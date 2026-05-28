@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Horizon</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=11">
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+</head>
+<body data-theme="horizon" data-page="home">
+
+    <div class="bg-environment">
+        <div id="bubbleContainer" class="bubble-container"></div>
+
+        <div class="sky-container" id="skyLayer">
+            <div class="galaxy-nebula"></div>
+            <div class="crescent-moon"></div>
+            
+            <div class="cosmic-shooting-star comet-one"></div>
+            <div class="cosmic-shooting-star comet-two"></div>
+            <div class="cosmic-shooting-star comet-three"></div>
+            
+            <div class="star-cluster-field" id="homeStarField"></div>
+            <div class="cosmic-dashboard-stars" id="dashboardStarField"></div>
+        </div>
+
+        <div class="ocean-horizon" id="oceanLayer">
+            <div class="ripple-ocean-surface">
+                <div class="flat-horizon-base"></div>
+                <div class="fluid-wave distant-ripple-layer"></div> 
+                <div class="fluid-wave mid-sea-layer-2"></div>
+                <div class="fluid-wave surface-sea-layer-1"></div>
+            </div>
+
+            <div class="fish-scene">
+                <div class="water-splash splash-in"></div>
+                <img src="https://img.pokemondb.net/sprites/black-white/anim/normal/magikarp.gif" alt="Pixel Fish" class="jumping-fish">
+                <div class="water-splash splash-out"></div>
+            </div>
+
+            <div class="foreground-land-silhouette"></div>
+        </div>
+    </div>
+
+    <main id="app-viewport" class="content-layer"></main>
+
+    <div id="particleExplosionContainer" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999998; overflow: hidden;"></div>
+    <div id="pageTransitionCircle" class="transition-circle"></div>
+    <div id="secretAdminTrigger" style="position: fixed; bottom: 0; right: 0; width: 50px; height: 50px; z-index: 999999; cursor: default; opacity: 0;"></div>
+    
+    <div id="footerCredit" style="position: fixed; bottom: 15px; left: 20px; font-family: 'Starborn', 'Fredoka', sans-serif; color: rgba(255,255,255,0.5); font-size: 0.95rem; z-index: 99999; pointer-events: none; text-shadow: 0 0 8px rgba(0, 242, 254, 0.4); letter-spacing: 1px;">coded by Husky</div>
+
+    <script type="module" src="script.js?v=11"></script>
+</body>
+</html>
