@@ -408,36 +408,7 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     display: none !important; 
 }
 
-/* CSS Bubbles */
-.bubble-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    z-index: 1;
-    pointer-events: none;
-}
-
-.magical-bubble {
-    position: absolute;
-    bottom: -50px;
-    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.1) 60%, transparent 80%);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: 50%;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3), inset 0 0 10px rgba(255, 255, 255, 0.3);
-    animation: floatUp ease-in infinite;
-}
-
-@keyframes floatUp {
-    0% { transform: translateY(0) scale(1); opacity: 0; }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
-    100% { transform: translateY(-110vh) scale(1.2); opacity: 0; }
-}
-
-/* Preorder Center Card (Updated Width for 3-Column Support) */
+/* Preorder Center Card */
 .preorder-card {
     background: rgba(0, 105, 148, 0.2);
     backdrop-filter: blur(25px);
@@ -752,14 +723,14 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     100% { transform: translate(var(--tx), var(--ty)) scale(0) rotate(360deg); opacity: 0; }
 }
 
-/* NEW CIRCLE EXPANSION ANIMATION (Speed tweaked to be slow to cover, fast to reveal) */
+/* GPU-Optimized Circle Transition for Mobile Safety */
 .transition-circle {
     position: fixed;
     top: 50%;
     left: 50%;
-    width: 250vmax; /* Ensures the circle completely covers any screen size */
-    height: 250vmax;
-    z-index: 999999; /* Forces the circle to render ON TOP of everything */
+    width: 100px; 
+    height: 100px;
+    z-index: 999999;
     pointer-events: none;
     background: radial-gradient(circle, 
         rgba(236, 72, 153, 1) 0%, 
@@ -769,19 +740,19 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     border-radius: 50%;
     transform: translate(-50%, -50%) scale(0);
     opacity: 0;
+    will-change: transform, opacity; 
 }
 
 .transition-circle.active {
-    /* 2.2s total duration allowing a slow start and a quick finish */
     animation: expandCircleTransition 2.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes expandCircleTransition {
     0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-    5% { opacity: 1; transform: translate(-50%, -50%) scale(0.02); }
-    55% { transform: translate(-50%, -50%) scale(1); opacity: 1; } /* Expands slowly to cover screen */
-    70% { transform: translate(-50%, -50%) scale(1); opacity: 1; } /* Holds briefly while page swaps */
-    100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; } /* Fades out very quickly */
+    5% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+    55% { transform: translate(-50%, -50%) scale(35); opacity: 1; } 
+    70% { transform: translate(-50%, -50%) scale(35); opacity: 1; } 
+    100% { transform: translate(-50%, -50%) scale(45); opacity: 0; }
 }
 
 /* Confetti Effect */
@@ -1040,7 +1011,7 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     z-index: 2;
 }
 
-/* Specific Premade Card (taller for contain images) */
+/* Specific Premade Card */
 .premade-card {
     background: rgba(10, 5, 20, 0.75);
     border: 2px solid rgba(0, 242, 254, 0.5);
@@ -1097,7 +1068,6 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
    --- MOBILE RESPONSIVENESS & PERFORMANCE ---
    ========================================== */
 @media (max-width: 768px) {
-    /* Scale down main headers and gifs */
     header h1 { font-size: 2.2rem; text-shadow: none; }
     header h2 { font-size: 1.2rem; margin-bottom: 3vh; }
     .starborn-name { font-size: 1.8rem; }
@@ -1105,7 +1075,6 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     .active-pokemon-gif { height: 50px; }
     .content-layer { padding-top: 5vh; }
 
-    /* Fix box sizes and padding for phone screens */
     .form-card, .pricing-container, .preorder-card, .tos-container, .admin-dashboard {
         padding: 25px 15px;
         width: 95%;
@@ -1120,10 +1089,29 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     .socials-container { flex-direction: column; align-items: center; }
     .preorder-section-grid { grid-template-columns: 1fr; gap: 15px; }
     
-    /* Performance: Remove heavy backdrop-filters, glows, and drop-shadows on mobile */
+    /* Fixed overlapping layouts by completely separating elements */
+    #footerCredit {
+        position: relative !important;
+        bottom: auto !important;
+        left: auto !important;
+        margin-top: 40px;
+        margin-bottom: 20px;
+        text-align: center;
+        width: 100%;
+        display: block;
+    }
+
+    /* Target the text blocks inside Critter Café and dynamically downscale the border characters to fit the screen */
+    div[style*="white-space: pre-wrap"] {
+        font-size: 0.85rem !important;
+        letter-spacing: -0.5px !important;
+        line-height: 1.6 !important;
+        overflow-x: hidden !important;
+    }
+    
     .nav-btn, .preorder-btn, .form-card, .pricing-container, .preorder-card, .tos-container, .profile-card, .text-scroller-card, .visual-media-card {
         backdrop-filter: none !important;
-        background: rgba(10, 5, 20, 0.95) !important; /* Make solid to hide lack of blur */
+        background: rgba(10, 5, 20, 0.95) !important; 
         box-shadow: none !important;
     }
     .btn-pink-highlight, .pricing-btn-glow {
@@ -1131,12 +1119,10 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
         box-shadow: none !important;
     }
 
-    /* Performance: Reduce background particles and complex animations */
     .star-cluster-field, .cosmic-shooting-star { display: none !important; }
-    .magical-bubble:nth-child(even) { display: none; } /* Cuts bubbles by 50% */
+    .magical-bubble:nth-child(even) { display: none; } 
     .distant-ripple-layer, .mid-sea-layer-2 { animation: none; opacity: 0.5; } 
     .fish-scene { transform: scale(0.6); right: 5%; bottom: 30px; }
     
-    /* Form specifics */
-    .form-input, .form-select, .form-textarea { font-size: 16px; /* prevents iOS zoom on focus */ }
+    .form-input, .form-select, .form-textarea { font-size: 16px; }
 }

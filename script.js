@@ -16,6 +16,13 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// === PROFANITY FILTER HELPER ===
+function containsProfanity(text) {
+    if (typeof text !== 'string') return false;
+    const profanityRegex = /\b(fuck|shit|bitch|ass|dick|cunt|pussy|cock|porn|sex|nudes|nsfw|whore|slut|slutty|cum|rape|tits|boobs)\b/i;
+    return profanityRegex.test(text);
+}
+
 let globalCommentsArray = [];
 let commentDisplayLimit = 5;
 let unsubscribeListener = null;
@@ -38,7 +45,10 @@ function createBubbles() {
     const container = document.getElementById('bubbleContainer');
     if (!container) return;
     container.innerHTML = "";
-    const bubbleCount = 45;
+    
+    const isMobile = window.innerWidth <= 768;
+    const bubbleCount = isMobile ? 10 : 45; 
+    
     for (let i = 0; i < bubbleCount; i++) {
         const bubble = document.createElement('div');
         bubble.className = 'magical-bubble';
@@ -46,7 +56,6 @@ function createBubbles() {
         bubble.style.width = `${size}px`;
         bubble.style.height = `${size}px`;
         bubble.style.left = `${Math.random() * 100}vw`;
-        /* Increased bubble flow speed significantly */
         bubble.style.animationDuration = `${Math.random() * 3 + 2}s`;
         bubble.style.animationDelay = `${Math.random() * 5}s`;
         container.appendChild(bubble);
@@ -61,7 +70,10 @@ function clearBubbles() {
 function renderHomeStars() {
     homeStarField.innerHTML = "";
     dashboardStarField.innerHTML = "";
-    const countTarget = 350;
+    
+    const isMobile = window.innerWidth <= 768;
+    const countTarget = isMobile ? 40 : 350; 
+    
     for (let i = 0; i < countTarget; i++) {
         const potentialTop = Math.floor(Math.random() * 85) + 2;
         const potentialLeft = Math.floor(Math.random() * 100);
@@ -84,7 +96,11 @@ function renderHomeStars() {
 function renderDashboardStars() {
     homeStarField.innerHTML = "";
     dashboardStarField.innerHTML = "";
-    for (let i = 1; i <= 28; i++) {
+    
+    const isMobile = window.innerWidth <= 768;
+    const countTarget = isMobile ? 8 : 28;
+    
+    for (let i = 1; i <= countTarget; i++) {
         const star = document.createElement('div');
         star.className = 'dashboard-star';
         const size = Math.random() > 0.6 ? 5 : 3;
@@ -99,6 +115,8 @@ function renderDashboardStars() {
 
 function cinematicTransition(event, targetPageFunction) {
     let btn = null;
+    const isMobile = window.innerWidth <= 768;
+    
     if (event && event.currentTarget) {
         btn = event.currentTarget;
         btn.classList.add('btn-squish');
@@ -108,8 +126,10 @@ function cinematicTransition(event, targetPageFunction) {
             const rect = btn.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
+            
+            const particleCount = isMobile ? 5 : 30; 
 
-            for (let i = 0; i < 30; i++) {
+            for (let i = 0; i < particleCount; i++) {
                 const star = document.createElement('div');
                 star.className = 'transition-star';
                 const angle = Math.random() * Math.PI * 2;
@@ -132,25 +152,21 @@ function cinematicTransition(event, targetPageFunction) {
         }
     }
 
-    // Snappier Circle Transition Setup
     const transitionCircle = document.getElementById('pageTransitionCircle');
     setTimeout(() => {
         if(transitionCircle) transitionCircle.classList.add('active');
     }, 50);
 
-    // Swap content right when screen is fully covered (around 1300ms now, during the slow expansion)
     setTimeout(() => {
         if (btn) btn.classList.remove('btn-squish');
         targetPageFunction();
     }, 1300); 
 
-    // Remove the circle entirely once the fade-out ends
     setTimeout(() => {
         if(transitionCircle) transitionCircle.classList.remove('active');
     }, 2300); 
 }
 
-// Confetti Celebration for successful form submissions
 function triggerConfetti() {
     const colors = ['#ec4899', '#00f2fe', '#22c55e', '#a855f7', '#f1c40f'];
     for (let i = 0; i < 75; i++) {
@@ -202,7 +218,6 @@ function loadHomePage() {
 
 function loadDiscordPage() {
     clearBubbles();
-    // Use the brand new, exclusive Space theme for the Discord page
     bodyElement.setAttribute('data-theme', 'discord-space');
     bodyElement.setAttribute('data-page', 'discord');
     renderDashboardStars();
@@ -470,6 +485,7 @@ function loadContactPage() {
             const passcode = inputs[0].value.trim().toLowerCase();
             const text = inputs[1].value.trim();
             let adminName = "";
+            
             if (passcode === "bingo") adminName = "Admin Husky 🎨";
             else if (passcode === "fanta") adminName = "Admin Lopside 🧵";
             else { alert("Authentication Failed: Invalid Passcode."); return; }
@@ -491,6 +507,12 @@ function loadContactPage() {
         const nameInput = document.getElementById('commentName');
         const textInput = document.getElementById('commentText');
         const submitBtn = commentForm.querySelector('button[type="submit"]');
+        
+        if (containsProfanity(nameInput.value) || containsProfanity(textInput.value)) {
+            alert("Hold on! Please keep the comments family-friendly. We do not allow swearing or NSFW content.");
+            return; 
+        }
+
         submitBtn.textContent = "Posting... 🛰️";
         submitBtn.disabled = true;
 
@@ -543,6 +565,7 @@ function loadContactPage() {
                     const replyItem = document.createElement('div');
                     replyItem.style.cssText = `background: rgba(255, 255, 255, 0.05); padding: 10px 15px; border-left: 3px solid ${color}; border-radius: 6px;`;
                     replyItem.innerHTML = `<strong style="color: ${color}; font-size: 0.9rem;">↳ ${escapeHTML(reply.name)} <span style="font-size: 0.7rem; color: #a3b8cc;">(Admin)</span></strong><p style="margin-top: 4px; color: #d1d5db; font-size: 0.85rem; line-height: 1.3;">${escapeHTML(reply.text)}</p>`;
+                    repliesContainer.appendChild(repliesContainer.firstChild); // dummy sync block
                     repliesContainer.appendChild(replyItem);
                 });
                 commentWrap.appendChild(repliesContainer);
@@ -856,12 +879,19 @@ async function submitPreorder(event, orderType) {
     event.preventDefault();
     const form = event.target;
     const submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn.textContent = "✨ Sending Order... ✨";
-    submitBtn.disabled = true;
-
+    
     const formData = new FormData(form);
     const addons = formData.getAll('addon');
     const orderData = Object.fromEntries(formData.entries());
+
+    const orderValues = Object.values(orderData).join(" ");
+    if (containsProfanity(orderValues)) {
+        alert("Hold on! Please keep your request family-friendly. We do not allow swearing or NSFW content in our forms.");
+        return; 
+    }
+
+    submitBtn.textContent = "✨ Sending Order... ✨";
+    submitBtn.disabled = true;
 
     if (addons.length > 0) {
         orderData.selectedAddons = addons.join(", ");
@@ -875,15 +905,11 @@ async function submitPreorder(event, orderType) {
 
     if (orderData.email) orderData.email = orderData.email.toLowerCase();
 
-    // Compile notes for the email
     const compiledNotes = orderData.notes || orderData.description || orderData.materials || orderData.pose || "No additional notes provided.";
 
     try {
-        // 1. Save to Firebase
         await addDoc(collection(db, "preorders"), { ...orderData, createdAt: serverTimestamp() });
         
-        // 2. Prepare the email data matching your EmailJS Template variables
-        // We use newOrderId.replace('HTG-', '') so it fits perfectly into your template's HTG-{{order_id}} design!
         const templateParams = {
             name: orderData.name,
             email: orderData.email,
@@ -892,8 +918,6 @@ async function submitPreorder(event, orderType) {
             message: compiledNotes
         };
 
-        // 3. Send the email via EmailJS
-        // NOTE: YOU MUST REPLACE "YOUR_SERVICE_ID_HERE" WITH YOUR ACTUAL EMAILJS SERVICE ID
         emailjs.send("service_jn29dsl", "template_0p1cxof", templateParams)
             .then(function() {
                 console.log('Confirmation email sent successfully!');
@@ -901,7 +925,6 @@ async function submitPreorder(event, orderType) {
                 console.error('Email failed to send...', error);
             });
 
-        // 4. Trigger UI Celebration
         triggerConfetti();
         form.innerHTML = `
             <div style="text-align: center; padding: 40px 20px;">
@@ -1449,16 +1472,35 @@ loadHomePage();
 const bgMusic = new Audio("sonican-lo-fi-music-loop-sentimental-jazzy-love-473154.mp3");
 bgMusic.loop = true;
 bgMusic.volume = 0.5;
+
 const musicBtn = document.createElement('button');
 musicBtn.id = 'globalMusicBtn';
 musicBtn.innerHTML = '🎵 Play Music';
-musicBtn.style.cssText = `
-    position: fixed; bottom: 20px; right: 20px; z-index: 9999;
-    padding: 12px 18px; border-radius: 12px; background: rgba(10, 18, 38, 0.8);
-    border: 1px solid #00f2fe; color: white; cursor: pointer;
-    backdrop-filter: blur(5px); font-family: inherit; font-size: 1rem;
-    box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2); transition: all 0.3s ease;
-`;
+
+// Set standard styles. If mobile is detected dynamically, toggle placement settings safely.
+const applyResponsiveMusicPlacement = () => {
+    const isMobile = window.innerWidth <= 768;
+    musicBtn.style.cssText = `
+        position: fixed; 
+        z-index: 9999;
+        padding: 12px 18px; 
+        border-radius: 12px; 
+        background: rgba(10, 18, 38, 0.8);
+        border: 1px solid #00f2fe; 
+        color: white; 
+        cursor: pointer;
+        backdrop-filter: blur(5px); 
+        font-family: inherit; 
+        font-size: 1rem;
+        box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2); 
+        transition: all 0.3s ease;
+        ${isMobile ? 'top: 20px; right: 20px; bottom: auto;' : 'bottom: 20px; right: 20px; top: auto;'}
+    `;
+};
+
+applyResponsiveMusicPlacement();
+window.addEventListener('resize', applyResponsiveMusicPlacement);
+
 musicBtn.onmouseover = () => musicBtn.style.background = "rgba(0, 242, 254, 0.2)";
 musicBtn.onmouseout = () => musicBtn.style.background = "rgba(10, 18, 38, 0.8)";
 document.body.appendChild(musicBtn);
