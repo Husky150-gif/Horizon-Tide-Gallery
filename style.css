@@ -1011,7 +1011,7 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     z-index: 2;
 }
 
-/* Specific Premade Card (taller for contain images) */
+/* Specific Premade Card */
 .premade-card {
     background: rgba(10, 5, 20, 0.75);
     border: 2px solid rgba(0, 242, 254, 0.5);

@@ -66,7 +66,8 @@ const TOS_CONTENT_HTML = `
 `;
 
 let globalCommentsArray = [];
-let commentDisplayLimit = 5;
+// Increased default comment limit from 5 to 15 to prevent perceived "vanishing" comments
+let commentDisplayLimit = 15; 
 let unsubscribeListener = null;
 
 const appViewport = document.getElementById('app-viewport');
@@ -598,7 +599,6 @@ function loadContactPage() {
                     const replyItem = document.createElement('div');
                     replyItem.style.cssText = `background: rgba(255, 255, 255, 0.05); padding: 10px 15px; border-left: 3px solid ${color}; border-radius: 6px;`;
                     replyItem.innerHTML = `<strong style="color: ${color}; font-size: 0.9rem;">↳ ${escapeHTML(reply.name)} <span style="font-size: 0.7rem; color: #a3b8cc;">(Admin)</span></strong><p style="margin-top: 4px; color: #d1d5db; font-size: 0.85rem; line-height: 1.3;">${escapeHTML(reply.text)}</p>`;
-                    repliesContainer.appendChild(repliesContainer.firstChild); 
                     repliesContainer.appendChild(replyItem);
                 });
                 commentWrap.appendChild(repliesContainer);
