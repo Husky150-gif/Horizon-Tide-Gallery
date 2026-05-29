@@ -23,6 +23,48 @@ function containsProfanity(text) {
     return profanityRegex.test(text);
 }
 
+// === CENTRALIZED TOS CONTENT FOR MODALS AND PAGES ===
+const TOS_CONTENT_HTML = `
+    <h1 style="color: #f472b6; font-size: 2.5rem; text-align: center; margin-bottom: 10px; text-shadow: 0 0 15px rgba(244, 114, 182, 0.5);">Terms of Service</h1>
+    <p>By commissioning, purchasing, or placing an order with Horizon Tide Gallery, the client agrees to the following Terms of Service. Please read carefully before purchasing or commissioning any product or service.</p>
+    <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">GENERAL</h2>
+    <p>Horizon Tide Gallery reserves the right to refuse, decline, cancel, or discontinue any commission, order, inquiry, or interaction for any reason, including but not limited to:</p>
+    <ul>
+        <li>Inappropriate or disrespectful behavior</li>
+        <li>Harassment or excessive spam messaging</li>
+        <li>Offensive, hateful, discriminatory, or illegal content</li>
+        <li>Requests outside our skill level or comfort zone</li>
+        <li>Failure to communicate or follow payment agreements</li>
+        <li>Repeated violation of our boundaries or policies</li>
+    </ul>
+    <p>We reserve the right to decline any request without explanation.<br>Clients commissioning NSFW content or entering payment agreements independently must be 18 years of age or older. Certain commission types may require parental permission for minors.</p>
+    <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">PRODUCTS & SERVICES</h2>
+    <p>Horizon Tide Gallery may offer products and services including, but not limited to: Fursuits, parts & accessories (Tails, paws, partials), Character artwork & Digital illustrations, Keychains, charms, handmade merchandise & custom crafts. Because many products are handmade, slight variations may occur between finished items.</p>
+    <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">PAYMENT</h2>
+    <p>Accepted payment methods may include: PayPal, CashApp, Ko-fi, or other approved platforms.</p>
+    <ul>
+        <li>A non-refundable deposit of 10%–30% may be required before work begins.</li>
+        <li>Smaller or digital commissions may require full upfront payment.</li>
+        <li>Payment plans may be available for orders over $200.</li>
+        <li>Full payment must be completed before physical items are shipped.</li>
+    </ul>
+    <p>If a payment plan is abandoned for more than 14 days without communication, the order may be canceled, materials remain property of Horizon Tide, and completed items may be resold.</p>
+    <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">REFUND POLICY</h2>
+    <p>Deposits and down payments are non-refundable. Once substantial work has begun, refunds may become partial or unavailable. Completed commissions are not eligible for refunds.</p>
+    <p>Refunds will NOT be granted for impatience, minor delays, failure to read the TOS, or personal preference changes after work starts. Chargebacks will result in placement on a Do Not Commission list.</p>
+    <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">TURNAROUND TIME & DEADLINES</h2>
+    <p>Most products are handmade, and all turnaround times are estimates only. Estimated completion dates are NOT guaranteed unless explicitly agreed upon in writing. Convention pickups or event deadlines must be discussed BEFORE payment is made.</p>
+    <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">HANDMADE PRODUCT DISCLAIMER</h2>
+    <p>Small imperfections may naturally occur (slight asymmetry, minor stitching visibility, natural variation). Factory-level perfection should not be expected. Materials may vary slightly in color, texture, or pile length.</p>
+    <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">SHIPPING & REPAIRS</h2>
+    <p>Clients are responsible for providing a correct address and paying shipping costs. Once shipped, ownership transfers to the shipping carrier and client. Minor craftsmanship-related repairs may be offered within 7 days of delivery at our discretion (this does not include wear and tear, pet damage, or improper care).</p>
+    <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">ART CONTENT & NSFW POLICY</h2>
+    <p>We may create furry/anthro art, original characters, fanart, and mild NSFW. We will NOT create illegal content, hate content, heavy gore, or content involving minors. All NSFW commissioners must be 18+.</p>
+    <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">ARTISTIC RIGHTS & USAGE</h2>
+    <p>We retain artistic rights to all creations. Clients may use purchased products for personal use and upload photos with credit. Clients MAY NOT claim the work as their own, trace/replicate, mass-produce, or use our work for AI training datasets.</p>
+    <p style="text-align: center; margin-top: 30px; color: #f472b6; font-weight: bold;">✨ Thank you for supporting Horizon Tide Gallery. Every order directly supports independent artists, handmade craftsmanship, and small-business creativity.</p>
+`;
+
 let globalCommentsArray = [];
 let commentDisplayLimit = 5;
 let unsubscribeListener = null;
@@ -178,6 +220,34 @@ function triggerConfetti() {
         document.body.appendChild(conf);
         setTimeout(() => conf.remove(), 4000);
     }
+}
+
+// === NEW TOS MODAL SYSTEM FOR FORMS ===
+function showTOSModal() {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); padding: 20px;";
+    
+    const modalContent = document.createElement('div');
+    modalContent.className = "tos-container";
+    modalContent.style.cssText = "background: rgba(10, 5, 20, 0.95); position: relative; margin-bottom: 0; max-height: 85vh; overflow-y: auto; width: 100%; max-width: 900px; padding-top: 20px;"; 
+    
+    const closeWrap = document.createElement('div');
+    closeWrap.style.cssText = "display: flex; justify-content: flex-end; position: sticky; top: 0; right: 0; z-index: 10; margin-bottom: 10px;";
+    
+    const closeBtn = document.createElement('button');
+    closeBtn.className = "nav-btn";
+    closeBtn.innerHTML = "✖ Close TOS";
+    closeBtn.style.cssText = "border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.1); padding: 8px 16px; font-size: 0.9rem; margin-top: -10px;";
+    closeBtn.onclick = () => overlay.remove();
+    
+    const tosTextContainer = document.createElement('div');
+    tosTextContainer.innerHTML = TOS_CONTENT_HTML;
+    
+    closeWrap.appendChild(closeBtn);
+    modalContent.appendChild(closeWrap);
+    modalContent.appendChild(tosTextContainer);
+    overlay.appendChild(modalContent);
+    document.body.appendChild(overlay);
 }
 
 function bindCoreMenuControls() {
@@ -375,44 +445,7 @@ function loadTOSPage() {
 
     appViewport.innerHTML = `
         <div class="tos-container">
-            <h1>Terms of Service</h1>
-            <p>By commissioning, purchasing, or placing an order with Horizon Tide Gallery, the client agrees to the following Terms of Service. Please read carefully before purchasing or commissioning any product or service.</p>
-            <h2>GENERAL</h2>
-            <p>Horizon Tide Gallery reserves the right to refuse, decline, cancel, or discontinue any commission, order, inquiry, or interaction for any reason, including but not limited to:</p>
-            <ul>
-                <li>Inappropriate or disrespectful behavior</li>
-                <li>Harassment or excessive spam messaging</li>
-                <li>Offensive, hateful, discriminatory, or illegal content</li>
-                <li>Requests outside our skill level or comfort zone</li>
-                <li>Failure to communicate or follow payment agreements</li>
-                <li>Repeated violation of our boundaries or policies</li>
-            </ul>
-            <p>We reserve the right to decline any request without explanation.<br>Clients commissioning NSFW content or entering payment agreements independently must be 18 years of age or older. Certain commission types may require parental permission for minors.</p>
-            <h2>PRODUCTS & SERVICES</h2>
-            <p>Horizon Tide Gallery may offer products and services including, but not limited to: Fursuits, parts & accessories (Tails, paws, partials), Character artwork & Digital illustrations, Keychains, charms, handmade merchandise & custom crafts. Because many products are handmade, slight variations may occur between finished items.</p>
-            <h2>PAYMENT</h2>
-            <p>Accepted payment methods may include: PayPal, CashApp, Ko-fi, or other approved platforms.</p>
-            <ul>
-                <li>A non-refundable deposit of 10%–30% may be required before work begins.</li>
-                <li>Smaller or digital commissions may require full upfront payment.</li>
-                <li>Payment plans may be available for orders over $200.</li>
-                <li>Full payment must be completed before physical items are shipped.</li>
-            </ul>
-            <p>If a payment plan is abandoned for more than 14 days without communication, the order may be canceled, materials remain property of Horizon Tide, and completed items may be resold.</p>
-            <h2>REFUND POLICY</h2>
-            <p>Deposits and down payments are non-refundable. Once substantial work has begun, refunds may become partial or unavailable. Completed commissions are not eligible for refunds.</p>
-            <p>Refunds will NOT be granted for impatience, minor delays, failure to read the TOS, or personal preference changes after work starts. Chargebacks will result in placement on a Do Not Commission list.</p>
-            <h2>TURNAROUND TIME & DEADLINES</h2>
-            <p>Most products are handmade, and all turnaround times are estimates only. Estimated completion dates are NOT guaranteed unless explicitly agreed upon in writing. Convention pickups or event deadlines must be discussed BEFORE payment is made.</p>
-            <h2>HANDMADE PRODUCT DISCLAIMER</h2>
-            <p>Small imperfections may naturally occur (slight asymmetry, minor stitching visibility, natural variation). Factory-level perfection should not be expected. Materials may vary slightly in color, texture, or pile length.</p>
-            <h2>SHIPPING & REPAIRS</h2>
-            <p>Clients are responsible for providing a correct address and paying shipping costs. Once shipped, ownership transfers to the shipping carrier and client. Minor craftsmanship-related repairs may be offered within 7 days of delivery at our discretion (this does not include wear and tear, pet damage, or improper care).</p>
-            <h2>ART CONTENT & NSFW POLICY</h2>
-            <p>We may create furry/anthro art, original characters, fanart, and mild NSFW. We will NOT create illegal content, hate content, heavy gore, or content involving minors. All NSFW commissioners must be 18+.</p>
-            <h2>ARTISTIC RIGHTS & USAGE</h2>
-            <p>We retain artistic rights to all creations. Clients may use purchased products for personal use and upload photos with credit. Clients MAY NOT claim the work as their own, trace/replicate, mass-produce, or use our work for AI training datasets.</p>
-            <p style="text-align: center; margin-top: 30px; color: #f472b6; font-weight: bold;">✨ Thank you for supporting Horizon Tide Gallery. Every order directly supports independent artists, handmade craftsmanship, and small-business creativity.</p>
+            ${TOS_CONTENT_HTML}
         </div>
         <button id="backHomeBtn" class="nav-btn" style="border-color: #22c55e;">← Back to Horizon</button>
     `;
@@ -565,7 +598,7 @@ function loadContactPage() {
                     const replyItem = document.createElement('div');
                     replyItem.style.cssText = `background: rgba(255, 255, 255, 0.05); padding: 10px 15px; border-left: 3px solid ${color}; border-radius: 6px;`;
                     replyItem.innerHTML = `<strong style="color: ${color}; font-size: 0.9rem;">↳ ${escapeHTML(reply.name)} <span style="font-size: 0.7rem; color: #a3b8cc;">(Admin)</span></strong><p style="margin-top: 4px; color: #d1d5db; font-size: 0.85rem; line-height: 1.3;">${escapeHTML(reply.text)}</p>`;
-                    repliesContainer.appendChild(repliesContainer.firstChild); // dummy sync block
+                    repliesContainer.appendChild(repliesContainer.firstChild); 
                     repliesContainer.appendChild(replyItem);
                 });
                 commentWrap.appendChild(repliesContainer);
@@ -1030,7 +1063,7 @@ function loadCustomKeychainsForm() {
     `;
     
     document.querySelectorAll('.tos-redirect-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => cinematicTransition(e, loadTOSPage));
+        btn.addEventListener('click', () => showTOSModal());
     });
     document.getElementById('customKeychainForm').addEventListener('submit', (e) => submitPreorder(e, 'Custom Keychain'));
     document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
@@ -1102,7 +1135,7 @@ function loadPremadeKeychainsForm() {
     `;
     
     document.querySelectorAll('.tos-redirect-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => cinematicTransition(e, loadTOSPage));
+        btn.addEventListener('click', () => showTOSModal());
     });
     document.getElementById('premadeKeychainForm').addEventListener('submit', (e) => submitPreorder(e, 'Premade Keychain'));
     document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
@@ -1179,7 +1212,7 @@ function loadCustomStickersForm() {
     `;
     
     document.querySelectorAll('.tos-redirect-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => cinematicTransition(e, loadTOSPage));
+        btn.addEventListener('click', () => showTOSModal());
     });
     document.getElementById('stickerForm').addEventListener('submit', (e) => submitPreorder(e, 'Custom Stickers'));
     document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
@@ -1266,7 +1299,7 @@ function loadHuskyArtForm() {
     `;
     
     document.querySelectorAll('.tos-redirect-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => cinematicTransition(e, loadTOSPage));
+        btn.addEventListener('click', () => showTOSModal());
     });
     document.getElementById('artForm').addEventListener('submit', (e) => submitPreorder(e, 'Art Commission'));
     document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
@@ -1323,7 +1356,7 @@ function loadFursuitForm() {
     `;
     
     document.querySelectorAll('.tos-redirect-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => cinematicTransition(e, loadTOSPage));
+        btn.addEventListener('click', () => showTOSModal());
     });
     document.getElementById('fursuitForm').addEventListener('submit', (e) => submitPreorder(e, 'Fursuit Request'));
     document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
@@ -1477,7 +1510,6 @@ const musicBtn = document.createElement('button');
 musicBtn.id = 'globalMusicBtn';
 musicBtn.innerHTML = '🎵 Play Music';
 
-// Set standard styles. If mobile is detected dynamically, toggle placement settings safely.
 const applyResponsiveMusicPlacement = () => {
     const isMobile = window.innerWidth <= 768;
     musicBtn.style.cssText = `
