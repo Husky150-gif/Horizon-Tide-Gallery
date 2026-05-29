@@ -267,11 +267,11 @@ function loadPreorderPage() {
                     <button class="preorder-btn" id="btnCustomStickers">Custom Stickers</button>
                     <button class="preorder-btn" id="btnPremadeKeychains" style="border-color: #00f2fe;">Premade Keychains</button>
                     <button class="preorder-btn" id="btnCustomKeychains">Custom Keychains</button>
-                    <button class="preorder-btn" id="btnArt" style="border-color: #ec4899;">Husky's Art Commissions</button>
                     <button class="preorder-btn" id="btnFursuits" style="border-color: #22c55e;">Lopside's Fursuit Creations</button>
                 </div>
                 <div class="menu-section">
                     <h3>Coming Soon / Closed</h3>
+                    <button class="preorder-btn disabled" id="btnArt" style="border-color: #ec4899;">Husky's Art Commissions</button>
                     <button class="preorder-btn disabled" id="btnCustomPlushies">Custom Plushies</button>
                     <button class="preorder-btn disabled" id="btnAnimations">Animations</button>
                 </div>
@@ -618,6 +618,12 @@ function loadPricingPage() {
                     <div class="price-item"><span>Flat Color</span> <span>$70</span></div>
                     <div class="price-item"><span>Cel Shaded</span> <span>$95</span></div>
                     <div class="price-item"><span>Rendered</span> <span>$125–$140+</span></div>
+                </div>
+                <h3>Scenes</h3>
+                <div class="price-grid">
+                    <div class="price-item"><span>Flat Color</span> <span>$150</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>$180</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>$220+</span></div>
                 </div>
                 <h3>Reference Sheets</h3>
                 <ul>
@@ -1172,22 +1178,29 @@ function loadHuskyArtForm() {
                 <div class="form-group"><label>Discord Username <span>*</span></label><input type="text" name="discord" class="form-input" required></div>
                 <div class="form-group"><label>Character Name</label><input type="text" name="characterName" class="form-input"></div>
                 <div class="form-group"><label>Reference Image Link <span>*</span></label><input type="url" name="refLink" class="form-input" required></div>
+                
                 <div class="form-group">
                     <label>Commission Type <span>*</span></label>
                     <select name="artType" class="form-select" required>
-                        <option value="Headshot/Bust">Headshot/Bust (Starts at $25+)</option>
-                        <option value="Halfbody">Halfbody (Starts at $40+)</option>
-                        <option value="Fullbody">Fullbody (Starts at $60+)</option>
-                        <option value="Scene">Scene (Starts at $90+)</option>
+                        <option value="Headshot/Bust">Headshot/Bust</option>
+                        <option value="Halfbody">Halfbody</option>
+                        <option value="Fullbody">Fullbody</option>
+                        <option value="Scene">Scene</option>
                         <option value="Basic Ref Sheet">Basic Ref Sheet ($160)</option>
                         <option value="Standard Ref Sheet">Standard Ref Sheet ($200)</option>
                         <option value="Deluxe Ref Sheet">Deluxe Ref Sheet ($250+)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Shading Style <span>*</span></label>
+                    <select name="shadingStyle" class="form-select" required>
                         <option value="Sketchy">Sketchy (Lower cost)</option>
                         <option value="Flat Color">Flat Color</option>
                         <option value="Cel Shaded">Cel Shaded</option>
                         <option value="Rendered">Rendered (Premium)</option>
                     </select>
                 </div>
+                
                 <div class="form-group"><label>Number of Characters <span>*</span></label><input type="number" name="characterCount" class="form-input" required min="1" value="1"></div>
                 <div class="form-group">
                     <label>Background Preference</label>

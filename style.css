@@ -1092,3 +1092,51 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     text-align: center;
     letter-spacing: 0.5px;
 }
+
+/* ==========================================
+   --- MOBILE RESPONSIVENESS & PERFORMANCE ---
+   ========================================== */
+@media (max-width: 768px) {
+    /* Scale down main headers and gifs */
+    header h1 { font-size: 2.2rem; text-shadow: none; }
+    header h2 { font-size: 1.2rem; margin-bottom: 3vh; }
+    .starborn-name { font-size: 1.8rem; }
+    .gif-container { height: 55px; }
+    .active-pokemon-gif { height: 50px; }
+    .content-layer { padding-top: 5vh; }
+
+    /* Fix box sizes and padding for phone screens */
+    .form-card, .pricing-container, .preorder-card, .tos-container, .admin-dashboard {
+        padding: 25px 15px;
+        width: 95%;
+        border-width: 2px;
+    }
+    
+    .split-workspace-layout { 
+        flex-direction: column; 
+        gap: 20px; 
+    }
+    .button-grid { gap: 10px; }
+    .socials-container { flex-direction: column; align-items: center; }
+    .preorder-section-grid { grid-template-columns: 1fr; gap: 15px; }
+    
+    /* Performance: Remove heavy backdrop-filters, glows, and drop-shadows on mobile */
+    .nav-btn, .preorder-btn, .form-card, .pricing-container, .preorder-card, .tos-container, .profile-card, .text-scroller-card, .visual-media-card {
+        backdrop-filter: none !important;
+        background: rgba(10, 5, 20, 0.95) !important; /* Make solid to hide lack of blur */
+        box-shadow: none !important;
+    }
+    .btn-pink-highlight, .pricing-btn-glow {
+        animation: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Performance: Reduce background particles and complex animations */
+    .star-cluster-field, .cosmic-shooting-star { display: none !important; }
+    .magical-bubble:nth-child(even) { display: none; } /* Cuts bubbles by 50% */
+    .distant-ripple-layer, .mid-sea-layer-2 { animation: none; opacity: 0.5; } 
+    .fish-scene { transform: scale(0.6); right: 5%; bottom: 30px; }
+    
+    /* Form specifics */
+    .form-input, .form-select, .form-textarea { font-size: 16px; /* prevents iOS zoom on focus */ }
+}
