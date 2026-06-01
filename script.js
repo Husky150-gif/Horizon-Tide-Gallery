@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp, doc, updateDoc, deleteDoc, where, getDocs } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
 
 // === INITIALIZE EMAILJS ===
 emailjs.init("3stRxyurkRVP3ym8o");
@@ -15,19 +16,26 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const storage = getStorage(app); 
 
-// === PROFANITY FILTER HELPER ===
 function containsProfanity(text) {
     if (typeof text !== 'string') return false;
     const profanityRegex = /\b(fuck|shit|bitch|ass|dick|cunt|pussy|cock|porn|sex|nudes|nsfw|whore|slut|slutty|cum|rape|tits|boobs)\b/i;
     return profanityRegex.test(text);
 }
 
-// === CENTRALIZED TOS CONTENT FOR MODALS AND PAGES ===
+// === CENTRALIZED TOS CONTENT ===
 const TOS_CONTENT_HTML = `
     <h1 style="color: #f472b6; font-size: 2.5rem; text-align: center; margin-bottom: 10px; text-shadow: 0 0 15px rgba(244, 114, 182, 0.5);">Terms of Service</h1>
+    <div class="tos-jump-menu">
+        <a href="#tos-general" class="tos-jump-btn">General</a>
+        <a href="#tos-payment" class="tos-jump-btn">Payment</a>
+        <a href="#tos-refunds" class="tos-jump-btn">Refunds</a>
+        <a href="#tos-shipping" class="tos-jump-btn">Shipping</a>
+        <a href="#tos-art" class="tos-jump-btn">Art Policy</a>
+    </div>
     <p>By commissioning, purchasing, or placing an order with Horizon Tide Gallery, the client agrees to the following Terms of Service. Please read carefully before purchasing or commissioning any product or service.</p>
-    <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">GENERAL</h2>
+    <h2 id="tos-general" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">GENERAL</h2>
     <p>Horizon Tide Gallery reserves the right to refuse, decline, cancel, or discontinue any commission, order, inquiry, or interaction for any reason, including but not limited to:</p>
     <ul>
         <li>Inappropriate or disrespectful behavior</li>
@@ -40,7 +48,7 @@ const TOS_CONTENT_HTML = `
     <p>We reserve the right to decline any request without explanation.<br>Clients commissioning NSFW content or entering payment agreements independently must be 18 years of age or older. Certain commission types may require parental permission for minors.</p>
     <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">PRODUCTS & SERVICES</h2>
     <p>Horizon Tide Gallery may offer products and services including, but not limited to: Fursuits, parts & accessories (Tails, paws, partials), Character artwork & Digital illustrations, Keychains, charms, handmade merchandise & custom crafts. Because many products are handmade, slight variations may occur between finished items.</p>
-    <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">PAYMENT</h2>
+    <h2 id="tos-payment" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">PAYMENT</h2>
     <p>Accepted payment methods may include: PayPal, CashApp, Ko-fi, or other approved platforms.</p>
     <ul>
         <li>A non-refundable deposit of 10%–30% may be required before work begins.</li>
@@ -49,16 +57,16 @@ const TOS_CONTENT_HTML = `
         <li>Full payment must be completed before physical items are shipped.</li>
     </ul>
     <p>If a payment plan is abandoned for more than 14 days without communication, the order may be canceled, materials remain property of Horizon Tide, and completed items may be resold.</p>
-    <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">REFUND POLICY</h2>
+    <h2 id="tos-refunds" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">REFUND POLICY</h2>
     <p>Deposits and down payments are non-refundable. Once substantial work has begun, refunds may become partial or unavailable. Completed commissions are not eligible for refunds.</p>
     <p>Refunds will NOT be granted for impatience, minor delays, failure to read the TOS, or personal preference changes after work starts. Chargebacks will result in placement on a Do Not Commission list.</p>
-    <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">TURNAROUND TIME & DEADLINES</h2>
+    <h2 id="tos-shipping" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">TURNAROUND TIME & DEADLINES</h2>
     <p>Most products are handmade, and all turnaround times are estimates only. Estimated completion dates are NOT guaranteed unless explicitly agreed upon in writing. Convention pickups or event deadlines must be discussed BEFORE payment is made.</p>
     <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">HANDMADE PRODUCT DISCLAIMER</h2>
     <p>Small imperfections may naturally occur (slight asymmetry, minor stitching visibility, natural variation). Factory-level perfection should not be expected. Materials may vary slightly in color, texture, or pile length.</p>
     <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">SHIPPING & REPAIRS</h2>
     <p>Clients are responsible for providing a correct address and paying shipping costs. Once shipped, ownership transfers to the shipping carrier and client. Minor craftsmanship-related repairs may be offered within 7 days of delivery at our discretion (this does not include wear and tear, pet damage, or improper care).</p>
-    <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">ART CONTENT & NSFW POLICY</h2>
+    <h2 id="tos-art" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">ART CONTENT & NSFW POLICY</h2>
     <p>We may create furry/anthro art, original characters, fanart, and mild NSFW. We will NOT create illegal content, hate content, heavy gore, or content involving minors. All NSFW commissioners must be 18+.</p>
     <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">ARTISTIC RIGHTS & USAGE</h2>
     <p>We retain artistic rights to all creations. Clients may use purchased products for personal use and upload photos with credit. Clients MAY NOT claim the work as their own, trace/replicate, mass-produce, or use our work for AI training datasets.</p>
@@ -66,13 +74,14 @@ const TOS_CONTENT_HTML = `
 `;
 
 let globalCommentsArray = [];
-// Increased default comment limit from 5 to 15 to prevent perceived "vanishing" comments
 let commentDisplayLimit = 15; 
 let unsubscribeListener = null;
 
 const appViewport = document.getElementById('app-viewport');
 const bodyElement = document.body;
+
 const homeStarField = document.getElementById('homeStarField');
+const interactiveStarField = document.getElementById('interactiveStarField');
 const dashboardStarField = document.getElementById('dashboardStarField');
 
 window.handleImageError = function(img) {
@@ -81,9 +90,357 @@ window.handleImageError = function(img) {
     img.src = "data:image/svg+xml;utf8," + svgStr;
 };
 
-// ==========================================
-// --- BUBBLE GENERATION SYSTEM ---
-// ==========================================
+// --- DYNAMIC MOON ALGORITHM & CONTINUOUS QUOTES ---
+const moonPhases = [
+    { name: "New Moon", quote: "A quiet beginning is still a beginning.", shadow: "-65px 0 0 0 #02050c", bg: "transparent" },
+    { name: "Waxing Crescent", quote: "Little by little, light finds its way back.", shadow: "-16px 12px 0 0 #f1c40f", bg: "transparent" },
+    { name: "First Quarter", quote: "Keep going — growth is already happening.", shadow: "-32px 0 0 0 #f1c40f", bg: "transparent" },
+    { name: "Waxing Gibbous", quote: "You are closer than you think.", shadow: "-10px 0 0 0 #f1c40f", bg: "transparent" },
+    { name: "Full Moon", quote: "Let yourself shine without apology.", shadow: "0 0 20px #f1c40f", bg: "#f1c40f" },
+    { name: "Waning Gibbous", quote: "Share your light, then rest.", shadow: "10px 0 0 0 #f1c40f", bg: "transparent" },
+    { name: "Last Quarter", quote: "Release what no longer needs to stay.", shadow: "32px 0 0 0 #f1c40f", bg: "transparent" },
+    { name: "Waning Crescent", quote: "Rest is part of the magic too.", shadow: "16px 12px 0 0 #f1c40f", bg: "transparent" }
+];
+
+let globalQuoteIndex = 0;
+let globalQuoteInterval = null;
+
+function getDynamicMoonPhase() {
+    const date = new Date();
+    const newMoon = new Date(Date.UTC(2024, 0, 11, 11, 57)).getTime();
+    const cycle = 29.53058867 * 24 * 60 * 60 * 1000;
+    const diff = date.getTime() - newMoon;
+    let phase = (diff % cycle) / cycle;
+    if (phase < 0) phase += 1;
+    
+    return moonPhases[Math.floor(phase * 8 + 0.5) % 8];
+}
+
+function startQuoteRotation() {
+    if (globalQuoteInterval) clearInterval(globalQuoteInterval);
+    globalQuoteInterval = setInterval(() => {
+        globalQuoteIndex = (globalQuoteIndex + 1) % moonPhases.length;
+        const quoteEl = document.getElementById('rotatingMoonQuote');
+        if (quoteEl) {
+            quoteEl.style.opacity = 0;
+            setTimeout(() => {
+                quoteEl.innerText = `"${moonPhases[globalQuoteIndex].quote}"`;
+                quoteEl.style.opacity = 1;
+            }, 500);
+        }
+    }, 6000); 
+}
+
+function renderDynamicMoon() {
+    const container = document.getElementById('dynamicMoonContainer');
+    if(!container) return;
+    container.innerHTML = "";
+    
+    const moonData = getDynamicMoonPhase();
+    const moonWrap = document.createElement('div');
+    moonWrap.style.position = 'relative';
+    
+    const moon = document.createElement('div');
+    moon.className = "dynamic-moon-phase";
+    moon.style.boxShadow = moonData.shadow;
+    moon.style.backgroundColor = moonData.bg;
+    
+    const tooltip = document.createElement('div');
+    tooltip.className = "moon-tooltip";
+    
+    globalQuoteIndex = moonPhases.findIndex(p => p.name === moonData.name);
+    
+    tooltip.innerHTML = `<strong>${moonData.name}</strong><br><em id="rotatingMoonQuote" class="moon-quote-text">"${moonPhases[globalQuoteIndex].quote}"</em>`;
+    
+    moonWrap.appendChild(moon);
+    moonWrap.appendChild(tooltip);
+    container.appendChild(moonWrap);
+
+    startQuoteRotation();
+}
+
+// --- TOS CONSTELLATION GENERATOR (Connecting animations + Organic Stars) ---
+function renderTOSConstellations() {
+    const wrapper = document.getElementById('tosConstellationWrapper');
+    if (!wrapper) return;
+    wrapper.innerHTML = ""; 
+
+    // Replaced paths with connecting animated lines (pathLength=100)
+    const svgs = [
+        `<svg width="150" height="150" viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="120" r="1.5" fill="#fff"/><circle cx="50" cy="100" r="1" fill="#fff"/><circle cx="80" cy="110" r="1.5" fill="#fff"/><circle cx="110" cy="80" r="1" fill="#fff"/><circle cx="130" cy="40" r="2" fill="#fff"/><path pathLength="100" class="constellation-line" d="M20 120L50 100L80 110L110 80L130 40" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/></svg>`,
+        `<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="60" r="1.5" fill="#fff"/><circle cx="40" cy="20" r="1" fill="#fff"/><circle cx="60" cy="80" r="1.5" fill="#fff"/><circle cx="90" cy="40" r="1" fill="#fff"/><circle cx="110" cy="90" r="2" fill="#fff"/><path pathLength="100" class="constellation-line" d="M10 60L40 20L60 80L90 40L110 90" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/></svg>`,
+        `<svg width="100" height="150" viewBox="0 0 100 150" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="20" r="1.5" fill="#fff"/><circle cx="20" cy="70" r="1" fill="#fff"/><circle cx="80" cy="70" r="1.5" fill="#fff"/><circle cx="50" cy="130" r="2" fill="#fff"/><path pathLength="100" class="constellation-line" d="M50 20L20 70L50 130L80 70Z" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/><path pathLength="100" class="constellation-line" d="M20 70L80 70" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/></svg>`,
+        `<svg width="180" height="80" viewBox="0 0 180 80" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="40" r="1" fill="#fff"/><circle cx="60" cy="20" r="1.5" fill="#fff"/><circle cx="110" cy="60" r="2" fill="#fff"/><circle cx="160" cy="30" r="1" fill="#fff"/><path pathLength="100" class="constellation-line" d="M10 40L60 20L110 60L160 30" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/></svg>`,
+        `<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="10" r="1.5" fill="#fff"/><circle cx="10" cy="60" r="1" fill="#fff"/><circle cx="70" cy="60" r="1.5" fill="#fff"/><path pathLength="100" class="constellation-line" d="M40 10L10 60L70 60Z" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/></svg>`,
+        `<svg width="150" height="150" viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="1.5" fill="#fff"/><circle cx="40" cy="50" r="1" fill="#fff"/><circle cx="90" cy="20" r="2" fill="#fff"/><circle cx="140" cy="80" r="1.5" fill="#fff"/><circle cx="30" cy="120" r="1" fill="#fff"/><circle cx="100" cy="130" r="1.5" fill="#fff"/><path pathLength="100" class="constellation-line" d="M10 10L40 50L90 20" stroke="rgba(255,255,255,0.4)" stroke-width="1"/><path pathLength="100" class="constellation-line" d="M30 120L100 130L140 80" stroke="rgba(255,255,255,0.4)" stroke-width="1"/></svg>`
+    ];
+
+    // Spawn 15 Constellations dynamically to fill out the sky
+    for (let i = 0; i < 15; i++) {
+        const svg = svgs[Math.floor(Math.random() * svgs.length)];
+        const div = document.createElement('div');
+        div.className = 'constellation-drift';
+        div.style.position = 'absolute';
+        div.style.top = `${Math.random() * 100}%`;
+        div.style.left = `${Math.random() * 100}%`;
+        div.innerHTML = svg;
+        
+        // Pass rotation to CSS variable
+        div.style.setProperty('--start-rot', `${Math.random() * 360}deg`);
+        div.style.animationDelay = `${Math.random() * -50}s`;
+        div.style.opacity = (Math.random() * 0.4 + 0.4).toString(); 
+        
+        // Faster Drift: 15-30s
+        div.style.animation = `slowConstellationDrift ${15 + Math.random() * 15}s linear infinite, twinkleStardust ${3 + Math.random() * 3}s infinite alternate`;
+        
+        wrapper.appendChild(div);
+    }
+    
+    // Inject organic stardust dots (Fix for grid look)
+    const stardust = document.querySelector('.tos-stardust');
+    if(stardust) {
+        stardust.innerHTML = "";
+        for(let i = 0; i < 150; i++) {
+            const dot = document.createElement('div');
+            dot.style.cssText = `position: absolute; width: ${Math.random()*2+1}px; height: ${Math.random()*2+1}px; background: white; border-radius: 50%; opacity: ${Math.random() * 0.6 + 0.2}; top: ${Math.random()*100}%; left: ${Math.random()*100}%;`;
+            stardust.appendChild(dot);
+        }
+    }
+}
+
+// --- ROBUST & THROTTLED BACK TO TOP LOGIC (Saves CPU) ---
+function attachInnerScrollListener() {
+    const btn = document.getElementById('backToTopBtn');
+    if (!btn) return;
+
+    let ticking = false;
+
+    const checkScroll = (e) => {
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                let scrolled = window.scrollY || document.documentElement.scrollTop;
+                if (e && e.target && e.target.scrollTop) {
+                    scrolled = Math.max(scrolled, e.target.scrollTop);
+                }
+                
+                const formCard = document.querySelector('.form-card, .tos-container, .pricing-container');
+                if (formCard) {
+                    scrolled = Math.max(scrolled, formCard.scrollTop);
+                }
+
+                if (scrolled > 150) {
+                    btn.classList.add('visible');
+                } else {
+                    btn.classList.remove('visible');
+                }
+                ticking = false;
+            });
+            ticking = true;
+        }
+    };
+
+    window.removeEventListener('scroll', checkScroll, true); 
+    window.addEventListener('scroll', checkScroll, true);
+    
+    document.querySelectorAll('.form-card, .tos-container, .pricing-container, .text-scroller-card, .gallery-grid, .comment-section').forEach(box => {
+        box.addEventListener('scroll', checkScroll, { passive: true });
+    });
+    
+    checkScroll();
+
+    btn.onclick = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.querySelectorAll('.form-card, .tos-container, .pricing-container, .text-scroller-card, .gallery-grid, .comment-section').forEach(box => {
+            box.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    };
+}
+
+// DESKTOP CURSOR TRAIL
+document.addEventListener('mousemove', (e) => {
+    if (window.innerWidth <= 768) return; 
+    if (Math.random() > 0.6) return; 
+    
+    const sparkle = document.createElement('div');
+    sparkle.className = 'cursor-sparkle';
+    sparkle.style.left = e.clientX + 'px';
+    sparkle.style.top = e.clientY + 'px';
+    document.body.appendChild(sparkle);
+    setTimeout(() => sparkle.remove(), 600);
+});
+
+// CHECKLIST & ESTIMATOR HELPERS
+function getChecklistHTML() {
+    return `
+        <div class="before-order-checklist">
+            <h4>📋 Before You Order:</h4>
+            <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I know handmade/custom items take time</label></div>
+            <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I have clear reference images ready</label></div>
+            <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I understand this is not instant shipping</label></div>
+            <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I know the final price may vary</label></div>
+            <div class="checklist-item" style="margin-top: 15px; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 10px;">
+                <input type="checkbox" class="req-check" id="tosAgreeGlobal" required style="width: 22px; height: 22px; cursor: pointer;"> 
+                <label for="tosAgreeGlobal" style="color: #00f2fe; font-weight: bold; cursor: pointer;">I have read and agree to the Terms of Service.</label>
+                <button type="button" class="nav-btn tos-redirect-btn" style="padding: 4px 10px; font-size: 0.8rem; margin-left: 10px; border-color: #ec4899; color: #ec4899; background: rgba(236, 72, 153, 0.1);">Read TOS 📜</button>
+            </div>
+        </div>
+    `;
+}
+
+function getPriceEstimatorHTML() {
+    return `
+        <div class="price-estimator">
+            <p>💡 Estimated Starting Range</p>
+            <h2 id="liveEstimate" style="text-align: center; color: #ffffff;">$0.00</h2>
+            <span>*Final quote may vary after review. Adding details may increase cost.</span>
+        </div>
+    `;
+}
+
+function attachDynamicEstimator(formId, baseType) {
+    const form = document.getElementById(formId);
+    if(!form) return;
+    const estDisplay = form.querySelector('#liveEstimate');
+    if(!estDisplay) return;
+
+    function updateEstimate() {
+        let min = 0;
+        let max = 0;
+        let isPlus = false;
+
+        if (baseType === 'art') {
+            const typeSel = form.querySelector('[name="artType"]');
+            const shadeSel = form.querySelector('[name="shadingStyle"]');
+            const addons = form.querySelectorAll('[name="addon"]:checked');
+            
+            if(typeSel) min = parseInt(typeSel.options[typeSel.selectedIndex].dataset.price || 0);
+            max = min;
+
+            if(shadeSel) {
+                const shade = shadeSel.value;
+                if(shade === "Cel Shaded") { min += 10; max += 25; }
+                if(shade === "Rendered") { min += 25; max += 50; }
+            }
+
+            addons.forEach(box => {
+                if(box.value === "Extra Character") { const mult = min * 0.6; min+=mult; max+=mult; }
+                if(box.value === "Background") { min += 30; max += 60; }
+                if(box.value === "Extra Outfit") { min += 25; max += 25; }
+                if(box.value === "Complex Props") { min += 10; max += 20; }
+                if(box.value === "Rush Order") { min += 60; max += 60; }
+            });
+            isPlus = true;
+
+        } else if (baseType === 'fursuit') {
+            const typeSel = form.querySelector('[name="partType"]');
+            if(typeSel) min = parseInt(typeSel.options[typeSel.selectedIndex].dataset.price || 0);
+            max = min + (min * 0.5); 
+            isPlus = true;
+
+        } else if (baseType === 'keychain' || baseType === 'sticker') {
+            const typeSel = form.querySelector('[name="keychainType"]') || form.querySelector('[name="stickerType"]'); 
+            const qtyInput = form.querySelector('[name="quantity"]');
+            const compSel = form.querySelector('[name="complexity"]');
+            const doubleSel = form.querySelector('[name="doubleSided"]');
+            
+            let base = 12; 
+            if (formId === 'premadeKeychainForm') base = 8;
+            else if (typeSel) base = parseInt(typeSel.options[typeSel.selectedIndex].dataset.price || 12);
+            
+            let mult = 1;
+            if (compSel) mult = parseFloat(compSel.options[compSel.selectedIndex].dataset.mult || 1);
+            if (doubleSel && doubleSel.value === "Different designs") mult += 0.5;
+
+            let qty = parseInt(qtyInput ? qtyInput.value : 1) || 1;
+            
+            min = Math.floor(base * mult * qty);
+            max = Math.floor((base + 5) * mult * qty); 
+            isPlus = true;
+        }
+
+        if (min === max && !isPlus) {
+            estDisplay.innerText = `$${min.toFixed(2)}`;
+        } else if (min === max && isPlus) {
+            estDisplay.innerText = `$${min.toFixed(0)}+`;
+        } else {
+            estDisplay.innerText = `$${min.toFixed(0)} - $${max.toFixed(0)}+`;
+        }
+    }
+
+    form.addEventListener('input', updateEstimate);
+    form.addEventListener('change', updateEstimate);
+    updateEstimate(); 
+}
+
+function getFileUploadHTML() {
+    return `
+        <div class="form-group">
+            <label>Upload Reference Images (Max 3, up to 5MB each)</label>
+            <input type="file" name="refFiles" id="refFilesInput" class="form-input" accept="image/jpeg, image/png, image/webp" multiple style="padding: 8px;">
+            <div id="filePreviewList" style="font-size: 0.85rem; color: #00f2fe; margin-top: 8px; display: flex; flex-direction: column; gap: 4px;"></div>
+            <p style="font-size: 0.8rem; color: #a2b7cc; margin-top: 5px;">*Only JPG, PNG, WEBP allowed.</p>
+        </div>
+    `;
+}
+
+function attachFileInputListener() {
+    const fileInput = document.getElementById('refFilesInput');
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            const previewDiv = document.getElementById('filePreviewList');
+            previewDiv.innerHTML = '';
+            
+            if(this.files.length > 3) {
+                alert("Please only select up to 3 images.");
+                this.value = ''; 
+                return;
+            }
+            
+            Array.from(this.files).forEach(file => {
+                if(file.size > 5 * 1024 * 1024) {
+                    alert(`The file ${file.name} is too large (Max 5MB).`);
+                    this.value = '';
+                    previewDiv.innerHTML = '';
+                    return;
+                }
+                previewDiv.innerHTML += `<span>📎 ${escapeHTML(file.name)} (${(file.size/1024/1024).toFixed(2)}MB)</span>`;
+            });
+        });
+    }
+}
+
+function attachCharCounters() {
+    document.querySelectorAll('.form-input, .form-textarea').forEach(input => {
+        if(input.hasAttribute('maxlength')) {
+            const counter = document.createElement('span');
+            counter.className = "char-counter";
+            counter.innerText = `0 / ${input.getAttribute('maxlength')}`;
+            input.parentNode.appendChild(counter);
+            input.addEventListener('input', () => {
+                counter.innerText = `${input.value.length} / ${input.getAttribute('maxlength')}`;
+            });
+        }
+    });
+}
+
+function showErrorMsg(form, msg) {
+    let errDiv = form.querySelector('.form-error-msg');
+    if (!errDiv) {
+        errDiv = document.createElement('div');
+        errDiv.className = 'form-error-msg';
+        form.insertBefore(errDiv, form.firstChild);
+    }
+    errDiv.innerText = msg;
+    errDiv.style.display = 'block';
+    form.parentNode.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function hideErrorMsg(form) {
+    const errDiv = form.querySelector('.form-error-msg');
+    if (errDiv) errDiv.style.display = 'none';
+}
+
+// BUBBLE GENERATION SYSTEM
 function createBubbles() {
     const container = document.getElementById('bubbleContainer');
     if (!container) return;
@@ -98,8 +455,11 @@ function createBubbles() {
         const size = Math.random() * 25 + 5;
         bubble.style.width = `${size}px`;
         bubble.style.height = `${size}px`;
-        bubble.style.left = `${Math.random() * 100}vw`;
-        bubble.style.animationDuration = `${Math.random() * 3 + 2}s`;
+        
+        // Spawn bubble safely between 5% and 90%
+        bubble.style.left = `${Math.random() * 85 + 5}vw`;
+        
+        bubble.style.animationDuration = `${Math.random() * 3 + 4}s`; 
         bubble.style.animationDelay = `${Math.random() * 5}s`;
         container.appendChild(bubble);
     }
@@ -110,34 +470,101 @@ function clearBubbles() {
     if (container) container.innerHTML = "";
 }
 
+// SYSTEM A: DECORATIVE BACKGROUND STARS
 function renderHomeStars() {
+    if (!homeStarField) return;
     homeStarField.innerHTML = "";
-    dashboardStarField.innerHTML = "";
     
     const isMobile = window.innerWidth <= 768;
-    const countTarget = isMobile ? 40 : 350; 
+    const countTarget = isMobile ? 50 : 200; 
     
     for (let i = 0; i < countTarget; i++) {
-        const potentialTop = Math.floor(Math.random() * 85) + 2;
-        const potentialLeft = Math.floor(Math.random() * 100);
         const star = document.createElement('div');
-        star.className = `star`;
-        star.style.top = `${potentialTop}%`;
-        star.style.left = `${potentialLeft}%`;
-        const customDuration = 35 + Math.random() * 25;
-        const customDelay = Math.random() * -50;
-        star.style.animationDuration = `${customDuration}s`;
-        star.style.animationDelay = `${customDelay}s`;
-        if (Math.random() > 0.8) {
-            star.style.width = "5px";
-            star.style.height = "5px";
-        }
+        star.className = `star decorative`;
+        star.style.top = `${Math.random() * 100}%`;
+        star.style.left = `${Math.random() * 100}%`;
+        
+        star.style.animationDuration = `${40 + Math.random() * 60}s`;
+        star.style.animationDelay = `${Math.random() * -100}s`;
+        
+        const size = Math.random() > 0.8 ? 5 : (Math.random() > 0.5 ? 3 : 2);
+        star.style.width = `${size}px`;
+        star.style.height = `${size}px`;
+        
+        star.style.opacity = Math.random() * 0.8 + 0.2;
+
         homeStarField.appendChild(star);
     }
 }
 
+// SYSTEM B: CLICKABLE MAGIC STARS (PC ONLY & CAPPED)
+function spawnSingleInteractiveStar(container) {
+    if (bodyElement.getAttribute('data-page') !== 'home') return; 
+    
+    const potentialLeft = Math.floor(Math.random() * 80) + 10;
+    
+    const star = document.createElement('div');
+    star.className = `star interactive`;
+    star.style.left = `${potentialLeft}%`;
+    star.style.animationDelay = `${Math.random() * -5}s`; 
+    star.style.setProperty('--drift', `${(Math.random() - 0.5) * 40}vw`);
+
+    star.addEventListener('click', function(e) {
+        if(this.classList.contains('falling')) return;
+        
+        const rect = this.getBoundingClientRect();
+        this.style.animationPlayState = 'paused';
+        this.classList.add('falling');
+        
+        setTimeout(() => {
+            for(let j=0; j<10; j++) {
+                const spark = document.createElement('div');
+                spark.className = 'stardust-particle';
+                spark.style.left = (rect.left + rect.width / 2) + 'px';
+                spark.style.top = (rect.top + rect.height / 2) + 'px';
+                
+                const angle = (Math.random() * 1.5 + 0.25) * Math.PI; 
+                const force = Math.random() * 80 + 30;
+                spark.style.setProperty('--tx', `${Math.cos(angle) * force}px`);
+                spark.style.setProperty('--ty', `${Math.sin(angle) * force + 80}px`);
+                
+                document.body.appendChild(spark);
+                setTimeout(() => spark.remove(), 1500);
+            }
+            this.remove(); 
+            
+            setTimeout(() => {
+                const currentContainer = document.getElementById('interactiveStarField');
+                // Cap the maximum interactive stars to 15 to prevent infinite loop freezing
+                if (currentContainer && currentContainer.children.length < 15) {
+                    spawnSingleInteractiveStar(currentContainer);
+                }
+            }, Math.random() * 8000 + 4000);
+            
+        }, 10);
+    });
+
+    container.appendChild(star);
+}
+
+function renderInteractiveStars() {
+    if (!interactiveStarField) return;
+    interactiveStarField.innerHTML = "";
+    
+    if (bodyElement.getAttribute('data-page') !== 'home') return; 
+    
+    // Nuke interaction on mobile devices to save memory/CPU
+    if (window.innerWidth <= 768) return;
+    
+    const countTarget = 12; 
+    
+    for (let i = 0; i < countTarget; i++) {
+        spawnSingleInteractiveStar(interactiveStarField);
+    }
+}
+
 function renderDashboardStars() {
-    homeStarField.innerHTML = "";
+    if(!dashboardStarField) return;
     dashboardStarField.innerHTML = "";
     
     const isMobile = window.innerWidth <= 768;
@@ -202,6 +629,12 @@ function cinematicTransition(event, targetPageFunction) {
 
     setTimeout(() => {
         if (btn) btn.classList.remove('btn-squish');
+        
+        if (targetPageFunction !== loadHomePage) {
+            if(interactiveStarField) interactiveStarField.innerHTML = "";
+            if(homeStarField) homeStarField.innerHTML = "";
+        }
+        
         targetPageFunction();
     }, 1300); 
 
@@ -223,7 +656,6 @@ function triggerConfetti() {
     }
 }
 
-// === NEW TOS MODAL SYSTEM FOR FORMS ===
 function showTOSModal() {
     const overlay = document.createElement('div');
     overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); padding: 20px;";
@@ -249,6 +681,20 @@ function showTOSModal() {
     modalContent.appendChild(tosTextContainer);
     overlay.appendChild(modalContent);
     document.body.appendChild(overlay);
+
+    overlay.querySelectorAll('.tos-jump-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const targetEl = document.getElementById(targetId);
+            if(targetEl) {
+                modalContent.scrollTo({
+                    top: targetEl.offsetTop - 20,
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
 }
 
 function bindCoreMenuControls() {
@@ -266,6 +712,9 @@ function loadHomePage() {
     bodyElement.setAttribute('data-theme', 'horizon');
     bodyElement.setAttribute('data-page', 'home');
     renderHomeStars();
+    renderInteractiveStars();
+    renderDynamicMoon();
+    attachInnerScrollListener(); 
 
     appViewport.innerHTML = `
         <div class="gif-container"><img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/umbreon.gif" alt="Shiny Umbreon" class="active-pokemon-gif"></div>
@@ -291,6 +740,7 @@ function loadDiscordPage() {
     clearBubbles();
     bodyElement.setAttribute('data-theme', 'discord-space');
     bodyElement.setAttribute('data-page', 'discord');
+    renderDynamicMoon();
     renderDashboardStars();
 
     appViewport.innerHTML = `
@@ -329,13 +779,13 @@ Just a place to exist, create, and connect at your own pace.
         </div>
     `;
     document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage));
+    attachInnerScrollListener();
 }
 
 function loadPreorderPage() {
     bodyElement.setAttribute('data-theme', 'preorder');
     bodyElement.setAttribute('data-page', 'preorder');
-    homeStarField.innerHTML = "";
-    dashboardStarField.innerHTML = "";
+    renderDynamicMoon();
     createBubbles();
 
     appViewport.innerHTML = `
@@ -375,12 +825,14 @@ function loadPreorderPage() {
     document.getElementById('btnArt').addEventListener('click', (e) => cinematicTransition(e, loadHuskyArtForm));
     document.getElementById('btnFursuits').addEventListener('click', (e) => cinematicTransition(e, loadFursuitForm));
     document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage));
+    attachInnerScrollListener();
 }
 
 function loadWhatWeDoPage() {
     clearBubbles();
     bodyElement.setAttribute('data-theme', 'cosmic-green-pink');
     bodyElement.setAttribute('data-page', 'what-we-do');
+    renderDynamicMoon();
     renderDashboardStars();
 
     appViewport.innerHTML = `
@@ -400,14 +852,14 @@ function loadWhatWeDoPage() {
         </div>
     `;
     document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage));
+    attachInnerScrollListener();
 }
 
 function loadSocialsPage() {
     clearBubbles();
     bodyElement.setAttribute('data-theme', 'socials');
     bodyElement.setAttribute('data-page', 'socials');
-    homeStarField.innerHTML = "";
-    dashboardStarField.innerHTML = "";
+    renderDynamicMoon();
 
     appViewport.innerHTML = `
         <div class="galaxy-comet comet-a"></div><div class="galaxy-comet comet-b"></div><div class="galaxy-comet comet-c"></div>
@@ -435,14 +887,15 @@ function loadSocialsPage() {
         <button id="backHomeBtn" class="nav-btn" style="margin-top: 10px; border-color: #a855f7;">← Back to Horizon</button>
     `;
     document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage));
+    attachInnerScrollListener();
 }
 
 function loadTOSPage() {
     clearBubbles();
     bodyElement.setAttribute('data-theme', 'tos');
     bodyElement.setAttribute('data-page', 'tos');
-    homeStarField.innerHTML = "";
-    dashboardStarField.innerHTML = "";
+    renderDynamicMoon();
+    renderTOSConstellations();
 
     appViewport.innerHTML = `
         <div class="tos-container">
@@ -450,14 +903,30 @@ function loadTOSPage() {
         </div>
         <button id="backHomeBtn" class="nav-btn" style="border-color: #22c55e;">← Back to Horizon</button>
     `;
+
+    document.querySelectorAll('.tos-jump-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const targetEl = document.getElementById(targetId);
+            if(targetEl) {
+                document.querySelector('.tos-container').scrollTo({
+                    top: targetEl.offsetTop - 20,
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
+
     document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage));
+    attachInnerScrollListener();
 }
 
 function loadContactPage() {
     clearBubbles();
     bodyElement.setAttribute('data-theme', 'horizon');
     bodyElement.setAttribute('data-page', 'contact');
-    renderHomeStars();
+    renderDynamicMoon();
 
     appViewport.innerHTML = `
         <div class="gif-container"><img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/umbreon.gif" alt="Shiny Umbreon" class="active-pokemon-gif"></div>
@@ -467,9 +936,9 @@ function loadContactPage() {
             <h3 style="margin-bottom: 15px; font-size: 1.4rem; color: #00f2fe;">Leave a Comment</h3>
             <p style="font-size: 0.9rem; color: #a3b8cc; margin-bottom: 15px;">Comments are public. Use the reply button on comments below to respond as an admin.</p>
             <form id="commentForm" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px;">
-                <input type="text" id="commentName" placeholder="Your Name or Alias" required maxlength="30" style="padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.4); background: rgba(0,0,0,0.4); color: white; font-family: inherit;">
+                <input type="text" id="commentName" placeholder="Your Name or Alias" required maxlength="50" style="padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.4); background: rgba(0,0,0,0.4); color: white; font-family: inherit;">
                 <textarea id="commentText" placeholder="Write your message here..." rows="3" required maxlength="500" style="padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.4); background: rgba(0,0,0,0.4); color: white; font-family: inherit; resize: none;"></textarea>
-                <button type="submit" class="nav-btn" style="padding: 12px; font-size: 1.1rem; width: 100%;">Post Message 🚀</button>
+                <button type="submit" class="nav-btn" style="padding: 12px; font-size: 1.1rem; width: 100%;">Post Message</button>
             </form>
             <div id="commentsFeed" style="display: flex; flex-direction: column; gap: 15px; max-height: 350px; overflow-y: auto; padding-right: 5px;">
                 <p style="text-align: center; color: #a3b8cc; font-size: 0.9rem;">Loading messages from the cloud...</p>
@@ -627,14 +1096,15 @@ function loadContactPage() {
             commentsFeed.appendChild(loadMoreBtn);
         }
     }
+    
+    attachInnerScrollListener();
 }
 
 function loadPricingPage() {
     clearBubbles();
     bodyElement.setAttribute('data-theme', 'pricing');
     bodyElement.setAttribute('data-page', 'pricing');
-    homeStarField.innerHTML = "";
-    dashboardStarField.innerHTML = "";
+    renderDynamicMoon();
     renderDashboardStars();
 
     appViewport.innerHTML = `
@@ -740,37 +1210,28 @@ function loadPricingPage() {
         </div>
     `;
     document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
+    attachInnerScrollListener();
 }
 
 function loadGalleryPage() {
     clearBubbles();
     bodyElement.setAttribute('data-theme', 'gallery');
     bodyElement.setAttribute('data-page', 'gallery');
-    homeStarField.innerHTML = "";
-    dashboardStarField.innerHTML = "";
+    renderDynamicMoon();
     createBubbles();
 
     const huskyImages = [
-        "Images/Candelle_icon.png",
-        "Images/Com_1.png",
-        "Images/Comm_2.png",
-        "Images/Commmmmm.png",
-        "Images/Illustration_2.0.png",
-        "Images/Illustration15.png",
-        "Images/Lambbbbbb_no_shade.png",
-        "Images/Meow.jpg",
-        "Images/What_safety_cost_me.png"
+        "Images/Candelle_icon.png", "Images/Com_1.png", "Images/Comm_2.png",
+        "Images/Commmmmm.png", "Images/Illustration_2.0.png", "Images/Illustration15.png",
+        "Images/Lambbbbbb_no_shade.png", "Images/Meow.jpg", "Images/What_safety_cost_me.png"
     ];
 
     const lopsideImages = [
         "Lopside's art images/03F50406-DA67-44D8-8E51-DB337E650157.jpg",
         "Lopside's art images/BD466073-9A75-4F99-A7E3-45BBF7A3DCAE.jpg",
-        "Lopside's art images/IMG_1464.jpg",
-        "Lopside's art images/IMG_2276.jpg",
-        "Lopside's art images/IMG_2309.jpg",
-        "Lopside's art images/IMG_2557.jpg",
-        "Lopside's art images/IMG_5188.jpg",
-        "Lopside's art images/IMG_5784.jpg"
+        "Lopside's art images/IMG_1464.jpg", "Lopside's art images/IMG_2276.jpg",
+        "Lopside's art images/IMG_2309.jpg", "Lopside's art images/IMG_2557.jpg",
+        "Lopside's art images/IMG_5188.jpg", "Lopside's art images/IMG_5784.jpg"
     ];
 
     let galleryHTML = `
@@ -826,11 +1287,13 @@ function loadGalleryPage() {
     });
 
     document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage));
+    attachInnerScrollListener();
 }
 
 function loadStatusCheckPage() {
     clearBubbles();
     bodyElement.setAttribute('data-theme', 'cosmic-green-pink');
+    renderDynamicMoon();
     renderDashboardStars();
 
     appViewport.innerHTML = `
@@ -872,18 +1335,44 @@ function loadStatusCheckPage() {
                 querySnapshot.forEach((docSnap) => {
                     const data = docSnap.data();
                     const orderDate = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleDateString() : 'Unknown Date';
-                    let statusColor = '#00f2fe';
-                    if (['Finished', 'Shipped', 'Paid'].includes(data.status)) statusColor = '#22c55e';
-                    if (['Cancelled', 'Not Accepted'].includes(data.status)) statusColor = '#ef4444';
-                    if (data.status === 'Pending Review') statusColor = '#a855f7';
+                    
+                    let statusColor = '#00f2fe'; 
+                    let iconAnim = '';
+                    
+                    if (data.status === 'Pending Review' || data.status === 'New') { 
+                        statusColor = '#a855f7'; 
+                        iconAnim = `
+                          <div class="loader-bottle-mini" style="margin: 15px auto; width: 20px; height: 35px; animation: gentleFloat 2s infinite ease-in-out;">
+                            <div class="loader-bottle-cork" style="width: 12px; height: 6px; left: 4px;"></div>
+                            <div class="loader-bottle-neck" style="width: 10px; height: 8px; left: 5px; top: 4px; border-color: #a855f7;"></div>
+                            <div class="loader-bottle-glass" style="height: 25px; border-color: #a855f7; box-shadow: inset 0 0 10px rgba(168,85,247,0.5);"></div>
+                          </div>`; 
+                    } 
+                    else if (data.status === 'Reviewed' || data.status === 'Accepted') { 
+                        statusColor = '#00f2fe'; 
+                        iconAnim = `<div style="font-size: 1.8rem; color: #00f2fe; text-shadow: 0 0 10px #00f2fe; margin: 10px 0;">🌊✧</div>`; 
+                    }
+                    else if (data.status === 'In Progress') { 
+                        statusColor = '#f1c40f'; 
+                        iconAnim = `<div style="font-size: 1.8rem; color: #f1c40f; text-shadow: 0 0 15px #f1c40f; animation: craftingGlow 2s infinite alternate; margin: 10px 0;">✂️✨</div>`; 
+                    }
+                    else if (['Finished', 'Shipped', 'Paid'].includes(data.status)) { 
+                        statusColor = '#22c55e'; 
+                        iconAnim = `<div style="font-size: 1.8rem; color: #22c55e; text-shadow: 0 0 15px #22c55e; animation: starBurst 3s infinite; margin: 10px 0;">★✦★</div>`; 
+                    }
+                    else if (['Cancelled', 'Not Accepted'].includes(data.status)) { 
+                        statusColor = '#ef4444'; 
+                        iconAnim = `<div style="font-size: 1.8rem; color: #ef4444; margin: 10px 0;">✕</div>`; 
+                    }
 
                     resultsDiv.innerHTML += `
-                        <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid ${statusColor}; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                        <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid ${statusColor}; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: center;">
                             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 10px;">
                                 <strong style="color: #ffffff; font-size: 1.1rem; letter-spacing: 1px;">${escapeHTML(data.orderId || 'Unknown ID')}</strong>
                                 <span style="background: rgba(255,255,255,0.1); color: ${statusColor}; padding: 4px 12px; border-radius: 20px; font-size: 0.9rem; border: 1px solid ${statusColor};">${escapeHTML(data.status || 'Pending Review')}</span>
                             </div>
-                            <p style="color: #a2b7cc; margin-bottom: 5px;"><strong>Order Type:</strong> ${escapeHTML(data.orderType)}</p>
+                            ${iconAnim}
+                            <p style="color: #a2b7cc; margin-top: 10px;"><strong>Order Type:</strong> ${escapeHTML(data.orderType)}</p>
                             <p style="color: #a2b7cc; margin-bottom: 5px;"><strong>Date Submitted:</strong> ${orderDate}</p>
                         </div>
                     `;
@@ -908,102 +1397,157 @@ function generateOrderID() {
     return `HTG-2026-${id}`;
 }
 
+const submitLoaderHTML = (text) => `
+    <div class="sea-submit-loader" aria-live="polite">
+      <div class="loader-bottle-mini">
+        <div class="loader-bottle-cork"></div>
+        <div class="loader-bottle-neck"></div>
+        <div class="loader-bottle-glass"></div>
+      </div>
+      <span class="submit-status-text">${text}</span>
+    </div>
+`;
+
 async function submitPreorder(event, orderType) {
     event.preventDefault();
     const form = event.target;
+    hideErrorMsg(form);
     const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML; 
     
+    const checks = form.querySelectorAll('.req-check');
+    for (let i = 0; i < checks.length; i++) {
+        if (!checks[i].checked) { showErrorMsg(form, "Please complete the 'Before You Order' checklist to proceed."); return; }
+    }
+
     const formData = new FormData(form);
     const addons = formData.getAll('addon');
     const orderData = Object.fromEntries(formData.entries());
 
-    const orderValues = Object.values(orderData).join(" ");
-    if (containsProfanity(orderValues)) {
-        alert("Hold on! Please keep your request family-friendly. We do not allow swearing or NSFW content in our forms.");
-        return; 
+    // ANTI-SPAM LIMIT
+    if (orderData.quantity && parseInt(orderData.quantity) > 10) {
+        showErrorMsg(form, "Whoa there! We limit orders to 10 items max to prevent spam and ensure we can fulfill everyone's requests.");
+        return;
     }
 
-    submitBtn.textContent = "✨ Sending Order... ✨";
+    const orderValues = Object.values(orderData).join(" ");
+    if (containsProfanity(orderValues)) { showErrorMsg(form, "Hold on! Please keep your request family-friendly. We do not allow swearing or NSFW content in our forms."); return; }
+
+    submitBtn.innerHTML = submitLoaderHTML("Sending order...");
+    submitBtn.classList.add('btn-loading-wave');
     submitBtn.disabled = true;
 
-    if (addons.length > 0) {
-        orderData.selectedAddons = addons.join(", ");
+    if (addons.length > 0) orderData.selectedAddons = addons.join(", ");
+    
+    const fileInput = form.querySelector('#refFilesInput');
+    let uploadedImageUrls = [];
+    if (fileInput && fileInput.files.length > 0) {
+        if (fileInput.files.length > 3) { showErrorMsg(form, "You can only upload a maximum of 3 reference images."); submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false; return; }
+        submitBtn.innerHTML = submitLoaderHTML("Uploading references...");
+        for (let i = 0; i < fileInput.files.length; i++) {
+            const file = fileInput.files[i];
+            if (file.size > 5 * 1024 * 1024) { showErrorMsg(form, `The file ${file.name} exceeds the 5MB limit.`); submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false; return; }
+            
+            // FIREBASE FILENAME SANITIZATION
+            const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+            try {
+                const storageRef = ref(storage, `references/${Date.now()}_${safeName}`);
+                await uploadBytes(storageRef, file);
+                const url = await getDownloadURL(storageRef);
+                uploadedImageUrls.push(url);
+            } catch (err) { showErrorMsg(form, "Failed to upload images. Please try again or use the link option."); submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false; return; }
+        }
     }
+    
+    delete orderData.refFiles; 
+    if (uploadedImageUrls.length > 0) orderData.referenceImageUrls = uploadedImageUrls;
 
     const newOrderId = generateOrderID();
-    orderData.orderType = orderType;
-    orderData.status = "Pending Review";
-    orderData.adminNotes = "";
-    orderData.orderId = newOrderId;
-
+    orderData.orderType = orderType; orderData.status = "Pending Review"; orderData.adminNotes = ""; orderData.orderId = newOrderId;
     if (orderData.email) orderData.email = orderData.email.toLowerCase();
-
     const compiledNotes = orderData.notes || orderData.description || orderData.materials || orderData.pose || "No additional notes provided.";
 
     try {
+        submitBtn.innerHTML = submitLoaderHTML("Drifting to shore...");
         await addDoc(collection(db, "preorders"), { ...orderData, createdAt: serverTimestamp() });
         
-        const templateParams = {
-            name: orderData.name,
-            email: orderData.email,
-            order_id: newOrderId.replace('HTG-', ''), 
-            request_type: orderType,
-            message: compiledNotes
-        };
-
-        emailjs.send("service_jn29dsl", "template_0p1cxof", templateParams)
-            .then(function() {
-                console.log('Confirmation email sent successfully!');
-            }, function(error) {
-                console.error('Email failed to send...', error);
-            });
-
+        const templateParams = { name: orderData.name, email: orderData.email, order_id: newOrderId.replace('HTG-', ''), request_type: orderType, message: compiledNotes };
+        emailjs.send("service_jn29dsl", "template_0p1cxof", templateParams).catch(e => console.error(e));
         triggerConfetti();
-        form.innerHTML = `
-            <div style="text-align: center; padding: 40px 20px;">
-                <h2 style="color: #4ade80; text-shadow: 0 0 15px rgba(74, 222, 128, 0.5); margin-bottom: 20px;">Yay! Order Sent! ✨</h2>
-                <p style="color: #e2e8f0; font-size: 1.15rem; margin-bottom: 25px;">We got your request, <strong>${escapeHTML(orderData.name)}</strong>! A cute confirmation email is floating your way soon to <strong>${escapeHTML(orderData.email)}</strong>.</p>
-                <div style="background: rgba(0, 242, 254, 0.1); border: 1px solid #00f2fe; padding: 25px; border-radius: 16px; display: inline-block; box-shadow: inset 0 0 15px rgba(0, 242, 254, 0.2);">
-                    <p style="color: #00f2fe; font-size: 0.95rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">Your Order Number</p>
-                    <h3 style="color: #ffffff; font-size: 2rem; letter-spacing: 2px;">${newOrderId}</h3>
+
+        // Smooth fade out of the card
+        const formContainer = form.closest('.form-card') || form.closest('.preorder-card') || form;
+        formContainer.classList.add('form-fade-wrapper', 'form-fade-out');
+        
+        setTimeout(() => {
+            formContainer.innerHTML = `
+                <div class="success-screen-wrapper">
+                    <div class="bottle-success-anim">
+                        <div class="bottle-cork-wood"></div>
+                        <div class="bottle-neck-glass"></div>
+                        <div class="bottle-glass"></div>
+                        <div class="success-waves"></div>
+                        <div class="success-sparkles"></div>
+                    </div>
+                    <h2 class="success-headline">Yay! Order Sent!</h2>
+                    <p class="success-subtext">We safely received your request, <strong>${escapeHTML(orderData.name)}</strong>!<br>A confirmation bottle is floating to your email: <br><strong style="color: #00f2fe;">${escapeHTML(orderData.email)}</strong></p>
+                    <div class="order-number-card">
+                        <p style="color: #00f2fe; font-size: 0.95rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; font-weight: 500;">Your Tracking Number</p>
+                        <h3 style="color: #ffffff; font-size: 2.2rem; letter-spacing: 2px; margin: 0; text-shadow: 0 0 10px rgba(0, 242, 254, 0.4);">${newOrderId}</h3>
+                    </div>
+                    <p style="color: #a2b7cc; font-size: 0.95rem; margin-top: 5px; margin-bottom: 15px;">Please save this number for checking your order status.</p>
+                    <button type="button" class="nav-btn" style="width: 100%; max-width: 300px;" id="successBackBtn">← Back to Menu</button>
                 </div>
-                <p style="color: #a2b7cc; font-size: 0.95rem; margin-top: 20px;">Please save this number for status tracking.</p>
-            </div>
-        `;
+            `;
+            
+            // Re-bind the back button dynamically inside the new HTML
+            document.getElementById('successBackBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
+            
+            formContainer.classList.remove('form-fade-out');
+        }, 400);
+
     } catch (error) {
-        console.error("Error submitting order: ", error);
-        alert("Oh no! Something went wrong sending your order. Please try again or contact us on Discord.");
-        submitBtn.textContent = "Submit Preorder 🚀";
-        submitBtn.disabled = false;
+        showErrorMsg(form, "Oh no! Something went wrong sending your order to the database. Please check your connection and try again.");
+        submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false;
     }
 }
 
 function loadCustomKeychainsForm() {
-    clearBubbles();
-    bodyElement.setAttribute('data-theme', 'cosmic-green-pink');
-    renderDashboardStars();
-
+    clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
-        <div class="form-card">
+        <div class="form-card" id="customKFormWrap">
             <h1>Custom Keychain Preorder</h1>
             <p class="form-desc">Order a custom acrylic keychain featuring your character, OC, Pokémon, pet, or design idea.</p>
+            
             <form id="customKeychainForm">
-                <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" required></div>
-                <div class="form-group"><label>Email <span>*</span></label><input type="email" name="email" class="form-input" required></div>
-                <div class="form-group"><label>Discord Username <span>*</span></label><input type="text" name="discord" class="form-input" required></div>
-                <div class="form-group"><label>Character/Design Name</label><input type="text" name="characterName" class="form-input"></div>
-                <div class="form-group"><label>What do you want on the keychain? <span>*</span></label><textarea name="description" class="form-textarea" rows="3" required></textarea></div>
-                <div class="form-group"><label>Reference Image Link <span>*</span></label><input type="url" name="refLink" class="form-input" required placeholder="https://..."></div>
+                <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" maxlength="50" required></div>
+                <div class="form-group"><label>Email <span>*</span></label><input type="email" name="email" class="form-input" maxlength="100" required></div>
+                <div class="form-group"><label>Discord Username <span>*</span></label><input type="text" name="discord" class="form-input" maxlength="100" required></div>
+                <div class="form-group"><label>Character/Design Name</label><input type="text" name="characterName" class="form-input" maxlength="100"></div>
+                <div class="form-group"><label>What do you want on the keychain? <span>*</span></label><textarea name="description" class="form-textarea" rows="3" maxlength="1000" required></textarea></div>
+                
+                ${getFileUploadHTML()}
+                
+                <div class="form-group"><label>Reference Image Link (Optional)</label><input type="url" name="refLink" class="form-input" placeholder="https://..."></div>
+                
                 <div class="form-group">
                     <label>Keychain Type <span>*</span></label>
-                    <select name="keychainType" class="form-select" required>
-                        <option value="Clear Acrylic">Clear Acrylic Keychain</option>
-                        <option value="Epoxy">Epoxy Keychain</option>
-                        <option value="Rainbow Acrylic">Rainbow Acrylic Keychain</option>
-                        <option value="Holographic">Holographic Keychain</option>
-                        <option value="Colored Acrylic">Colored Acrylic</option>
-                        <option value="Translucent">Translucent Colored Acrylic</option>
-                        <option value="Glow in the Dark">Glow in the Dark</option>
+                    <select name="keychainType" id="kTypeSelect" class="form-select" required>
+                        <option value="Clear Acrylic" data-price="12">Clear Acrylic ($12)</option>
+                        <option value="Epoxy" data-price="14">Epoxy ($14)</option>
+                        <option value="Rainbow Acrylic" data-price="15">Rainbow Acrylic ($15)</option>
+                        <option value="Holographic" data-price="16">Holographic ($16)</option>
+                        <option value="Colored Acrylic" data-price="14">Colored Acrylic ($14)</option>
+                        <option value="Translucent" data-price="15">Translucent Colored Acrylic ($15)</option>
+                        <option value="Glow in the Dark" data-price="16">Glow in the Dark ($16)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Complexity Level <span>*</span></label>
+                    <select name="complexity" class="form-select" required>
+                        <option value="Simple" data-mult="1">Simple</option>
+                        <option value="Moderate" data-mult="1.2">Moderate</option>
+                        <option value="Complex" data-mult="1.5">Complex</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -1034,46 +1578,31 @@ function loadCustomKeychainsForm() {
                         <option value="Heart Clasp">Heart clasp</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>Finish Preference</label>
-                    <select name="finish" class="form-select">
-                        <option value="Surprise Me">Surprise me</option>
-                        <option value="Matte">Matte</option>
-                        <option value="Glossy">Glossy</option>
-                        <option value="Sparkly">Sparkly</option>
-                        <option value="Holographic">Holographic</option>
-                    </select>
-                </div>
-                <div class="form-group"><label>Quantity <span>*</span></label><input type="number" name="quantity" class="form-input" required min="1" value="1"></div>
-                <div class="form-group"><label>Deadline (if any)</label><input type="text" name="deadline" class="form-input"></div>
-                <div class="form-group"><label>Extra Notes</label><textarea name="notes" class="form-textarea" rows="2"></textarea></div>
+                <div class="form-group"><label>Quantity <span>*</span></label><input type="number" name="quantity" id="kQty" class="form-input" required min="1" max="10" value="1"></div>
+                <div class="form-group"><label>Deadline (if any)</label><input type="text" name="deadline" class="form-input" maxlength="100"></div>
+                <div class="form-group"><label>Extra Notes</label><textarea name="notes" class="form-textarea" rows="2" maxlength="1000"></textarea></div>
                 
-                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px;">
-                    <div class="checkbox-group" style="margin-bottom: 0;">
-                        <input type="checkbox" id="tosAgreeCustomKeychain" required style="cursor: pointer; width: 18px; height: 18px; margin-top: 2px;">
-                        <label for="tosAgreeCustomKeychain" style="font-size: 0.95rem; color: #e2e8f0; cursor: pointer; line-height: 1.4;">I have read the Terms of Service and understand this is a request form that does not guarantee acceptance until confirmed.</label>
-                    </div>
-                    <button type="button" class="nav-btn tos-redirect-btn" style="align-self: flex-start; padding: 6px 14px; font-size: 0.85rem; border-color: #ec4899; color: #ec4899; background: rgba(236, 72, 153, 0.1);">Read TOS 📜</button>
-                </div>
+                ${getPriceEstimatorHTML()}
+                ${getChecklistHTML()}
 
-                <button type="submit" class="preorder-btn" style="border-color: #ec4899;">Submit Preorder 🚀</button>
+                <button type="submit" class="preorder-btn" style="border-color: #ec4899;">Submit Preorder</button>
             </form>
         </div>
         <button id="backToMenuBtn" class="nav-btn">← Back to Menu</button>
     `;
     
-    document.querySelectorAll('.tos-redirect-btn').forEach(btn => {
-        btn.addEventListener('click', () => showTOSModal());
-    });
+    attachCharCounters();
+    attachFileInputListener();
+    attachInnerScrollListener();
+    attachDynamicEstimator('customKeychainForm', 'keychain');
+
+    document.querySelectorAll('.tos-redirect-btn').forEach(btn => btn.addEventListener('click', () => showTOSModal()));
     document.getElementById('customKeychainForm').addEventListener('submit', (e) => submitPreorder(e, 'Custom Keychain'));
     document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
 }
 
 function loadPremadeKeychainsForm() {
-    clearBubbles();
-    bodyElement.setAttribute('data-theme', 'cosmic-green-pink');
-    renderDashboardStars();
-
+    clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="preorder-card menu-large" style="margin-bottom: 25px;">
             <h1 style="color: #ffffff; text-shadow: 0 0 15px #00f2fe; font-size: 2.5rem;">Premade Keychains</h1>
@@ -1099,12 +1628,13 @@ function loadPremadeKeychainsForm() {
         <div class="form-card">
             <h1>Premade Keychain Order Form</h1>
             <p class="form-desc">Order premade Horizon Tide Gallery keychains. (Size: 2.5 inches)</p>
+
             <form id="premadeKeychainForm">
-                <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" required></div>
-                <div class="form-group"><label>Email <span>*</span></label><input type="email" name="email" class="form-input" required></div>
-                <div class="form-group"><label>Discord Username <span>*</span></label><input type="text" name="discord" class="form-input" required></div>
-                <div class="form-group"><label>Which premade design do you want? <span>*</span></label><input type="text" name="designChoice" class="form-input" required></div>
-                <div class="form-group"><label>Quantity <span>*</span></label><input type="number" name="quantity" class="form-input" required min="1" value="1"></div>
+                <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" maxlength="50" required></div>
+                <div class="form-group"><label>Email <span>*</span></label><input type="email" name="email" class="form-input" maxlength="100" required></div>
+                <div class="form-group"><label>Discord Username <span>*</span></label><input type="text" name="discord" class="form-input" maxlength="100" required></div>
+                <div class="form-group"><label>Which premade design do you want? <span>*</span></label><input type="text" name="designChoice" class="form-input" maxlength="100" required></div>
+                <div class="form-group"><label>Quantity <span>*</span></label><input type="number" name="quantity" id="kQty" class="form-input" required min="1" max="10" value="1"></div>
                 <div class="form-group">
                     <label>Preferred Finish (if available)</label>
                     <select name="finish" class="form-select">
@@ -1116,53 +1646,58 @@ function loadPremadeKeychainsForm() {
                         <option value="Glow in the Dark">Glow in the Dark</option>
                     </select>
                 </div>
-                <div class="form-group"><label>Shipping Name <span>*</span></label><input type="text" name="shippingName" class="form-input" required></div>
-                <div class="form-group"><label>Shipping Address <span>*</span></label><textarea name="shippingAddress" class="form-textarea" rows="3" required></textarea></div>
-                <div class="form-group"><label>Notes</label><textarea name="notes" class="form-textarea" rows="2"></textarea></div>
+                <div class="form-group"><label>Shipping Name <span>*</span></label><input type="text" name="shippingName" class="form-input" maxlength="100" required></div>
+                <div class="form-group"><label>Shipping Address <span>*</span></label><textarea name="shippingAddress" class="form-textarea" rows="3" maxlength="300" required></textarea></div>
+                <div class="form-group"><label>Notes</label><textarea name="notes" class="form-textarea" rows="2" maxlength="1000"></textarea></div>
                 
-                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px;">
-                    <div class="checkbox-group" style="margin-bottom: 0;">
-                        <input type="checkbox" id="tosAgreePremade" required style="cursor: pointer; width: 18px; height: 18px; margin-top: 2px;">
-                        <label for="tosAgreePremade" style="font-size: 0.95rem; color: #e2e8f0; cursor: pointer; line-height: 1.4;">I have read the Terms of Service and understand this is a request form that does not guarantee acceptance until confirmed.</label>
-                    </div>
-                    <button type="button" class="nav-btn tos-redirect-btn" style="align-self: flex-start; padding: 6px 14px; font-size: 0.85rem; border-color: #ec4899; color: #ec4899; background: rgba(236, 72, 153, 0.1);">Read TOS 📜</button>
-                </div>
+                ${getPriceEstimatorHTML()}
+                ${getChecklistHTML()}
 
-                <button type="submit" class="preorder-btn" style="border-color: #ec4899;">Submit Order 🚀</button>
+                <button type="submit" class="preorder-btn" style="border-color: #ec4899;">Submit Order</button>
             </form>
         </div>
         <button id="backToMenuBtn" class="nav-btn">← Back to Menu</button>
     `;
     
-    document.querySelectorAll('.tos-redirect-btn').forEach(btn => {
-        btn.addEventListener('click', () => showTOSModal());
-    });
+    attachCharCounters();
+    attachInnerScrollListener();
+    attachDynamicEstimator('premadeKeychainForm', 'keychain');
+
+    document.querySelectorAll('.tos-redirect-btn').forEach(btn => btn.addEventListener('click', () => showTOSModal()));
     document.getElementById('premadeKeychainForm').addEventListener('submit', (e) => submitPreorder(e, 'Premade Keychain'));
     document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
 }
 
 function loadCustomStickersForm() {
-    clearBubbles();
-    bodyElement.setAttribute('data-theme', 'cosmic-green-pink');
-    renderDashboardStars();
-
+    clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="form-card">
             <h1>Custom Sticker Preorder</h1>
             <p class="form-desc">Order custom stickers of your OC, fursona, pet, Pokémon, logo, or design idea.</p>
             <form id="stickerForm">
-                <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" required></div>
-                <div class="form-group"><label>Email <span>*</span></label><input type="email" name="email" class="form-input" required></div>
-                <div class="form-group"><label>Discord Username <span>*</span></label><input type="text" name="discord" class="form-input" required></div>
-                <div class="form-group"><label>Sticker Subject <span>*</span></label><input type="text" name="subject" class="form-input" required></div>
-                <div class="form-group"><label>Reference Image Link <span>*</span></label><input type="url" name="refLink" class="form-input" required></div>
+                <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" maxlength="50" required></div>
+                <div class="form-group"><label>Email <span>*</span></label><input type="email" name="email" class="form-input" maxlength="100" required></div>
+                <div class="form-group"><label>Discord Username <span>*</span></label><input type="text" name="discord" class="form-input" maxlength="100" required></div>
+                <div class="form-group"><label>Sticker Subject <span>*</span></label><input type="text" name="subject" class="form-input" maxlength="100" required></div>
+                
+                ${getFileUploadHTML()}
+                <div class="form-group"><label>Reference Image Link (Optional)</label><input type="url" name="refLink" class="form-input"></div>
+                
                 <div class="form-group">
                     <label>Sticker Type <span>*</span></label>
                     <select name="stickerType" class="form-select" required>
-                        <option value="Single Sticker">Single sticker</option>
-                        <option value="Sticker Sheet">Sticker sheet</option>
-                        <option value="Matching Couple">Matching couple stickers</option>
-                        <option value="Small Batch">Small batch</option>
+                        <option value="Single Sticker" data-price="5">Single sticker ($5)</option>
+                        <option value="Sticker Sheet" data-price="25">Sticker sheet ($25)</option>
+                        <option value="Matching Couple" data-price="10">Matching couple stickers ($10)</option>
+                        <option value="Small Batch" data-price="35">Small batch ($35)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Complexity Level <span>*</span></label>
+                    <select name="complexity" class="form-select" required>
+                        <option value="Simple" data-mult="1">Simple</option>
+                        <option value="Moderate" data-mult="1.2">Moderate</option>
+                        <option value="Complex" data-mult="1.5">Complex</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -1193,58 +1728,56 @@ function loadCustomStickersForm() {
                         <option value="Large">Large</option>
                     </select>
                 </div>
-                <div class="form-group"><label>Quantity <span>*</span></label><input type="number" name="quantity" class="form-input" required min="1" value="1"></div>
-                <div class="form-group"><label>Deadline (if any)</label><input type="text" name="deadline" class="form-input"></div>
-                <div class="form-group"><label>Extra Notes</label><textarea name="notes" class="form-textarea" rows="2"></textarea></div>
+                <div class="form-group"><label>Quantity <span>*</span></label><input type="number" name="quantity" class="form-input" required min="1" max="10" value="1"></div>
+                <div class="form-group"><label>Deadline (if any)</label><input type="text" name="deadline" class="form-input" maxlength="100"></div>
+                <div class="form-group"><label>Extra Notes</label><textarea name="notes" class="form-textarea" rows="2" maxlength="1000"></textarea></div>
                 
-                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px;">
-                    <div class="checkbox-group" style="margin-bottom: 0;">
-                        <input type="checkbox" id="tosAgreeSticker" required style="cursor: pointer; width: 18px; height: 18px; margin-top: 2px;">
-                        <label for="tosAgreeSticker" style="font-size: 0.95rem; color: #e2e8f0; cursor: pointer; line-height: 1.4;">I have read the Terms of Service and understand this is a request form that does not guarantee acceptance until confirmed.</label>
-                    </div>
-                    <button type="button" class="nav-btn tos-redirect-btn" style="align-self: flex-start; padding: 6px 14px; font-size: 0.85rem; border-color: #ec4899; color: #ec4899; background: rgba(236, 72, 153, 0.1);">Read TOS 📜</button>
-                </div>
+                ${getPriceEstimatorHTML()}
+                ${getChecklistHTML()}
 
-                <button type="submit" class="preorder-btn" style="border-color: #ec4899;">Submit Preorder 🚀</button>
+                <button type="submit" class="preorder-btn" style="border-color: #ec4899;">Submit Preorder</button>
             </form>
         </div>
         <button id="backToMenuBtn" class="nav-btn">← Back to Menu</button>
     `;
     
-    document.querySelectorAll('.tos-redirect-btn').forEach(btn => {
-        btn.addEventListener('click', () => showTOSModal());
-    });
+    attachCharCounters();
+    attachFileInputListener();
+    attachInnerScrollListener();
+    attachDynamicEstimator('stickerForm', 'sticker');
+    
+    document.querySelectorAll('.tos-redirect-btn').forEach(btn => btn.addEventListener('click', () => showTOSModal()));
     document.getElementById('stickerForm').addEventListener('submit', (e) => submitPreorder(e, 'Custom Stickers'));
     document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
 }
 
 function loadHuskyArtForm() {
-    clearBubbles();
-    bodyElement.setAttribute('data-theme', 'cosmic-green-pink');
-    renderDashboardStars();
-
+    clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="form-card">
             <h1>Husky's Art Commissions</h1>
             <p class="form-desc" style="color: #ef4444; font-weight: bold;">Status: Closed for now.</p>
             <p class="form-desc">Commission Husky for digital artwork, character art, Pokémon-inspired art, icons, scenes, and illustrations.</p>
+
             <form id="artForm">
-                <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" required></div>
-                <div class="form-group"><label>Email <span>*</span></label><input type="email" name="email" class="form-input" required></div>
-                <div class="form-group"><label>Discord Username <span>*</span></label><input type="text" name="discord" class="form-input" required></div>
-                <div class="form-group"><label>Character Name</label><input type="text" name="characterName" class="form-input"></div>
-                <div class="form-group"><label>Reference Image Link <span>*</span></label><input type="url" name="refLink" class="form-input" required></div>
+                <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" maxlength="50" required></div>
+                <div class="form-group"><label>Email <span>*</span></label><input type="email" name="email" class="form-input" maxlength="100" required></div>
+                <div class="form-group"><label>Discord Username <span>*</span></label><input type="text" name="discord" class="form-input" maxlength="100" required></div>
+                <div class="form-group"><label>Character Name</label><input type="text" name="characterName" class="form-input" maxlength="100"></div>
+                
+                ${getFileUploadHTML()}
+                <div class="form-group"><label>Reference Image Link (Optional)</label><input type="url" name="refLink" class="form-input"></div>
                 
                 <div class="form-group">
                     <label>Commission Type <span>*</span></label>
-                    <select name="artType" class="form-select" required>
-                        <option value="Headshot/Bust">Headshot/Bust</option>
-                        <option value="Halfbody">Halfbody</option>
-                        <option value="Fullbody">Fullbody</option>
-                        <option value="Scene">Scene</option>
-                        <option value="Basic Ref Sheet">Basic Ref Sheet ($160)</option>
-                        <option value="Standard Ref Sheet">Standard Ref Sheet ($200)</option>
-                        <option value="Deluxe Ref Sheet">Deluxe Ref Sheet ($250+)</option>
+                    <select name="artType" id="artTypeSelect" class="form-select" required>
+                        <option value="Headshot/Bust" data-price="28">Headshot/Bust (Start $28)</option>
+                        <option value="Halfbody" data-price="55">Halfbody (Start $55)</option>
+                        <option value="Fullbody" data-price="70">Fullbody (Start $70)</option>
+                        <option value="Scene" data-price="150">Scene (Start $150)</option>
+                        <option value="Basic Ref Sheet" data-price="160">Basic Ref Sheet ($160)</option>
+                        <option value="Standard Ref Sheet" data-price="200">Standard Ref Sheet ($200)</option>
+                        <option value="Deluxe Ref Sheet" data-price="250">Deluxe Ref Sheet ($250+)</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -1256,8 +1789,7 @@ function loadHuskyArtForm() {
                         <option value="Rendered">Rendered (Premium)</option>
                     </select>
                 </div>
-                
-                <div class="form-group"><label>Number of Characters <span>*</span></label><input type="number" name="characterCount" class="form-input" required min="1" value="1"></div>
+                <div class="form-group"><label>Number of Characters <span>*</span></label><input type="number" name="characterCount" class="form-input" required min="1" max="10" value="1"></div>
                 <div class="form-group">
                     <label>Background Preference</label>
                     <select name="background" class="form-select">
@@ -1277,20 +1809,14 @@ function loadHuskyArtForm() {
                         <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Complex Props"> Complex Props (+$10-20)</label>
                         <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Rush Order"> Rush Order (+$60)</label>
                     </div>
-                    <p style="color: #ec4899; font-size: 0.85rem; margin-top: 10px;">* Add-ons may increase the final price.</p>
                 </div>
-                <div class="form-group"><label>Pose / Expression Idea</label><textarea name="pose" class="form-textarea" rows="2"></textarea></div>
-                <div class="form-group"><label>Mood / Theme</label><input type="text" name="mood" class="form-input"></div>
-                <div class="form-group"><label>Deadline (if any)</label><input type="text" name="deadline" class="form-input"></div>
-                <div class="form-group"><label>Extra Notes</label><textarea name="notes" class="form-textarea" rows="2"></textarea></div>
+                <div class="form-group"><label>Pose / Expression Idea</label><textarea name="pose" class="form-textarea" rows="2" maxlength="300"></textarea></div>
+                <div class="form-group"><label>Mood / Theme</label><input type="text" name="mood" class="form-input" maxlength="100"></div>
+                <div class="form-group"><label>Deadline (if any)</label><input type="text" name="deadline" class="form-input" maxlength="100"></div>
+                <div class="form-group"><label>Extra Notes</label><textarea name="notes" class="form-textarea" rows="2" maxlength="1000"></textarea></div>
                 
-                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px;">
-                    <div class="checkbox-group" style="margin-bottom: 0;">
-                        <input type="checkbox" id="tosAgreeArt" required style="cursor: pointer; width: 18px; height: 18px; margin-top: 2px;">
-                        <label for="tosAgreeArt" style="font-size: 0.95rem; color: #e2e8f0; cursor: pointer; line-height: 1.4;">I have read the Terms of Service and understand this is a request form that does not guarantee acceptance until confirmed.</label>
-                    </div>
-                    <button type="button" class="nav-btn tos-redirect-btn" style="align-self: flex-start; padding: 6px 14px; font-size: 0.85rem; border-color: #ec4899; color: #ec4899; background: rgba(236, 72, 153, 0.1);">Read TOS 📜</button>
-                </div>
+                ${getPriceEstimatorHTML()}
+                ${getChecklistHTML()}
 
                 <button type="submit" class="preorder-btn" style="border-color: #ec4899;" disabled>Submissions Closed</button>
             </form>
@@ -1298,73 +1824,78 @@ function loadHuskyArtForm() {
         <button id="backToMenuBtn" class="nav-btn">← Back to Menu</button>
     `;
     
-    document.querySelectorAll('.tos-redirect-btn').forEach(btn => {
-        btn.addEventListener('click', () => showTOSModal());
-    });
+    attachCharCounters();
+    attachFileInputListener();
+    attachInnerScrollListener();
+    attachDynamicEstimator('artForm', 'art');
+
+    document.querySelectorAll('.tos-redirect-btn').forEach(btn => btn.addEventListener('click', () => showTOSModal()));
     document.getElementById('artForm').addEventListener('submit', (e) => submitPreorder(e, 'Art Commission'));
     document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
 }
 
 function loadFursuitForm() {
-    clearBubbles();
-    bodyElement.setAttribute('data-theme', 'cosmic-green-pink');
-    renderDashboardStars();
-
+    clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="form-card">
             <h1>Lopside's Fursuit Creations</h1>
             <p class="form-desc">Request fursuit parts, handmade costume pieces, or 3D physical creations from Lopside.</p>
             <p style="color: #a855f7; font-size: 0.9rem; text-align: center; margin-bottom: 20px;">* Note: This is a request form. Lopside will review the project before accepting.</p>
+
             <form id="fursuitForm">
-                <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" required></div>
-                <div class="form-group"><label>Email <span>*</span></label><input type="email" name="email" class="form-input" required></div>
-                <div class="form-group"><label>Discord Username <span>*</span></label><input type="text" name="discord" class="form-input" required></div>
-                <div class="form-group"><label>Character/Species <span>*</span></label><input type="text" name="species" class="form-input" required></div>
-                <div class="form-group"><label>Reference Image Link <span>*</span></label><input type="url" name="refLink" class="form-input" required></div>
+                <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" maxlength="50" required></div>
+                <div class="form-group"><label>Email <span>*</span></label><input type="email" name="email" class="form-input" maxlength="100" required></div>
+                <div class="form-group"><label>Discord Username <span>*</span></label><input type="text" name="discord" class="form-input" maxlength="100" required></div>
+                <div class="form-group"><label>Character/Species <span>*</span></label><input type="text" name="species" class="form-input" maxlength="100" required></div>
+                
+                ${getFileUploadHTML()}
+                <div class="form-group"><label>Reference Image Link (Optional)</label><input type="url" name="refLink" class="form-input"></div>
+                
                 <div class="form-group">
                     <label>What are you interested in? <span>*</span></label>
-                    <select name="partType" class="form-select" required>
-                        <option value="Tail">Tail</option>
-                        <option value="Paws">Paws</option>
-                        <option value="Ears">Ears</option>
-                        <option value="Head">Head</option>
-                        <option value="Partial">Partial</option>
-                        <option value="Accessories">Accessories</option>
-                        <option value="Other">Other (Describe in notes)</option>
+                    <select name="partType" id="suitTypeSelect" class="form-select" required>
+                        <option value="Tail" data-price="80">Tail (Start $80)</option>
+                        <option value="Paws" data-price="150">Paws (Start $150)</option>
+                        <option value="Paws & Tail" data-price="220">Paws and Tail Set (Start $220)</option>
+                        <option value="Ears" data-price="80">Ears (Start $80)</option>
+                        <option value="Head" data-price="1000">Head (Start $1000)</option>
+                        <option value="Partial" data-price="1200">Partial (Start $1200)</option>
+                        <option value="Accessories" data-price="50">Accessories</option>
+                        <option value="Other" data-price="0">Other (Describe in notes)</option>
                     </select>
                 </div>
-                <div class="form-group"><label>Fur Colors / Material Notes</label><textarea name="materials" class="form-textarea" rows="2"></textarea></div>
+                <div class="form-group"><label>Fur Colors / Material Notes</label><textarea name="materials" class="form-textarea" rows="2" maxlength="500"></textarea></div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="measurementsCheck" name="needsMeasurements">
                     <label for="measurementsCheck">I understand I may need to provide specific measurements or a DTD later.</label>
                 </div>
-                <div class="form-group"><label>Deadline (if any)</label><input type="text" name="deadline" class="form-input"></div>
-                <div class="form-group"><label>Extra Notes</label><textarea name="notes" class="form-textarea" rows="2"></textarea></div>
+                <div class="form-group"><label>Deadline (if any)</label><input type="text" name="deadline" class="form-input" maxlength="100"></div>
+                <div class="form-group"><label>Extra Notes</label><textarea name="notes" class="form-textarea" rows="2" maxlength="1000"></textarea></div>
                 
-                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px;">
-                    <div class="checkbox-group" style="margin-bottom: 0;">
-                        <input type="checkbox" id="tosAgreeFursuit" required style="cursor: pointer; width: 18px; height: 18px; margin-top: 2px;">
-                        <label for="tosAgreeFursuit" style="font-size: 0.95rem; color: #e2e8f0; cursor: pointer; line-height: 1.4;">I have read the Terms of Service and understand this is a request form that does not guarantee acceptance until confirmed.</label>
-                    </div>
-                    <button type="button" class="nav-btn tos-redirect-btn" style="align-self: flex-start; padding: 6px 14px; font-size: 0.85rem; border-color: #ec4899; color: #ec4899; background: rgba(236, 72, 153, 0.1);">Read TOS 📜</button>
-                </div>
+                ${getPriceEstimatorHTML()}
+                ${getChecklistHTML()}
 
-                <button type="submit" class="preorder-btn" style="border-color: #22c55e;">Submit Request 🧵</button>
+                <button type="submit" class="preorder-btn" style="border-color: #22c55e;">Submit Request</button>
             </form>
         </div>
         <button id="backToMenuBtn" class="nav-btn">← Back to Menu</button>
     `;
     
-    document.querySelectorAll('.tos-redirect-btn').forEach(btn => {
-        btn.addEventListener('click', () => showTOSModal());
-    });
+    attachCharCounters();
+    attachFileInputListener();
+    attachInnerScrollListener();
+    attachDynamicEstimator('fursuitForm', 'fursuit');
+
+    document.querySelectorAll('.tos-redirect-btn').forEach(btn => btn.addEventListener('click', () => showTOSModal()));
     document.getElementById('fursuitForm').addEventListener('submit', (e) => submitPreorder(e, 'Fursuit Request'));
     document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
 }
 
 function loadNotReadyPage(title, message) {
     clearBubbles();
+    if(interactiveStarField) interactiveStarField.innerHTML = "";
     bodyElement.setAttribute('data-theme', 'cosmic-green-pink');
+    renderDynamicMoon();
     renderDashboardStars();
 
     appViewport.innerHTML = `
@@ -1383,13 +1914,12 @@ document.getElementById('secretAdminTrigger').addEventListener('dblclick', () =>
     if (pass === "bingo" || pass === "fanta") loadAdminDashboard();
 });
 
+// =====================================
+// ADMIN DASHBOARD
+// =====================================
 function loadAdminDashboard() {
-    clearBubbles();
-    bodyElement.setAttribute('data-theme', 'cosmic-green-pink');
-    homeStarField.innerHTML = "";
-    dashboardStarField.innerHTML = "";
-    renderDashboardStars();
-
+    clearBubbles(); if(interactiveStarField) interactiveStarField.innerHTML = ""; bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); renderDynamicMoon(); renderDashboardStars();
+    homeStarField.innerHTML = ""; dashboardStarField.innerHTML = "";
     appViewport.innerHTML = `
         <div class="admin-dashboard" id="adminDashboardView">
             <h1 style="color: #ffffff; text-shadow: 0 0 20px #a855f7; font-size: 2.5rem; text-align: center;">Horizon Admin Dashboard</h1>
@@ -1437,6 +1967,11 @@ function renderAdminOrders(ordersArr) {
         const notes = order.notes || "None";
         const email = order.email || "No Email";
         const addonsText = order.selectedAddons ? `<br><strong>Add-ons:</strong> ${escapeHTML(order.selectedAddons)}` : '';
+        
+        let imagesHtml = '';
+        if (order.referenceImageUrls && order.referenceImageUrls.length > 0) {
+            imagesHtml = `<br><strong>Uploads:</strong> ` + order.referenceImageUrls.map((url, i) => `<a href="${escapeHTML(url)}" target="_blank" style="color:#00f2fe;">View Image ${i+1}</a>`).join(' | ');
+        }
 
         card.innerHTML = `
             <h3>${escapeHTML(order.orderType)}</h3>
@@ -1450,13 +1985,16 @@ function renderAdminOrders(ordersArr) {
                 <span style="color: #a2b7cc; font-size: 0.85rem;">
                     (Type: ${escapeHTML(order.keychainType || order.stickerType || order.partType || order.artType || 'N/A')}, Qty: ${escapeHTML(order.quantity || '1')})
                     ${addonsText}
+                    ${imagesHtml}
                 </span>
             </div>
             <div class="admin-detail" style="grid-column: span 2;"><strong>Notes:</strong> ${escapeHTML(notes)}</div>
-            ${order.refLink ? `<div class="admin-detail" style="grid-column: span 2;"><strong>Ref:</strong> <a href="${escapeHTML(order.refLink)}" target="_blank" style="color: #00f2fe;">View Reference</a></div>` : ''}
+            ${order.refLink ? `<div class="admin-detail" style="grid-column: span 2;"><strong>Ref Link:</strong> <a href="${escapeHTML(order.refLink)}" target="_blank" style="color: #00f2fe;">View Link Reference</a></div>` : ''}
+            
             <div class="admin-actions">
                 <select id="status-${order.id}" style="padding: 5px; background: #0a0514; color: white; border: 1px solid #a855f7; border-radius: 5px;">
                     <option value="Pending Review" ${order.status === 'Pending Review' || order.status === 'New' ? 'selected' : ''}>Pending Review</option>
+                    <option value="Reviewed" ${order.status === 'Reviewed' ? 'selected' : ''}>Reviewed</option>
                     <option value="Accepted" ${order.status === 'Accepted' ? 'selected' : ''}>Accepted</option>
                     <option value="Not Accepted" ${order.status === 'Not Accepted' ? 'selected' : ''}>Not Accepted</option>
                     <option value="Paid" ${order.status === 'Paid' ? 'selected' : ''}>Paid</option>
@@ -1465,16 +2003,44 @@ function renderAdminOrders(ordersArr) {
                     <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
                     <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
                 </select>
+                <button id="msg-${order.id}" class="copy-template-btn" style="background: rgba(0,242,254,0.2); border: 1px solid #00f2fe; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Copy Msg</button>
                 <button id="copy-${order.id}" style="background: rgba(0,242,254,0.2); border: 1px solid #00f2fe; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Copy Email</button>
                 <button id="delete-${order.id}" style="background: rgba(239,68,68,0.2); border: 1px solid #ef4444; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Delete</button>
             </div>
         `;
         ordersGrid.appendChild(card);
 
-        document.getElementById(`status-${order.id}`).addEventListener('change', (e) => updateOrderStatus(order.id, e.target.value));
-        document.getElementById(`copy-${order.id}`).addEventListener('click', () => { navigator.clipboard.writeText(email); alert('Email copied!'); });
+        document.getElementById(`status-${order.id}`).addEventListener('change', async (e) => {
+            try { 
+                await updateDoc(doc(db, "preorders", order.id), { status: e.target.value });
+                showAdminToast("Status updated successfully ✨");
+            } catch (err) { showAdminToast("Failed to update status.", true); }
+        });
+
+        document.getElementById(`msg-${order.id}`).addEventListener('click', () => {
+            const currentStatus = document.getElementById(`status-${order.id}`).value;
+            let msg = `Hi ${order.name}! Your order status has been updated to ${currentStatus}. We'll contact you if we need anything else.`;
+            if (currentStatus === 'Pending Review') msg = `Hi ${order.name}! Your preorder has been submitted successfully. We'll review it and contact you if we need anything else.`;
+            if (currentStatus === 'Reviewed' || currentStatus === 'Accepted') msg = `Hi ${order.name}! Your order has been reviewed. We'll reach out soon with the next steps or any questions.`;
+            if (currentStatus === 'Finished') msg = `Hi ${order.name}! Your order has been completed. Thank you so much for supporting Horizon Tide Gallery!`;
+            
+            navigator.clipboard.writeText(msg);
+            showAdminToast("Message template copied! ✨");
+        });
+
+        document.getElementById(`copy-${order.id}`).addEventListener('click', () => { navigator.clipboard.writeText(email); showAdminToast('Email copied! ✨'); });
         document.getElementById(`delete-${order.id}`).addEventListener('click', () => deleteOrder(order.id));
     });
+}
+
+function showAdminToast(msg, isError = false) {
+    const toast = document.createElement('div');
+    toast.className = 'admin-toast';
+    toast.style.background = isError ? 'rgba(239, 68, 68, 0.9)' : 'rgba(34, 197, 94, 0.9)';
+    toast.innerText = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.style.opacity = '1', 10);
+    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
 }
 
 function filterOrders(status) {
@@ -1500,8 +2066,7 @@ function escapeHTML(str) {
     return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
 }
 
-loadHomePage();
-
+// Background Music Logic
 const bgMusic = new Audio("sonican-lo-fi-music-loop-sentimental-jazzy-love-473154.mp3");
 bgMusic.loop = true;
 bgMusic.volume = 0.5;
@@ -1546,3 +2111,6 @@ musicBtn.addEventListener('click', () => {
         musicBtn.innerHTML = '🎵 Play Music';
     }
 });
+
+// Boot Application
+loadHomePage();

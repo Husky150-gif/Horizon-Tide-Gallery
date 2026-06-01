@@ -4,21 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Horizon</title>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=18">
+    
+    <link rel="stylesheet" href="style.css?v=30">
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body data-theme="horizon" data-page="home">
 
     <div class="bg-environment">
+        
         <div id="bubbleContainer" class="bubble-container"></div>
+
+        <div class="tos-night-sky" id="tosNightSky">
+            <div class="tos-nebula tos-nebula-purple"></div>
+            <div class="tos-nebula tos-nebula-blue"></div>
+            <div class="tos-nebula tos-nebula-seafoam"></div>
+            <div class="tos-stardust"></div>
+            <div id="tosConstellationWrapper" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; opacity: 0.6; overflow: hidden;"></div>
+            <div class="tos-ocean-shimmer"></div>
+        </div>
 
         <div class="sky-container" id="skyLayer">
             <div class="galaxy-nebula"></div>
-            <div class="crescent-moon"></div>
+            
+            <div id="dynamicMoonContainer"></div>
             
             <div class="cosmic-shooting-star comet-one"></div>
             <div class="cosmic-shooting-star comet-two"></div>
@@ -44,16 +57,21 @@
 
             <div class="foreground-land-silhouette"></div>
         </div>
+        
+        <div id="interactiveStarField" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; pointer-events: none; z-index: 99999; overflow: hidden;"></div>
     </div>
 
     <main id="app-viewport" class="content-layer"></main>
 
     <div id="particleExplosionContainer" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999998; overflow: hidden;"></div>
     <div id="pageTransitionCircle" class="transition-circle"></div>
+    
     <div id="secretAdminTrigger" style="position: fixed; bottom: 0; right: 0; width: 50px; height: 50px; z-index: 999999; cursor: default; opacity: 0;"></div>
     
+    <button id="backToTopBtn" class="back-to-top-btn" aria-label="Back to top">⭐ Top</button>
+
     <div id="footerCredit" style="position: fixed; bottom: 15px; left: 20px; font-family: 'Starborn', 'Fredoka', sans-serif; color: rgba(255,255,255,0.5); font-size: 0.95rem; z-index: 99999; pointer-events: none; text-shadow: 0 0 8px rgba(0, 242, 254, 0.4); letter-spacing: 1px;">coded by Husky</div>
 
-    <script type="module" src="script.js?v=18"></script>
+    <script type="module" src="script.js?v=30"></script>
 </body>
 </html>
