@@ -120,7 +120,8 @@ body:not([data-page="home"]) #dynamicMoonContainer {
     position: absolute;
     background: #ffffff;
     border-radius: 50%;
-    filter: drop-shadow(0 0 4px #ffffff);
+    box-shadow: 0 0 4px 1px rgba(255, 255, 255, 0.6);
+    will-change: transform;
     animation: decorativeOrbit linear infinite;
     pointer-events: none;
 }
@@ -406,7 +407,7 @@ body:not([data-page="home"]) .fish-scene { display: none; }
     pointer-events: none;
 }
 
-header, nav, .split-workspace-layout, #backHomeBtn, #backToMenuBtn, .comment-section, .preorder-card, .socials-container, .socials-bio, .tos-container, .form-card, .admin-dashboard, .pricing-container, .nav-btn, .preorder-btn {
+header, nav, .split-workspace-layout, #backHomeBtn, #backToMenuBtn, .comment-section, .preorder-card, .socials-container, .socials-bio, .tos-container, .form-card, .admin-dashboard, .pricing-container, .nav-btn, .preorder-btn, .btn-preorder-massive, .btn-discord-small {
     pointer-events: auto;
 }
 
@@ -458,8 +459,171 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
 .mew-display-gif { height: 110px; image-rendering: pixelated; filter: drop-shadow(0 0 15px rgba(236, 72, 153, 0.5)); }
 
 /* ==========================================
-   --- PREORDER MAGICAL OCEAN THEME ---
+   --- NEW BUTTON HIERARCHY ---
    ========================================== */
+
+/* BIG PREORDER BUTTON */
+.btn-preorder-massive {
+    background: linear-gradient(135deg, #00b4db, #0083b0);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 20px rgba(0, 180, 219, 0.5);
+    color: white;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1.5rem;
+    padding: 20px 45px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 15px;
+    width: 100%;
+    max-width: 450px;
+}
+
+.btn-preorder-massive:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 0 30px rgba(0, 180, 219, 0.8);
+    border-color: #ffffff;
+}
+
+/* SMALL DISCORD BUTTON */
+.btn-discord-small {
+    background: rgba(114, 137, 218, 0.2);
+    border: 1px solid rgba(114, 137, 218, 0.5);
+    color: #e2e8f0;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1rem;
+    padding: 12px 25px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 15px;
+    width: 100%;
+    max-width: 350px;
+}
+
+.btn-discord-small:hover {
+    background: rgba(114, 137, 218, 0.4);
+    box-shadow: 0 0 15px rgba(114, 137, 218, 0.5);
+    color: #ffffff;
+}
+
+/* ==========================================
+   --- MODALS & FORMS LAYOUT RECOVERY ---
+   ========================================== */
+
+.modal {
+    display: none; 
+    position: fixed; 
+    z-index: 99999; 
+    left: 0; 
+    top: 0; 
+    width: 100%; 
+    height: 100%; 
+    overflow: hidden; 
+    background-color: rgba(0,0,0,0.85); 
+    backdrop-filter: blur(5px);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: rgba(10, 5, 20, 0.95);
+    border-radius: 24px;
+    padding: 40px;
+    width: 90%;
+    max-width: 900px;
+    max-height: 85vh;
+    overflow-y: auto;
+    position: relative;
+    border: 2px solid #00f2fe;
+    box-shadow: 0 0 30px rgba(0, 242, 254, 0.3);
+}
+
+.close-btn {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    color: #a2b7cc;
+    font-size: 2.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+    z-index: 10;
+}
+
+.close-btn:hover {
+    color: #ef4444;
+}
+
+.modal-title {
+    color: #ffffff;
+    text-shadow: 0 0 15px #00f2fe;
+    font-size: 2.2rem;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+/* Base Form Styles */
+.form-card {
+    background: rgba(10, 5, 20, 0.85);
+    backdrop-filter: blur(20px);
+    border: 3px solid #00f2fe;
+    box-shadow: 0 0 30px rgba(0, 242, 254, 0.2), inset 0 0 20px rgba(236, 72, 153, 0.1);
+    border-radius: 24px;
+    padding: 40px;
+    max-width: 700px;
+    width: 90%;
+    max-height: 75vh;
+    overflow-y: auto;
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.form-fade-wrapper {
+    transition: opacity 0.4s ease-in-out;
+    opacity: 1;
+}
+
+.form-fade-out {
+    opacity: 0;
+}
+
+.form-card::-webkit-scrollbar, .modal-content::-webkit-scrollbar { width: 8px; }
+.form-card::-webkit-scrollbar-thumb, .modal-content::-webkit-scrollbar-thumb { background: linear-gradient(to bottom, #00f2fe, #ec4899); border-radius: 10px; }
+
+.form-card h1 { color: #ffffff; text-shadow: 0 0 15px #00f2fe; margin-bottom: 10px; font-size: 2.2rem; text-align: center; }
+.form-card p.form-desc { color: #a2b7cc; text-align: center; margin-bottom: 25px; font-size: 1.1rem; }
+
+.form-group { margin-bottom: 20px; display: flex; flex-direction: column; text-align: left; }
+.form-group label { color: #e2e8f0; margin-bottom: 8px; font-weight: 500; font-size: 1.05rem; }
+.form-group label span { color: #ec4899; }
+
+.form-input, .form-select, .form-textarea {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(0, 242, 254, 0.4);
+    color: white;
+    padding: 12px 15px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline: none;
+    border-color: #ec4899;
+    box-shadow: 0 0 15px rgba(236, 72, 153, 0.4);
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.form-select option { background: #0a0514; color: white; }
+
+.checkbox-group { display: flex; align-items: flex-start; gap: 10px; margin-top: 10px; margin-bottom: 25px; text-align: left; }
+.checkbox-group input { margin-top: 5px; cursor: pointer; }
+.checkbox-group label { font-size: 0.9rem; color: #a2b7cc; cursor: pointer; }
+
+/* Preorder Menu Themes */
 [data-theme="preorder"] .bg-environment {
     background: linear-gradient(to bottom, #00f2fe 0%, #4facfe 40%, #006994 100%);
     transition: background 1s ease;
@@ -752,6 +916,20 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
 .tos-container ul { padding-left: 20px; }
 .tos-container li { margin-bottom: 8px; }
 
+/* AGE VERIFICATION WARNING STYLE */
+.age-verification-warning {
+    font-style: italic;
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.1);
+    border-left: 4px solid #ff6b6b;
+    padding: 12px 15px;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 15px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    display: block;
+}
+
 /* ==========================================
    --- FULL SCREEN CIRCLE TRANSITION ---
    ========================================== */
@@ -823,91 +1001,6 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     0% { transform: translateY(0) rotate(0deg); opacity: 1; }
     100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
 }
-
-/* ==========================================
-   --- FORMS & ADMIN CSS   ---
-   ========================================== */
-.form-card {
-    background: rgba(10, 5, 20, 0.85);
-    backdrop-filter: blur(20px);
-    border: 3px solid #00f2fe;
-    box-shadow: 0 0 30px rgba(0, 242, 254, 0.2), inset 0 0 20px rgba(236, 72, 153, 0.1);
-    border-radius: 24px;
-    padding: 40px;
-    max-width: 700px;
-    width: 90%;
-    max-height: 75vh;
-    overflow-y: auto;
-    text-align: left;
-    margin-bottom: 20px;
-}
-
-.form-fade-wrapper {
-    transition: opacity 0.4s ease-in-out;
-    opacity: 1;
-}
-
-.form-fade-out {
-    opacity: 0;
-}
-
-.form-card::-webkit-scrollbar { width: 8px; }
-.form-card::-webkit-scrollbar-thumb { background: linear-gradient(to bottom, #00f2fe, #ec4899); border-radius: 10px; }
-
-.form-card h1 { color: #ffffff; text-shadow: 0 0 15px #00f2fe; margin-bottom: 10px; font-size: 2.2rem; text-align: center; }
-.form-card p.form-desc { color: #a2b7cc; text-align: center; margin-bottom: 25px; font-size: 1.1rem; }
-
-.form-group { margin-bottom: 20px; display: flex; flex-direction: column; }
-.form-group label { color: #e2e8f0; margin-bottom: 8px; font-weight: 500; font-size: 1.05rem; }
-.form-group label span { color: #ec4899; }
-
-.form-input, .form-select, .form-textarea {
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(0, 242, 254, 0.4);
-    color: white;
-    padding: 12px 15px;
-    border-radius: 10px;
-    font-family: inherit;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-}
-
-.form-input:focus, .form-select:focus, .form-textarea:focus {
-    outline: none;
-    border-color: #ec4899;
-    box-shadow: 0 0 15px rgba(236, 72, 153, 0.4);
-    background: rgba(0, 0, 0, 0.6);
-}
-
-.form-select option { background: #0a0514; color: white; }
-
-.checkbox-group { display: flex; align-items: flex-start; gap: 10px; margin-top: 10px; margin-bottom: 25px; }
-.checkbox-group input { margin-top: 5px; cursor: pointer; }
-.checkbox-group label { font-size: 0.9rem; color: #a2b7cc; cursor: pointer; }
-
-/* Admin Dashboard Styles */
-.admin-dashboard {
-    width: 95%; max-width: 1200px;
-    display: flex; flex-direction: column; gap: 20px;
-}
-.admin-filters {
-    display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px;
-}
-.admin-card {
-    background: rgba(10, 18, 38, 0.9);
-    border: 2px solid #a855f7;
-    border-radius: 16px;
-    padding: 20px;
-    text-align: left;
-    box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
-.admin-card h3 { color: #00f2fe; font-size: 1.3rem; grid-column: span 2; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;}
-.admin-detail { color: #e2e8f0; font-size: 0.95rem; }
-.admin-detail strong { color: #f472b6; }
-.admin-actions { grid-column: span 2; display: flex; gap: 10px; margin-top: 10px; }
 
 /* ==========================================
    --- PRICING SHEET STYLE          ---
@@ -1138,7 +1231,7 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     .active-pokemon-gif { height: 50px; }
     .content-layer { padding-top: 5vh; }
 
-    .form-card, .pricing-container, .preorder-card, .tos-container, .admin-dashboard {
+    .form-card, .pricing-container, .preorder-card, .tos-container, .admin-dashboard, .modal-content {
         padding: 25px 15px;
         width: 95%;
         border-width: 2px;
@@ -1171,7 +1264,7 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     }
     
     /* MOBILE PERFORMANCE OPTIMIZATION: Strips out heavy glowing shadows that cause lag */
-    .nav-btn, .preorder-btn, .form-card, .pricing-container, .preorder-card, .tos-container, .profile-card, .text-scroller-card, .visual-media-card {
+    .nav-btn, .preorder-btn, .form-card, .pricing-container, .preorder-card, .tos-container, .profile-card, .text-scroller-card, .visual-media-card, .modal-content {
         backdrop-filter: none !important;
         background: rgba(10, 5, 20, 0.95) !important; 
         box-shadow: none !important;
@@ -1197,7 +1290,6 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     
     .form-input, .form-select, .form-textarea { font-size: 16px; }
 }
-
 
 /* ==========================================
    --- ADDED FEATURE STYLES ---
@@ -1230,7 +1322,7 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     100% { transform: scale(1.1) translate(20px, 20px); }
 }
 
-/* FIX 1: Less Griddy, Organic Stardust using Prime Numbers */
+/* Less Griddy, Organic Stardust using Prime Numbers */
 .tos-stardust {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -1259,16 +1351,13 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     100% { opacity: 1; transform: scaleY(1.2); }
 }
 
-/* FIX 3: Faster Drift with Dynamic Angles */
-.constellation-drift {
-    /* JavaScript will inject --start-rot so it keeps its random angle */
-}
+/* Faster Drift with Dynamic Angles */
 @keyframes slowConstellationDrift {
     from { transform: translateX(0) translateY(0) rotate(var(--start-rot, 0deg)); }
     to { transform: translateX(-400px) translateY(-200px) rotate(calc(var(--start-rot, 0deg) + 15deg)); } 
 }
 
-/* FIX 2: Connecting Stars Line Animation (Using pathLength=100) */
+/* Connecting Stars Line Animation (Using pathLength=100) */
 .constellation-line {
     stroke-dasharray: 100;
     stroke-dashoffset: 100;
@@ -1284,7 +1373,6 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
 [data-theme="tos"] .tos-night-sky { display: block; }
 [data-theme="tos"] .galaxy-nebula { display: none; }
 [data-theme="tos"] .ocean-horizon { display: none; }
-
 
 /* Back to Top Button Fixed positioning */
 .back-to-top-btn {
@@ -1327,26 +1415,44 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     100% { transform: translateY(-120vh) scale(1.5); opacity: 0; }
 }
 
-
-/* NEW FEATURES: Moon, Tooltip, Sparkles, Checklists, Estimates */
-.dynamic-moon-phase {
+/* ==========================================
+   --- SMOOTH MOON FIX ---
+   ========================================== */
+#dynamicMoonContainer {
     position: absolute;
-    top: 40px;
-    left: 50px;
+    top: 20px;
+    left: 20px;
+    z-index: 999999;
+}
+
+.dynamic-moon-phase {
     width: 65px;
     height: 65px;
     border-radius: 50%;
-    z-index: 3;
     cursor: pointer;
-    box-shadow: 0 0 15px rgba(241, 196, 15, 0.6);
-    background-color: #f1c40f;
-    transition: all 0.5s ease;
-    pointer-events: auto; /* Ensures the moon is clickable/hoverable */
+    /* Smooth Real-Life Transition */
+    opacity: 0; 
+    transition: all 2s ease-in-out;
+    pointer-events: auto; 
+    /* Slow 60s Drift */
+    animation: moonRealLifeFloat 60s ease-in-out infinite alternate;
 }
+
+.dynamic-moon-phase.moon-loaded {
+    opacity: 1;
+}
+
+@keyframes moonRealLifeFloat {
+    /* Uses the JS variable to flip it depending on Hemisphere! */
+    0% { transform: scaleX(var(--hemi-flip, 1)) translateY(0px) rotate(0deg); }
+    100% { transform: scaleX(var(--hemi-flip, 1)) translateY(-10px) rotate(2deg); }
+}
+
 .moon-tooltip {
     position: absolute;
-    top: 110px;
-    left: 40px;
+    top: 100%;
+    left: 0;
+    margin-top: 10px;
     background: rgba(10, 5, 20, 0.9);
     border: 1px solid #f1c40f;
     color: #fff;
@@ -1358,12 +1464,12 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     transform: translateY(-10px);
     transition: opacity 0.3s ease, transform 0.3s ease;
     box-shadow: 0 0 15px rgba(241, 196, 15, 0.3);
-    z-index: 999999; /* Ensure it stays above other content layers */
     width: max-content;
     max-width: 250px;
     text-align: left;
     line-height: 1.4;
 }
+
 .dynamic-moon-phase:hover + .moon-tooltip, 
 .dynamic-moon-phase:active + .moon-tooltip {
     opacity: 1;

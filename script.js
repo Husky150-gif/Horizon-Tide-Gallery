@@ -35,6 +35,7 @@ const TOS_CONTENT_HTML = `
         <a href="#tos-art" class="tos-jump-btn">Art Policy</a>
     </div>
     <p>By commissioning, purchasing, or placing an order with Horizon Tide Gallery, the client agrees to the following Terms of Service. Please read carefully before purchasing or commissioning any product or service.</p>
+    
     <h2 id="tos-general" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">GENERAL</h2>
     <p>Horizon Tide Gallery reserves the right to refuse, decline, cancel, or discontinue any commission, order, inquiry, or interaction for any reason, including but not limited to:</p>
     <ul>
@@ -46,8 +47,10 @@ const TOS_CONTENT_HTML = `
         <li>Repeated violation of our boundaries or policies</li>
     </ul>
     <p>We reserve the right to decline any request without explanation.<br>Clients commissioning NSFW content or entering payment agreements independently must be 18 years of age or older. Certain commission types may require parental permission for minors.</p>
+    
     <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">PRODUCTS & SERVICES</h2>
     <p>Horizon Tide Gallery may offer products and services including, but not limited to: Fursuits, parts & accessories (Tails, paws, partials), Character artwork & Digital illustrations, Keychains, charms, handmade merchandise & custom crafts. Because many products are handmade, slight variations may occur between finished items.</p>
+    
     <h2 id="tos-payment" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">PAYMENT</h2>
     <p>Accepted payment methods may include: PayPal, CashApp, Ko-fi, or other approved platforms.</p>
     <ul>
@@ -57,17 +60,28 @@ const TOS_CONTENT_HTML = `
         <li>Full payment must be completed before physical items are shipped.</li>
     </ul>
     <p>If a payment plan is abandoned for more than 14 days without communication, the order may be canceled, materials remain property of Horizon Tide, and completed items may be resold.</p>
+    
     <h2 id="tos-refunds" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">REFUND POLICY</h2>
     <p>Deposits and down payments are non-refundable. Once substantial work has begun, refunds may become partial or unavailable. Completed commissions are not eligible for refunds.</p>
     <p>Refunds will NOT be granted for impatience, minor delays, failure to read the TOS, or personal preference changes after work starts. Chargebacks will result in placement on a Do Not Commission list.</p>
+    
     <h2 id="tos-shipping" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">TURNAROUND TIME & DEADLINES</h2>
     <p>Most products are handmade, and all turnaround times are estimates only. Estimated completion dates are NOT guaranteed unless explicitly agreed upon in writing. Convention pickups or event deadlines must be discussed BEFORE payment is made.</p>
+    
     <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">HANDMADE PRODUCT DISCLAIMER</h2>
     <p>Small imperfections may naturally occur (slight asymmetry, minor stitching visibility, natural variation). Factory-level perfection should not be expected. Materials may vary slightly in color, texture, or pile length.</p>
+    
     <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">SHIPPING & REPAIRS</h2>
     <p>Clients are responsible for providing a correct address and paying shipping costs. Once shipped, ownership transfers to the shipping carrier and client. Minor craftsmanship-related repairs may be offered within 7 days of delivery at our discretion (this does not include wear and tear, pet damage, or improper care).</p>
+    
     <h2 id="tos-art" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">ART CONTENT & NSFW POLICY</h2>
+    
+    <p class="age-verification-warning">
+        ⚠️ <strong>Age Verification Required:</strong> Please note that you must contact us directly via Discord or email for NSFW requests. We require valid proof that you are 18 or older before discussing or accepting any mature commissions.
+    </p>
+    
     <p>We may create furry/anthro art, original characters, fanart, and mild NSFW. We will NOT create illegal content, hate content, heavy gore, or content involving minors. All NSFW commissioners must be 18+.</p>
+    
     <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">ARTISTIC RIGHTS & USAGE</h2>
     <p>We retain artistic rights to all creations. Clients may use purchased products for personal use and upload photos with credit. Clients MAY NOT claim the work as their own, trace/replicate, mass-produce, or use our work for AI training datasets.</p>
     <p style="text-align: center; margin-top: 30px; color: #f472b6; font-weight: bold;">✨ Thank you for supporting Horizon Tide Gallery. Every order directly supports independent artists, handmade craftsmanship, and small-business creativity.</p>
@@ -112,8 +126,17 @@ function getDynamicMoonPhase() {
     const diff = date.getTime() - newMoon;
     let phase = (diff % cycle) / cycle;
     if (phase < 0) phase += 1;
-    
     return moonPhases[Math.floor(phase * 8 + 0.5) % 8];
+}
+
+// Function to detect if user is in Southern Hemisphere (to flip the moon)
+function getHemisphereDirection() {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    const southernZones = ["Australia", "Pacific/Auckland", "Pacific/Fiji", "America/Sao_Paulo", "America/Argentina", "America/Santiago", "Africa/Johannesburg", "Pacific/Port_Moresby"];
+    for (let i = 0; i < southernZones.length; i++) {
+        if (tz.includes(southernZones[i])) return -1; // -1 mirrors the moon perfectly!
+    }
+    return 1; // 1 keeps it normal for Northern Hemisphere
 }
 
 function startQuoteRotation() {
@@ -137,13 +160,15 @@ function renderDynamicMoon() {
     container.innerHTML = "";
     
     const moonData = getDynamicMoonPhase();
+    const hemiFlip = getHemisphereDirection();
+    
     const moonWrap = document.createElement('div');
     moonWrap.style.position = 'relative';
     
     const moon = document.createElement('div');
     moon.className = "dynamic-moon-phase";
-    moon.style.boxShadow = moonData.shadow;
-    moon.style.backgroundColor = moonData.bg;
+    // Send the hemisphere direction to our CSS animation
+    moon.style.setProperty('--hemi-flip', hemiFlip); 
     
     const tooltip = document.createElement('div');
     tooltip.className = "moon-tooltip";
@@ -156,16 +181,21 @@ function renderDynamicMoon() {
     moonWrap.appendChild(tooltip);
     container.appendChild(moonWrap);
 
-    startQuoteRotation();
+    // Smooth real-life fade in (adds the class that changes opacity from 0 to 1)
+    setTimeout(() => {
+        moon.style.boxShadow = moonData.shadow;
+        moon.style.backgroundColor = moonData.bg;
+        moon.classList.add('moon-loaded'); 
+        startQuoteRotation();
+    }, 100);
 }
 
-// --- TOS CONSTELLATION GENERATOR (Connecting animations + Organic Stars) ---
+// --- TOS CONSTELLATION GENERATOR ---
 function renderTOSConstellations() {
     const wrapper = document.getElementById('tosConstellationWrapper');
     if (!wrapper) return;
     wrapper.innerHTML = ""; 
 
-    // Replaced paths with connecting animated lines (pathLength=100)
     const svgs = [
         `<svg width="150" height="150" viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="120" r="1.5" fill="#fff"/><circle cx="50" cy="100" r="1" fill="#fff"/><circle cx="80" cy="110" r="1.5" fill="#fff"/><circle cx="110" cy="80" r="1" fill="#fff"/><circle cx="130" cy="40" r="2" fill="#fff"/><path pathLength="100" class="constellation-line" d="M20 120L50 100L80 110L110 80L130 40" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/></svg>`,
         `<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="60" r="1.5" fill="#fff"/><circle cx="40" cy="20" r="1" fill="#fff"/><circle cx="60" cy="80" r="1.5" fill="#fff"/><circle cx="90" cy="40" r="1" fill="#fff"/><circle cx="110" cy="90" r="2" fill="#fff"/><path pathLength="100" class="constellation-line" d="M10 60L40 20L60 80L90 40L110 90" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/></svg>`,
@@ -175,7 +205,6 @@ function renderTOSConstellations() {
         `<svg width="150" height="150" viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="1.5" fill="#fff"/><circle cx="40" cy="50" r="1" fill="#fff"/><circle cx="90" cy="20" r="2" fill="#fff"/><circle cx="140" cy="80" r="1.5" fill="#fff"/><circle cx="30" cy="120" r="1" fill="#fff"/><circle cx="100" cy="130" r="1.5" fill="#fff"/><path pathLength="100" class="constellation-line" d="M10 10L40 50L90 20" stroke="rgba(255,255,255,0.4)" stroke-width="1"/><path pathLength="100" class="constellation-line" d="M30 120L100 130L140 80" stroke="rgba(255,255,255,0.4)" stroke-width="1"/></svg>`
     ];
 
-    // Spawn 15 Constellations dynamically to fill out the sky
     for (let i = 0; i < 15; i++) {
         const svg = svgs[Math.floor(Math.random() * svgs.length)];
         const div = document.createElement('div');
@@ -185,18 +214,15 @@ function renderTOSConstellations() {
         div.style.left = `${Math.random() * 100}%`;
         div.innerHTML = svg;
         
-        // Pass rotation to CSS variable
         div.style.setProperty('--start-rot', `${Math.random() * 360}deg`);
         div.style.animationDelay = `${Math.random() * -50}s`;
         div.style.opacity = (Math.random() * 0.4 + 0.4).toString(); 
         
-        // Faster Drift: 15-30s
         div.style.animation = `slowConstellationDrift ${15 + Math.random() * 15}s linear infinite, twinkleStardust ${3 + Math.random() * 3}s infinite alternate`;
         
         wrapper.appendChild(div);
     }
     
-    // Inject organic stardust dots (Fix for grid look)
     const stardust = document.querySelector('.tos-stardust');
     if(stardust) {
         stardust.innerHTML = "";
@@ -208,7 +234,7 @@ function renderTOSConstellations() {
     }
 }
 
-// --- ROBUST & THROTTLED BACK TO TOP LOGIC (Saves CPU) ---
+// --- ROBUST & THROTTLED BACK TO TOP LOGIC ---
 function attachInnerScrollListener() {
     const btn = document.getElementById('backToTopBtn');
     if (!btn) return;
@@ -270,15 +296,17 @@ document.addEventListener('mousemove', (e) => {
 });
 
 // CHECKLIST & ESTIMATOR HELPERS
-function getChecklistHTML() {
+function getChecklistHTML(excludeRefImage = false) {
+    const refHtml = excludeRefImage ? '' : `<div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I have clear reference images ready</label></div>`;
+    
     return `
         <div class="before-order-checklist">
             <h4>📋 Before You Order:</h4>
             <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I know handmade/custom items take time</label></div>
-            <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I have clear reference images ready</label></div>
+            ${refHtml}
             <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I understand this is not instant shipping</label></div>
             <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I know the final price may vary</label></div>
-            <div class="checklist-item" style="margin-top: 15px; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 10px;">
+            <div class="checklist-item tos-line" style="margin-top: 15px; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 10px;">
                 <input type="checkbox" class="req-check" id="tosAgreeGlobal" required style="width: 22px; height: 22px; cursor: pointer;"> 
                 <label for="tosAgreeGlobal" style="color: #00f2fe; font-weight: bold; cursor: pointer;">I have read and agree to the Terms of Service.</label>
                 <button type="button" class="nav-btn tos-redirect-btn" style="padding: 4px 10px; font-size: 0.8rem; margin-left: 10px; border-color: #ec4899; color: #ec4899; background: rgba(236, 72, 153, 0.1);">Read TOS 📜</button>
@@ -440,7 +468,7 @@ function hideErrorMsg(form) {
     if (errDiv) errDiv.style.display = 'none';
 }
 
-// BUBBLE GENERATION SYSTEM
+// BUBBLE GENERATION SYSTEM (MOBILE THROTTLED)
 function createBubbles() {
     const container = document.getElementById('bubbleContainer');
     if (!container) return;
@@ -455,10 +483,7 @@ function createBubbles() {
         const size = Math.random() * 25 + 5;
         bubble.style.width = `${size}px`;
         bubble.style.height = `${size}px`;
-        
-        // Spawn bubble safely between 5% and 90%
         bubble.style.left = `${Math.random() * 85 + 5}vw`;
-        
         bubble.style.animationDuration = `${Math.random() * 3 + 4}s`; 
         bubble.style.animationDelay = `${Math.random() * 5}s`;
         container.appendChild(bubble);
@@ -470,7 +495,7 @@ function clearBubbles() {
     if (container) container.innerHTML = "";
 }
 
-// SYSTEM A: DECORATIVE BACKGROUND STARS
+// SYSTEM A: DECORATIVE BACKGROUND STARS (MOBILE THROTTLED)
 function renderHomeStars() {
     if (!homeStarField) return;
     homeStarField.innerHTML = "";
@@ -497,7 +522,7 @@ function renderHomeStars() {
     }
 }
 
-// SYSTEM B: CLICKABLE MAGIC STARS (PC ONLY & CAPPED)
+// SYSTEM B: CLICKABLE MAGIC STARS (PC ONLY)
 function spawnSingleInteractiveStar(container) {
     if (bodyElement.getAttribute('data-page') !== 'home') return; 
     
@@ -535,7 +560,6 @@ function spawnSingleInteractiveStar(container) {
             
             setTimeout(() => {
                 const currentContainer = document.getElementById('interactiveStarField');
-                // Cap the maximum interactive stars to 15 to prevent infinite loop freezing
                 if (currentContainer && currentContainer.children.length < 15) {
                     spawnSingleInteractiveStar(currentContainer);
                 }
@@ -552,9 +576,7 @@ function renderInteractiveStars() {
     interactiveStarField.innerHTML = "";
     
     if (bodyElement.getAttribute('data-page') !== 'home') return; 
-    
-    // Nuke interaction on mobile devices to save memory/CPU
-    if (window.innerWidth <= 768) return;
+    if (window.innerWidth <= 768) return; // MOBILE KILL SWITCH
     
     const countTarget = 12; 
     
@@ -656,55 +678,19 @@ function triggerConfetti() {
     }
 }
 
-function showTOSModal() {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); padding: 20px;";
-    
-    const modalContent = document.createElement('div');
-    modalContent.className = "tos-container";
-    modalContent.style.cssText = "background: rgba(10, 5, 20, 0.95); position: relative; margin-bottom: 0; max-height: 85vh; overflow-y: auto; width: 100%; max-width: 900px; padding-top: 20px;"; 
-    
-    const closeWrap = document.createElement('div');
-    closeWrap.style.cssText = "display: flex; justify-content: flex-end; position: sticky; top: 0; right: 0; z-index: 10; margin-bottom: 10px;";
-    
-    const closeBtn = document.createElement('button');
-    closeBtn.className = "nav-btn";
-    closeBtn.innerHTML = "✖ Close TOS";
-    closeBtn.style.cssText = "border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.1); padding: 8px 16px; font-size: 0.9rem; margin-top: -10px;";
-    closeBtn.onclick = () => overlay.remove();
-    
-    const tosTextContainer = document.createElement('div');
-    tosTextContainer.innerHTML = TOS_CONTENT_HTML;
-    
-    closeWrap.appendChild(closeBtn);
-    modalContent.appendChild(closeWrap);
-    modalContent.appendChild(tosTextContainer);
-    overlay.appendChild(modalContent);
-    document.body.appendChild(overlay);
-
-    overlay.querySelectorAll('.tos-jump-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const targetId = this.getAttribute('href').substring(1);
-            const targetEl = document.getElementById(targetId);
-            if(targetEl) {
-                modalContent.scrollTo({
-                    top: targetEl.offsetTop - 20,
-                    behavior: 'smooth'
-                });
-            }
-        });
-    });
-}
-
+// =====================================
+// PAGE LOADERS & ROUTING
+// =====================================
 function bindCoreMenuControls() {
     document.getElementById('whatWeDoBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadWhatWeDoPage));
     document.getElementById('contactBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadContactPage));
     document.getElementById('tosBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadTOSPage));
-    document.getElementById('preorderBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
     document.getElementById('socialsBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadSocialsPage));
+    
+    // Bind the Homepage specific UI Buttons
     document.getElementById('btnGalleryHome')?.addEventListener('click', (e) => cinematicTransition(e, loadGalleryPage));
     document.getElementById('btnDiscordHome')?.addEventListener('click', (e) => cinematicTransition(e, loadDiscordPage));
+    document.getElementById('btnPreorderMassive')?.addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
 }
 
 function loadHomePage() {
@@ -720,15 +706,15 @@ function loadHomePage() {
         <div class="gif-container"><img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/umbreon.gif" alt="Shiny Umbreon" class="active-pokemon-gif"></div>
         <header><h1>Welcome to The Horizon,</h1><h2>where creativity happens</h2></header>
         
-        <div style="display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 800px; gap: 15px; margin-bottom: 15px;">
+        <div class="button-container" style="display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 800px; gap: 5px; margin-bottom: 25px;">
             <button class="nav-btn btn-pink-highlight" id="btnGalleryHome" style="width: 100%; max-width: 450px;">✨ Horizon Tide Gallery ✨</button>
-            <button class="nav-btn btn-pink-highlight" id="btnDiscordHome" style="width: 100%; max-width: 450px;">🐾 Join Our Furry Discord Server 🐾</button>
+            <button class="btn-preorder-massive" id="btnPreorderMassive">🛒 Preorder Menu</button>
+            <button class="btn-discord-small" id="btnDiscordHome">🐾 Join Our SFW 18+ Discord Server 🐾</button>
         </div>
 
         <nav class="button-grid" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; width: 100%; max-width: 800px;">
             <button class="nav-btn" id="tosBtn">Our TOS</button>
             <button class="nav-btn" id="whatWeDoBtn">What we do</button>
-            <button class="nav-btn" id="preorderBtn">Preorder Menu</button>
             <button class="nav-btn" id="socialsBtn">Our socials</button>
             <button class="nav-btn" id="contactBtn">Contact us 💬</button>
         </nav>
@@ -1408,6 +1394,9 @@ const submitLoaderHTML = (text) => `
     </div>
 `;
 
+// =====================================
+// FORM SUBMISSION LOGIC (FIREBASE UPLOADS)
+// =====================================
 async function submitPreorder(event, orderType) {
     event.preventDefault();
     const form = event.target;
@@ -1439,14 +1428,24 @@ async function submitPreorder(event, orderType) {
 
     if (addons.length > 0) orderData.selectedAddons = addons.join(", ");
     
+    // FIREBASE STORAGE IMAGE UPLOAD LOGIC
     const fileInput = form.querySelector('#refFilesInput');
     let uploadedImageUrls = [];
     if (fileInput && fileInput.files.length > 0) {
-        if (fileInput.files.length > 3) { showErrorMsg(form, "You can only upload a maximum of 3 reference images."); submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false; return; }
+        // STRICT SAFETY CHECKS
+        if (fileInput.files.length > 3) { 
+            showErrorMsg(form, "You can only upload a maximum of 3 reference images."); 
+            submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false; 
+            return; 
+        }
         submitBtn.innerHTML = submitLoaderHTML("Uploading references...");
         for (let i = 0; i < fileInput.files.length; i++) {
             const file = fileInput.files[i];
-            if (file.size > 5 * 1024 * 1024) { showErrorMsg(form, `The file ${file.name} exceeds the 5MB limit.`); submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false; return; }
+            if (file.size > 5 * 1024 * 1024) { 
+                showErrorMsg(form, `The file ${file.name} exceeds the 5MB limit. Please compress it or use a link instead.`); 
+                submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false; 
+                return; 
+            }
             
             // FIREBASE FILENAME SANITIZATION
             const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
@@ -1455,7 +1454,11 @@ async function submitPreorder(event, orderType) {
                 await uploadBytes(storageRef, file);
                 const url = await getDownloadURL(storageRef);
                 uploadedImageUrls.push(url);
-            } catch (err) { showErrorMsg(form, "Failed to upload images. Please try again or use the link option."); submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false; return; }
+            } catch (err) { 
+                showErrorMsg(form, "Failed to upload images. Please try again or use the link option."); 
+                submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false; 
+                return; 
+            }
         }
     }
     
@@ -1583,7 +1586,7 @@ function loadCustomKeychainsForm() {
                 <div class="form-group"><label>Extra Notes</label><textarea name="notes" class="form-textarea" rows="2" maxlength="1000"></textarea></div>
                 
                 ${getPriceEstimatorHTML()}
-                ${getChecklistHTML()}
+                ${getChecklistHTML(false)}
 
                 <button type="submit" class="preorder-btn" style="border-color: #ec4899;">Submit Preorder</button>
             </form>
@@ -1651,7 +1654,8 @@ function loadPremadeKeychainsForm() {
                 <div class="form-group"><label>Notes</label><textarea name="notes" class="form-textarea" rows="2" maxlength="1000"></textarea></div>
                 
                 ${getPriceEstimatorHTML()}
-                ${getChecklistHTML()}
+                
+                ${getChecklistHTML(true)}
 
                 <button type="submit" class="preorder-btn" style="border-color: #ec4899;">Submit Order</button>
             </form>
@@ -1733,7 +1737,7 @@ function loadCustomStickersForm() {
                 <div class="form-group"><label>Extra Notes</label><textarea name="notes" class="form-textarea" rows="2" maxlength="1000"></textarea></div>
                 
                 ${getPriceEstimatorHTML()}
-                ${getChecklistHTML()}
+                ${getChecklistHTML(false)}
 
                 <button type="submit" class="preorder-btn" style="border-color: #ec4899;">Submit Preorder</button>
             </form>
@@ -1816,7 +1820,7 @@ function loadHuskyArtForm() {
                 <div class="form-group"><label>Extra Notes</label><textarea name="notes" class="form-textarea" rows="2" maxlength="1000"></textarea></div>
                 
                 ${getPriceEstimatorHTML()}
-                ${getChecklistHTML()}
+                ${getChecklistHTML(false)}
 
                 <button type="submit" class="preorder-btn" style="border-color: #ec4899;" disabled>Submissions Closed</button>
             </form>
@@ -1873,7 +1877,7 @@ function loadFursuitForm() {
                 <div class="form-group"><label>Extra Notes</label><textarea name="notes" class="form-textarea" rows="2" maxlength="1000"></textarea></div>
                 
                 ${getPriceEstimatorHTML()}
-                ${getChecklistHTML()}
+                ${getChecklistHTML(false)}
 
                 <button type="submit" class="preorder-btn" style="border-color: #22c55e;">Submit Request</button>
             </form>
@@ -1909,14 +1913,14 @@ function loadNotReadyPage(title, message) {
     document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
 }
 
+// =====================================
+// ADMIN DASHBOARD
+// =====================================
 document.getElementById('secretAdminTrigger').addEventListener('dblclick', () => {
     const pass = prompt("🌌 Secure Admin Access. Enter Passcode:");
     if (pass === "bingo" || pass === "fanta") loadAdminDashboard();
 });
 
-// =====================================
-// ADMIN DASHBOARD
-// =====================================
 function loadAdminDashboard() {
     clearBubbles(); if(interactiveStarField) interactiveStarField.innerHTML = ""; bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); renderDynamicMoon(); renderDashboardStars();
     homeStarField.innerHTML = ""; dashboardStarField.innerHTML = "";
@@ -2047,11 +2051,6 @@ function filterOrders(status) {
     if (!window.allOrders) return;
     if (status === 'All') renderAdminOrders(window.allOrders);
     else renderAdminOrders(window.allOrders.filter(o => o.status === status));
-}
-
-async function updateOrderStatus(id, newStatus) {
-    try { await updateDoc(doc(db, "preorders", id), { status: newStatus }); }
-    catch (e) { alert("Failed to update status."); }
 }
 
 async function deleteOrder(id) {
