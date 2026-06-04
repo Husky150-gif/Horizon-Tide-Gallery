@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp, doc, updateDoc, deleteDoc, where, getDocs } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
+import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
 // === INITIALIZE EMAILJS ===
 emailjs.init("3stRxyurkRVP3ym8o");
@@ -17,10 +18,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app); 
+const auth = getAuth(app); 
 
 function containsProfanity(text) {
     if (typeof text !== 'string') return false;
-    const profanityRegex = /\b(fuck|shit|bitch|ass|dick|cunt|pussy|cock|porn|sex|nudes|nsfw|whore|slut|slutty|cum|rape|tits|boobs)\b/i;
+    // Enhanced regex to catch common bypasses (e.g., b1tch, f*ck)
+    const profanityRegex = /\b(f[u\*\@]ck|sh[i\!1]t|b[i\!1]tch|a\$\$|ass|d[i\!1]ck|c[u\*]nt|p[u\*]ssy|c[o0\*]ck|p[o0]rn|s[e3]x|nudes|nsfw|wh[o0]re|sl[u\*]t|c[u\*]m|rape|t[i\!1]ts|b[o0][o0]bs)\b/i;
     return profanityRegex.test(text);
 }
 
@@ -129,14 +132,13 @@ function getDynamicMoonPhase() {
     return moonPhases[Math.floor(phase * 8 + 0.5) % 8];
 }
 
-// Function to detect if user is in Southern Hemisphere (to flip the moon)
 function getHemisphereDirection() {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
     const southernZones = ["Australia", "Pacific/Auckland", "Pacific/Fiji", "America/Sao_Paulo", "America/Argentina", "America/Santiago", "Africa/Johannesburg", "Pacific/Port_Moresby"];
     for (let i = 0; i < southernZones.length; i++) {
-        if (tz.includes(southernZones[i])) return -1; // -1 mirrors the moon perfectly!
+        if (tz.includes(southernZones[i])) return -1;
     }
-    return 1; // 1 keeps it normal for Northern Hemisphere
+    return 1; 
 }
 
 function startQuoteRotation() {
@@ -167,7 +169,6 @@ function renderDynamicMoon() {
     
     const moon = document.createElement('div');
     moon.className = "dynamic-moon-phase";
-    // Send the hemisphere direction to our CSS animation
     moon.style.setProperty('--hemi-flip', hemiFlip); 
     
     const tooltip = document.createElement('div');
@@ -181,7 +182,6 @@ function renderDynamicMoon() {
     moonWrap.appendChild(tooltip);
     container.appendChild(moonWrap);
 
-    // Smooth real-life fade in (adds the class that changes opacity from 0 to 1)
     setTimeout(() => {
         moon.style.boxShadow = moonData.shadow;
         moon.style.backgroundColor = moonData.bg;
@@ -234,52 +234,75 @@ function renderTOSConstellations() {
     }
 }
 
-// --- ROBUST & THROTTLED BACK TO TOP LOGIC ---
-function attachInnerScrollListener() {
+// --- MISSING TOS MODAL FUNCTION ---
+function showTOSModal() {
+    const modal = document.getElementById('tosModalOverlay');
+    const contentBox = document.getElementById('tosModalTextWrap');
+    const closeBtn = document.getElementById('closeTosModalBtn');
+    
+    if (modal && contentBox) {
+        contentBox.innerHTML = TOS_CONTENT_HTML;
+        
+        // Remove jump menu to avoid scroll breaking in modal
+        const jumpMenu = contentBox.querySelector('.tos-jump-menu');
+        if(jumpMenu) jumpMenu.remove();
+
+        modal.style.display = 'flex';
+        
+        closeBtn.onclick = () => modal.style.display = 'none';
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.style.display = 'none';
+        };
+    }
+}
+
+// --- ROBUST GLOBAL SCROLL LISTENER FIX ---
+let isGlobalScrollAttached = false;
+
+function handleGlobalScroll(e) {
     const btn = document.getElementById('backToTopBtn');
     if (!btn) return;
+    
+    let scrolled = window.scrollY || document.documentElement.scrollTop;
+    
+    // Check if the target was an internal scroll box
+    if (e && e.target && e.target.scrollTop) {
+        scrolled = Math.max(scrolled, e.target.scrollTop);
+    }
+    
+    // Check specific known scrollable containers
+    const formCard = document.querySelector('.form-card, .tos-container, .pricing-container, .text-scroller-card, .gallery-grid, .comment-section, .modal-content');
+    if (formCard) {
+        scrolled = Math.max(scrolled, formCard.scrollTop);
+    }
 
-    let ticking = false;
+    if (scrolled > 150) {
+        btn.classList.add('visible');
+    } else {
+        btn.classList.remove('visible');
+    }
+}
 
-    const checkScroll = (e) => {
-        if (!ticking) {
-            window.requestAnimationFrame(() => {
-                let scrolled = window.scrollY || document.documentElement.scrollTop;
-                if (e && e.target && e.target.scrollTop) {
-                    scrolled = Math.max(scrolled, e.target.scrollTop);
-                }
-                
-                const formCard = document.querySelector('.form-card, .tos-container, .pricing-container');
-                if (formCard) {
-                    scrolled = Math.max(scrolled, formCard.scrollTop);
-                }
-
-                if (scrolled > 150) {
-                    btn.classList.add('visible');
-                } else {
-                    btn.classList.remove('visible');
-                }
-                ticking = false;
+function attachInnerScrollListener() {
+    // Only attach the window listener ONCE to prevent memory leaks
+    if (!isGlobalScrollAttached) {
+        window.addEventListener('scroll', handleGlobalScroll, true);
+        isGlobalScrollAttached = true;
+    }
+    
+    // Setup the button click action to scroll EVERYTHING back up
+    const btn = document.getElementById('backToTopBtn');
+    if (btn) {
+        btn.onclick = () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.querySelectorAll('.form-card, .tos-container, .pricing-container, .text-scroller-card, .gallery-grid, .comment-section, .modal-content').forEach(box => {
+                box.scrollTo({ top: 0, behavior: 'smooth' });
             });
-            ticking = true;
-        }
-    };
-
-    window.removeEventListener('scroll', checkScroll, true); 
-    window.addEventListener('scroll', checkScroll, true);
+        };
+    }
     
-    document.querySelectorAll('.form-card, .tos-container, .pricing-container, .text-scroller-card, .gallery-grid, .comment-section').forEach(box => {
-        box.addEventListener('scroll', checkScroll, { passive: true });
-    });
-    
-    checkScroll();
-
-    btn.onclick = () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        document.querySelectorAll('.form-card, .tos-container, .pricing-container, .text-scroller-card, .gallery-grid, .comment-section').forEach(box => {
-            box.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-    };
+    // Trigger check immediately in case we load halfway down the page
+    handleGlobalScroll();
 }
 
 // DESKTOP CURSOR TRAIL
@@ -948,19 +971,28 @@ function loadContactPage() {
     attachLiveFeedListener();
 
     commentsFeed.addEventListener('click', async (e) => {
+        // Security check: Must be logged into Firebase Auth first
+        if (e.target.classList.contains('reply-btn') || e.target.classList.contains('delete-btn')) {
+            if (!auth.currentUser) {
+                alert("Security Check: You must log into the Admin Dashboard (Secret Corner) first before managing comments.");
+                return;
+            }
+        }
+
         if (e.target.classList.contains('reply-btn')) {
             const id = e.target.getAttribute('data-id');
             const formWrap = document.getElementById(`reply-form-${id}`);
             formWrap.style.display = formWrap.style.display === 'none' ? 'block' : 'none';
         }
+
         if (e.target.classList.contains('delete-btn')) {
             const id = e.target.getAttribute('data-id');
-            const rawPasscode = prompt("Enter Admin Passcode to delete this message:");
-            if (rawPasscode !== null) {
-                const cleanPasscode = rawPasscode.trim().toLowerCase();
-                if (cleanPasscode === "bingo" || cleanPasscode === "fanta") {
-                    try { await deleteDoc(doc(db, "comments", id)); } catch (error) { alert("Failed to delete the message."); }
-                } else { alert("Authentication Failed: Invalid Passcode."); }
+            if (confirm("Are you sure you want to permanently delete this comment?")) {
+                try { 
+                    await deleteDoc(doc(db, "comments", id)); 
+                } catch (error) { 
+                    alert("Failed to delete the message. Database blocked the request."); 
+                }
             }
         }
     });
@@ -968,16 +1000,19 @@ function loadContactPage() {
     commentsFeed.addEventListener('submit', async (e) => {
         if (e.target.classList.contains('mini-reply-form')) {
             e.preventDefault();
+            
+            // Double check security session hasn't expired
+            if (!auth.currentUser) {
+                alert("Session expired. Please log in via the Secret Corner again.");
+                return;
+            }
+
             const form = e.target;
             const targetId = form.getAttribute('data-target');
-            const inputs = form.elements;
-            const passcode = inputs[0].value.trim().toLowerCase();
-            const text = inputs[1].value.trim();
-            let adminName = "";
+            const text = form.elements[0].value.trim(); // Textarea is now the only input
             
-            if (passcode === "bingo") adminName = "Admin Husky 🎨";
-            else if (passcode === "fanta") adminName = "Admin Lopside 🧵";
-            else { alert("Authentication Failed: Invalid Passcode."); return; }
+            // Automatically assign the correct name based on who is logged in
+            let adminName = auth.currentUser.email === 'musicisbae6547@gmail.com' ? "Admin Husky 🎨" : "Admin Lopside 🧵";
 
             const parentComment = globalCommentsArray.find(c => c.id === targetId);
             if (parentComment) {
@@ -986,7 +1021,9 @@ function loadContactPage() {
                     await updateDoc(doc(db, "comments", targetId), { replies: newReplies });
                     form.reset();
                     document.getElementById(`reply-form-${targetId}`).style.display = 'none';
-                } catch (error) { alert("Failed to post reply."); }
+                } catch (error) { 
+                    alert("Failed to post reply. Database rejected the request."); 
+                }
             }
         }
     });
@@ -1062,10 +1099,11 @@ function loadContactPage() {
             const replyFormWrap = document.createElement('div');
             replyFormWrap.id = `reply-form-${comment.id}`;
             replyFormWrap.style.cssText = "display: none; margin-left: 20px; margin-top: 10px;";
+            
+            // Cleaned up form layout to remove the password box
             replyFormWrap.innerHTML = `
                 <form class="mini-reply-form" data-target="${comment.id}" style="display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px; border: 1px dashed #9b51e0;">
-                    <p style="font-size: 0.8rem; color: #9b51e0; margin-bottom: 2px;">Admin Identity Verification required</p>
-                    <input type="password" placeholder="Enter Admin Passcode" required style="padding: 8px; border-radius: 6px; border: 1px solid rgba(155, 81, 224, 0.4); background: rgba(0,0,0,0.6); color: white; font-family: inherit; font-size: 0.85rem;">
+                    <p style="font-size: 0.8rem; color: #9b51e0; margin-bottom: 2px;">Posting as Admin</p>
                     <textarea placeholder="Write your reply..." rows="2" required maxlength="500" style="padding: 8px; border-radius: 6px; border: 1px solid rgba(155, 81, 224, 0.4); background: rgba(0,0,0,0.6); color: white; font-family: inherit; resize: none; font-size: 0.85rem;"></textarea>
                     <button type="submit" style="background: rgba(155, 81, 224, 0.2); border: 1px solid #9b51e0; color: white; padding: 8px; border-radius: 6px; cursor: pointer; font-family: inherit;">Post Secure Reply</button>
                 </form>
@@ -1916,9 +1954,20 @@ function loadNotReadyPage(title, message) {
 // =====================================
 // ADMIN DASHBOARD
 // =====================================
-document.getElementById('secretAdminTrigger').addEventListener('dblclick', () => {
-    const pass = prompt("🌌 Secure Admin Access. Enter Passcode:");
-    if (pass === "bingo" || pass === "fanta") loadAdminDashboard();
+document.getElementById('secretAdminTrigger').addEventListener('dblclick', async () => {
+    const email = prompt("🌌 Secure Admin Access. Enter Email:");
+    if (!email) return;
+    
+    const pass = prompt("Enter Password:");
+    if (!pass) return;
+
+    try {
+        await signInWithEmailAndPassword(auth, email.trim(), pass);
+        loadAdminDashboard();
+    } catch (error) {
+        alert("Authentication Failed: Invalid email or password.");
+        console.error(error);
+    }
 });
 
 function loadAdminDashboard() {
@@ -1931,6 +1980,7 @@ function loadAdminDashboard() {
                 <button class="nav-btn" id="filterAll">All Orders</button>
                 <button class="nav-btn" id="filterNew">Pending Review</button>
                 <button class="nav-btn" id="filterInProgress">In Progress</button>
+                <button id="homeAdminBtn" class="nav-btn" style="border-color: #00f2fe;">Back to Home (Stay Logged In)</button>
                 <button id="exitAdminBtn" class="nav-btn" style="border-color: #ef4444;">Lock & Exit</button>
             </div>
             <div id="ordersGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; width: 100%;">
@@ -1939,7 +1989,17 @@ function loadAdminDashboard() {
         </div>
     `;
 
-    document.getElementById('exitAdminBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage));
+    document.getElementById('homeAdminBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage));
+
+    document.getElementById('exitAdminBtn').addEventListener('click', async (e) => {
+        try {
+            await signOut(auth);
+        } catch (error) {
+            console.error("Error signing out", error);
+        }
+        cinematicTransition(e, loadHomePage);
+    });
+
     document.getElementById('filterAll').addEventListener('click', () => filterOrders('All'));
     document.getElementById('filterNew').addEventListener('click', () => filterOrders('Pending Review'));
     document.getElementById('filterInProgress').addEventListener('click', () => filterOrders('In Progress'));
@@ -2113,3 +2173,71 @@ musicBtn.addEventListener('click', () => {
 
 // Boot Application
 loadHomePage();
+
+// =====================================
+// FUN UPGRADES: LOADER & EASTER EGG
+// =====================================
+
+// 1. Bulletproof Tide Pool Loader Logic
+function removeLoader() {
+    setTimeout(() => {
+        const loader = document.getElementById('tidepoolLoader');
+        if(loader) {
+            loader.classList.add('fade-out');
+            setTimeout(() => loader.remove(), 800);
+        }
+    }, 600);
+}
+
+if (document.readyState === 'complete') {
+    removeLoader();
+} else {
+    window.addEventListener('load', removeLoader);
+}
+
+// =====================================
+// FUN UPGRADES: EASTER EGG
+// =====================================
+let isEvolving = false;
+const jumpingFish = document.querySelector('.jumping-fish');
+const splashes = document.querySelectorAll('.water-splash');
+
+if (jumpingFish) {
+    jumpingFish.style.pointerEvents = 'auto';
+    const originalSrc = jumpingFish.src; 
+    
+    jumpingFish.addEventListener('click', () => {
+        if (isEvolving) return; 
+        isEvolving = true;
+        
+        // Freeze both the fish AND the splash animations perfectly in time
+        jumpingFish.style.animationPlayState = 'paused';
+        splashes.forEach(s => s.style.animationPlayState = 'paused');
+        
+        // White-out CSS Flash
+        jumpingFish.style.filter = "brightness(5) drop-shadow(0 0 50px #ffffff)";
+        
+        setTimeout(() => {
+            jumpingFish.src = "https://img.pokemondb.net/sprites/black-white/anim/shiny/gyarados.gif";
+            jumpingFish.style.height = "150px"; 
+            jumpingFish.style.filter = "brightness(1) drop-shadow(0 0 25px #ef4444)";
+            triggerConfetti();
+        }, 800);
+
+        setTimeout(() => {
+            // Unpause the fish and the splashes at the same time
+            jumpingFish.style.animationPlayState = 'running';
+            splashes.forEach(s => s.style.animationPlayState = 'running');
+        }, 2800); 
+    });
+
+    // The Ironclad Reset: only triggers when he safely finishes his jump loop underwater
+    jumpingFish.addEventListener('animationiteration', () => {
+        if (isEvolving) {
+            jumpingFish.src = originalSrc;
+            jumpingFish.style.height = "60px";
+            jumpingFish.style.filter = "drop-shadow(0 0 8px rgba(0, 242, 254, 0.6))";
+            isEvolving = false;
+        }
+    });
+}

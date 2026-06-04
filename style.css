@@ -14,6 +14,14 @@ body {
     background-color: #02050c;
     color: #ffffff;
     overflow-x: hidden;
+    
+    /* Optimized Custom Horizon Cursor */
+    cursor: url('Images/cursor.png'), auto !important; 
+}
+
+/* Make sure clickable things have a "pointing" version */
+a, button, .nav-btn, .preorder-btn, .interactive, .dynamic-moon-phase, input[type="checkbox"], select, .jumping-fish, .close-btn, .tos-jump-btn, .filter-btn {
+    cursor: url('Images/pointer.png'), pointer !important; 
 }
 
 /* SCOPE HOMEPAGE ELEMENTS STRICTLY TO HOMEPAGE */
@@ -343,9 +351,10 @@ body:not([data-page="home"]) #dynamicMoonContainer {
 /* --- PIXEL FISH & SPLASH ANIMATION --- */
 .fish-scene {
     position: absolute;
-    bottom: 50px; 
-    right: 35%;
-    z-index: 4;
+    bottom: 120px; 
+    right: 15%; 
+    z-index: 99999; 
+    pointer-events: none; 
 }
 
 .jumping-fish {
@@ -353,8 +362,21 @@ body:not([data-page="home"]) #dynamicMoonContainer {
     height: 60px;
     image-rendering: pixelated;
     opacity: 0;
-    animation: jumpArc 12s infinite cubic-bezier(0.25, 1, 0.5, 1);
+    
+    /* THE HOLY GRAIL FIX: CSS Motion Path */
+    /* This draws a mathematically perfect, invisible SVG arc */
+    offset-path: path('M 0,0 Q -150,-400 -300,10');
+    
+    /* Auto-rotates his nose along the exact curve of the path! */
+    /* The 180deg ensures the left-facing sprite doesn't flip upside down */
+    offset-rotate: auto 180deg; 
+    
+    /* Linear is required so he glides smoothly along the path */
+    animation: fishJumpPath 12s infinite linear;
+    
+    transition: height 0.8s cubic-bezier(0.25, 1, 0.5, 1), filter 0.8s ease-in-out;
     filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.6));
+    pointer-events: auto; 
 }
 
 .water-splash {
@@ -369,30 +391,29 @@ body:not([data-page="home"]) #dynamicMoonContainer {
     transform: scale(0);
 }
 
-.splash-in { left: -10px; animation: splashEffectIn 12s infinite; }
-.splash-out { left: 90px; animation: splashEffectOut 12s infinite; }
+/* Synced splash coordinates */
+.splash-in { left: -10px; animation: splashEffectIn 12s infinite linear; }
+.splash-out { left: -310px; animation: splashEffectOut 12s infinite linear; }
 
-@keyframes jumpArc {
-    0%, 80% { transform: translate(0, 50px) scaleX(-1) rotate(0deg); opacity: 0; }
-    81% { transform: translate(0, 50px) scaleX(-1) rotate(0deg); opacity: 1; }
-    85% { transform: translate(60px, -140px) scaleX(-1) rotate(45deg); opacity: 1; }
-    89% { transform: translate(120px, 50px) scaleX(-1) rotate(120deg); opacity: 1; }
-    90%, 100% { transform: translate(120px, 50px) scaleX(-1) rotate(120deg); opacity: 0; }
+/* The animation now just tells him how far along the track to travel */
+@keyframes fishJumpPath {
+    0%, 69.9% { offset-distance: 0%; opacity: 0; }
+    70% { offset-distance: 0%; opacity: 1; }
+    89% { offset-distance: 100%; opacity: 1; }
+    90%, 100% { offset-distance: 100%; opacity: 0; }
 }
 
 @keyframes splashEffectIn {
-    0%, 80% { transform: scale(0); opacity: 0; }
-    81% { transform: scale(1); opacity: 0.8; }
-    84%, 100% { transform: scale(2); opacity: 0; }
+    0%, 69.9% { transform: scale(0); opacity: 0; }
+    70% { transform: scale(0.5); opacity: 0.8; }
+    73%, 100% { transform: scale(2); opacity: 0; }
 }
 
 @keyframes splashEffectOut {
-    0%, 88% { transform: scale(0); opacity: 0; }
-    89% { transform: scale(1); opacity: 0.8; }
+    0%, 88.9% { transform: scale(0); opacity: 0; }
+    89% { transform: scale(0.5); opacity: 0.8; }
     92%, 100% { transform: scale(2); opacity: 0; }
 }
-
-body:not([data-page="home"]) .fish-scene { display: none; }
 
 /* --- USER INTERFACE OVERLAYS --- */
 .content-layer {
@@ -428,7 +449,6 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     font-family: 'Fredoka', sans-serif;
     font-size: 1.1rem;
     border-radius: 50px;
-    cursor: pointer;
     transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -472,7 +492,6 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     font-size: 1.5rem;
     padding: 20px 45px;
     border-radius: 50px;
-    cursor: pointer;
     transition: all 0.3s ease;
     margin-top: 15px;
     width: 100%;
@@ -494,7 +513,6 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     font-size: 1rem;
     padding: 12px 25px;
     border-radius: 30px;
-    cursor: pointer;
     transition: all 0.2s ease;
     margin-top: 15px;
     width: 100%;
@@ -546,7 +564,6 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     color: #a2b7cc;
     font-size: 2.5rem;
     font-weight: bold;
-    cursor: pointer;
     transition: color 0.2s;
     z-index: 10;
 }
@@ -620,8 +637,8 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
 .form-select option { background: #0a0514; color: white; }
 
 .checkbox-group { display: flex; align-items: flex-start; gap: 10px; margin-top: 10px; margin-bottom: 25px; text-align: left; }
-.checkbox-group input { margin-top: 5px; cursor: pointer; }
-.checkbox-group label { font-size: 0.9rem; color: #a2b7cc; cursor: pointer; }
+.checkbox-group input { margin-top: 5px; }
+.checkbox-group label { font-size: 0.9rem; color: #a2b7cc; }
 
 /* Preorder Menu Themes */
 [data-theme="preorder"] .bg-environment {
@@ -689,7 +706,6 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     font-size: 1.15rem;
     font-weight: 500;
     border-radius: 50px;
-    cursor: pointer;
     transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
     box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2);
     width: 100%;
@@ -1110,7 +1126,7 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
 .filter-btn {
     background: rgba(0, 0, 0, 0.4);
     border: 1px solid rgba(0, 242, 254, 0.4);
-    color: white; padding: 10px 24px; border-radius: 20px; cursor: pointer;
+    color: white; padding: 10px 24px; border-radius: 20px;
     font-family: inherit; transition: 0.3s ease; font-size: 1.05rem;
 }
 .filter-btn.active, .filter-btn:hover {
@@ -1384,7 +1400,6 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     color: #fff;
     padding: 10px 16px;
     border-radius: 20px;
-    cursor: pointer;
     font-family: 'Fredoka', sans-serif;
     backdrop-filter: blur(5px);
     box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
@@ -1429,7 +1444,6 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     width: 65px;
     height: 65px;
     border-radius: 50%;
-    cursor: pointer;
     /* Smooth Real-Life Transition */
     opacity: 0; 
     transition: all 2s ease-in-out;
@@ -1498,7 +1512,6 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     padding: 6px 12px;
     border-radius: 12px;
     font-size: 0.9rem;
-    cursor: pointer;
     text-decoration: none;
     transition: all 0.2s;
 }
@@ -1533,7 +1546,7 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
 }
 .before-order-checklist h4 { color: #f472b6; margin-bottom: 15px; font-size: 1.15rem; }
 .checklist-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; color: #e2e8f0; font-size: 0.95rem; }
-.checklist-item input { cursor: pointer; width: 18px; height: 18px; accent-color: #ec4899; }
+.checklist-item input { width: 18px; height: 18px; accent-color: #ec4899; }
 .form-error-msg {
     display: none;
     background: rgba(239, 68, 68, 0.1);
@@ -1670,6 +1683,7 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
 .success-headline { color: #4ade80; text-shadow: 0 0 15px rgba(74, 222, 128, 0.5); font-size: 2.2rem; margin: 0; }
 .success-subtext { color: #e2e8f0; font-size: 1.05rem; line-height: 1.6; max-width: 500px; margin: 0 auto; word-wrap: break-word; }
 .order-number-card { background: rgba(0, 242, 254, 0.1); border: 1px solid #00f2fe; padding: 15px 30px; border-radius: 16px; display: inline-block; box-shadow: inset 0 0 15px rgba(0, 242, 254, 0.2); margin-top: 5px; width: 100%; max-width: 350px; }
+
 /* ==========================================
    --- ADMIN DASHBOARD STYLES RECOVERY ---
    ========================================== */
@@ -1701,3 +1715,54 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
 .admin-detail { color: #e2e8f0; font-size: 0.95rem; }
 .admin-detail strong { color: #f472b6; }
 .admin-actions { grid-column: span 2; display: flex; gap: 10px; margin-top: 10px; }
+/* ==========================================
+   --- TIDE POOL LOADER ---
+   ========================================== */
+#tidepoolLoader {
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100vh;
+    background: #02050c; 
+    z-index: 99999999; /* Stays above absolutely everything */
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+}
+
+#tidepoolLoader.fade-out {
+    opacity: 0; 
+    visibility: hidden;
+}
+
+.loader-wave {
+    width: 80px; 
+    height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ec4899, #00f2fe);
+    animation: tidePulse 1.5s infinite alternate ease-in-out;
+    box-shadow: 0 0 30px rgba(0, 242, 254, 0.5);
+    margin-bottom: 25px;
+}
+
+@keyframes tidePulse {
+    0% { transform: scale(0.8); opacity: 0.7; }
+    100% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 50px rgba(236, 72, 153, 0.8); }
+}
+
+.loader-text {
+    color: #ffffff; 
+    font-family: 'Starborn', sans-serif; 
+    font-size: 1.5rem; 
+    letter-spacing: 2px;
+    text-shadow: 0 0 15px rgba(0, 242, 254, 0.8);
+    animation: textFloat 2s infinite alternate ease-in-out;
+}
+
+@keyframes textFloat { 
+    0% { transform: translateY(0); } 
+    100% { transform: translateY(-8px); } 
+}
