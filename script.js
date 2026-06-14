@@ -36,6 +36,7 @@ const TOS_CONTENT_HTML = `
         <a href="#tos-refunds" class="tos-jump-btn">Refunds</a>
         <a href="#tos-shipping" class="tos-jump-btn">Shipping</a>
         <a href="#tos-art" class="tos-jump-btn">Art Policy</a>
+        <a href="#tos-animation" class="tos-jump-btn">Animation Policy</a>
     </div>
     <p>By commissioning, purchasing, or placing an order with Horizon Tide Gallery, the client agrees to the following Terms of Service. Please read carefully before purchasing or commissioning any product or service.</p>
     
@@ -87,6 +88,35 @@ const TOS_CONTENT_HTML = `
     
     <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">ARTISTIC RIGHTS & USAGE</h2>
     <p>We retain artistic rights to all creations. Clients may use purchased products for personal use and upload photos with credit. Clients MAY NOT claim the work as their own, trace/replicate, mass-produce, or use our work for AI training datasets.</p>
+
+    <h2 id="tos-animation" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">ANIMATION POLICY</h2>
+    <p><strong>Process:</strong><br>
+    1. Concept / Planning<br>
+    2. Sketch / Storyboard<br>
+    3. Rough Animation<br>
+    4. Clean Animation<br>
+    5. Color / Effects<br>
+    6. Final Render<br>
+    Major changes must happen at the storyboard stage. After animation begins, only minor edits are allowed.</p>
+
+    <p><strong>Revisions:</strong><br>
+    Minor edits are allowed. Major changes after approval cost extra. Full reanimation counts as a new charge.</p>
+
+    <p><strong>What I Animate:</strong><br>
+    Furry / Anthro / Feral, Original characters / Fanart, Meme animations, Loops and expressive scenes, Mild to moderate NSFW.</p>
+
+    <p><strong>Will Not Animate:</strong><br>
+    Heavy/extreme NSFW (including bodily fluids or extreme kinks), Illegal or harmful content, Anything I am uncomfortable with.</p>
+
+    <p><strong>NSFW Rules:</strong><br>
+    Must be 18+. No extreme fetishes. No minors, zero tolerance.</p>
+
+    <p><strong>Delivery & Usage:</strong><br>
+    Delivered as MP4 by default (other formats upon request). Project files are not included. I retain ownership and may post the animation. The client may use it for personal use and post with credit, but may not claim it as theirs or resell without permission.</p>
+
+    <p><strong>Cancellation & Behavior:</strong><br>
+    Cancellation before starting is allowed (standard refund rules apply). After starting, there is no refund. Respect is required; rude behavior may result in cancellation without a refund. By commissioning me, the client agrees to all terms and understands the time required for animation.</p>
+
     <p style="text-align: center; margin-top: 30px; color: #f472b6; font-weight: bold;">✨ Thank you for supporting Horizon Tide Gallery. Every order directly supports independent artists, handmade craftsmanship, and small-business creativity.</p>
 `;
 
@@ -109,7 +139,7 @@ window.handleImageError = function(img) {
 
 // --- DYNAMIC MOON ALGORITHM & CONTINUOUS QUOTES ---
 const moonPhases = [
-    { name: "New Moon", quote: "A quiet beginning is still a beginning.", shadow: "-65px 0 0 0 #02050c", bg: "transparent" },
+    { name: "New Moon", quote: "A quiet beginning is still a beginning.", shadow: "inset -10px 0 20px rgba(255,255,255,0.05)", bg: "rgba(255,255,255,0.02)" },
     { name: "Waxing Crescent", quote: "Little by little, light finds its way back.", shadow: "-16px 12px 0 0 #f1c40f", bg: "transparent" },
     { name: "First Quarter", quote: "Keep going — growth is already happening.", shadow: "-32px 0 0 0 #f1c40f", bg: "transparent" },
     { name: "Waxing Gibbous", quote: "You are closer than you think.", shadow: "-10px 0 0 0 #f1c40f", bg: "transparent" },
@@ -234,7 +264,6 @@ function renderTOSConstellations() {
     }
 }
 
-// --- MISSING TOS MODAL FUNCTION ---
 function showTOSModal() {
     const modal = document.getElementById('tosModalOverlay');
     const contentBox = document.getElementById('tosModalTextWrap');
@@ -243,7 +272,6 @@ function showTOSModal() {
     if (modal && contentBox) {
         contentBox.innerHTML = TOS_CONTENT_HTML;
         
-        // Remove jump menu to avoid scroll breaking in modal
         const jumpMenu = contentBox.querySelector('.tos-jump-menu');
         if(jumpMenu) jumpMenu.remove();
 
@@ -256,7 +284,6 @@ function showTOSModal() {
     }
 }
 
-// --- ROBUST GLOBAL SCROLL LISTENER FIX ---
 let isGlobalScrollAttached = false;
 
 function handleGlobalScroll(e) {
@@ -265,12 +292,10 @@ function handleGlobalScroll(e) {
     
     let scrolled = window.scrollY || document.documentElement.scrollTop;
     
-    // Check if the target was an internal scroll box
     if (e && e.target && e.target.scrollTop) {
         scrolled = Math.max(scrolled, e.target.scrollTop);
     }
     
-    // Check specific known scrollable containers
     const formCard = document.querySelector('.form-card, .tos-container, .pricing-container, .text-scroller-card, .gallery-grid, .comment-section, .modal-content');
     if (formCard) {
         scrolled = Math.max(scrolled, formCard.scrollTop);
@@ -284,13 +309,11 @@ function handleGlobalScroll(e) {
 }
 
 function attachInnerScrollListener() {
-    // Only attach the window listener ONCE to prevent memory leaks
     if (!isGlobalScrollAttached) {
         window.addEventListener('scroll', handleGlobalScroll, true);
         isGlobalScrollAttached = true;
     }
     
-    // Setup the button click action to scroll EVERYTHING back up
     const btn = document.getElementById('backToTopBtn');
     if (btn) {
         btn.onclick = () => {
@@ -301,11 +324,9 @@ function attachInnerScrollListener() {
         };
     }
     
-    // Trigger check immediately in case we load halfway down the page
     handleGlobalScroll();
 }
 
-// DESKTOP CURSOR TRAIL
 document.addEventListener('mousemove', (e) => {
     if (window.innerWidth <= 768) return; 
     if (Math.random() > 0.6) return; 
@@ -318,7 +339,6 @@ document.addEventListener('mousemove', (e) => {
     setTimeout(() => sparkle.remove(), 600);
 });
 
-// CHECKLIST & ESTIMATOR HELPERS
 function getChecklistHTML(excludeRefImage = false) {
     const refHtml = excludeRefImage ? '' : `<div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I have clear reference images ready</label></div>`;
     
@@ -343,7 +363,7 @@ function getPriceEstimatorHTML() {
         <div class="price-estimator">
             <p>💡 Estimated Starting Range</p>
             <h2 id="liveEstimate" style="text-align: center; color: #ffffff;">$0.00</h2>
-            <span>*Final quote may vary after review. Adding details may increase cost.</span>
+            <span>*Estimates are not final. Prices may go up or down after contact and review. Adding details may increase cost.</span>
         </div>
     `;
 }
@@ -395,8 +415,11 @@ function attachDynamicEstimator(formId, baseType) {
             const doubleSel = form.querySelector('[name="doubleSided"]');
             
             let base = 12; 
-            if (formId === 'premadeKeychainForm') base = 8;
-            else if (typeSel) base = parseInt(typeSel.options[typeSel.selectedIndex].dataset.price || 12);
+            if (formId === 'premadeKeychainForm') {
+                base = 8;
+            } else if (typeSel) {
+                base = parseInt(typeSel.options[typeSel.selectedIndex].dataset.price || 12);
+            }
             
             let mult = 1;
             if (compSel) mult = parseFloat(compSel.options[compSel.selectedIndex].dataset.mult || 1);
@@ -404,8 +427,13 @@ function attachDynamicEstimator(formId, baseType) {
 
             let qty = parseInt(qtyInput ? qtyInput.value : 1) || 1;
             
-            min = Math.floor(base * mult * qty);
-            max = Math.floor((base + 5) * mult * qty); 
+            if (formId === 'premadeKeychainForm') {
+                min = Math.floor(8 * qty);
+                max = Math.floor(15 * qty);
+            } else {
+                min = Math.floor(base * mult * qty);
+                max = Math.floor((base + 5) * mult * qty); 
+            }
             isPlus = true;
         }
 
@@ -491,7 +519,6 @@ function hideErrorMsg(form) {
     if (errDiv) errDiv.style.display = 'none';
 }
 
-// BUBBLE GENERATION SYSTEM (MOBILE THROTTLED)
 function createBubbles() {
     const container = document.getElementById('bubbleContainer');
     if (!container) return;
@@ -518,7 +545,6 @@ function clearBubbles() {
     if (container) container.innerHTML = "";
 }
 
-// SYSTEM A: DECORATIVE BACKGROUND STARS (MOBILE THROTTLED)
 function renderHomeStars() {
     if (!homeStarField) return;
     homeStarField.innerHTML = "";
@@ -545,7 +571,6 @@ function renderHomeStars() {
     }
 }
 
-// SYSTEM B: CLICKABLE MAGIC STARS (PC ONLY)
 function spawnSingleInteractiveStar(container) {
     if (bodyElement.getAttribute('data-page') !== 'home') return; 
     
@@ -599,7 +624,7 @@ function renderInteractiveStars() {
     interactiveStarField.innerHTML = "";
     
     if (bodyElement.getAttribute('data-page') !== 'home') return; 
-    if (window.innerWidth <= 768) return; // MOBILE KILL SWITCH
+    if (window.innerWidth <= 768) return; 
     
     const countTarget = 12; 
     
@@ -710,7 +735,6 @@ function bindCoreMenuControls() {
     document.getElementById('tosBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadTOSPage));
     document.getElementById('socialsBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadSocialsPage));
     
-    // Bind the Homepage specific UI Buttons
     document.getElementById('btnGalleryHome')?.addEventListener('click', (e) => cinematicTransition(e, loadGalleryPage));
     document.getElementById('btnDiscordHome')?.addEventListener('click', (e) => cinematicTransition(e, loadDiscordPage));
     document.getElementById('btnPreorderMassive')?.addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
@@ -809,14 +833,16 @@ function loadPreorderPage() {
                 </div>
                 <div class="menu-section">
                     <h3>Order Forms</h3>
-                    <button class="preorder-btn" id="btnCustomStickers">Custom Stickers</button>
-                    <button class="preorder-btn" id="btnPremadeKeychains" style="border-color: #00f2fe;">Premade Keychains</button>
-                    <button class="preorder-btn" id="btnCustomKeychains">Custom Keychains</button>
-                    <button class="preorder-btn" id="btnFursuits" style="border-color: #22c55e;">Lopside's Fursuit Creations</button>
+                    <div class="button-grid-2col">
+                        <button class="preorder-btn" id="btnArt" style="border-color: #ec4899;">Husky's Art Commissions</button>
+                        <button class="preorder-btn" id="btnCustomStickers" style="border-color: #ec4899;">Custom Stickers</button>
+                        <button class="preorder-btn" id="btnPremadeKeychains" style="border-color: #00f2fe;">Premade Keychains</button>
+                        <button class="preorder-btn" id="btnCustomKeychains" style="border-color: #00f2fe;">Custom Keychains</button>
+                        <button class="preorder-btn" id="btnFursuits" style="border-color: #22c55e; grid-column: 1 / -1;">Lopside's Fursuit Creations</button>
+                    </div>
                 </div>
                 <div class="menu-section">
                     <h3>Coming Soon / Closed</h3>
-                    <button class="preorder-btn disabled" id="btnArt" style="border-color: #ec4899;">Husky's Art Commissions</button>
                     <button class="preorder-btn disabled" id="btnCustomPlushies">Custom Plushies</button>
                     <button class="preorder-btn disabled" id="btnAnimations">Animations</button>
                 </div>
@@ -971,7 +997,6 @@ function loadContactPage() {
     attachLiveFeedListener();
 
     commentsFeed.addEventListener('click', async (e) => {
-        // Security check: Must be logged into Firebase Auth first
         if (e.target.classList.contains('reply-btn') || e.target.classList.contains('delete-btn')) {
             if (!auth.currentUser) {
                 alert("Security Check: You must log into the Admin Dashboard (Secret Corner) first before managing comments.");
@@ -1001,7 +1026,6 @@ function loadContactPage() {
         if (e.target.classList.contains('mini-reply-form')) {
             e.preventDefault();
             
-            // Double check security session hasn't expired
             if (!auth.currentUser) {
                 alert("Session expired. Please log in via the Secret Corner again.");
                 return;
@@ -1009,9 +1033,8 @@ function loadContactPage() {
 
             const form = e.target;
             const targetId = form.getAttribute('data-target');
-            const text = form.elements[0].value.trim(); // Textarea is now the only input
+            const text = form.elements[0].value.trim(); 
             
-            // Automatically assign the correct name based on who is logged in
             let adminName = auth.currentUser.email === 'musicisbae6547@gmail.com' ? "Admin Husky 🎨" : "Admin Lopside 🧵";
 
             const parentComment = globalCommentsArray.find(c => c.id === targetId);
@@ -1100,7 +1123,6 @@ function loadContactPage() {
             replyFormWrap.id = `reply-form-${comment.id}`;
             replyFormWrap.style.cssText = "display: none; margin-left: 20px; margin-top: 10px;";
             
-            // Cleaned up form layout to remove the password box
             replyFormWrap.innerHTML = `
                 <form class="mini-reply-form" data-target="${comment.id}" style="display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px; border: 1px dashed #9b51e0;">
                     <p style="font-size: 0.8rem; color: #9b51e0; margin-bottom: 2px;">Posting as Admin</p>
@@ -1194,21 +1216,83 @@ function loadPricingPage() {
                     <div class="price-item"><span>Rush Order</span> <span>+$60</span></div>
                 </div>
             </div>
+            
+            <div class="pricing-section" style="border-left-color: #f59e0b;">
+                <h2 style="color: #f59e0b; border-left-color: #f59e0b;">Husky's Animation Commissions</h2>
+                <p>Turnaround: 2 weeks to 6+ months (Depends on complexity, queue, and school schedule. Faster completion may be possible but not guaranteed).</p>
+                <h3>Loop Animations</h3>
+                <div class="price-grid">
+                    <div class="price-item"><span>1–5 seconds</span> <span>$20–$60</span></div>
+                </div>
+                <ul style="margin-top: 5px;">
+                    <li>Simple looping motion like breathing, blinking, slight movement</li>
+                    <li>Minimal or no background</li>
+                </ul>
+                <h3>Simple Animations</h3>
+                <div class="price-grid">
+                    <div class="price-item"><span>3–8 seconds</span> <span>$60–$140</span></div>
+                </div>
+                <ul style="margin-top: 5px;">
+                    <li>Basic character motion like head turns or arm movement</li>
+                    <li>Light secondary motion like ears, tails, or hair</li>
+                </ul>
+                <h3>Full Character Animation</h3>
+                <div class="price-grid">
+                    <div class="price-item"><span>5–12 seconds</span> <span>$140–$300</span></div>
+                </div>
+                <ul style="margin-top: 5px;">
+                    <li>Full body movement with strong expressions and acting</li>
+                    <li>Includes secondary motion like hair, clothing, ribbons</li>
+                </ul>
+                <h3>Complex / Custom Animation</h3>
+                <div class="price-grid">
+                    <div class="price-item"><span>Longer/Detailed Scenes</span> <span>$300+ quoted</span></div>
+                </div>
+                <ul style="margin-top: 5px;">
+                    <li>Multiple actions or higher polish</li>
+                </ul>
+                <h3>Animation Add-ons</h3>
+                <div class="price-grid">
+                    <div class="price-item"><span>Extra character</span> <span>+$40–$120</span></div>
+                    <div class="price-item"><span>Simple background</span> <span>+$20–$60</span></div>
+                    <div class="price-item"><span>Detailed background</span> <span>+$60–$120</span></div>
+                    <div class="price-item"><span>Complex motion/effects</span> <span>+$20–$80</span></div>
+                    <div class="price-item"><span>Lip sync/dialogue</span> <span>+$30+</span></div>
+                    <div class="price-item"><span>Commercial use</span> <span>+50%–100% of total</span></div>
+                </div>
+            </div>
+
+            <div class="pricing-section" style="border-left-color: #ec4899;">
+                <h2 style="color: #ec4899; border-left-color: #ec4899;">Custom Stickers</h2>
+                <p>Custom stickers of your OC, fursona, pet, or logo. Pricing below covers the base design.</p>
+                <div class="price-grid">
+                    <div class="price-item"><span>Single Sticker</span> <span>$5</span></div>
+                    <div class="price-item"><span>Matching Couple</span> <span>$10</span></div>
+                    <div class="price-item"><span>Sticker Sheet</span> <span>$25</span></div>
+                    <div class="price-item"><span>Small Batch</span> <span>$35</span></div>
+                </div>
+                <p style="color: #eab308; font-size: 0.95rem; margin-top: 10px;">*Note: Moderate complexity (+20%) and Complex designs (+50%) will increase the base cost.</p>
+            </div>
+
             <div class="pricing-section" style="border-left-color: #a855f7;">
                 <h2 style="color: #a855f7; border-left-color: #a855f7;">Lopside's Fursuit Creations</h2>
-                <p>These are starting prices. Prices vary by complexity.</p>
+                <p>Prices are starting prices and vary by complexity.</p>
                 <div class="price-grid">
-                    <div class="price-item"><span>Tails</span> <span>$80</span></div>
-                    <div class="price-item"><span>Paws</span> <span>$150</span></div>
-                    <div class="price-item"><span>Paws and Tail Set</span> <span>$220</span></div>
-                    <div class="price-item"><span>Head</span> <span>$1,000</span></div>
-                    <div class="price-item"><span>Partial</span> <span>$1,200</span></div>
+                    <div class="price-item"><span>Tails</span> <span>$100</span></div>
+                    <div class="price-item"><span>Paws</span> <span>$170</span></div>
+                    <div class="price-item"><span>Paws and Tail Set</span> <span>$260</span></div>
+                    <div class="price-item"><span>Feet Paws</span> <span>$270</span></div>
+                    <div class="price-item"><span>Trio Set (Feet, Paws, Tail)</span> <span>$530</span></div>
+                    <div class="price-item"><span>Heads (Artistic Liberty Only)</span> <span>$1,100</span></div>
+                    <div class="price-item"><span>Mini Partial</span> <span>$1,350</span></div>
+                    <div class="price-item"><span>Full Partial</span> <span>$1,620</span></div>
                 </div>
                 <p style="color: #eab308; font-size: 0.95rem; margin-top: 10px;">*Important note: Heads are artistic liberty only.</p>
             </div>
+            
             <div class="pricing-section" style="border-left-color: #00f2fe; margin-bottom: 0;">
                 <h2 style="color: #00f2fe; border-left-color: #00f2fe;">Keychain Pricing</h2>
-                <p>Shipping from the manufacturer is $5.99. Prices below include design work, ordering costs, and handling.</p>
+                <p>Shipping from the manufacturer is $5.99. Prices below are <strong>estimates only</strong> and include design work, ordering costs, and handling. Final prices may go up or down after contact.</p>
                 <h3>Premade Keychains (2.5 inches)</h3>
                 <div class="price-grid">
                     <div class="price-item"><span>Starting Price Estimate</span> <span>$8–$15 each</span></div>
@@ -1432,9 +1516,6 @@ const submitLoaderHTML = (text) => `
     </div>
 `;
 
-// =====================================
-// FORM SUBMISSION LOGIC (FIREBASE UPLOADS)
-// =====================================
 async function submitPreorder(event, orderType) {
     event.preventDefault();
     const form = event.target;
@@ -1451,7 +1532,6 @@ async function submitPreorder(event, orderType) {
     const addons = formData.getAll('addon');
     const orderData = Object.fromEntries(formData.entries());
 
-    // ANTI-SPAM LIMIT
     if (orderData.quantity && parseInt(orderData.quantity) > 10) {
         showErrorMsg(form, "Whoa there! We limit orders to 10 items max to prevent spam and ensure we can fulfill everyone's requests.");
         return;
@@ -1466,11 +1546,9 @@ async function submitPreorder(event, orderType) {
 
     if (addons.length > 0) orderData.selectedAddons = addons.join(", ");
     
-    // FIREBASE STORAGE IMAGE UPLOAD LOGIC
     const fileInput = form.querySelector('#refFilesInput');
     let uploadedImageUrls = [];
     if (fileInput && fileInput.files.length > 0) {
-        // STRICT SAFETY CHECKS
         if (fileInput.files.length > 3) { 
             showErrorMsg(form, "You can only upload a maximum of 3 reference images."); 
             submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false; 
@@ -1485,7 +1563,6 @@ async function submitPreorder(event, orderType) {
                 return; 
             }
             
-            // FIREBASE FILENAME SANITIZATION
             const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
             try {
                 const storageRef = ref(storage, `references/${Date.now()}_${safeName}`);
@@ -1516,7 +1593,6 @@ async function submitPreorder(event, orderType) {
         emailjs.send("service_jn29dsl", "template_0p1cxof", templateParams).catch(e => console.error(e));
         triggerConfetti();
 
-        // Smooth fade out of the card
         const formContainer = form.closest('.form-card') || form.closest('.preorder-card') || form;
         formContainer.classList.add('form-fade-wrapper', 'form-fade-out');
         
@@ -1541,7 +1617,6 @@ async function submitPreorder(event, orderType) {
                 </div>
             `;
             
-            // Re-bind the back button dynamically inside the new HTML
             document.getElementById('successBackBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
             
             formContainer.classList.remove('form-fade-out');
@@ -1729,8 +1804,8 @@ function loadCustomStickersForm() {
                     <label>Sticker Type <span>*</span></label>
                     <select name="stickerType" class="form-select" required>
                         <option value="Single Sticker" data-price="5">Single sticker ($5)</option>
-                        <option value="Sticker Sheet" data-price="25">Sticker sheet ($25)</option>
                         <option value="Matching Couple" data-price="10">Matching couple stickers ($10)</option>
+                        <option value="Sticker Sheet" data-price="25">Sticker sheet ($25)</option>
                         <option value="Small Batch" data-price="35">Small batch ($35)</option>
                     </select>
                 </div>
@@ -1798,7 +1873,7 @@ function loadHuskyArtForm() {
     appViewport.innerHTML = `
         <div class="form-card">
             <h1>Husky's Art Commissions</h1>
-            <p class="form-desc" style="color: #ef4444; font-weight: bold;">Status: Closed for now.</p>
+            <p class="form-desc" style="color: #22c55e; font-weight: bold;">Status: Open</p>
             <p class="form-desc">Commission Husky for digital artwork, character art, Pokémon-inspired art, icons, scenes, and illustrations.</p>
 
             <form id="artForm">
@@ -1860,7 +1935,7 @@ function loadHuskyArtForm() {
                 ${getPriceEstimatorHTML()}
                 ${getChecklistHTML(false)}
 
-                <button type="submit" class="preorder-btn" style="border-color: #ec4899;" disabled>Submissions Closed</button>
+                <button type="submit" class="preorder-btn" style="border-color: #ec4899;">Submit Preorder</button>
             </form>
         </div>
         <button id="backToMenuBtn" class="nav-btn">← Back to Menu</button>
@@ -1896,12 +1971,14 @@ function loadFursuitForm() {
                 <div class="form-group">
                     <label>What are you interested in? <span>*</span></label>
                     <select name="partType" id="suitTypeSelect" class="form-select" required>
-                        <option value="Tail" data-price="80">Tail (Start $80)</option>
-                        <option value="Paws" data-price="150">Paws (Start $150)</option>
-                        <option value="Paws & Tail" data-price="220">Paws and Tail Set (Start $220)</option>
-                        <option value="Ears" data-price="80">Ears (Start $80)</option>
-                        <option value="Head" data-price="1000">Head (Start $1000)</option>
-                        <option value="Partial" data-price="1200">Partial (Start $1200)</option>
+                        <option value="Tail" data-price="100">Tail (Start $100)</option>
+                        <option value="Paws" data-price="170">Paws (Start $170)</option>
+                        <option value="Paws & Tail" data-price="260">Paws and Tail Set (Start $260)</option>
+                        <option value="Feet Paws" data-price="270">Feet Paws (Start $270)</option>
+                        <option value="Trio Set" data-price="530">Trio Set (Start $530)</option>
+                        <option value="Head" data-price="1100">Head (Start $1100)</option>
+                        <option value="Mini Partial" data-price="1350">Mini Partial (Start $1350)</option>
+                        <option value="Full Partial" data-price="1620">Full Partial (Start $1620)</option>
                         <option value="Accessories" data-price="50">Accessories</option>
                         <option value="Other" data-price="0">Other (Describe in notes)</option>
                     </select>
@@ -2012,7 +2089,10 @@ function loadAdminDashboard() {
         snapshot.forEach(docSnap => { window.allOrders.push({ id: docSnap.id, ...docSnap.data() }); });
         renderAdminOrders(window.allOrders);
     }, (error) => {
-        document.getElementById('ordersGrid').innerHTML = `<p style="color: #ef4444; text-align: center; width: 100%;">Access Denied: Firebase Security Rules are blocking read access on the website. Please view orders in your Firebase Console.</p>`;
+        const ordersGrid = document.getElementById('ordersGrid');
+        if (ordersGrid) {
+            ordersGrid.innerHTML = `<p style="color: #ef4444; text-align: center; width: 100%;">Access Denied: Please log in or check Firebase Security Rules.</p>`;
+        }
     });
 }
 
@@ -2175,27 +2255,6 @@ musicBtn.addEventListener('click', () => {
 loadHomePage();
 
 // =====================================
-// FUN UPGRADES: LOADER & EASTER EGG
-// =====================================
-
-// 1. Bulletproof Tide Pool Loader Logic
-function removeLoader() {
-    setTimeout(() => {
-        const loader = document.getElementById('tidepoolLoader');
-        if(loader) {
-            loader.classList.add('fade-out');
-            setTimeout(() => loader.remove(), 800);
-        }
-    }, 600);
-}
-
-if (document.readyState === 'complete') {
-    removeLoader();
-} else {
-    window.addEventListener('load', removeLoader);
-}
-
-// =====================================
 // FUN UPGRADES: EASTER EGG
 // =====================================
 let isEvolving = false;
@@ -2210,11 +2269,9 @@ if (jumpingFish) {
         if (isEvolving) return; 
         isEvolving = true;
         
-        // Freeze both the fish AND the splash animations perfectly in time
         jumpingFish.style.animationPlayState = 'paused';
         splashes.forEach(s => s.style.animationPlayState = 'paused');
         
-        // White-out CSS Flash
         jumpingFish.style.filter = "brightness(5) drop-shadow(0 0 50px #ffffff)";
         
         setTimeout(() => {
@@ -2225,13 +2282,11 @@ if (jumpingFish) {
         }, 800);
 
         setTimeout(() => {
-            // Unpause the fish and the splashes at the same time
             jumpingFish.style.animationPlayState = 'running';
             splashes.forEach(s => s.style.animationPlayState = 'running');
         }, 2800); 
     });
 
-    // The Ironclad Reset: only triggers when he safely finishes his jump loop underwater
     jumpingFish.addEventListener('animationiteration', () => {
         if (isEvolving) {
             jumpingFish.src = originalSrc;

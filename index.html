@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Horizon</title>
     
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⭐</text></svg>">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
@@ -33,13 +35,10 @@
 
         <div class="sky-container" id="skyLayer">
             <div class="galaxy-nebula"></div>
-            
             <div id="dynamicMoonContainer"></div>
-            
             <div class="cosmic-shooting-star comet-one"></div>
             <div class="cosmic-shooting-star comet-two"></div>
             <div class="cosmic-shooting-star comet-three"></div>
-            
             <div class="star-cluster-field" id="homeStarField"></div>
             <div class="cosmic-dashboard-stars" id="dashboardStarField"></div>
         </div>
@@ -83,5 +82,17 @@
     <div id="footerCredit" style="position: fixed; bottom: 15px; left: 20px; font-family: 'Starborn', 'Fredoka', sans-serif; color: rgba(255,255,255,0.5); font-size: 0.95rem; z-index: 99999; pointer-events: none; text-shadow: 0 0 8px rgba(0, 242, 254, 0.4); letter-spacing: 1px;">coded by Husky</div>
 
     <script type="module" src="script.js"></script>
+
+    <script>
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                var loader = document.getElementById('tidepoolLoader');
+                if(loader) {
+                    loader.classList.add('fade-out');
+                    setTimeout(function() { loader.remove(); }, 800);
+                }
+            }, 600); 
+        });
+    </script>
 </body>
 </html>
