@@ -31,9 +31,11 @@ const homeStarField = document.getElementById('homeStarField');
 const interactiveStarField = document.getElementById('interactiveStarField');
 const dashboardStarField = document.getElementById('dashboardStarField');
 
-window.globalDiscount = { enabled: false, percentage: 10, target: 'all', message: '' };
+// Discount System State
+window.activeSales = [];
 let globalDiscountListener = null;
 
+// Comments & Admin State
 let globalCommentsArray = [];
 let commentDisplayLimit = 15; 
 let unsubscribeListener = null;
@@ -44,6 +46,7 @@ window.adminAnnounceUnsub = null;
 window.announcementsUnsubscribe = null;
 window.currentEditingAnnounceId = null;
 
+// UI State
 let isGlobalScrollAttached = false;
 let globalQuoteIndex = 0;
 let globalQuoteInterval = null;
@@ -147,10 +150,73 @@ function escapeHTML(str) {
     return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
 }
 
+function normalizeTextForFilter(text) {
+    if (typeof text !== 'string') return '';
+    let normalized = text.toLowerCase();
+    
+    // Map common leetspeak/symbol bypasses back to base characters
+    const leetMap = { 
+        '@': 'a', '4': 'a', 
+        '$': 's', '5': 's', 
+        '!': 'i', '1': 'i', 
+        '0': 'o', 
+        '3': 'e', 
+        '7': 't', 
+        '8': 'b',
+        '+': 't',
+        '|': 'l'
+    };
+    
+    normalized = normalized.replace(/[0-9!@$*+|]/g, m => leetMap[m] || m);
+    return normalized;
+}
+
 function containsProfanity(text) {
     if (typeof text !== 'string') return false;
-    const profanityRegex = /\b(f[u\*\@]ck|sh[i\!1]t|b[i\!1]tch|a\$\$|ass|d[i\!1]ck|c[u\*]nt|p[u\*]ssy|c[o0\*]ck|p[o0]rn|s[e3]x|nudes|nsfw|wh[o0]re|sl[u\*]t|c[u\*]m|rape|t[i\!1]ts|b[o0][o0]bs)\b/i;
-    return profanityRegex.test(text);
+    const rawTextLower = text.toLowerCase();
+    
+    // 1. Exact match on raw words (handles normal typing seamlessly)
+    const explicitBadWords = [
+        'fuck', 'shit', 'bitch', 'asshole', 'dick', 'cunt', 'pussy', 
+        'cock', 'porn', 'whore', 'slut', 'nigger', 'nigga', 'niga', 'niggah', 
+        'faggot', 'tranny', 'retard', 'retarded', 'rape', 'incest', 'nudes', 
+        'kys', 'chink', 'spic', 'dyke', 'twat'
+    ];
+    
+    const rawWords = rawTextLower.split(/[\s,.-]+/);
+    if (rawWords.some(w => explicitBadWords.includes(w))) return true;
+    if (rawTextLower.includes('kill yourself')) return true;
+
+    // 2. Leet mapped & collapsed word check (catches symbol bypasses like $h!t, fuuuuck)
+    const mappedText = normalizeTextForFilter(text);
+    const mappedWords = mappedText.replace(/[^a-z\s]/g, '').split(/\s+/);
+    const collapsedWords = mappedWords.map(w => w.replace(/(.)\1+/g, '$1'));
+
+    const collapsedBadWords = [
+        'fuck', 'shit', 'bitch', 'ashole', 'dick', 'cunt', 'pusy',
+        'cock', 'porn', 'whore', 'slut', 'nudes', 'rape', 'dyke', 'twat', 'kys'
+    ];
+
+    if (collapsedWords.some(w => collapsedBadWords.includes(w))) return true;
+
+    // 3. Fully collapsed check (removes all spaces) to catch spaced-out bypasses
+    const fullyCollapsed = mappedText.replace(/[^a-z]/g, '');
+
+    // Roots that rarely form accidentally across normal word boundaries
+    const safeCollapsedRoots = [
+        'fuck', 'bitch', 'whore', 'slut', 'porn', 'nudes', 
+        'nigger', 'nigga', 'niggah', 'faggot', 'tranny', 'retard', 'retarded', 'incest'
+    ];
+
+    for (const root of safeCollapsedRoots) {
+        if (fullyCollapsed.includes(root)) {
+            // Prevent false positive if the word naturally occurs inside another safe word
+            if (root === 'nigga' && fullyCollapsed.includes('snigga')) continue;
+            return true;
+        }
+    }
+    
+    return false;
 }
 
 function getTemplateHTML(id) {
@@ -228,22 +294,59 @@ window.handleImageError = function(img) {
 function attachGlobalSettingsListener() {
     if (globalDiscountListener) globalDiscountListener();
     globalDiscountListener = onSnapshot(doc(db, "settings", "discount"), (docSnap) => {
+        window.activeSales = [];
+        
         if (docSnap.exists()) {
-            window.globalDiscount = docSnap.data();
-        } else {
-            window.globalDiscount = { enabled: false, percentage: 10, target: 'all', message: '' };
+            const data = docSnap.data();
+            
+            // Support for new activeSales array format
+            if (data.activeSales && Array.isArray(data.activeSales)) {
+                window.activeSales = data.activeSales;
+            }
+            
+            // Backward compatibility for legacy single-discount format
+            if (data.enabled === true && data.percentage) {
+                const hasLegacy = window.activeSales.some(s => s.id === 'legacy_sale');
+                if (!hasLegacy) {
+                    window.activeSales.push({
+                        id: 'legacy_sale',
+                        target: data.target || 'all',
+                        percentage: data.percentage,
+                        message: data.message || "Sale Event"
+                    });
+                }
+            }
         }
         updateDiscountUI();
     });
 }
 attachGlobalSettingsListener();
 
+function getBestDiscount(type) {
+    if (!window.activeSales || window.activeSales.length === 0) return 0;
+    
+    let bestPct = 0;
+    window.activeSales.forEach(sale => {
+        if (sale.target === 'all' || sale.target === type) {
+            if (sale.percentage > bestPct) bestPct = sale.percentage;
+        }
+    });
+    return bestPct;
+}
+
 function updateDiscountUI() {
     const banner = document.getElementById('globalSaleBanner');
+    
     if(banner) {
-        if (window.globalDiscount && window.globalDiscount.enabled) {
-            let msg = window.globalDiscount.message && window.globalDiscount.message.trim() !== '' ? escapeHTML(window.globalDiscount.message) : "Sale Event";
-            banner.innerHTML = `🌙✨ <span id="bannerSaleMessage">${msg}</span> — Save <span id="bannerDiscountAmt">${window.globalDiscount.percentage}</span>%! ✨🌙`;
+        if (window.activeSales && window.activeSales.length > 0) {
+            // Display the highest value discount globally
+            let displaySale = window.activeSales[0];
+            window.activeSales.forEach(sale => {
+                if (sale.percentage > displaySale.percentage) displaySale = sale;
+            });
+            
+            let msg = displaySale.message && displaySale.message.trim() !== '' ? escapeHTML(displaySale.message) : "Sale Event";
+            banner.innerHTML = `🌙✨ <span id="bannerSaleMessage">${msg}</span> — Save <span id="bannerDiscountAmt">${displaySale.percentage}</span>%! ✨🌙`;
             banner.style.display = 'block';
             document.body.style.paddingTop = '40px'; 
         } else {
@@ -261,15 +364,9 @@ function updateDiscountUI() {
     });
 }
 
-function isDiscountApplicable(type) {
-    if (!window.globalDiscount || !window.globalDiscount.enabled) return false;
-    if (window.globalDiscount.target === 'all') return true;
-    return window.globalDiscount.target === type;
-}
-
 function renderPrice(base, type, isPlus = false) {
-    if (isDiscountApplicable(type)) {
-        const pct = window.globalDiscount.percentage;
+    const pct = getBestDiscount(type);
+    if (pct > 0) {
         const newPrice = Math.round(base * (1 - pct / 100));
         return `<span style="text-decoration: line-through; color: #a2b7cc; font-size: 0.9em; margin-right: 8px;">$${base}${isPlus ? '+' : ''}</span><span style="color: #22c55e; font-weight: bold;">$${newPrice}${isPlus ? '+' : ''} <span class="announcement-badge" style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; vertical-align: middle; margin-left: 5px; border-color: #ef4444;">${pct}% OFF</span></span>`;
     }
@@ -277,8 +374,8 @@ function renderPrice(base, type, isPlus = false) {
 }
 
 function renderPriceRange(min, max, type, isPlus = false) {
-    if (isDiscountApplicable(type)) {
-        const pct = window.globalDiscount.percentage;
+    const pct = getBestDiscount(type);
+    if (pct > 0) {
         const newMin = Math.round(min * (1 - pct / 100));
         const newMax = Math.round(max * (1 - pct / 100));
         return `<span style="text-decoration: line-through; color: #a2b7cc; font-size: 0.9em; margin-right: 8px;">$${min}–$${max}${isPlus ? '+' : ''}</span><span style="color: #22c55e; font-weight: bold;">$${newMin}–$${newMax}${isPlus ? '+' : ''} <span class="announcement-badge" style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; vertical-align: middle; margin-left: 5px; border-color: #ef4444;">${pct}% OFF</span></span>`;
@@ -561,6 +658,58 @@ function showTOSModal() {
     }
 }
 
+// === LIGHTBOX LOGIC ===
+function openLightbox(imgSrc, altText) {
+    const overlay = document.getElementById('galleryLightboxOverlay');
+    const imgElement = document.getElementById('galleryLightboxImage');
+    const closeBtn = document.getElementById('galleryLightboxClose');
+    
+    if (!overlay || !imgElement) return;
+
+    imgElement.src = imgSrc;
+    imgElement.alt = altText || 'Gallery Image';
+    
+    overlay.style.display = 'flex';
+    // Trigger reflow before adding active class for CSS transition
+    void overlay.offsetWidth;
+    overlay.classList.add('active');
+    
+    const closeHandler = () => closeLightbox();
+    
+    const overlayClickHandler = (e) => {
+        if (e.target === overlay) closeLightbox();
+    };
+
+    const escKeyHandler = (e) => {
+        if (e.key === 'Escape') closeLightbox();
+    };
+
+    closeBtn.addEventListener('click', closeHandler, { once: true });
+    overlay.addEventListener('click', overlayClickHandler);
+    document.addEventListener('keydown', escKeyHandler);
+
+    window._lightboxCleanup = () => {
+        overlay.removeEventListener('click', overlayClickHandler);
+        document.removeEventListener('keydown', escKeyHandler);
+    };
+}
+
+function closeLightbox() {
+    const overlay = document.getElementById('galleryLightboxOverlay');
+    if (!overlay) return;
+    
+    overlay.classList.remove('active');
+    setTimeout(() => {
+        overlay.style.display = 'none';
+        document.getElementById('galleryLightboxImage').src = '';
+    }, 300);
+
+    if (window._lightboxCleanup) {
+        window._lightboxCleanup();
+        window._lightboxCleanup = null;
+    }
+}
+
 function handleGlobalScroll(e) {
     const btn = document.getElementById('backToTopBtn');
     if (!btn) return;
@@ -617,7 +766,7 @@ document.addEventListener('mousemove', (e) => {
 // PART 2 of 4: PAGE LOADERS & PRICING
 // ==========================================
 
-function cinematicTransition(event, targetPageFunction) {
+function cinematicTransition(event, targetPageFunction, hashTarget = '') {
     let btn = null;
     const isMobile = window.innerWidth <= 768;
     
@@ -657,12 +806,23 @@ function cinematicTransition(event, targetPageFunction) {
     }
 
     const transitionCircle = document.getElementById('pageTransitionCircle');
-    setTimeout(() => {
-        if(transitionCircle) transitionCircle.classList.add('active');
-    }, 50);
+    if (transitionCircle) {
+        transitionCircle.classList.remove('active');
+        void transitionCircle.offsetWidth;
+        transitionCircle.classList.add('active');
+    }
+
+    const pageLoadDelay = 1100;
+    const transitionEndDelay = 2200;
 
     setTimeout(() => {
         if (btn) btn.classList.remove('btn-squish');
+        
+        // Use hash routing compatible with hashchange
+        if (hashTarget && window.location.hash !== hashTarget) {
+            suppressNextHashRoute = true;
+            window.location.hash = hashTarget.replace('#', '');
+        }
         
         if (targetPageFunction !== loadHomePage) {
             if(interactiveStarField) interactiveStarField.innerHTML = "";
@@ -670,11 +830,11 @@ function cinematicTransition(event, targetPageFunction) {
         }
         
         targetPageFunction();
-    }, 1300); 
+    }, pageLoadDelay); 
 
     setTimeout(() => {
         if(transitionCircle) transitionCircle.classList.remove('active');
-    }, 2300); 
+    }, transitionEndDelay); 
 }
 
 function triggerConfetti() {
@@ -691,17 +851,17 @@ function triggerConfetti() {
 }
 
 function bindCoreMenuControls() {
-    document.getElementById('whatWeDoBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadWhatWeDoPage));
-    document.getElementById('contactBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadContactPage));
-    document.getElementById('tosBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadTOSPage));
-    document.getElementById('socialsBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadSocialsPage));
+    document.getElementById('whatWeDoBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadWhatWeDoPage, '#whatwedo'));
+    document.getElementById('contactBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadContactPage, '#contact'));
+    document.getElementById('tosBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadTOSPage, '#tos'));
+    document.getElementById('socialsBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadSocialsPage, '#socials'));
     
-    document.getElementById('btnGalleryHome')?.addEventListener('click', (e) => cinematicTransition(e, loadGalleryPage));
-    document.getElementById('btnDiscordHome')?.addEventListener('click', (e) => cinematicTransition(e, loadDiscordPage));
-    document.getElementById('btnPreorderMassive')?.addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
+    document.getElementById('btnGalleryHome')?.addEventListener('click', (e) => cinematicTransition(e, loadGalleryPage, '#gallery'));
+    document.getElementById('btnDiscordHome')?.addEventListener('click', (e) => cinematicTransition(e, loadDiscordPage, '#discord'));
+    document.getElementById('btnPreorderMassive')?.addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
     
     const cosmicBtn = document.getElementById('btnCosmicUpdates');
-    if (cosmicBtn) cosmicBtn.addEventListener('click', (e) => cinematicTransition(e, loadAnnouncementsPage));
+    if (cosmicBtn) cosmicBtn.addEventListener('click', (e) => cinematicTransition(e, loadAnnouncementsPage, '#updates'));
 }
 
 function attachDynamicEstimator(formId, baseType) {
@@ -779,8 +939,9 @@ function attachDynamicEstimator(formId, baseType) {
         if (baseType === 'keychain') targetType = 'keychains';
         if (baseType === 'sticker') targetType = 'stickers';
 
-        if (window.globalDiscount && window.globalDiscount.enabled && (window.globalDiscount.target === 'all' || window.globalDiscount.target === targetType)) {
-            const pct = window.globalDiscount.percentage;
+        const pct = getBestDiscount(targetType);
+
+        if (pct > 0) {
             const origMin = min;
             const origMax = max;
             min = Math.round(min * (1 - pct / 100));
@@ -962,7 +1123,15 @@ function loadGalleryPage() {
         });
     });
 
-    document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage));
+    // Lightbox binding
+    const galleryImages = appViewport.querySelectorAll('.gallery-img, .premade-img');
+    galleryImages.forEach(img => {
+        img.addEventListener('click', () => {
+            openLightbox(img.src, img.alt);
+        });
+    });
+
+    document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
     attachInnerScrollListener();
 }
 
@@ -1001,16 +1170,18 @@ function loadPreorderPage() {
             <button type="button" id="backHomeBtn" class="preorder-btn" style="max-width: 400px; margin: 0 auto; border-color: transparent; background: rgba(255,255,255,0.15);">← Back to Horizon</button>
         </div>
     `;
-    document.getElementById('btnPricing').addEventListener('click', (e) => cinematicTransition(e, loadPricingPage));
-    document.getElementById('btnStatusCheck').addEventListener('click', (e) => cinematicTransition(e, loadStatusCheckPage));
-    document.getElementById('btnCustomStickers').addEventListener('click', (e) => cinematicTransition(e, loadCustomStickersForm));
-    document.getElementById('btnPremadeKeychains').addEventListener('click', (e) => cinematicTransition(e, loadPremadeKeychainsForm));
+    
+    document.getElementById('btnPricing').addEventListener('click', (e) => cinematicTransition(e, loadPricingPage, '#pricing'));
+    document.getElementById('btnStatusCheck').addEventListener('click', (e) => cinematicTransition(e, loadStatusCheckPage, '#status'));
+    document.getElementById('btnCustomStickers').addEventListener('click', (e) => cinematicTransition(e, loadCustomStickersForm, '#stickers'));
+    document.getElementById('btnPremadeKeychains').addEventListener('click', (e) => cinematicTransition(e, loadPremadeKeychainsForm, '#premade'));
     document.getElementById('btnCustomPlushies').addEventListener('click', (e) => cinematicTransition(e, () => loadNotReadyPage('Custom Plushies', 'Custom plushies are not ready yet, but they may open in the future.')));
-    document.getElementById('btnCustomKeychains').addEventListener('click', (e) => cinematicTransition(e, loadCustomKeychainsForm));
+    document.getElementById('btnCustomKeychains').addEventListener('click', (e) => cinematicTransition(e, loadCustomKeychainsForm, '#custom-keychain'));
     document.getElementById('btnAnimations').addEventListener('click', (e) => cinematicTransition(e, () => loadNotReadyPage('Animations', 'Animations are coming soon / closed for now.')));
-    document.getElementById('btnArt').addEventListener('click', (e) => cinematicTransition(e, loadHuskyArtForm));
-    document.getElementById('btnFursuits').addEventListener('click', (e) => cinematicTransition(e, loadFursuitForm));
-    document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage));
+    document.getElementById('btnArt').addEventListener('click', (e) => cinematicTransition(e, loadHuskyArtForm, '#art'));
+    document.getElementById('btnFursuits').addEventListener('click', (e) => cinematicTransition(e, loadFursuitForm, '#fursuits'));
+    document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
+    
     attachInnerScrollListener();
 }
 
@@ -1182,10 +1353,17 @@ function loadPricingPage() {
                     <div class="price-item"><span>Glow in the Dark</span> <span>starting at ${renderPrice(16, 'keychains')}</span></div>
                 </div>
             </div>
-            <button type="button" id="backToMenuBtn" class="nav-btn" style="width: 100%; margin-top: 30px; border-color: #a855f7;">← Back to Menu</button>
+            <div class="pricing-ending">
+                <div class="pricing-ending-divider"></div>
+                <p>Thank you for supporting Horizon Tide Gallery ✨</p>
+            </div>
+            <div class="pricing-back-menu-bottom">
+                <button type="button" id="backToMenuBtn" class="nav-btn pricing-btn-glow">← Back to Menu</button>
+            </div>
         </div>
     `;
-    document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
+    
+    document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
     attachInnerScrollListener();
 }
 // ==========================================
@@ -1193,7 +1371,7 @@ function loadPricingPage() {
 // ==========================================
 
 function loadHuskyArtForm() {
-    clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); renderDynamicMoon(); renderDashboardStars();
+    clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'art-form'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="form-card">
             <h1>Husky's Art Commissions</h1>
@@ -1272,11 +1450,11 @@ function loadHuskyArtForm() {
 
     document.querySelectorAll('.tos-redirect-btn').forEach(btn => btn.addEventListener('click', () => showTOSModal()));
     document.getElementById('artForm').addEventListener('submit', (e) => submitPreorder(e, 'Art Commission'));
-    document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
+    document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
 }
 
 function loadFursuitForm() {
-    clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); renderDynamicMoon(); renderDashboardStars();
+    clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'fursuit-form'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="form-card">
             <h1>Lopside's Fursuit Creations</h1>
@@ -1331,11 +1509,11 @@ function loadFursuitForm() {
 
     document.querySelectorAll('.tos-redirect-btn').forEach(btn => btn.addEventListener('click', () => showTOSModal()));
     document.getElementById('fursuitForm').addEventListener('submit', (e) => submitPreorder(e, 'Fursuit Request'));
-    document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
+    document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
 }
 
 function loadCustomKeychainsForm() {
-    clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); renderDynamicMoon(); renderDashboardStars();
+    clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'custom-keychain-form'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="form-card" id="customKFormWrap">
             <h1>Custom Keychain Preorder</h1>
@@ -1420,11 +1598,11 @@ function loadCustomKeychainsForm() {
     
     document.querySelectorAll('.tos-redirect-btn').forEach(btn => btn.addEventListener('click', () => showTOSModal()));
     document.getElementById('customKeychainForm').addEventListener('submit', (e) => submitPreorder(e, 'Custom Keychain'));
-    document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
+    document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
 }
 
 function loadCustomStickersForm() {
-    clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); renderDynamicMoon(); renderDashboardStars();
+    clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'stickers-form'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="form-card">
             <h1>Custom Sticker Preorder</h1>
@@ -1503,11 +1681,11 @@ function loadCustomStickersForm() {
     
     document.querySelectorAll('.tos-redirect-btn').forEach(btn => btn.addEventListener('click', () => showTOSModal()));
     document.getElementById('stickerForm').addEventListener('submit', (e) => submitPreorder(e, 'Custom Stickers'));
-    document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
+    document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
 }
 
 function loadPremadeKeychainsForm() {
-    clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); renderDynamicMoon(); renderDashboardStars();
+    clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'premade-form'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="preorder-card menu-large" style="margin-bottom: 25px;">
             <h1 style="color: #ffffff; text-shadow: 0 0 15px #00f2fe; font-size: 2.5rem;">Premade Keychains</h1>
@@ -1565,13 +1743,21 @@ function loadPremadeKeychainsForm() {
         <button type="button" id="backToMenuBtn" class="nav-btn">← Back to Menu</button>
     `;
     
+    // Lightbox binding for premade images
+    const premadeImages = appViewport.querySelectorAll('.premade-img');
+    premadeImages.forEach(img => {
+        img.addEventListener('click', () => {
+            openLightbox(img.src, img.alt);
+        });
+    });
+
     attachCharCounters();
     attachInnerScrollListener();
     attachDynamicEstimator('premadeKeychainForm', 'keychain');
 
     document.querySelectorAll('.tos-redirect-btn').forEach(btn => btn.addEventListener('click', () => showTOSModal()));
     document.getElementById('premadeKeychainForm').addEventListener('submit', (e) => submitPreorder(e, 'Premade Keychain'));
-    document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
+    document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
 }
 
 function loadWhatWeDoPage() {
@@ -1597,7 +1783,7 @@ function loadWhatWeDoPage() {
             </div>
         </div>
     `;
-    document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage));
+    document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
     attachInnerScrollListener();
 }
 
@@ -1632,7 +1818,7 @@ function loadSocialsPage() {
         </div>
         <button type="button" id="backHomeBtn" class="nav-btn" style="margin-top: 10px; border-color: #a855f7;">← Back to Horizon</button>
     `;
-    document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage));
+    document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
     attachInnerScrollListener();
 }
 
@@ -1664,7 +1850,7 @@ function loadTOSPage() {
         });
     });
 
-    document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage));
+    document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
     attachInnerScrollListener();
 }
 
@@ -1677,7 +1863,7 @@ function loadAnnouncementsPage() {
 
     appViewport.innerHTML = getTemplateHTML('announcementsPageTemplate');
 
-    document.getElementById('backHomeFromUpdatesBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadHomePage));
+    document.getElementById('backHomeFromUpdatesBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
     
     const listContainer = document.getElementById('announcementsList');
     if(!listContainer) return;
@@ -1725,6 +1911,47 @@ function loadAnnouncementsPage() {
     attachInnerScrollListener();
 }
 
+function checkPreorderSpam() {
+    const now = Date.now();
+    const lastOrder = localStorage.getItem('hz_preorder_cooldown');
+    if (lastOrder && (now - parseInt(lastOrder)) < 300000) { // 5 minutes
+        return "You recently submitted an order. Please wait a few minutes before submitting another to prevent duplicate requests.";
+    }
+    return true;
+}
+
+function checkCommentSpam(newText, isAdmin) {
+    if (isAdmin) return true; // Admins bypass spam checks
+    
+    const now = Date.now();
+    let history = JSON.parse(localStorage.getItem('hz_comment_history') || '[]');
+    
+    // Clean up history older than 30 minutes (1800000 ms)
+    history = history.filter(record => now - record.timestamp < 1800000);
+    
+    // Rule 1: Rapid Fire Block (30 seconds / 30000 ms)
+    if (history.length > 0 && (now - history[history.length - 1].timestamp) < 30000) {
+        return "You are posting too fast. Please wait 30 seconds between comments.";
+    }
+    
+    // Rule 2: Duplicate Block (10 minutes / 600000 ms)
+    const tenMinsAgo = now - 600000;
+    const isDuplicate = history.some(record => record.timestamp > tenMinsAgo && record.text === newText);
+    if (isDuplicate) {
+        return "You recently posted this exact comment. Please wait before posting it again.";
+    }
+    
+    // Rule 3: Max Limit Block (3 comments per 30 minutes)
+    if (history.length >= 3) {
+        return "You have reached the maximum of 3 comments per 30 minutes. Please check back later.";
+    }
+    
+    // Allow and update history
+    history.push({ text: newText, timestamp: now });
+    localStorage.setItem('hz_comment_history', JSON.stringify(history));
+    return true;
+}
+
 function loadContactPage() {
     clearBubbles();
     bodyElement.setAttribute('data-theme', 'horizon');
@@ -1748,7 +1975,7 @@ function loadContactPage() {
             </div>
         </div>
     `;
-    document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage));
+    document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
 
     const commentForm = document.getElementById('commentForm');
     const commentsFeed = document.getElementById('commentsFeed');
@@ -1825,9 +2052,18 @@ function loadContactPage() {
         const textInput = document.getElementById('commentText');
         const submitBtn = commentForm.querySelector('button[type="submit"]');
         
-        if (containsProfanity(nameInput.value) || containsProfanity(textInput.value)) {
-            alert("Hold on! Please keep the comments family-friendly. We do not allow swearing or NSFW content.");
+        const rawName = nameInput.value.trim();
+        const rawText = textInput.value.trim();
+
+        if (containsProfanity(rawName) || containsProfanity(rawText)) {
+            alert("Hold on! Please keep the comments family-friendly. We do not allow swearing, slurs, or NSFW content.");
             return; 
+        }
+
+        const spamCheckResult = checkCommentSpam(rawText, false); // Correction applied
+        if (spamCheckResult !== true) {
+            alert(spamCheckResult);
+            return;
         }
 
         submitBtn.textContent = "Posting... 🛰️";
@@ -1835,8 +2071,8 @@ function loadContactPage() {
 
         try {
             await addDoc(collection(db, "comments"), {
-                name: nameInput.value.trim(),
-                text: textInput.value.trim(),
+                name: rawName,
+                text: rawText,
                 replies: [],
                 timestamp: serverTimestamp()
             });
@@ -1918,6 +2154,7 @@ function loadContactPage() {
 function loadStatusCheckPage() {
     clearBubbles();
     bodyElement.setAttribute('data-theme', 'cosmic-green-pink');
+    bodyElement.setAttribute('data-page', 'status-check');
     renderDynamicMoon();
     renderDashboardStars();
 
@@ -1933,7 +2170,7 @@ function loadStatusCheckPage() {
             <button type="button" id="backToMenuBtn" class="nav-btn" style="margin-top: 30px;">← Back to Menu</button>
         </div>
     `;
-    document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
+    document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
 
     document.getElementById('statusCheckForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -2055,7 +2292,7 @@ Just a place to exist, create, and connect at your own pace.
             <button type="button" id="backHomeBtn" class="nav-btn" style="margin-top: 20px;">← Back to Horizon</button>
         </div>
     `;
-    document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage));
+    document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
     attachInnerScrollListener();
 }
 
@@ -2063,6 +2300,7 @@ function loadNotReadyPage(title, message) {
     clearBubbles();
     if(interactiveStarField) interactiveStarField.innerHTML = "";
     bodyElement.setAttribute('data-theme', 'cosmic-green-pink');
+    bodyElement.setAttribute('data-page', 'not-ready');
     renderDynamicMoon();
     renderDashboardStars();
 
@@ -2074,16 +2312,159 @@ function loadNotReadyPage(title, message) {
             <button type="button" id="backToMenuBtn" class="preorder-btn" style="background: rgba(255,255,255,0.15); border-color: transparent;">← Back to Menu</button>
         </div>
     `;
-    document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
+    document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
 }
 // ==========================================
 // PART 4 of 4: ADMIN DASHBOARD & BOOT SEQUENCE
 // ==========================================
 
+const submitLoaderHTML = (text) => `
+    <div class="sea-submit-loader" aria-live="polite">
+      <div class="loader-bottle-mini">
+        <div class="loader-bottle-cork"></div>
+        <div class="loader-bottle-neck"></div>
+        <div class="loader-bottle-glass"></div>
+      </div>
+      <span class="submit-status-text">${text}</span>
+    </div>
+`;
+
+function generateOrderID() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let id = '';
+    for (let i = 0; i < 6; i++) {
+        id += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return `HTG-2026-${id}`;
+}
+
+// =====================================
+// ORDER SUBMISSION SYSTEM
+// =====================================
+async function submitPreorder(event, orderType) {
+    event.preventDefault();
+    const form = event.target;
+    hideErrorMsg(form);
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML; 
+    
+    const checks = form.querySelectorAll('.req-check');
+    for (let i = 0; i < checks.length; i++) {
+        if (!checks[i].checked) { showErrorMsg(form, "Please complete the 'Before You Order' checklist to proceed."); return; }
+    }
+
+    const spamCheckResult = checkPreorderSpam();
+    if (spamCheckResult !== true) {
+        showErrorMsg(form, spamCheckResult);
+        return;
+    }
+
+    const formData = new FormData(form);
+    const addons = formData.getAll('addon');
+    const orderData = Object.fromEntries(formData.entries());
+
+    if (orderData.quantity && parseInt(orderData.quantity) > 10) {
+        showErrorMsg(form, "Whoa there! We limit orders to 10 items max to prevent spam and ensure we can fulfill everyone's requests.");
+        return;
+    }
+
+    const orderValues = Object.values(orderData).join(" ");
+    if (containsProfanity(orderValues)) { showErrorMsg(form, "Hold on! Please keep your request family-friendly. We do not allow swearing, slurs, or NSFW content in our forms."); return; }
+
+    submitBtn.innerHTML = submitLoaderHTML("Sending order...");
+    submitBtn.classList.add('btn-loading-wave');
+    submitBtn.disabled = true;
+
+    if (addons.length > 0) orderData.selectedAddons = addons.join(", ");
+    
+    const fileInput = form.querySelector('#refFilesInput');
+    let uploadedImageUrls = [];
+    if (fileInput && fileInput.files.length > 0) {
+        if (fileInput.files.length > 3) { 
+            showErrorMsg(form, "You can only upload a maximum of 3 reference images."); 
+            submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false; 
+            return; 
+        }
+        submitBtn.innerHTML = submitLoaderHTML("Uploading references...");
+        for (let i = 0; i < fileInput.files.length; i++) {
+            const file = fileInput.files[i];
+            if (file.size > 5 * 1024 * 1024) { 
+                showErrorMsg(form, `The file ${file.name} exceeds the 5MB limit. Please compress it or use a link instead.`); 
+                submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false; 
+                return; 
+            }
+            
+            const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+            try {
+                const storageRef = ref(storage, `references/${Date.now()}_${safeName}`);
+                await uploadBytes(storageRef, file);
+                const url = await getDownloadURL(storageRef);
+                uploadedImageUrls.push(url);
+            } catch (err) { 
+                showErrorMsg(form, "Failed to upload images. Please try again or use the link option."); 
+                submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false; 
+                return; 
+            }
+        }
+    }
+    
+    delete orderData.refFiles; 
+    if (uploadedImageUrls.length > 0) orderData.referenceImageUrls = uploadedImageUrls;
+
+    const newOrderId = generateOrderID();
+    orderData.orderType = orderType; orderData.status = "Pending Review"; orderData.adminNotes = ""; orderData.orderId = newOrderId;
+    if (orderData.email) orderData.email = orderData.email.toLowerCase();
+    const compiledNotes = orderData.notes || orderData.description || orderData.materials || orderData.pose || "No additional notes provided.";
+
+    try {
+        submitBtn.innerHTML = submitLoaderHTML("Drifting to shore...");
+        await addDoc(collection(db, "preorders"), { ...orderData, createdAt: serverTimestamp() });
+        
+        localStorage.setItem('hz_preorder_cooldown', Date.now().toString());
+
+        const templateParams = { name: orderData.name, email: orderData.email, order_id: newOrderId.replace('HTG-', ''), request_type: orderType, message: compiledNotes };
+        emailjs.send("service_jn29dsl", "template_0p1cxof", templateParams).catch(e => console.error(e));
+        triggerConfetti();
+
+        const formContainer = form.closest('.form-card') || form.closest('.preorder-card') || form;
+        formContainer.classList.add('form-fade-wrapper', 'form-fade-out');
+        
+        setTimeout(() => {
+            formContainer.innerHTML = `
+                <div class="success-screen-wrapper">
+                    <div class="bottle-success-anim">
+                        <div class="bottle-cork-wood"></div>
+                        <div class="bottle-neck-glass"></div>
+                        <div class="bottle-glass"></div>
+                        <div class="success-waves"></div>
+                        <div class="success-sparkles"></div>
+                    </div>
+                    <h2 class="success-headline">Yay! Order Sent!</h2>
+                    <p class="success-subtext">We safely received your request, <strong>${escapeHTML(orderData.name)}</strong>!<br>A confirmation bottle is floating to your email: <br><strong style="color: #00f2fe;">${escapeHTML(orderData.email)}</strong></p>
+                    <div class="order-number-card">
+                        <p style="color: #00f2fe; font-size: 0.95rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; font-weight: 500;">Your Tracking Number</p>
+                        <h3 style="color: #ffffff; font-size: 2.2rem; letter-spacing: 2px; margin: 0; text-shadow: 0 0 10px rgba(0, 242, 254, 0.4);">${newOrderId}</h3>
+                    </div>
+                    <p style="color: #a2b7cc; font-size: 0.95rem; margin-top: 5px; margin-bottom: 15px;">Please save this number for checking your order status.</p>
+                    <button type="button" class="nav-btn" style="width: 100%; max-width: 300px;" id="successBackBtn">← Back to Menu</button>
+                </div>
+            `;
+            
+            document.getElementById('successBackBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
+            
+            formContainer.classList.remove('form-fade-out');
+        }, 400);
+
+    } catch (error) {
+        showErrorMsg(form, "Oh no! Something went wrong sending your order to the database. Please check your connection and try again.");
+        submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false;
+    }
+}
+
 // =====================================
 // ADMIN DASHBOARD
 // =====================================
-document.getElementById('secretAdminTrigger').addEventListener('dblclick', async () => {
+document.getElementById('secretAdminTrigger')?.addEventListener('dblclick', async () => {
     const email = prompt("🌌 Secure Admin Access. Enter Email:");
     if (!email) return;
     
@@ -2092,15 +2473,79 @@ document.getElementById('secretAdminTrigger').addEventListener('dblclick', async
 
     try {
         await signInWithEmailAndPassword(auth, email.trim(), pass);
-        loadAdminDashboard();
+        cinematicTransition(null, loadAdminDashboard, '#admin');
     } catch (error) {
         alert("Authentication Failed: Invalid email or password.");
         console.error(error);
     }
 });
 
+function updateAdminPreview() {
+    const dPercent = document.getElementById('adminDiscountPercent');
+    if(!dPercent) return;
+    const pct = parseInt(dPercent.value) || 0;
+    const base = 100;
+    
+    if(pct > 0) {
+        const discounted = base * (1 - pct/100);
+        document.getElementById('previewOriginalPrice').innerText = `$${base.toFixed(2)}`;
+        document.getElementById('previewOriginalPrice').style.textDecoration = 'line-through';
+        document.getElementById('previewDiscountedPrice').innerText = `$${discounted.toFixed(2)}`;
+        document.getElementById('previewAmountSaved').innerText = `You saved $${(base - discounted).toFixed(2)}`;
+    } else {
+        document.getElementById('previewOriginalPrice').innerText = `$${base.toFixed(2)}`;
+        document.getElementById('previewOriginalPrice').style.textDecoration = 'none';
+        document.getElementById('previewDiscountedPrice').innerText = `$${base.toFixed(2)}`;
+        document.getElementById('previewAmountSaved').innerText = `No discount applied`;
+    }
+}
+
+function renderActiveDiscountsList() {
+    const listEl = document.getElementById('adminActiveDiscountsList');
+    if(!listEl) return;
+    listEl.innerHTML = '';
+    
+    if(!window.activeSales || window.activeSales.length === 0) {
+        listEl.innerHTML = '<p style="color:#a2b7cc; font-size:0.9rem;">No active discounts.</p>';
+        return;
+    }
+
+    window.activeSales.forEach(sale => {
+        const div = document.createElement('div');
+        div.className = 'admin-discount-item';
+        div.innerHTML = `
+            <div class="discount-item-info">
+                <span class="discount-item-title">${sale.percentage}% OFF - ${sale.target.toUpperCase()}</span>
+                <span class="discount-item-meta">Msg: ${escapeHTML(sale.message || 'None')}</span>
+            </div>
+            <button type="button" class="admin-btn-delete btn-delete-discount" data-id="${sale.id}">Delete</button>
+        `;
+        listEl.appendChild(div);
+    });
+
+    document.querySelectorAll('.btn-delete-discount').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const id = e.target.getAttribute('data-id');
+            if(confirm("Remove this discount?")) {
+                const newSales = window.activeSales.filter(s => s.id !== id);
+                try {
+                    const isLegacy = id === 'legacy_sale';
+                    let updatePayload = { activeSales: newSales };
+                    if (isLegacy) {
+                        updatePayload.enabled = false;
+                    }
+                    await setDoc(doc(db, "settings", "discount"), updatePayload, { merge: true });
+                    showAdminToast("Discount removed.");
+                } catch(err) {
+                    showAdminToast("Failed to remove discount.", true);
+                }
+            }
+        });
+    });
+}
+
 function loadAdminDashboard() {
-    clearBubbles(); if(interactiveStarField) interactiveStarField.innerHTML = ""; bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); renderDynamicMoon(); renderDashboardStars();
+    clearBubbles(); if(interactiveStarField) interactiveStarField.innerHTML = ""; bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'admin'); renderDynamicMoon(); renderDashboardStars();
     homeStarField.innerHTML = ""; dashboardStarField.innerHTML = "";
     
     appViewport.innerHTML = `
@@ -2124,87 +2569,48 @@ function loadAdminDashboard() {
         </div>
     `;
 
-    // --- DISCOUNT MANAGER LOGIC ---
-    const dToggle = document.getElementById('adminDiscountToggle');
+    // --- DISCOUNT MANAGER BINDINGS ---
     const dPercent = document.getElementById('adminDiscountPercent');
-    const dMessage = document.getElementById('adminDiscountMessage');
-    const dTarget = document.getElementById('adminDiscountTarget');
-    
-    if(window.globalDiscount) {
-        if(dToggle) dToggle.value = window.globalDiscount.enabled ? 'true' : 'false';
-        if(dPercent) dPercent.value = window.globalDiscount.percentage || 10;
-        if(dMessage) dMessage.value = window.globalDiscount.message || '';
-        if(dTarget) dTarget.value = window.globalDiscount.target || 'all';
-    }
-
-    function updateAdminPreview() {
-        const pct = parseInt(dPercent.value) || 0;
-        const enabled = dToggle.value === 'true';
-        const base = 100;
-        
-        if(enabled && pct > 0) {
-            const discounted = base * (1 - pct/100);
-            document.getElementById('previewOriginalPrice').innerText = `$${base.toFixed(2)}`;
-            document.getElementById('previewOriginalPrice').style.textDecoration = 'line-through';
-            document.getElementById('previewDiscountedPrice').innerText = `$${discounted.toFixed(2)}`;
-            document.getElementById('previewAmountSaved').innerText = `You saved $${(base - discounted).toFixed(2)}`;
-        } else {
-            document.getElementById('previewOriginalPrice').innerText = `$${base.toFixed(2)}`;
-            document.getElementById('previewOriginalPrice').style.textDecoration = 'none';
-            document.getElementById('previewDiscountedPrice').innerText = `$${base.toFixed(2)}`;
-            document.getElementById('previewAmountSaved').innerText = `No discount applied`;
-        }
-    }
-
-    if(dToggle) dToggle.addEventListener('change', updateAdminPreview);
     if(dPercent) dPercent.addEventListener('input', updateAdminPreview);
     updateAdminPreview();
+    
+    renderActiveDiscountsList();
 
     document.getElementById('btnSaveDiscount')?.addEventListener('click', async (e) => {
         const btn = e.target;
-        let pct = parseInt(dPercent.value) || 10;
-        if (pct < 10) pct = 10;
-        if (pct > 50) pct = 50; 
+        const dTarget = document.getElementById('adminDiscountTarget');
+        const dMessage = document.getElementById('adminDiscountMessage');
+
+        let pct = parseInt(dPercent.value) || 0;
+        if (pct < 1 || pct > 100) { alert("Enter a valid percentage."); return; }
         
-        btn.innerText = "Saving...";
-        try {
-            await setDoc(doc(db, "settings", "discount"), {
-                enabled: dToggle.value === 'true',
-                percentage: pct,
-                message: dMessage.value.trim(),
-                target: dTarget.value
-            });
-            showAdminToast("Discount settings saved successfully! ✨");
-        } catch (error) {
-            console.error(error);
-            showAdminToast("Failed to save discount settings.", true);
-        } finally {
-            btn.innerText = "Save Settings";
-        }
-    });
+        const newSale = {
+            id: 'sale_' + Date.now(),
+            percentage: pct,
+            target: dTarget.value,
+            message: dMessage.value.trim()
+        };
 
-    document.getElementById('btnDisableDiscount')?.addEventListener('click', async (e) => {
-        const btn = e.target;
-        btn.innerText = "Disabling...";
+        btn.innerText = "Adding...";
+        btn.disabled = true;
         try {
-            dToggle.value = 'false';
-            await setDoc(doc(db, "settings", "discount"), {
-                enabled: false,
-                percentage: parseInt(dPercent.value) || 10,
-                message: dMessage.value.trim(),
-                target: dTarget.value
-            });
+            const updatedSales = [...window.activeSales, newSale];
+            await setDoc(doc(db, "settings", "discount"), { activeSales: updatedSales }, { merge: true });
+            showAdminToast("Discount added! ✨");
+            if(dPercent) dPercent.value = '';
+            if(dMessage) dMessage.value = '';
             updateAdminPreview();
-            showAdminToast("Discounts have been disabled globally. ✨");
+            renderActiveDiscountsList();
         } catch (error) {
             console.error(error);
-            showAdminToast("Failed to disable discounts.", true);
+            showAdminToast("Failed to add discount.", true);
         } finally {
-            btn.innerText = "Disable Discount";
+            btn.innerText = "Add Discount";
+            btn.disabled = false;
         }
     });
 
-    // --- ANNOUNCEMENTS LOGIC ---
+    // --- ANNOUNCEMENTS BINDINGS ---
     window.currentEditingAnnounceId = null;
 
     document.getElementById('adminAnnouncementForm')?.addEventListener('submit', async (e) => {
@@ -2260,7 +2666,6 @@ function loadAdminDashboard() {
             const div = document.createElement('div');
             div.className = "admin-announce-item";
             
-            // Encode the payload safely for edit retrieval
             const rawData = encodeURIComponent(JSON.stringify({
                 title: data.title || '',
                 date: data.date || '',
@@ -2325,7 +2730,7 @@ function loadAdminDashboard() {
     });
 
     // --- STANDARD ADMIN CONTROLS ---
-    document.getElementById('homeAdminBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage));
+    document.getElementById('homeAdminBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
 
     document.getElementById('exitAdminBtn').addEventListener('click', async (e) => {
         try {
@@ -2335,7 +2740,7 @@ function loadAdminDashboard() {
         } catch (error) {
             console.error("Error signing out", error);
         }
-        cinematicTransition(e, loadHomePage);
+        cinematicTransition(e, loadHomePage, '#home');
     });
 
     document.getElementById('filterAll').addEventListener('click', () => filterOrders('All'));
@@ -2462,141 +2867,6 @@ async function deleteOrder(id) {
     }
 }
 
-function generateOrderID() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let id = '';
-    for (let i = 0; i < 6; i++) {
-        id += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return `HTG-2026-${id}`;
-}
-
-const submitLoaderHTML = (text) => `
-    <div class="sea-submit-loader" aria-live="polite">
-      <div class="loader-bottle-mini">
-        <div class="loader-bottle-cork"></div>
-        <div class="loader-bottle-neck"></div>
-        <div class="loader-bottle-glass"></div>
-      </div>
-      <span class="submit-status-text">${text}</span>
-    </div>
-`;
-
-// =====================================
-// ORDER SUBMISSION SYSTEM
-// =====================================
-async function submitPreorder(event, orderType) {
-    event.preventDefault();
-    const form = event.target;
-    hideErrorMsg(form);
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML; 
-    
-    const checks = form.querySelectorAll('.req-check');
-    for (let i = 0; i < checks.length; i++) {
-        if (!checks[i].checked) { showErrorMsg(form, "Please complete the 'Before You Order' checklist to proceed."); return; }
-    }
-
-    const formData = new FormData(form);
-    const addons = formData.getAll('addon');
-    const orderData = Object.fromEntries(formData.entries());
-
-    if (orderData.quantity && parseInt(orderData.quantity) > 10) {
-        showErrorMsg(form, "Whoa there! We limit orders to 10 items max to prevent spam and ensure we can fulfill everyone's requests.");
-        return;
-    }
-
-    const orderValues = Object.values(orderData).join(" ");
-    if (containsProfanity(orderValues)) { showErrorMsg(form, "Hold on! Please keep your request family-friendly. We do not allow swearing or NSFW content in our forms."); return; }
-
-    submitBtn.innerHTML = submitLoaderHTML("Sending order...");
-    submitBtn.classList.add('btn-loading-wave');
-    submitBtn.disabled = true;
-
-    if (addons.length > 0) orderData.selectedAddons = addons.join(", ");
-    
-    const fileInput = form.querySelector('#refFilesInput');
-    let uploadedImageUrls = [];
-    if (fileInput && fileInput.files.length > 0) {
-        if (fileInput.files.length > 3) { 
-            showErrorMsg(form, "You can only upload a maximum of 3 reference images."); 
-            submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false; 
-            return; 
-        }
-        submitBtn.innerHTML = submitLoaderHTML("Uploading references...");
-        for (let i = 0; i < fileInput.files.length; i++) {
-            const file = fileInput.files[i];
-            if (file.size > 5 * 1024 * 1024) { 
-                showErrorMsg(form, `The file ${file.name} exceeds the 5MB limit. Please compress it or use a link instead.`); 
-                submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false; 
-                return; 
-            }
-            
-            const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-            try {
-                const storageRef = ref(storage, `references/${Date.now()}_${safeName}`);
-                await uploadBytes(storageRef, file);
-                const url = await getDownloadURL(storageRef);
-                uploadedImageUrls.push(url);
-            } catch (err) { 
-                showErrorMsg(form, "Failed to upload images. Please try again or use the link option."); 
-                submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false; 
-                return; 
-            }
-        }
-    }
-    
-    delete orderData.refFiles; 
-    if (uploadedImageUrls.length > 0) orderData.referenceImageUrls = uploadedImageUrls;
-
-    const newOrderId = generateOrderID();
-    orderData.orderType = orderType; orderData.status = "Pending Review"; orderData.adminNotes = ""; orderData.orderId = newOrderId;
-    if (orderData.email) orderData.email = orderData.email.toLowerCase();
-    const compiledNotes = orderData.notes || orderData.description || orderData.materials || orderData.pose || "No additional notes provided.";
-
-    try {
-        submitBtn.innerHTML = submitLoaderHTML("Drifting to shore...");
-        await addDoc(collection(db, "preorders"), { ...orderData, createdAt: serverTimestamp() });
-        
-        const templateParams = { name: orderData.name, email: orderData.email, order_id: newOrderId.replace('HTG-', ''), request_type: orderType, message: compiledNotes };
-        emailjs.send("service_jn29dsl", "template_0p1cxof", templateParams).catch(e => console.error(e));
-        triggerConfetti();
-
-        const formContainer = form.closest('.form-card') || form.closest('.preorder-card') || form;
-        formContainer.classList.add('form-fade-wrapper', 'form-fade-out');
-        
-        setTimeout(() => {
-            formContainer.innerHTML = `
-                <div class="success-screen-wrapper">
-                    <div class="bottle-success-anim">
-                        <div class="bottle-cork-wood"></div>
-                        <div class="bottle-neck-glass"></div>
-                        <div class="bottle-glass"></div>
-                        <div class="success-waves"></div>
-                        <div class="success-sparkles"></div>
-                    </div>
-                    <h2 class="success-headline">Yay! Order Sent!</h2>
-                    <p class="success-subtext">We safely received your request, <strong>${escapeHTML(orderData.name)}</strong>!<br>A confirmation bottle is floating to your email: <br><strong style="color: #00f2fe;">${escapeHTML(orderData.email)}</strong></p>
-                    <div class="order-number-card">
-                        <p style="color: #00f2fe; font-size: 0.95rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; font-weight: 500;">Your Tracking Number</p>
-                        <h3 style="color: #ffffff; font-size: 2.2rem; letter-spacing: 2px; margin: 0; text-shadow: 0 0 10px rgba(0, 242, 254, 0.4);">${newOrderId}</h3>
-                    </div>
-                    <p style="color: #a2b7cc; font-size: 0.95rem; margin-top: 5px; margin-bottom: 15px;">Please save this number for checking your order status.</p>
-                    <button type="button" class="nav-btn" style="width: 100%; max-width: 300px;" id="successBackBtn">← Back to Menu</button>
-                </div>
-            `;
-            
-            document.getElementById('successBackBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage));
-            
-            formContainer.classList.remove('form-fade-out');
-        }, 400);
-
-    } catch (error) {
-        showErrorMsg(form, "Oh no! Something went wrong sending your order to the database. Please check your connection and try again.");
-        submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false;
-    }
-}
-
 // =====================================
 // MUSIC & EASTER EGGS
 // =====================================
@@ -2647,16 +2917,14 @@ musicBtn.addEventListener('click', () => {
 });
 
 let isEvolving = false;
-const jumpingFish = document.querySelector('.jumping-fish');
-const splashes = document.querySelectorAll('.water-splash');
-
-if (jumpingFish) {
-    jumpingFish.style.pointerEvents = 'auto';
-    const originalSrc = jumpingFish.src; 
-    
-    jumpingFish.addEventListener('click', () => {
+document.addEventListener('click', (e) => {
+    if (e.target && e.target.classList.contains('jumping-fish')) {
+        const jumpingFish = e.target;
         if (isEvolving) return; 
         isEvolving = true;
+        
+        const originalSrc = jumpingFish.src; 
+        const splashes = document.querySelectorAll('.water-splash');
         
         jumpingFish.style.animationPlayState = 'paused';
         splashes.forEach(s => s.style.animationPlayState = 'paused');
@@ -2674,17 +2942,68 @@ if (jumpingFish) {
             jumpingFish.style.animationPlayState = 'running';
             splashes.forEach(s => s.style.animationPlayState = 'running');
         }, 2800); 
-    });
 
-    jumpingFish.addEventListener('animationiteration', () => {
-        if (isEvolving) {
-            jumpingFish.src = originalSrc;
-            jumpingFish.style.height = "60px";
-            jumpingFish.style.filter = "drop-shadow(0 0 8px rgba(0, 242, 254, 0.6))";
-            isEvolving = false;
+        const revertEvolve = () => {
+            if (isEvolving) {
+                jumpingFish.src = originalSrc;
+                jumpingFish.style.height = "60px";
+                jumpingFish.style.filter = "drop-shadow(0 0 8px rgba(0, 242, 254, 0.6))";
+                isEvolving = false;
+                jumpingFish.removeEventListener('animationiteration', revertEvolve);
+            }
+        };
+        jumpingFish.addEventListener('animationiteration', revertEvolve);
+    }
+});
+
+// =====================================
+// ROUTER & BOOT SYSTEM
+// =====================================
+
+let suppressNextHashRoute = false;
+
+const routes = {
+    '#home': loadHomePage,
+    '#gallery': loadGalleryPage,
+    '#preorder': loadPreorderPage,
+    '#pricing': loadPricingPage,
+    '#updates': loadAnnouncementsPage,
+    '#contact': loadContactPage,
+    '#tos': loadTOSPage,
+    '#socials': loadSocialsPage,
+    '#discord': loadDiscordPage,
+    '#status': loadStatusCheckPage,
+    '#stickers': loadCustomStickersForm,
+    '#premade': loadPremadeKeychainsForm,
+    '#custom-keychain': loadCustomKeychainsForm,
+    '#art': loadHuskyArtForm,
+    '#fursuits': loadFursuitForm,
+    '#admin': loadAdminDashboard
+};
+
+function initRouter() {
+    let initialHash = window.location.hash || '#home';
+    if (routes[initialHash]) {
+        routes[initialHash]();
+    } else {
+        loadHomePage();
+    }
+
+    window.addEventListener('hashchange', () => {
+        if (suppressNextHashRoute) {
+            suppressNextHashRoute = false;
+            return;
+        }
+
+        const currentHash = window.location.hash || '#home';
+
+        if (routes[currentHash]) {
+            cinematicTransition(null, routes[currentHash], '');
+        } else {
+            cinematicTransition(null, loadHomePage, '');
         }
     });
 }
 
-// Boot Application
-loadHomePage();
+// Start Application
+initRouter();

@@ -72,6 +72,11 @@
     <div id="particleExplosionContainer" class="particle-explosion-container"></div>
     <div id="pageTransitionCircle" class="transition-circle"></div>
     
+    <div id="galleryLightboxOverlay" style="display: none;">
+        <span id="galleryLightboxClose">&times;</span>
+        <img id="galleryLightboxImage" src="" alt="Zoomed Gallery Image">
+    </div>
+    
     <div id="tosModalOverlay" class="modal">
         <div class="modal-content" id="tosModalContent">
             <span class="close-btn" id="closeTosModalBtn">&times;</span>
@@ -96,7 +101,7 @@
             
             <div class="announcements-mascot-container">
                 <div class="announcements-mascot-gif">
-                    <img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/vaporeon.gif" alt="Shiny Vaporeon Mascot" style="width: 80%; object-fit: contain;">
+                    <img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/vaporeon.gif" alt="Shiny Vaporeon Mascot" class="announcements-mascot-img">
                 </div>
             </div>
 
@@ -124,14 +129,6 @@
             <p class="admin-card-subtitle">Configure site-wide sales. This updates pricing sheets and calculators automatically.</p>
             
             <div class="discount-controls">
-                <label class="admin-label">
-                    Status
-                    <select id="adminDiscountToggle" class="admin-input">
-                        <option value="false">❌ Disabled</option>
-                        <option value="true">✅ Enabled</option>
-                    </select>
-                </label>
-
                 <label class="admin-label">
                     Discount Amount (%)
                     <input type="number" id="adminDiscountPercent" class="admin-input admin-input-narrow" min="10" max="50" step="1" placeholder="e.g. 20">
@@ -163,9 +160,10 @@
             </div>
 
             <div class="admin-actions discount-actions">
-                <button type="button" id="btnSaveDiscount" class="admin-btn-save">Save Settings</button>
-                <button type="button" id="btnDisableDiscount" class="admin-btn-disable">Disable Discount</button>
+                <button type="button" id="btnSaveDiscount" class="admin-btn-save">Add Discount</button>
             </div>
+            
+            <div id="adminActiveDiscountsList" class="active-discounts-list"></div>
         </div>
     </template>
 
