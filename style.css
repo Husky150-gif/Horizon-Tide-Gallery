@@ -1065,7 +1065,8 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     overflow-y: auto;
     color: white;
     text-align: left;
-    margin-bottom: 20px;
+    margin-bottom: 32px;
+    padding-bottom: 50px;
 }
 
 .pricing-container::-webkit-scrollbar { width: 8px; }
@@ -1147,7 +1148,7 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
 .pricing-back-menu-bottom {
     display: flex;
     justify-content: center;
-    margin-bottom: 10px;
+    margin-bottom: 16px;
 }
 
 .pricing-back-menu-bottom .nav-btn {
@@ -1162,6 +1163,31 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
 .pricing-back-menu-bottom .nav-btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 0 26px rgba(236, 72, 153, 0.25), inset 0 0 12px rgba(0, 242, 254, 0.12);
+}
+
+.pricing-back-menu-bottom-external {
+    padding: 12px 0 20px;
+    margin-top: 8px;
+    display: flex;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 24px;
+}
+
+.pricing-back-menu-bottom-external .nav-btn {
+    max-width: 360px;
+    width: 100%;
+    padding: 14px 22px;
+    border-color: #22c55e;
+    background: rgba(34, 197, 94, 0.18);
+    box-shadow: 0 0 22px rgba(34, 197, 94, 0.2), inset 0 0 10px rgba(0, 242, 254, 0.08);
+    font-size: 1rem;
+    letter-spacing: 0.03em;
+}
+
+.pricing-back-menu-bottom-external .nav-btn:hover {
+    background: rgba(34, 197, 94, 0.24);
+    box-shadow: 0 0 32px rgba(34, 197, 94, 0.32), inset 0 0 12px rgba(0, 242, 254, 0.16);
 }
 
 @keyframes glowPulseBtn {
@@ -1403,13 +1429,22 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     }
 
     .pricing-back-menu-bottom {
-        margin-bottom: 14px;
+        margin-bottom: 18px;
     }
 
     .pricing-back-menu-bottom .nav-btn {
         width: 100%;
         max-width: 100%;
         padding: 14px 18px;
+    }
+
+    .pricing-back-menu-bottom-external {
+        padding: 24px 0 34px;
+        margin-top: 28px;
+    }
+
+    .pricing-back-menu-bottom-external .nav-btn {
+        padding: 16px 20px;
     }
     
     .split-workspace-layout { 

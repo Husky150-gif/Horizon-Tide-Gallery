@@ -177,9 +177,10 @@ function containsProfanity(text) {
     
     // 1. Exact match on raw words (handles normal typing seamlessly)
     const explicitBadWords = [
-        'fuck', 'shit', 'bitch', 'asshole', 'dick', 'cunt', 'pussy', 
-        'cock', 'porn', 'whore', 'slut', 'nigger', 'nigga', 'niga', 'niggah', 
-        'faggot', 'tranny', 'retard', 'retarded', 'rape', 'incest', 'nudes', 
+        'fuck', 'shit', 'bitch', 'asshole', 'dick', 'cunt', 'pussy',
+        'cock', 'porn', 'whore', 'slut', 'nigger', 'nigga', 'niga', 'niggah',
+        'fag', 'fags', 'fagot', 'fagots', 'faggot', 'faggots', 'fagsy', 'faggy', 'fagging', 'fug', 'fugs', 'fut', 'futs',
+        'kill', 'tranny', 'retard', 'retarded', 'rape', 'incest', 'nudes',
         'kys', 'chink', 'spic', 'dyke', 'twat'
     ];
     
@@ -194,7 +195,7 @@ function containsProfanity(text) {
 
     const collapsedBadWords = [
         'fuck', 'shit', 'bitch', 'ashole', 'dick', 'cunt', 'pusy',
-        'cock', 'porn', 'whore', 'slut', 'nudes', 'rape', 'dyke', 'twat', 'kys'
+        'cock', 'porn', 'whore', 'slut', 'fag', 'fags', 'faggot', 'faggots', 'fug', 'fugs', 'fut', 'futs', 'nudes', 'rape', 'dyke', 'twat', 'kys', 'kill'
     ];
 
     if (collapsedWords.some(w => collapsedBadWords.includes(w))) return true;
@@ -205,7 +206,7 @@ function containsProfanity(text) {
     // Roots that rarely form accidentally across normal word boundaries
     const safeCollapsedRoots = [
         'fuck', 'bitch', 'whore', 'slut', 'porn', 'nudes', 
-        'nigger', 'nigga', 'niggah', 'faggot', 'tranny', 'retard', 'retarded', 'incest'
+        'nigger', 'nigga', 'niggah', 'faggot', 'fug', 'fut', 'tranny', 'retard', 'retarded', 'incest'
     ];
 
     for (const root of safeCollapsedRoots) {
@@ -1068,7 +1069,8 @@ function loadGalleryPage() {
         "Lopside's art images/BD466073-9A75-4F99-A7E3-45BBF7A3DCAE.jpg",
         "Lopside's art images/IMG_1464.jpg", "Lopside's art images/IMG_2276.jpg",
         "Lopside's art images/IMG_2309.jpg", "Lopside's art images/IMG_2557.jpg",
-        "Lopside's art images/IMG_5188.jpg", "Lopside's art images/IMG_5784.jpg"
+        "Lopside's art images/IMG_5188.jpg", "Lopside's art images/IMG_5784.jpg",
+        "https://media.discordapp.net/attachments/1416476500257148928/1517304216232788068/62E04C23-D216-46E4-A7D4-883167FBD192.jpg?ex=6a35cb2b&is=6a3479ab&hm=d566b0612994071347e2932d0b2dd2dd9c750862481a674cd3affb8f1eed8445&=&format=webp&width=764&height=1018"
     ];
 
     let galleryHTML = `
@@ -1361,9 +1363,13 @@ function loadPricingPage() {
                 <button type="button" id="backToMenuBtn" class="nav-btn pricing-btn-glow">← Back to Menu</button>
             </div>
         </div>
+        <div class="pricing-back-menu-bottom pricing-back-menu-bottom-external">
+            <button type="button" id="backToMenuBtnBottom" class="nav-btn pricing-btn-glow">← Back to Menu</button>
+        </div>
     `;
     
     document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
+    document.getElementById('backToMenuBtnBottom').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
     attachInnerScrollListener();
 }
 // ==========================================
