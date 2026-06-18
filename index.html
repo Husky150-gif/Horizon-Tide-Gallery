@@ -11,11 +11,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2">
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body data-theme="horizon" data-page="home">
+    <div id="globalSaleBanner" class="sale-banner global-sale-banner" style="display: none;">
+        🌙✨ <span id="bannerSaleMessage">Summer Commission Event</span> — Save <span id="bannerDiscountAmt"></span>%! ✨🌙
+    </div>
+
     <div id="tidepoolLoader" class="tidepool-loader">
         <div class="loader-wave"></div>
         <p class="loader-text">Wading into the Tide Pool...</p>
@@ -29,7 +33,7 @@
             <div class="tos-nebula tos-nebula-blue"></div>
             <div class="tos-nebula tos-nebula-seafoam"></div>
             <div class="tos-stardust"></div>
-            <div id="tosConstellationWrapper" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; opacity: 0.6; overflow: hidden;"></div>
+            <div id="tosConstellationWrapper" class="tos-constellation-wrapper"></div>
             <div class="tos-ocean-shimmer"></div>
         </div>
 
@@ -60,12 +64,12 @@
             <div class="foreground-land-silhouette"></div>
         </div>
         
-        <div id="interactiveStarField" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; pointer-events: none; z-index: 99999; overflow: hidden;"></div>
+        <div id="interactiveStarField" class="interactive-star-field"></div>
     </div>
 
     <main id="app-viewport" class="content-layer"></main>
 
-    <div id="particleExplosionContainer" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999998; overflow: hidden;"></div>
+    <div id="particleExplosionContainer" class="particle-explosion-container"></div>
     <div id="pageTransitionCircle" class="transition-circle"></div>
     
     <div id="tosModalOverlay" class="modal">
@@ -75,13 +79,157 @@
         </div>
     </div>
     
-    <div id="secretAdminTrigger" style="position: fixed; bottom: 0; right: 0; width: 50px; height: 50px; z-index: 999999; cursor: default; opacity: 0;"></div>
+    <div id="secretAdminTrigger" class="secret-admin-trigger" style="position: fixed; bottom: 0; right: 0; width: 50px; height: 50px; z-index: 999999; cursor: default; opacity: 0;"></div>
     
-    <button id="backToTopBtn" class="back-to-top-btn" aria-label="Back to top">⭐ Top</button>
+    <button type="button" id="backToTopBtn" class="back-to-top-btn" aria-label="Back to top">⭐ Top</button>
 
-    <div id="footerCredit" style="position: fixed; bottom: 15px; left: 20px; font-family: 'Starborn', 'Fredoka', sans-serif; color: rgba(255,255,255,0.5); font-size: 0.95rem; z-index: 99999; pointer-events: none; text-shadow: 0 0 8px rgba(0, 242, 254, 0.4); letter-spacing: 1px;">coded by Husky</div>
+    <div id="footerCredit" class="footer-credit" style="position: fixed; bottom: 15px; left: 20px; font-family: 'Starborn', 'Fredoka', sans-serif; color: rgba(255,255,255,0.5); font-size: 0.95rem; z-index: 99999; pointer-events: none; text-shadow: 0 0 8px rgba(0, 242, 254, 0.4); letter-spacing: 1px;">coded by Husky</div>
 
-    <script type="module" src="script.js"></script>
+    <template id="homeAnnouncementsBtnWrapper">
+        <button type="button" id="btnCosmicUpdates" class="nav-btn cosmic-updates-btn">✨ Cosmic Updates ✨</button>
+    </template>
+
+    <template id="announcementsPageTemplate">
+        <div class="announcements-container space-theme">
+            <h1 class="cosmic-title">Cosmic Updates</h1>
+            <p class="intro-text">Check here for the latest news, progress updates, and announcements from Horizon Tide Gallery!</p>
+            
+            <div class="announcements-mascot-container">
+                <div class="announcements-mascot-gif">
+                    <img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/vaporeon.gif" alt="Shiny Vaporeon Mascot" style="width: 80%; object-fit: contain;">
+                </div>
+            </div>
+
+            <div id="announcementsList" class="announcements-list">
+                <div class="empty-announcements-msg">
+                    <p>No new updates floating in the galaxy right now. Check back later!</p>
+                </div>
+                
+                <div class="announcement-card" style="display: none;">
+                    <div class="announcement-header">
+                        <h3 class="announcement-title">Sample Update Title</h3>
+                        <span class="announcement-date">June 15, 2026</span>
+                    </div>
+                    <span class="announcement-badge">Status Badge</span>
+                    <p class="announcement-body">Main update text goes here. This area supports multi-line announcements regarding commissions, queue status, or new merch drops.</p>
+                </div>
+            </div>
+            <button type="button" id="backHomeFromUpdatesBtn" class="nav-btn btn-spacing-top">← Back to Horizon</button>
+        </div>
+    </template>
+
+    <template id="adminDiscountManagerTemplate">
+        <div class="admin-card discount-manager-card">
+            <h3 class="admin-card-title discount-manager-title">🌙 Discount Manager</h3>
+            <p class="admin-card-subtitle">Configure site-wide sales. This updates pricing sheets and calculators automatically.</p>
+            
+            <div class="discount-controls">
+                <label class="admin-label">
+                    Status
+                    <select id="adminDiscountToggle" class="admin-input">
+                        <option value="false">❌ Disabled</option>
+                        <option value="true">✅ Enabled</option>
+                    </select>
+                </label>
+
+                <label class="admin-label">
+                    Discount Amount (%)
+                    <input type="number" id="adminDiscountPercent" class="admin-input admin-input-narrow" min="10" max="50" step="1" placeholder="e.g. 20">
+                </label>
+
+                <label class="admin-label admin-label-wide">
+                    Sale Title/Message (Optional)
+                    <input type="text" id="adminDiscountMessage" class="admin-input" placeholder="e.g. Summer Commission Event">
+                </label>
+
+                <label class="admin-label">
+                    Applies To
+                    <select id="adminDiscountTarget" class="admin-input">
+                        <option value="all">All Items</option>
+                        <option value="art">Art Commissions</option>
+                        <option value="fursuits">Fursuits</option>
+                        <option value="keychains">Keychains</option>
+                        <option value="stickers">Stickers</option>
+                        <option value="animations">Animation Commissions</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="discount-preview-area">
+                <h4 class="preview-title">Live Calculator Preview:</h4>
+                <p class="preview-text">Original Price: <span id="previewOriginalPrice" class="preview-original">$100.00</span></p>
+                <p class="preview-text">Discounted Price: <span id="previewDiscountedPrice" class="preview-discounted">$80.00</span></p>
+                <p class="preview-text">Amount Saved: <span id="previewAmountSaved" class="preview-saved">You saved $20.00</span></p>
+            </div>
+
+            <div class="admin-actions discount-actions">
+                <button type="button" id="btnSaveDiscount" class="admin-btn-save">Save Settings</button>
+                <button type="button" id="btnDisableDiscount" class="admin-btn-disable">Disable Discount</button>
+            </div>
+        </div>
+    </template>
+
+    <template id="adminAnnouncementsControlsTemplate">
+        <div class="admin-card announcements-manager-card">
+            <h3 class="admin-card-title announcements-manager-title">📢 Manage Announcements</h3>
+            
+            <form id="adminAnnouncementForm" class="admin-form-container">
+                <div class="admin-form-row">
+                    <label class="admin-label admin-label-wide">
+                        Title
+                        <input type="text" id="adminAnnounceTitle" class="admin-input" placeholder="Enter title..." required>
+                    </label>
+                    
+                    <label class="admin-label admin-label-medium">
+                        Date
+                        <input type="date" id="adminAnnounceDate" class="admin-input" required>
+                    </label>
+
+                    <label class="admin-label admin-label-medium">
+                        Category / Badge
+                        <select id="adminAnnounceBadge" class="admin-input">
+                            <option value="Update">Update</option>
+                            <option value="Event">Event</option>
+                            <option value="Alert">Alert</option>
+                            <option value="New Feature">New Feature</option>
+                        </select>
+                    </label>
+                </div>
+
+                <label class="admin-label">
+                    Body Text
+                    <textarea id="adminAnnounceBody" class="admin-input admin-textarea" rows="4" placeholder="What's the news?" required></textarea>
+                </label>
+
+                <div class="admin-checkbox-group">
+                    <input type="checkbox" id="adminAnnounceVisible" class="admin-checkbox" checked>
+                    <label for="adminAnnounceVisible" class="admin-checkbox-label">Visible to public?</label>
+                </div>
+
+                <div class="admin-submit-wrapper">
+                    <button type="submit" id="btnSaveAnnouncement" class="admin-btn-publish">Publish Announcement</button>
+                </div>
+            </form>
+
+            <div class="existing-announcements-admin">
+                <h4 class="existing-announcements-title">Existing Announcements</h4>
+                <div id="adminAnnouncementsList" class="admin-announcements-list">
+                    <div class="admin-announce-item">
+                        <div class="announce-item-info">
+                            <strong class="announce-item-title">Sample Announcement Title</strong>
+                            <span class="announce-item-meta">June 15, 2026 - [Visible]</span>
+                        </div>
+                        <div class="announce-item-actions">
+                            <button type="button" class="admin-btn-edit">Edit</button>
+                            <button type="button" class="admin-btn-delete">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script type="module" src="script.js?v=2"></script>
 
     <script>
         window.addEventListener('load', function() {

@@ -17,6 +17,7 @@ body {
     
     /* Optimized Custom Horizon Cursor */
     cursor: url('Images/cursor.png'), auto !important; 
+    transition: padding-top 0.3s ease;
 }
 
 /* Make sure clickable things have a "pointing" version */
@@ -142,6 +143,17 @@ body:not([data-page="home"]) #dynamicMoonContainer {
 }
 
 /* --- SYSTEM B: CLICKABLE FALLING STARS (INTERACTIVE) --- */
+.interactive-star-field {
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100vh; 
+    pointer-events: none; 
+    z-index: 99999; 
+    overflow: hidden;
+}
+
 .star.interactive {
     position: absolute;
     width: 6px;
@@ -204,11 +216,13 @@ body:not([data-page="home"]) #dynamicMoonContainer {
     height: 100%;
     top: 0;
     left: 0;
+    pointer-events: none;
 }
 
 [data-theme="cosmic-green-pink"] .cosmic-dashboard-stars,
 [data-theme="pricing"] .cosmic-dashboard-stars,
-[data-theme="discord-space"] .cosmic-dashboard-stars { 
+[data-theme="discord-space"] .cosmic-dashboard-stars,
+[data-theme="announcements"] .cosmic-dashboard-stars { 
     display: block; 
 }
 
@@ -218,6 +232,7 @@ body:not([data-page="home"]) #dynamicMoonContainer {
     border-radius: 50%;
     box-shadow: 0 0 8px #ffffff, 0 0 14px rgba(236, 72, 153, 0.9);
     animation: starPulseFlicker 3s infinite ease-in-out;
+    pointer-events: none;
 }
 
 @keyframes starPulseFlicker {
@@ -240,11 +255,13 @@ body:not([data-page="home"]) #dynamicMoonContainer {
     transform: rotate(45deg);
     transform-origin: right center;
     opacity: 0;
+    pointer-events: none;
 }
 
 [data-theme="cosmic-green-pink"] .cosmic-shooting-star,
 [data-theme="pricing"] .cosmic-shooting-star,
-[data-theme="discord-space"] .cosmic-shooting-star { 
+[data-theme="discord-space"] .cosmic-shooting-star,
+[data-theme="announcements"] .cosmic-shooting-star { 
     display: block; 
 }
 
@@ -281,6 +298,7 @@ body:not([data-page="home"]) #dynamicMoonContainer {
     width: 100%;
     height: 100%;
     z-index: 2;
+    pointer-events: none;
 }
 
 .flat-horizon-base {
@@ -293,6 +311,7 @@ body:not([data-page="home"]) #dynamicMoonContainer {
     border-top: 1px solid rgba(0, 242, 254, 0.4);
     box-shadow: inset 0 20px 40px rgba(0, 0, 0, 0.4);
     z-index: 1;
+    pointer-events: none;
 }
 
 .fluid-wave {
@@ -303,6 +322,7 @@ body:not([data-page="home"]) #dynamicMoonContainer {
     background-repeat: repeat-x;
     transform: translateZ(0); 
     will-change: transform;
+    pointer-events: none;
 }
 
 .distant-ripple-layer {
@@ -346,6 +366,7 @@ body:not([data-page="home"]) #dynamicMoonContainer {
     background-size: 100% 100%;
     z-index: 5;
     filter: drop-shadow(0 -8px 15px rgba(0,0,0,0.9));
+    pointer-events: none;
 }
 
 /* --- PIXEL FISH & SPLASH ANIMATION --- */
@@ -381,6 +402,7 @@ body:not([data-page="home"]) #dynamicMoonContainer {
     border-radius: 50%;
     opacity: 0;
     transform: scale(0);
+    pointer-events: none;
 }
 
 .splash-in { left: -10px; animation: splashEffectIn 12s infinite linear; }
@@ -418,7 +440,7 @@ body:not([data-page="home"]) #dynamicMoonContainer {
     pointer-events: none;
 }
 
-header, nav, .split-workspace-layout, #backHomeBtn, #backToMenuBtn, .comment-section, .preorder-card, .socials-container, .socials-bio, .tos-container, .form-card, .admin-dashboard, .pricing-container, .nav-btn, .preorder-btn, .btn-preorder-massive, .btn-discord-small {
+header, nav, .split-workspace-layout, #backHomeBtn, #backToMenuBtn, .comment-section, .preorder-card, .socials-container, .socials-bio, .tos-container, .form-card, .admin-dashboard, .pricing-container, .nav-btn, .preorder-btn, .btn-preorder-massive, .btn-discord-small, .announcements-container {
     pointer-events: auto;
 }
 
@@ -430,7 +452,7 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
 
 .button-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; max-width: 800px; }
 
-/* NEW: Clean 2-Column Grid for Preorder Buttons */
+/* Clean 2-Column Grid for Preorder Buttons */
 .button-grid-2col {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -764,6 +786,7 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     box-shadow: 0 0 15px 3px rgba(255, 255, 255, 0.8);
     opacity: 0;
     z-index: 1;
+    pointer-events: none;
 }
 
 .galaxy-comet::after {
@@ -989,6 +1012,7 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
 }
 
 .transition-circle.active {
+    pointer-events: auto; /* Catch clicks during transition */
     animation: expandCircleTransition 2.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
@@ -1007,6 +1031,7 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     height: 20px;
     z-index: 999999;
     animation: confettiFall 3s linear forwards;
+    pointer-events: none;
 }
 
 @keyframes confettiFall {
@@ -1263,7 +1288,7 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     .active-pokemon-gif { height: 50px; }
     .content-layer { padding-top: 5vh; }
 
-    .form-card, .pricing-container, .preorder-card, .tos-container, .admin-dashboard, .modal-content {
+    .form-card, .pricing-container, .preorder-card, .tos-container, .admin-dashboard, .modal-content, .announcements-container {
         padding: 25px 15px;
         width: 95%;
         border-width: 2px;
@@ -1301,7 +1326,7 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     }
     
     /* MOBILE PERFORMANCE OPTIMIZATION: Strips out heavy glowing shadows that cause lag */
-    .nav-btn, .preorder-btn, .form-card, .pricing-container, .preorder-card, .tos-container, .profile-card, .text-scroller-card, .visual-media-card, .modal-content {
+    .nav-btn, .preorder-btn, .form-card, .pricing-container, .preorder-card, .tos-container, .profile-card, .text-scroller-card, .visual-media-card, .modal-content, .announcements-container {
         backdrop-filter: none !important;
         background: rgba(10, 5, 20, 0.95) !important; 
         box-shadow: none !important;
@@ -1325,7 +1350,7 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     .distant-ripple-layer, .mid-sea-layer-2 { animation: none; opacity: 0.5; } 
     .fish-scene { transform: scale(0.6); right: 5%; bottom: 30px; }
     
-    .form-input, .form-select, .form-textarea { font-size: 16px; }
+    .form-input, .form-select, .form-textarea, #adminDiscountPercent, #adminDiscountMessage { font-size: 16px; }
 }
 
 /* ==========================================
@@ -1736,6 +1761,7 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
 .admin-detail { color: #e2e8f0; font-size: 0.95rem; }
 .admin-detail strong { color: #f472b6; }
 .admin-actions { grid-column: span 2; display: flex; gap: 10px; margin-top: 10px; }
+
 /* ==========================================
    --- TIDE POOL LOADER ---
    ========================================== */
@@ -1786,4 +1812,486 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
 @keyframes textFloat { 
     0% { transform: translateY(0); } 
     100% { transform: translateY(-8px); } 
+}
+
+/* ==========================================
+   --- NEW FEATURE STYLES: CLEANED UP ---
+   ========================================== */
+
+/* Global and Helper Classes */
+.global-sale-banner {
+    background: linear-gradient(90deg, #ec4899, #a855f7);
+    color: white;
+    text-align: center;
+    padding: 12px;
+    font-weight: bold;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 9999999;
+    box-shadow: 0 4px 15px rgba(236, 72, 153, 0.5);
+    font-size: 1.1rem;
+}
+
+.tos-constellation-wrapper {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    opacity: 0.6;
+    overflow: hidden;
+}
+
+.particle-explosion-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999998;
+    overflow: hidden;
+}
+
+/* Theme: Announcements Page */
+[data-theme="announcements"] .bg-environment {
+    background: radial-gradient(circle at center, #1e0b36 0%, #06020c 60%, #010206 100%);
+    transition: background 1s ease;
+}
+
+[data-theme="announcements"] .sky-container {
+    height: 100vh;
+}
+
+[data-theme="announcements"] .ocean-horizon {
+    display: none !important;
+}
+
+/* Cosmic Updates Home Button */
+.cosmic-updates-btn {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.4), rgba(236, 72, 153, 0.4));
+    border: 2px solid rgba(255, 255, 255, 0.7) !important;
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.5), inset 0 0 10px rgba(236, 72, 153, 0.3);
+    animation: glowPulseUpdatesBtn 2s infinite alternate;
+    font-weight: 500;
+    width: 100%;
+    max-width: 350px;
+    margin-top: 30px;
+    margin-bottom: 10px;
+}
+
+.cosmic-updates-btn:hover {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.8), rgba(236, 72, 153, 0.8));
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(236, 72, 153, 0.6), inset 0 0 15px rgba(255, 255, 255, 0.4);
+    border-color: #ffffff !important;
+}
+
+@keyframes glowPulseUpdatesBtn {
+    0% { box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); }
+    100% { box-shadow: 0 0 25px rgba(236, 72, 153, 0.7); }
+}
+
+/* Announcements Main Container */
+.announcements-container {
+    background: rgba(10, 5, 20, 0.85);
+    backdrop-filter: blur(20px);
+    border: 3px solid #a855f7;
+    box-shadow: 0 0 35px rgba(168, 85, 247, 0.3), inset 0 0 20px rgba(236, 72, 153, 0.15);
+    border-radius: 24px;
+    padding: 40px;
+    max-width: 900px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.announcements-container::-webkit-scrollbar { width: 8px; }
+.announcements-container::-webkit-scrollbar-thumb { background: linear-gradient(to bottom, #a855f7, #ec4899); border-radius: 10px; }
+
+.cosmic-title {
+    color: #ffffff;
+    text-shadow: 0 0 15px #a855f7;
+    font-size: 2.8rem;
+    margin-bottom: 10px;
+}
+
+.intro-text {
+    color: #e0f7fa;
+    font-size: 1.1rem;
+    margin-bottom: 25px;
+}
+
+.announcements-mascot-container {
+    margin-bottom: 30px;
+}
+
+.announcements-mascot-gif {
+    width: 110px;
+    height: 110px;
+    margin: 0 auto;
+    background: rgba(255,255,255,0.05);
+    border: 2px dashed #a855f7;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
+    overflow: hidden;
+}
+
+.announcements-mascot-gif img {
+    width: 80% !important;
+    height: 80% !important;
+    object-fit: contain;
+    image-rendering: pixelated;
+    border-radius: 50%;
+}
+
+.announcements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.empty-announcements-msg {
+    padding: 30px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 12px;
+    border: 1px dashed #00f2fe;
+}
+.empty-announcements-msg p {
+    color: #a2b7cc;
+    font-size: 1.1rem;
+}
+
+/* Announcement Cards */
+.announcement-card {
+    background: rgba(10, 5, 20, 0.85);
+    border: 2px solid #00f2fe;
+    border-radius: 16px;
+    padding: 25px;
+    text-align: left;
+    box-shadow: 0 0 20px rgba(0, 242, 254, 0.15);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.announcement-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 242, 254, 0.25) !important;
+}
+
+.announcement-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 10px;
+}
+
+.announcement-title {
+    color: #ec4899;
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.announcement-date {
+    color: #a2b7cc;
+    font-size: 0.9rem;
+}
+
+.announcement-badge {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+    border: 1px solid #22c55e;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    display: inline-block;
+    margin-bottom: 15px;
+}
+
+.announcement-body {
+    color: #e2e8f0;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.btn-spacing-top { margin-top: 30px; }
+
+/* Admin Discount Manager */
+.discount-manager-card {
+    grid-column: 1 / -1;
+    background: rgba(236, 72, 153, 0.1);
+    border-color: #ec4899;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.discount-manager-title {
+    color: #ec4899;
+    border-bottom-color: rgba(236, 72, 153, 0.3);
+}
+
+.admin-card-subtitle {
+    font-size: 0.85rem;
+    color: #a2b7cc;
+    margin: 0 0 10px 0;
+}
+
+.discount-controls {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.admin-label {
+    color: white;
+    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.admin-label-wide { flex: 2; min-width: 200px; }
+.admin-label-medium { flex: 1; min-width: 150px; }
+
+.admin-input {
+    padding: 8px;
+    background: #0a0514;
+    color: white;
+    border: 1px solid #ec4899;
+    border-radius: 5px;
+    font-family: inherit;
+}
+
+.admin-input-narrow { width: 120px; }
+
+.discount-preview-area {
+    margin-top: 10px;
+    padding: 15px;
+    background: rgba(0,0,0,0.4);
+    border: 1px dashed #00f2fe;
+    border-radius: 8px;
+}
+
+.preview-title {
+    color: #00f2fe;
+    margin-bottom: 10px;
+}
+
+.preview-text { margin-bottom: 5px; }
+
+.preview-original {
+    text-decoration: line-through;
+    color: #a2b7cc;
+}
+
+.preview-discounted {
+    color: #22c55e;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.preview-saved {
+    color: #ef4444;
+    font-weight: bold;
+}
+
+.discount-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 15px;
+}
+
+.admin-btn-save {
+    background: rgba(34, 197, 94, 0.2);
+    border: 1px solid #22c55e;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.admin-btn-disable {
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid #ef4444;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+/* Admin Announcements Manager */
+.announcements-manager-card {
+    grid-column: 1 / -1;
+    background: rgba(168, 85, 247, 0.1);
+    border-color: #a855f7;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.announcements-manager-title {
+    color: #a855f7;
+    border-bottom-color: rgba(168, 85, 247, 0.3);
+}
+
+.admin-form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.admin-form-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.admin-textarea {
+    resize: vertical;
+}
+
+.admin-checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: #a855f7;
+}
+
+.admin-checkbox-label {
+    color: #e2e8f0;
+}
+
+.admin-btn-publish {
+    background: rgba(168, 85, 247, 0.2);
+    border: 1px solid #a855f7;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.existing-announcements-admin {
+    margin-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 15px;
+}
+
+.existing-announcements-title {
+    color: #e2e8f0;
+    margin-bottom: 10px;
+}
+
+.admin-announcements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.admin-announce-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: rgba(0,0,0,0.4);
+    border: 1px dashed #a2b7cc;
+    border-radius: 6px;
+}
+
+.announce-item-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.announce-item-title {
+    color: #00f2fe;
+}
+
+.announce-item-meta {
+    color: #a2b7cc;
+    font-size: 0.8rem;
+}
+
+.announce-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.admin-btn-edit {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid #fff;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.admin-btn-delete {
+    background: rgba(239,68,68,0.2);
+    border: 1px solid #ef4444;
+    color: #fca5a5;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+/* Badges for announcements */
+.announcement-badge[data-type="Update"] {
+    background: rgba(34, 197, 94, 0.2) !important;
+    color: #22c55e !important;
+    border-color: #22c55e !important;
+}
+
+.announcement-badge[data-type="Event"] {
+    background: rgba(236, 72, 153, 0.2) !important;
+    color: #ec4899 !important;
+    border-color: #ec4899 !important;
+}
+
+.announcement-badge[data-type="Alert"] {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #ef4444 !important;
+    border-color: #ef4444 !important;
+}
+
+.announcement-badge[data-type="New Feature"] {
+    background: rgba(0, 242, 254, 0.2) !important;
+    color: #00f2fe !important;
+    border-color: #00f2fe !important;
+}
+
+/* Sale Banner Extra Styling */
+.sale-banner {
+    animation: bannerSlideDown 0.5s ease-out;
+}
+
+@keyframes bannerSlideDown {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
 }
