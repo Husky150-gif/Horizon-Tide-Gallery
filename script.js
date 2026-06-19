@@ -315,7 +315,10 @@ function getChecklistHTML(excludeRefImage = false) {
             <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I know handmade/custom items take time</label></div>
             ${refHtml}
             <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I understand this is not instant shipping</label></div>
-            <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I know the final price may vary</label></div>
+            <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I understand prices are estimates and final pricing may vary</label></div>
+            <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I understand due dates must be approved before acceptance</label></div>
+            <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I understand private information will not be shown publicly</label></div>
+            <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I have read the TOS and refund policy</label></div>
             <div class="checklist-item tos-line" style="margin-top: 15px; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 10px;">
                 <input type="checkbox" class="req-check" id="tosAgreeGlobal" required style="width: 22px; height: 22px; cursor: pointer;"> 
                 <label for="tosAgreeGlobal" style="color: #00f2fe; font-weight: bold; cursor: pointer;">I have read and agree to the Terms of Service.</label>
@@ -1093,8 +1096,14 @@ function cinematicTransition(event, targetPageFunction, hashTarget = '') {
             if(interactiveStarField) interactiveStarField.innerHTML = "";
             if(homeStarField) homeStarField.innerHTML = "";
         }
+
+        resetViewportToTop();
         
         targetPageFunction();
+
+        requestAnimationFrame(() => {
+            resetViewportToTop();
+        });
     }, pageLoadDelay); 
 
     setTimeout(() => {
@@ -2313,6 +2322,13 @@ function loadSocialsPage() {
             <h1 class="meet-artists-title">Meet the Artists & Socials</h1>
             <p class="meet-artists-subtitle">A warm hello from the two creators behind Horizon Tide. We blend dreamy digital storytelling with handmade physical craftsmanship.</p>
         </section>
+        <section class="meet-info-signpost" aria-label="Meet page quick links">
+            <p class="meet-info-signpost-label">Need quick info?</p>
+            <div class="meet-info-signpost-actions">
+                <button type="button" class="nav-btn meet-jump-btn" id="jumpToFaqBtn">Read FAQ</button>
+                <button type="button" class="nav-btn meet-jump-btn" id="jumpToOrderGuideBtn">How to Order</button>
+            </div>
+        </section>
         <div class="socials-container">
             <article class="profile-card card-pink">
                 <img src="https://img.pokemondb.net/sprites/black-white/anim/normal/espeon.gif" alt="Espeon" class="card-espeon" style="filter: drop-shadow(0 0 8px rgba(236, 72, 153, 0.5));">
@@ -2337,7 +2353,7 @@ function loadSocialsPage() {
         <div class="socials-bio">
             We are a small handmade studio built around trust, communication, and creativity. Husky leads digital projects and visual storytelling, while Lopside leads handmade and fursuit-focused work. Together, we keep each project personal, clear, and carefully crafted from first idea to final delivery.
         </div>
-        <section class="meet-faq-shell">
+        <section class="meet-faq-shell" id="meetFaqSection">
             <h2>Frequently Asked Questions</h2>
             <p class="meet-faq-intro">These quick answers cover the most common questions about ordering, timelines, updates, and Horizon Queue.</p>
             <div class="faq-list">
@@ -2387,7 +2403,7 @@ function loadSocialsPage() {
                 </details>
             </div>
         </section>
-        <section class="meet-ordering-shell">
+        <section class="meet-ordering-shell" id="meetOrderingSection">
             <h2>How Ordering Works</h2>
             <ol>
                 <li>Submit a request</li>
@@ -2401,6 +2417,15 @@ function loadSocialsPage() {
         </section>
         <button type="button" id="backHomeBtn" class="nav-btn" style="margin-top: 10px; border-color: #a855f7;">← Back to Horizon</button>
     `;
+
+    document.getElementById('jumpToFaqBtn')?.addEventListener('click', () => {
+        document.getElementById('meetFaqSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    document.getElementById('jumpToOrderGuideBtn')?.addEventListener('click', () => {
+        document.getElementById('meetOrderingSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
     document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
     attachInnerScrollListener();
 }
@@ -2843,14 +2868,32 @@ function loadContactPage() {
             <h3 style="margin-bottom: 15px; font-size: 1.4rem; color: #00f2fe;">Leave a Comment</h3>
             <p style="font-size: 0.9rem; color: #a3b8cc; margin-bottom: 15px;">Comments are public. Use the reply button on comments below to respond as an admin.</p>
             <form id="commentForm" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px;">
-                <input type="text" id="commentName" placeholder="Your Name or Alias" required maxlength="50" style="padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.4); background: rgba(0,0,0,0.4); color: white; font-family: inherit;">
-                <textarea id="commentText" placeholder="Write your message here..." rows="3" required maxlength="500" style="padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.4); background: rgba(0,0,0,0.4); color: white; font-family: inherit; resize: none;"></textarea>
+                <input type="text" id="commentName" aria-label="Your name or alias" placeholder="Your Name or Alias" required maxlength="50" style="padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.4); background: rgba(0,0,0,0.4); color: white; font-family: inherit;">
+                <textarea id="commentText" aria-label="Comment message" placeholder="Write your message here..." rows="3" required maxlength="500" style="padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.4); background: rgba(0,0,0,0.4); color: white; font-family: inherit; resize: none;"></textarea>
                 <button type="submit" class="nav-btn" style="padding: 12px; font-size: 1.1rem; width: 100%;">Post Message</button>
             </form>
             <div id="commentsFeed" style="display: flex; flex-direction: column; gap: 15px; max-height: 350px; overflow-y: auto; padding-right: 5px;">
                 <p style="text-align: center; color: #a3b8cc; font-size: 0.9rem;">Loading messages from the cloud...</p>
             </div>
         </div>
+
+        <section class="contact-policy-shell" aria-label="Privacy and shipping policies">
+            <article class="contact-policy-card">
+                <h3>Privacy Policy</h3>
+                <p>When you use our order or contact forms, we may collect details like your name, email, Discord handle, request info, references, and notes so we can review your request, communicate with you, and provide updates.</p>
+                <p>We collect this information only to support customer communication, project planning, and order fulfillment. Private details are never shown publicly.</p>
+                <p>Horizon Queue only displays public-safe details such as display names, queue status, and general progress updates.</p>
+                <p>If you need an update or removal request for submitted information, please contact us and we will help as quickly as possible.</p>
+            </article>
+
+            <article class="contact-policy-card">
+                <h3>Shipping & Physical Item Policy</h3>
+                <p>Shipping times may vary depending on location, carrier load, weather, and seasonal volume.</p>
+                <p>Tracking details are shared when available. Please make sure your shipping information is accurate before final confirmation.</p>
+                <p>After an item is shipped, carrier delays are outside our direct control.</p>
+                <p>If a physical item arrives damaged, contact us with photos and order details so we can assist.</p>
+            </article>
+        </section>
     `;
     document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
 
@@ -3574,6 +3617,9 @@ function loadAdminDashboard() {
                 <button type="button" class="nav-btn" id="filterAll">All Orders</button>
                 <button type="button" class="nav-btn" id="filterNew">Pending Review</button>
                 <button type="button" class="nav-btn" id="filterInProgress">In Progress</button>
+                <button type="button" class="nav-btn" id="exportPreordersCsvBtn">Export Preorders CSV</button>
+                <button type="button" class="nav-btn" id="exportRefundsCsvBtn">Export Refunds CSV</button>
+                <button type="button" class="nav-btn" id="exportCommissionsCsvBtn">Export Commissions CSV</button>
                 <button type="button" id="homeAdminBtn" class="nav-btn" style="border-color: #00f2fe;">Back to Home (Stay Logged In)</button>
                 <button type="button" id="exitAdminBtn" class="nav-btn" style="border-color: #ef4444;">Lock & Exit</button>
             </div>
@@ -3948,6 +3994,9 @@ function loadAdminDashboard() {
     document.getElementById('filterAll').addEventListener('click', () => filterOrders('All'));
     document.getElementById('filterNew').addEventListener('click', () => filterOrders('Pending Review'));
     document.getElementById('filterInProgress').addEventListener('click', () => filterOrders('In Progress'));
+    document.getElementById('exportPreordersCsvBtn')?.addEventListener('click', () => exportPreordersCSV());
+    document.getElementById('exportRefundsCsvBtn')?.addEventListener('click', () => exportRefundsCSV());
+    document.getElementById('exportCommissionsCsvBtn')?.addEventListener('click', () => exportCommissionsCSV());
 
     if (window.adminUnsubscribe) window.adminUnsubscribe();
     const q = query(collection(db, "preorders"), orderBy("createdAt", "desc"));
@@ -4702,17 +4751,113 @@ async function deleteOrder(id) {
     }
 }
 
+function convertRowsToCSV(rows) {
+    if (!Array.isArray(rows) || rows.length === 0) return '';
+    const headers = Object.keys(rows[0]);
+    const escapeCell = (value) => {
+        const text = value == null ? '' : String(value);
+        return `"${text.replace(/"/g, '""')}"`;
+    };
+
+    const lines = [headers.map(escapeCell).join(',')];
+    rows.forEach((row) => {
+        lines.push(headers.map((key) => escapeCell(row[key])).join(','));
+    });
+    return lines.join('\n');
+}
+
+function downloadCSV(filename, rows) {
+    const csv = convertRowsToCSV(rows);
+    if (!csv) {
+        alert('No data available to export yet.');
+        return;
+    }
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}
+
+function normalizeDateForCSV(value) {
+    if (!value) return '';
+    if (value.toDate) {
+        try {
+            return value.toDate().toISOString();
+        } catch {
+            return '';
+        }
+    }
+    const asDate = new Date(value);
+    return isNaN(asDate) ? String(value) : asDate.toISOString();
+}
+
+function exportPreordersCSV() {
+    const rows = (Array.isArray(window.allOrders) ? window.allOrders : []).map((order) => ({
+        orderId: order.orderId || '',
+        orderType: order.orderType || '',
+        status: order.status || '',
+        name: order.name || '',
+        email: order.email || '',
+        discord: order.discord || '',
+        createdAt: normalizeDateForCSV(order.createdAt),
+        notes: order.notes || order.description || order.materials || ''
+    }));
+
+    downloadCSV(`horizon-preorders-${new Date().toISOString().slice(0, 10)}.csv`, rows);
+}
+
+function exportRefundsCSV() {
+    const rows = (Array.isArray(window.adminRefundEntries) ? window.adminRefundEntries : []).map((refund) => ({
+        refundId: refund.refundId || '',
+        displayName: refund.displayName || '',
+        queueStatus: refund.queueStatus || '',
+        detailedStatus: refund.detailedStatus || '',
+        sourceType: refund.sourceType || '',
+        amountOwed: refund.amountOwed ?? '',
+        amountPaid: refund.amountPaid ?? '',
+        estimatedUpdate: refund.estimatedUpdate || '',
+        lastUpdated: refund.lastUpdated || '',
+        isPublic: refund.isPublic === true ? 'true' : 'false',
+        publicNotes: refund.publicNotes || ''
+    }));
+
+    downloadCSV(`horizon-refunds-${new Date().toISOString().slice(0, 10)}.csv`, rows);
+}
+
+function exportCommissionsCSV() {
+    const rows = (Array.isArray(window.adminCommissionEntries) ? window.adminCommissionEntries : []).map((commission) => ({
+        commissionId: commission.commissionId || '',
+        displayName: commission.displayName || '',
+        commissionType: commission.commissionType || '',
+        queueStatus: commission.queueStatus || '',
+        detailedStatus: commission.detailedStatus || '',
+        estimatedStart: commission.estimatedStart || '',
+        estimatedUpdate: commission.estimatedUpdate || '',
+        lastUpdated: commission.lastUpdated || '',
+        isPublic: commission.isPublic === true ? 'true' : 'false',
+        publicNotes: commission.publicNotes || ''
+    }));
+
+    downloadCSV(`horizon-commissions-${new Date().toISOString().slice(0, 10)}.csv`, rows);
+}
+
 // =====================================
 // MUSIC & EASTER EGGS
 // =====================================
-const bgMusic = new Audio("sonican-lo-fi-music-loop-sentimental-jazzy-love-473154.mp3");
-bgMusic.loop = true;
-bgMusic.volume = 0.5;
+let bgMusic = null;
+const MUSIC_SRC = null;
 
 const musicBtn = document.createElement('button');
 musicBtn.type = 'button';
 musicBtn.id = 'globalMusicBtn';
 musicBtn.innerHTML = '🎵 Play Music';
+musicBtn.setAttribute('aria-label', 'Toggle background music');
 
 const applyResponsiveMusicPlacement = () => {
     const isMobile = window.innerWidth <= 768;
@@ -4742,9 +4887,24 @@ musicBtn.onmouseout = () => musicBtn.style.background = "rgba(10, 18, 38, 0.8)";
 document.body.appendChild(musicBtn);
 
 musicBtn.addEventListener('click', () => {
+    if (!MUSIC_SRC) {
+        musicBtn.innerHTML = '🎵 Music Unavailable';
+        return;
+    }
+
+    if (!bgMusic) {
+        bgMusic = new Audio(MUSIC_SRC);
+        bgMusic.loop = true;
+        bgMusic.volume = 0.5;
+    }
+
     if (bgMusic.paused) {
-        bgMusic.play().catch(err => console.error("Audio playback failed:", err));
-        musicBtn.innerHTML = '⏸️ Pause Music';
+        bgMusic.play().then(() => {
+            musicBtn.innerHTML = '⏸️ Pause Music';
+        }).catch(() => {
+            musicBtn.innerHTML = '🎵 Music Unavailable';
+            console.warn('Audio playback unavailable in this environment.');
+        });
     } else {
         bgMusic.pause();
         musicBtn.innerHTML = '🎵 Play Music';
@@ -4797,6 +4957,18 @@ document.addEventListener('click', (e) => {
 
 let suppressNextHashRoute = false;
 
+function resetViewportToTop() {
+    window.scrollTo(0, 0);
+
+    if (appViewport) {
+        appViewport.scrollTop = 0;
+    }
+
+    document.querySelectorAll('.form-card, .pricing-container, .tos-container, .admin-dashboard, .announcements-container, .huskys-list-page-shell').forEach((el) => {
+        el.scrollTop = 0;
+    });
+}
+
 const routes = {
     '#home': loadHomePage,
     '#gallery': loadGalleryPage,
@@ -4819,11 +4991,17 @@ const routes = {
 
 function initRouter() {
     let initialHash = window.location.hash || '#home';
+    resetViewportToTop();
+
     if (routes[initialHash]) {
         routes[initialHash]();
     } else {
         loadHomePage();
     }
+
+    requestAnimationFrame(() => {
+        resetViewportToTop();
+    });
 
     window.addEventListener('hashchange', () => {
         if (suppressNextHashRoute) {

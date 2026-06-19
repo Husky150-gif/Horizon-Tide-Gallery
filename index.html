@@ -19,7 +19,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=11">
+    <link rel="stylesheet" href="style.css?v=13">
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
@@ -81,7 +81,7 @@
     <div id="pageTransitionCircle" class="transition-circle"></div>
     
     <div id="galleryLightboxOverlay" style="display: none;">
-        <span id="galleryLightboxClose">&times;</span>
+        <button type="button" id="galleryLightboxClose" aria-label="Close image preview">&times;</button>
         <img id="galleryLightboxImage" src="" alt="Zoomed Gallery Image">
     </div>
 
@@ -310,7 +310,7 @@
         </div>
     </template>
 
-    <script type="module" src="script.js?v=10"></script>
+    <script type="module" src="script.js?v=13"></script>
 
     <script>
         window.addEventListener('load', function() {

@@ -15,14 +15,28 @@ body {
     color: #ffffff;
     overflow-x: hidden;
     
-    /* Optimized Custom Horizon Cursor */
-    cursor: url('Images/cursor.png'), auto !important; 
+    cursor: auto;
     transition: padding-top 0.3s ease;
 }
 
 /* Make sure clickable things have a "pointing" version */
 a, button, .nav-btn, .preorder-btn, .interactive, .dynamic-moon-phase, input[type="checkbox"], select, .jumping-fish, .close-btn, .tos-jump-btn, .filter-btn {
-    cursor: url('Images/pointer.png'), pointer !important; 
+    cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.nav-btn:focus-visible,
+.preorder-btn:focus-visible,
+.filter-btn:focus-visible,
+.gallery-video-close:focus-visible,
+#galleryLightboxClose:focus-visible {
+    outline: 2px solid #f8fafc;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.45);
 }
 
 /* SCOPE HOMEPAGE ELEMENTS STRICTLY TO HOMEPAGE */
@@ -1278,6 +1292,40 @@ body.admin-login-modal-open {
     font-size: 1.03rem;
 }
 
+.meet-info-signpost {
+    width: min(900px, 92vw);
+    margin: 0 auto 24px;
+    background: linear-gradient(135deg, rgba(10, 28, 52, 0.85), rgba(20, 15, 45, 0.82));
+    border: 1px solid rgba(125, 211, 252, 0.3);
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: 0 0 22px rgba(56, 189, 248, 0.13);
+    text-align: center;
+}
+
+.meet-info-signpost-label {
+    margin: 0 0 10px;
+    color: #dbeafe;
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.meet-info-signpost-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.meet-jump-btn {
+    min-width: 170px;
+    padding: 10px 14px;
+    border-color: rgba(125, 211, 252, 0.55);
+    background: rgba(14, 165, 233, 0.12);
+}
+
 .socials-container {
     display: flex;
     justify-content: center;
@@ -2019,6 +2067,8 @@ body.admin-login-modal-open {
     color: #a2b7cc;
     font-size: 3.5rem;
     font-weight: bold;
+    background: transparent;
+    border: 0;
     cursor: pointer;
     z-index: 10;
     transition: color 0.2s;
@@ -2152,8 +2202,13 @@ body.admin-login-modal-open {
     .meet-faq-shell,
     .meet-ordering-shell,
     .socials-bio,
-    .meet-artists-heading {
+    .meet-artists-heading,
+    .meet-info-signpost {
         width: min(94vw, 94vw);
+    }
+    .meet-jump-btn {
+        min-width: 0;
+        width: 100%;
     }
     .starbit {
         width: 9px;
@@ -4442,6 +4497,39 @@ body.admin-login-modal-open {
     font-size: 0.95rem;
 }
 
+.contact-policy-shell {
+    width: min(900px, 92vw);
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.contact-policy-card {
+    background: linear-gradient(145deg, rgba(6, 14, 30, 0.9), rgba(7, 18, 34, 0.9));
+    border: 1px solid rgba(125, 211, 252, 0.25);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 0 18px rgba(56, 189, 248, 0.12), inset 0 0 10px rgba(255,255,255,0.03);
+}
+
+.contact-policy-card h3 {
+    color: #f8fbff;
+    margin: 0 0 8px;
+    font-size: 1.12rem;
+}
+
+.contact-policy-card p {
+    color: #dbeafe;
+    line-height: 1.62;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+}
+
+.contact-policy-card p:last-child {
+    margin-bottom: 0;
+}
+
 @media (max-width: 768px) {
     .pricing-container h1 {
         font-size: 2rem;
@@ -4534,5 +4622,32 @@ body.admin-login-modal-open {
     .huskys-list-section-shell {
         gap: 14px;
         border-radius: 20px;
+    }
+
+    .contact-policy-shell {
+        grid-template-columns: 1fr;
+        width: min(95vw, 95vw);
+        margin-top: 14px;
+    }
+
+    .contact-policy-card {
+        padding: 14px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gallery-card,
+    .premade-card,
+    .queue-reveal,
+    .transition-circle,
+    .dynamic-moon-phase,
+    .nav-btn,
+    .preorder-btn,
+    .gallery-video-overlay,
+    #galleryLightboxOverlay,
+    #galleryLightboxImage,
+    .bottle-success-anim {
+        animation: none !important;
+        transition: none !important;
     }
 }
