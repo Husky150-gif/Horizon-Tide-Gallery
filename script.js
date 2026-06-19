@@ -3,7 +3,7 @@
 // ==========================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp, doc, updateDoc, deleteDoc, where, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp, doc, updateDoc, deleteDoc, where, getDocs, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
 import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
@@ -34,6 +34,17 @@ const dashboardStarField = document.getElementById('dashboardStarField');
 // Discount System State
 window.activeSales = [];
 let globalDiscountListener = null;
+let globalHomeAvailabilityListener = null;
+
+const DEFAULT_HOME_AVAILABILITY = {
+    artists: {
+        husky: { name: 'Husky', service: 'Digital Art', status: 'Open', slots: 3 },
+        lopside: { name: 'Lopside', service: 'Fursuit Creations', status: 'Limited', slots: 2 }
+    },
+    responseTime: '1-3 days'
+};
+
+window.homeAvailability = JSON.parse(JSON.stringify(DEFAULT_HOME_AVAILABILITY));
 
 // Comments & Admin State
 let globalCommentsArray = [];
@@ -43,8 +54,16 @@ let unsubscribeListener = null;
 window.allOrders = [];
 window.adminUnsubscribe = null;
 window.adminAnnounceUnsub = null;
+window.adminRefundsUnsub = null;
+window.adminCommissionsUnsub = null;
+window.publicRefundsUnsub = null;
+window.publicCommissionsUnsub = null;
 window.announcementsUnsubscribe = null;
 window.currentEditingAnnounceId = null;
+window.currentEditingRefundId = null;
+window.currentEditingCommissionId = null;
+window.adminRefundEntries = [];
+window.adminCommissionEntries = [];
 
 // UI State
 let isGlobalScrollAttached = false;
@@ -227,6 +246,53 @@ function getTemplateHTML(id) {
     return template ? template.innerHTML : '';
 }
 
+function formatMoney(amount) {
+    if (typeof amount !== 'number') {
+        amount = Number(amount);
+    }
+    if (Number.isNaN(amount)) return '$0.00';
+    return `$${amount.toFixed(2)}`;
+}
+
+function getProgressPercent(amountPaid, amountOwed) {
+    const paid = Number(amountPaid) || 0;
+    const owed = Number(amountOwed) || 0;
+    if (owed <= 0) return 0;
+    return Math.min(100, Math.round((paid / owed) * 100));
+}
+
+function formatDisplayDate(value) {
+    if (!value) return 'Unknown';
+    try {
+        const date = value instanceof Date ? value : new Date(value);
+        if (isNaN(date)) return String(value);
+        return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch (err) {
+        return String(value);
+    }
+}
+
+function getQueueBadgeColor(status) {
+    if (!status) return '#60a5fa';
+    const normalized = status.toLowerCase();
+    if (normalized === 'not started') return '#60a5fa';
+    if (normalized === 'started') return '#f59e0b';
+    if (normalized === 'finished') return '#22c55e';
+    return '#60a5fa';
+}
+
+function getDetailBadgeColor(status) {
+    if (!status) return '#60a5fa';
+    const normalized = status.toLowerCase();
+    if (normalized === 'pending') return '#60a5fa';
+    if (normalized === 'in progress') return '#f59e0b';
+    if (normalized === 'partially paid') return '#a855f7';
+    if (normalized === 'completed') return '#22c55e';
+    if (normalized === 'contact needed') return '#f472b6';
+    if (normalized === 'on hold') return '#64748b';
+    return '#60a5fa';
+}
+
 function getFileUploadHTML() {
     return `
         <div class="form-group">
@@ -262,10 +328,10 @@ function getChecklistHTML(excludeRefImage = false) {
 function getPriceEstimatorHTML() {
     return `
         <div class="price-estimator">
-            <p>💡 Estimated Starting Range</p>
-            <h2 id="liveEstimate" style="text-align: center; color: #ffffff;">$0.00</h2>
+            <p class="price-estimator-title">Estimated Price Range:</p>
+            <h2 id="liveEstimate" class="price-estimator-range">$0.00 - $0.00</h2>
             <div id="discountSavingsLine" style="color: #ef4444; font-weight: bold; font-size: 0.95rem; text-align: center; display: none; margin-top: 5px;"></div>
-            <span>*Estimates are not final. Prices may go up or down after contact and review. Adding details may increase cost.</span>
+            <span>This is an estimate. Final pricing may change depending on complexity, character details, edits, deadline, and add-ons.</span>
         </div>
     `;
 }
@@ -285,6 +351,101 @@ function showErrorMsg(form, msg) {
 function hideErrorMsg(form) {
     const errDiv = form.querySelector('.form-error-msg');
     if (errDiv) errDiv.style.display = 'none';
+}
+
+function sanitizeAvailabilityStatus(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized === 'limited') return 'Limited';
+    if (normalized === 'closed') return 'Closed';
+    return 'Open';
+}
+
+function formatAvailabilitySlotLabel(value) {
+    const slots = Math.max(0, Number(value) || 0);
+    return `${slots} ${slots === 1 ? 'slot' : 'slots'}`;
+}
+
+function getAvailabilityStatusClass(status) {
+    const normalized = sanitizeAvailabilityStatus(status).toLowerCase();
+    return `status-${normalized}`;
+}
+
+function getTideStatusSnapshot(availabilityInput = window.homeAvailability) {
+    const availability = normalizeHomeAvailability(availabilityInput);
+    const husky = availability.artists.husky;
+    const lopside = availability.artists.lopside;
+    const statuses = [sanitizeAvailabilityStatus(husky.status), sanitizeAvailabilityStatus(lopside.status)];
+    const totalSlots = Math.max(0, Number(husky.slots) || 0) + Math.max(0, Number(lopside.slots) || 0);
+
+    let tide = 'Calm';
+    let note = 'The tide is calm and our queue is moving at a steady pace.';
+
+    if (statuses.includes('Closed') || totalSlots <= 1) {
+        tide = 'Stormy';
+        note = 'The tide is stormy right now. Replies may be slower while we clear active work.';
+    } else if (statuses.includes('Limited') || totalSlots <= 4) {
+        tide = 'Busy';
+        note = 'The tide is a bit busy. We are still taking requests, but capacity is limited.';
+    }
+
+    return { tide, note, availability, husky, lopside, totalSlots };
+}
+
+function normalizeHomeAvailability(raw) {
+    const fallback = JSON.parse(JSON.stringify(DEFAULT_HOME_AVAILABILITY));
+    if (!raw || typeof raw !== 'object') return fallback;
+
+    const huskyRaw = raw.artists && raw.artists.husky ? raw.artists.husky : {};
+    const lopsideRaw = raw.artists && raw.artists.lopside ? raw.artists.lopside : {};
+
+    fallback.artists.husky.name = String(huskyRaw.name || fallback.artists.husky.name).trim() || fallback.artists.husky.name;
+    fallback.artists.husky.service = String(huskyRaw.service || fallback.artists.husky.service).trim() || fallback.artists.husky.service;
+    fallback.artists.husky.status = sanitizeAvailabilityStatus(huskyRaw.status);
+    fallback.artists.husky.slots = Math.max(0, Number(huskyRaw.slots) || fallback.artists.husky.slots);
+
+    fallback.artists.lopside.name = String(lopsideRaw.name || fallback.artists.lopside.name).trim() || fallback.artists.lopside.name;
+    fallback.artists.lopside.service = String(lopsideRaw.service || fallback.artists.lopside.service).trim() || fallback.artists.lopside.service;
+    fallback.artists.lopside.status = sanitizeAvailabilityStatus(lopsideRaw.status);
+    fallback.artists.lopside.slots = Math.max(0, Number(lopsideRaw.slots) || fallback.artists.lopside.slots);
+
+    fallback.responseTime = String(raw.responseTime || fallback.responseTime).trim() || fallback.responseTime;
+    return fallback;
+}
+
+function applyHomeAvailabilityToCurrentDOM() {
+    const availability = normalizeHomeAvailability(window.homeAvailability);
+    const husky = availability.artists.husky;
+    const lopside = availability.artists.lopside;
+
+    const huskyNameEl = document.getElementById('homeAvailHuskyName');
+    const huskyServiceEl = document.getElementById('homeAvailHuskyService');
+    const huskyStatusEl = document.getElementById('homeAvailHuskyStatus');
+    const huskySlotsEl = document.getElementById('homeAvailHuskySlots');
+
+    const lopsideNameEl = document.getElementById('homeAvailLopsideName');
+    const lopsideServiceEl = document.getElementById('homeAvailLopsideService');
+    const lopsideStatusEl = document.getElementById('homeAvailLopsideStatus');
+    const lopsideSlotsEl = document.getElementById('homeAvailLopsideSlots');
+
+    const responseEl = document.getElementById('homeAvailResponseTime');
+
+    if (huskyNameEl) huskyNameEl.textContent = husky.name;
+    if (huskyServiceEl) huskyServiceEl.textContent = husky.service;
+    if (huskyStatusEl) {
+        huskyStatusEl.textContent = husky.status;
+        huskyStatusEl.className = `status-pill ${getAvailabilityStatusClass(husky.status)}`;
+    }
+    if (huskySlotsEl) huskySlotsEl.textContent = formatAvailabilitySlotLabel(husky.slots);
+
+    if (lopsideNameEl) lopsideNameEl.textContent = lopside.name;
+    if (lopsideServiceEl) lopsideServiceEl.textContent = lopside.service;
+    if (lopsideStatusEl) {
+        lopsideStatusEl.textContent = lopside.status;
+        lopsideStatusEl.className = `status-pill ${getAvailabilityStatusClass(lopside.status)}`;
+    }
+    if (lopsideSlotsEl) lopsideSlotsEl.textContent = formatAvailabilitySlotLabel(lopside.slots);
+
+    if (responseEl) responseEl.textContent = availability.responseTime;
 }
 
 window.handleImageError = function(img) {
@@ -324,6 +485,18 @@ function attachGlobalSettingsListener() {
     });
 }
 attachGlobalSettingsListener();
+
+function attachHomeAvailabilityListener() {
+    if (globalHomeAvailabilityListener) globalHomeAvailabilityListener();
+    globalHomeAvailabilityListener = onSnapshot(doc(db, 'settings', 'availability'), (docSnap) => {
+        window.homeAvailability = normalizeHomeAvailability(docSnap.exists() ? docSnap.data() : null);
+        applyHomeAvailabilityToCurrentDOM();
+    }, () => {
+        window.homeAvailability = normalizeHomeAvailability(null);
+        applyHomeAvailabilityToCurrentDOM();
+    });
+}
+attachHomeAvailabilityListener();
 
 function getBestDiscount(type) {
     if (!window.activeSales || window.activeSales.length === 0) return 0;
@@ -713,6 +886,95 @@ function closeLightbox() {
     }
 }
 
+function buildYouTubeEmbedUrl(rawUrl) {
+    if (!rawUrl) return null;
+    let parsed;
+    try {
+        parsed = new URL(rawUrl);
+    } catch {
+        return null;
+    }
+
+    let videoId = '';
+    const host = parsed.hostname.toLowerCase();
+
+    if (host.includes('youtu.be')) {
+        videoId = parsed.pathname.replace('/', '').trim();
+    } else if (host.includes('youtube.com')) {
+        videoId = parsed.searchParams.get('v') || '';
+        if (!videoId && parsed.pathname.includes('/shorts/')) {
+            videoId = parsed.pathname.split('/shorts/')[1] || '';
+        }
+    }
+
+    if (!videoId) return null;
+    videoId = videoId.split('/')[0].split('?')[0].split('&')[0];
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+}
+
+function openVideoModal(videoUrl, titleText) {
+    const overlay = document.getElementById('galleryVideoOverlay');
+    const frame = document.getElementById('galleryVideoFrame');
+    const title = document.getElementById('galleryVideoTitle');
+    const closeBtn = document.getElementById('galleryVideoClose');
+    const embedUrl = buildYouTubeEmbedUrl(videoUrl);
+
+    if (!overlay || !frame || !closeBtn || !embedUrl) {
+        if (videoUrl) window.open(videoUrl, '_blank', 'noopener');
+        return;
+    }
+
+    frame.src = embedUrl;
+    title.textContent = titleText || 'Animation Preview';
+
+    overlay.style.display = 'flex';
+    overlay.setAttribute('aria-hidden', 'false');
+    void overlay.offsetWidth;
+    overlay.classList.add('active');
+
+    const closeHandler = () => closeVideoModal();
+
+    const overlayClickHandler = (e) => {
+        if (e.target === overlay) closeVideoModal();
+    };
+
+    const escKeyHandler = (e) => {
+        if (e.key === 'Escape') closeVideoModal();
+    };
+
+    closeBtn.addEventListener('click', closeHandler, { once: true });
+    overlay.addEventListener('click', overlayClickHandler);
+    document.addEventListener('keydown', escKeyHandler);
+    closeBtn.focus();
+
+    window._videoModalCleanup = () => {
+        overlay.removeEventListener('click', overlayClickHandler);
+        document.removeEventListener('keydown', escKeyHandler);
+    };
+}
+
+function closeVideoModal() {
+    const overlay = document.getElementById('galleryVideoOverlay');
+    const frame = document.getElementById('galleryVideoFrame');
+    if (!overlay || !frame) return;
+
+    if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+    }
+
+    overlay.classList.remove('active');
+    setTimeout(() => {
+        overlay.style.display = 'none';
+        overlay.setAttribute('aria-hidden', 'true');
+        frame.src = '';
+    }, 250);
+
+    if (window._videoModalCleanup) {
+        window._videoModalCleanup();
+        window._videoModalCleanup = null;
+    }
+}
+
 function handleGlobalScroll(e) {
     const btn = document.getElementById('backToTopBtn');
     if (!btn) return;
@@ -867,6 +1129,21 @@ function bindCoreMenuControls() {
     if (cosmicBtn) cosmicBtn.addEventListener('click', (e) => cinematicTransition(e, loadAnnouncementsPage, '#updates'));
 }
 
+function bindSecretCornerTrigger() {
+    const trigger = document.getElementById('secretAdminTrigger');
+    if (!trigger || trigger.dataset.secretBound === 'true') return;
+
+    trigger.addEventListener('dblclick', () => {
+        if (auth.currentUser) {
+            cinematicTransition(null, loadAdminDashboard, '#admin');
+            return;
+        }
+        openAdminLoginModal();
+    });
+
+    trigger.dataset.secretBound = 'true';
+}
+
 function attachDynamicEstimator(formId, baseType) {
     const form = document.getElementById(formId);
     if(!form) return;
@@ -880,20 +1157,51 @@ function attachDynamicEstimator(formId, baseType) {
 
         if (baseType === 'art') {
             const typeSel = form.querySelector('[name="artType"]');
-            const shadeSel = form.querySelector('[name="shadingStyle"]');
+            const finishSel = form.querySelector('[name="shadingStyle"]');
+            const charCountInput = form.querySelector('[name="characterCount"]');
             const addons = form.querySelectorAll('[name="addon"]:checked');
             
-            if(typeSel) min = parseInt(typeSel.options[typeSel.selectedIndex].dataset.price || 0);
-            max = min;
+            let base = 0;
+            if (typeSel) {
+                base = parseInt(typeSel.options[typeSel.selectedIndex].dataset.price || 0);
+            }
 
-            if(shadeSel) {
-                const shade = shadeSel.value;
-                if(shade === "Cel Shaded") { min += 10; max += 25; }
-                if(shade === "Rendered") { min += 25; max += 50; }
+            // Finish style now directly drives the estimate range.
+            if (finishSel) {
+                const finish = finishSel.value;
+                if (finish === 'Sketch') {
+                    min = Math.round(base * 0.78);
+                    max = Math.round(base * 0.95);
+                } else if (finish === 'Flat Color') {
+                    min = Math.round(base * 0.95);
+                    max = Math.round(base * 1.2);
+                } else if (finish === 'Sketchy Cel Shade') {
+                    min = Math.round(base * 1.12);
+                    max = Math.round(base * 1.42);
+                } else if (finish === 'Rendered') {
+                    min = Math.round(base * 1.35);
+                    max = Math.round(base * 1.85);
+                } else {
+                    min = base;
+                    max = base;
+                }
+            } else {
+                min = base;
+                max = base;
+            }
+
+            const characterCount = Math.max(1, parseInt(charCountInput ? charCountInput.value : '1', 10) || 1);
+            if (characterCount > 1) {
+                const charMultiplier = 1 + (0.6 * (characterCount - 1));
+                min = Math.round(min * charMultiplier);
+                max = Math.round(max * charMultiplier);
             }
 
             addons.forEach(box => {
-                if(box.value === "Extra Character") { const mult = min * 0.6; min+=mult; max+=mult; }
+                if (box.value === "Extra Character" && characterCount <= 1) {
+                    min = Math.round(min * 1.6);
+                    max = Math.round(max * 1.6);
+                }
                 if(box.value === "Background") { min += 30; max += 60; }
                 if(box.value === "Extra Outfit") { min += 25; max += 25; }
                 if(box.value === "Complex Props") { min += 10; max += 20; }
@@ -959,23 +1267,20 @@ function attachDynamicEstimator(formId, baseType) {
                 else saveLine.innerText = `Discount Applied: ${pct}% off — You saved $${savedMin} - $${savedMax}`;
             }
 
-            let origText = origMin === origMax ? (isPlus ? `$${origMin}+` : `$${origMin.toFixed(2)}`) : `$${origMin.toFixed(0)} - $${origMax.toFixed(0)}+`;
-            let newText = min === max ? (isPlus ? `$${min}+` : `$${min.toFixed(2)}`) : `$${min.toFixed(0)} - $${max.toFixed(0)}+`;
+            let origText = `$${origMin.toFixed(0)} - $${origMax.toFixed(0)}`;
+            let newText = `$${min.toFixed(0)} - $${max.toFixed(0)}`;
 
-            estDisplay.innerHTML = `<span style="text-decoration: line-through; font-size: 0.6em; color: #a2b7cc; margin-right: 10px;">${origText}</span><span style="color: #22c55e;">${newText}</span>`;
+            estDisplay.innerText = newText;
+            if (saveLine) {
+                saveLine.innerText += ` (regularly ${origText})`;
+            }
             return;
         } else {
             const saveLine = form.querySelector('#discountSavingsLine');
             if(saveLine) saveLine.style.display = 'none';
         }
 
-        if (min === max && !isPlus) {
-            estDisplay.innerText = `$${min.toFixed(2)}`;
-        } else if (min === max && isPlus) {
-            estDisplay.innerText = `$${min.toFixed(0)}+`;
-        } else {
-            estDisplay.innerText = `$${min.toFixed(0)} - $${max.toFixed(0)}+`;
-        }
+        estDisplay.innerText = `$${min.toFixed(0)} - $${max.toFixed(0)}`;
     }
 
     form.addEventListener('input', updateEstimate);
@@ -1032,25 +1337,99 @@ function loadHomePage() {
     renderDynamicMoon();
     attachInnerScrollListener(); 
 
+    const availability = normalizeHomeAvailability(window.homeAvailability);
+    const husky = availability.artists.husky;
+    const lopside = availability.artists.lopside;
+
     appViewport.innerHTML = `
         <div class="gif-container"><img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/umbreon.gif" alt="Shiny Umbreon" class="active-pokemon-gif"></div>
         <header><h1>Welcome to The Horizon,</h1><h2>where creativity happens</h2></header>
         
-        <div class="button-container" style="display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 800px; gap: 5px; margin-bottom: 25px;">
+        <div class="button-container button-container-home">
             <button type="button" class="nav-btn btn-pink-highlight" id="btnGalleryHome" style="width: 100%; max-width: 450px;">✨ Horizon Tide Gallery ✨</button>
             <button type="button" class="btn-preorder-massive" id="btnPreorderMassive">🛒 Preorder Menu</button>
             <button type="button" class="btn-discord-small" id="btnDiscordHome">🐾 Join Our SFW 18+ Discord Server 🐾</button>
             ${getTemplateHTML('homeAnnouncementsBtnWrapper')}
         </div>
 
-        <nav class="button-grid" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; width: 100%; max-width: 800px;">
+        <nav class="button-grid home-nav-grid">
             <button type="button" class="nav-btn" id="tosBtn">Our TOS</button>
             <button type="button" class="nav-btn" id="whatWeDoBtn">What we do</button>
-            <button type="button" class="nav-btn" id="socialsBtn">Our socials</button>
+            <button type="button" class="nav-btn" id="socialsBtn">Meet the Artists</button>
             <button type="button" class="nav-btn" id="contactBtn">Contact us 💬</button>
         </nav>
+
+        <section class="home-pro-shell">
+        <section class="home-pro-grid">
+            <article class="home-pro-card home-availability-card">
+                <h3>Artist Availability & Slots</h3>
+                <div class="availability-list">
+                    <div class="availability-item">
+                        <div class="availability-service">
+                            <strong id="homeAvailHuskyName">${escapeHTML(husky.name)}</strong>
+                            <span id="homeAvailHuskyService">${escapeHTML(husky.service)}</span>
+                        </div>
+                        <div class="availability-meta">
+                            <span id="homeAvailHuskyStatus" class="status-pill ${getAvailabilityStatusClass(husky.status)}">${escapeHTML(husky.status)}</span>
+                            <span id="homeAvailHuskySlots" class="slot-pill">${escapeHTML(formatAvailabilitySlotLabel(husky.slots))}</span>
+                        </div>
+                    </div>
+                    <div class="availability-item">
+                        <div class="availability-service">
+                            <strong id="homeAvailLopsideName">${escapeHTML(lopside.name)}</strong>
+                            <span id="homeAvailLopsideService">${escapeHTML(lopside.service)}</span>
+                        </div>
+                        <div class="availability-meta">
+                            <span id="homeAvailLopsideStatus" class="status-pill ${getAvailabilityStatusClass(lopside.status)}">${escapeHTML(lopside.status)}</span>
+                            <span id="homeAvailLopsideSlots" class="slot-pill">${escapeHTML(formatAvailabilitySlotLabel(lopside.slots))}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="availability-response">
+                    <span>Current response time</span>
+                    <strong id="homeAvailResponseTime">${escapeHTML(availability.responseTime)}</strong>
+                </div>
+            </article>
+
+            <article class="home-pro-card">
+                <h3>Before You Order</h3>
+                <ul class="pro-checklist">
+                    <li>Character reference ready</li>
+                    <li>Commission type selected</li>
+                    <li>Finish style chosen</li>
+                    <li>Due date/deadline noted</li>
+                    <li>Important notes listed</li>
+                    <li>Preferred contact method included</li>
+                </ul>
+            </article>
+        </section>
+
+        <section class="home-pro-grid">
+            <article class="home-pro-card">
+                <h3>Care Guide</h3>
+                <div class="care-guide-grid">
+                    <article class="care-guide-item"><h4>Fursuit Parts</h4><p>Spot-clean gently, air dry, and store in breathable bags.</p></article>
+                    <article class="care-guide-item"><h4>Keychains</h4><p>Keep dry, avoid heavy drops, and wipe with soft cloth only.</p></article>
+                    <article class="care-guide-item"><h4>Stickers</h4><p>Apply to clean surfaces and avoid soaking or hard scrubbing.</p></article>
+                    <article class="care-guide-item"><h4>Handmade Items</h4><p>Keep away from high heat, direct sun, and moisture for long periods.</p></article>
+                </div>
+            </article>
+
+            <article class="home-pro-card home-updates-card">
+                <h3>What's New?</h3>
+                <ul class="mini-updates-list">
+                    <li><span class="update-dot"></span><span>Horizon Queue added</span></li>
+                    <li><span class="update-dot"></span><span>Professional FAQ added</span></li>
+                    <li><span class="update-dot"></span><span>Pricing calculator improved</span></li>
+                    <li><span class="update-dot"></span><span>Commission queue added</span></li>
+                </ul>
+            </article>
+        </section>
+        </section>
     `;
     bindCoreMenuControls();
+    bindSecretCornerTrigger();
+    applyHomeAvailabilityToCurrentDOM();
 }
 
 function loadGalleryPage() {
@@ -1060,19 +1439,42 @@ function loadGalleryPage() {
     renderDynamicMoon();
     createBubbles();
 
-    const huskyImages = [
-        "Images/Candelle_icon.png", "Images/Com_1.png", "Images/Comm_2.png",
-        "Images/Commmmmm.png", "Images/Illustration_2.0.png", "Images/Illustration15.png",
-        "Images/Lambbbbbb_no_shade.png", "Images/Meow.jpg", "Images/What_safety_cost_me.png"
-    ];
-
-    const lopsideImages = [
-        "Lopside's art images/03F50406-DA67-44D8-8E51-DB337E650157.jpg",
-        "Lopside's art images/BD466073-9A75-4F99-A7E3-45BBF7A3DCAE.jpg",
-        "Lopside's art images/IMG_1464.jpg", "Lopside's art images/IMG_2276.jpg",
-        "Lopside's art images/IMG_2309.jpg", "Lopside's art images/IMG_2557.jpg",
-        "Lopside's art images/IMG_5188.jpg", "Lopside's art images/IMG_5784.jpg",
-        "https://media.discordapp.net/attachments/1416476500257148928/1517304216232788068/62E04C23-D216-46E4-A7D4-883167FBD192.jpg?ex=6a35cb2b&is=6a3479ab&hm=d566b0612994071347e2932d0b2dd2dd9c750862481a674cd3affb8f1eed8445&=&format=webp&width=764&height=1018"
+    const galleryItems = [
+        { url: 'Images/Art fight.png', title: 'Art Fight', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { url: 'Images/banner 1.jpg', title: 'Banner Concept', creator: 'Husky', categories: ['digital-art'] },
+        { url: 'Images/Candelle_icon.png', title: 'Candelle Icon', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { url: 'Images/Com_1.png', title: 'Commission 1', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { url: 'Images/Comm_2.png', title: 'Commission 2', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { url: 'Images/Commmmmm.png', title: 'Commission 3', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { url: 'Images/Fancy clown lol v.03.png', title: 'Fancy Clown', creator: 'Husky', categories: ['digital-art'] },
+        { url: 'Images/Illustration15.png', title: 'Illustration 15', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { url: 'Images/Illustration7.png', title: 'Illustration 7', creator: 'Husky', categories: ['digital-art'] },
+        { url: 'Images/Illustration_2.0.png', title: 'Illustration 2.0', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { url: 'Images/Lambbbbbb_no_shade.png', title: 'Lamb Concept', creator: 'Husky', categories: ['digital-art'] },
+        { url: 'Images/Meow.jpg', title: 'Meow Portrait', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { url: 'Images/My pride.png', title: 'My Pride', creator: 'Husky', categories: ['digital-art'] },
+        { url: 'Images/Pounkkayk Icon for artfight 2025.png', title: 'Pounkkayk Icon', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { url: 'Images/Spinel but glitchy.png', title: 'Spinel Glitchy', creator: 'Husky', categories: ['digital-art'] },
+        { url: 'Images/Sticker 2.png', title: 'Sticker Design', creator: 'Husky', categories: ['stickers', 'finished-commissions'] },
+        { url: 'Images/What_safety_cost_me.png', title: 'What Safety Cost Me', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { url: 'Premade keychains/Absol_keycahin_watermark.png', title: 'Premade Keychain', creator: 'Horizon Tide', categories: ['keychains', 'finished-commissions'] },
+        { url: 'Premade keychains/bleh1.png', title: 'Keychain Sample', creator: 'Horizon Tide', categories: ['keychains'] },
+        { url: 'Premade keychains/Illustration13_2.png', title: 'Keychain Illustration', creator: 'Horizon Tide', categories: ['keychains'] },
+        { url: "Lopside's art images/03F50406-DA67-44D8-8E51-DB337E650157.jpg", title: 'Fursuit Build', creator: 'Lopside', categories: ['fursuits', 'finished-commissions'] },
+        { url: "Lopside's art images/BD466073-9A75-4F99-A7E3-45BBF7A3DCAE.jpg", title: 'Fursuit Detail', creator: 'Lopside', categories: ['fursuits'] },
+        { url: "Lopside's art images/IMG_1464.jpg", title: 'Suit Progress', creator: 'Lopside', categories: ['fursuits', 'finished-commissions'] },
+        { url: "Lopside's art images/IMG_2276.jpg", title: 'Suit Progress 2', creator: 'Lopside', categories: ['fursuits'] },
+        { url: "Lopside's art images/IMG_2309.jpg", title: 'Suit Progress 3', creator: 'Lopside', categories: ['fursuits'] },
+        { url: "Lopside's art images/IMG_2557.jpg", title: 'Suit Progress 4', creator: 'Lopside', categories: ['fursuits', 'finished-commissions'] },
+        { url: "Lopside's art images/IMG_5188.jpg", title: 'Suit Progress 5', creator: 'Lopside', categories: ['fursuits'] },
+        { url: "Lopside's art images/IMG_5784.jpg", title: 'Suit Progress 6', creator: 'Lopside', categories: ['fursuits', 'finished-commissions'] },
+        {
+            url: 'https://img.youtube.com/vi/jnh7WgHTO6w/hqdefault.jpg',
+            title: 'Animation Preview',
+            creator: 'Husky',
+            categories: ['animation', 'finished-commissions'],
+            videoLink: 'https://youtu.be/jnh7WgHTO6w?si=lB-yZ1W5KB42W1g4'
+        }
     ];
 
     let galleryHTML = `
@@ -1080,27 +1482,27 @@ function loadGalleryPage() {
             <h1 style="color: #ffffff; text-shadow: 0 0 15px #ec4899; font-size: 2.5rem;">Horizon Tide Gallery</h1>
             <p style="color: #e2e8f0; margin-bottom: 20px;">Explore past commissions, creations, and concepts.</p>
             <div class="filter-btn-group">
-                <button type="button" class="filter-btn active" data-filter="all">All Works</button>
-                <button type="button" class="filter-btn" data-filter="husky">Husky's Art Gallery</button>
-                <button type="button" class="filter-btn" data-filter="lopside">Lopside's Creations</button>
+                <button type="button" class="filter-btn active" data-filter="all">All</button>
+                <button type="button" class="filter-btn" data-filter="digital-art">Digital Art</button>
+                <button type="button" class="filter-btn" data-filter="fursuits">Fursuits</button>
+                <button type="button" class="filter-btn" data-filter="keychains">Keychains</button>
+                <button type="button" class="filter-btn" data-filter="stickers">Stickers</button>
+                <button type="button" class="filter-btn" data-filter="animation">Animation</button>
+                <button type="button" class="filter-btn" data-filter="finished-commissions">Finished Commissions</button>
             </div>
             <div class="gallery-grid" id="mainGalleryGrid">
     `;
 
-    huskyImages.forEach((url, i) => {
+    galleryItems.forEach((item, i) => {
+        const categoryBadges = item.categories.map(cat => `<span class="gallery-category-badge">${cat.replace('-', ' ')}</span>`).join('');
+        const mediaClass = item.videoLink ? 'gallery-video-thumb' : '';
+        const cardTag = item.videoLink ? 'Animation Clip • Click to play' : item.creator;
         galleryHTML += `
-            <div class="gallery-card filter-item husky-item">
-                <img src="${url}" class="gallery-img" alt="Husky Art ${i + 1}" loading="lazy" onerror="handleImageError(this)">
-                <p style="color: #ec4899; font-weight: 500;">Husky's Art</p>
-            </div>
-        `;
-    });
-
-    lopsideImages.forEach((url, i) => {
-        galleryHTML += `
-            <div class="gallery-card filter-item lopside-item">
-                <img src="${url}" class="gallery-img" alt="Lopside Creation ${i + 1}" loading="lazy" onerror="handleImageError(this)">
-                <p style="color: #22c55e; font-weight: 500;">Lopside's Creation</p>
+            <div class="gallery-card filter-item" data-categories="${item.categories.join(' ')}">
+                <img src="${item.url}" class="gallery-img ${mediaClass}" alt="${item.title || `Gallery Item ${i + 1}`}" loading="lazy" onerror="handleImageError(this)" ${item.videoLink ? `data-video-link="${item.videoLink}"` : ''}>
+                <p style="color: #ec4899; font-weight: 600;">${cardTag}</p>
+                <p class="gallery-card-title">${item.title || `Gallery Item ${i + 1}`}</p>
+                <div class="gallery-card-cats">${categoryBadges}</div>
             </div>
         `;
     });
@@ -1122,7 +1524,8 @@ function loadGalleryPage() {
             btn.classList.add('active');
             const filter = btn.getAttribute('data-filter');
             items.forEach(item => {
-                item.style.display = filter === 'all' || item.classList.contains(`${filter}-item`) ? 'flex' : 'none';
+                const categories = (item.getAttribute('data-categories') || '').split(' ');
+                item.style.display = filter === 'all' || categories.includes(filter) ? 'flex' : 'none';
             });
         });
     });
@@ -1131,6 +1534,11 @@ function loadGalleryPage() {
     const galleryImages = appViewport.querySelectorAll('.gallery-img, .premade-img');
     galleryImages.forEach(img => {
         img.addEventListener('click', () => {
+            const videoLink = img.getAttribute('data-video-link');
+            if (videoLink) {
+                openVideoModal(videoLink, img.alt || 'Animation Preview');
+                return;
+            }
             openLightbox(img.src, img.alt);
         });
     });
@@ -1146,9 +1554,21 @@ function loadPreorderPage() {
     createBubbles();
 
     appViewport.innerHTML = `
-        <div class="preorder-card">
+        <div class="preorder-card" style="position: relative;">
+            <button type="button" id="btnHuskysList" class="preorder-btn huskys-list-btn" style="position: absolute; top: 24px; right: 24px; max-width: 180px; font-size: 0.95rem; padding: 11px 18px; border-color: #22c55e; background: rgba(34,197,94,0.17); box-shadow: 0 0 18px rgba(34,197,94,0.3);">Horizon Queue</button>
             <h1 style="color: #ffffff; text-shadow: 0 0 15px rgba(255,255,255,0.8); margin-bottom: 10px; font-size: 2.8rem;">Preorder Menu</h1>
             <p style="color: #e0f7fa; font-size: 1.1rem;">Choose what you'd like to view or preorder from Horizon Tide Gallery.</p>
+            <section class="preorder-prep-shell">
+                <h3>Customer Prep Checklist</h3>
+                <ul>
+                    <li>Character reference ready</li>
+                    <li>Commission type chosen</li>
+                    <li>Finish style selected</li>
+                    <li>Due date/deadline included</li>
+                    <li>Important notes listed clearly</li>
+                    <li>Preferred contact method included</li>
+                </ul>
+            </section>
             <div class="preorder-section-grid">
                 <div class="menu-section">
                     <h3>Pricing & Info</h3>
@@ -1177,6 +1597,7 @@ function loadPreorderPage() {
     
     document.getElementById('btnPricing').addEventListener('click', (e) => cinematicTransition(e, loadPricingPage, '#pricing'));
     document.getElementById('btnStatusCheck').addEventListener('click', (e) => cinematicTransition(e, loadStatusCheckPage, '#status'));
+    document.getElementById('btnHuskysList').addEventListener('click', (e) => cinematicTransition(e, loadHuskysListPage, '#huskys-list'));
     document.getElementById('btnCustomStickers').addEventListener('click', (e) => cinematicTransition(e, loadCustomStickersForm, '#stickers'));
     document.getElementById('btnPremadeKeychains').addEventListener('click', (e) => cinematicTransition(e, loadPremadeKeychainsForm, '#premade'));
     document.getElementById('btnCustomPlushies').addEventListener('click', (e) => cinematicTransition(e, () => loadNotReadyPage('Custom Plushies', 'Custom plushies are not ready yet, but they may open in the future.')));
@@ -1196,10 +1617,84 @@ function loadPricingPage() {
     renderDynamicMoon();
     renderDashboardStars();
 
+    const tideSnapshot = getTideStatusSnapshot(window.homeAvailability);
+    const huskyAvailability = tideSnapshot.husky;
+    const lopsideAvailability = tideSnapshot.lopside;
+    const tideClass = `tide-${tideSnapshot.tide.toLowerCase()}`;
+
     appViewport.innerHTML = `
         <div class="pricing-container">
             <h1>Horizon Tide Gallery Pricing Sheet</h1>
             <p class="subtitle">Starting prices are listed below. Final prices may vary based on complexity, materials, size, add-ons, and queue.</p>
+
+            <section class="pricing-policy-shell">
+                <div class="pricing-policy-grid">
+                    <article class="pricing-policy-card">
+                        <h3>Complexity Guide</h3>
+                        <p>Our calculator and pricing sheet are designed to give a helpful estimate. Final pricing can shift based on project complexity and requested details.</p>
+                        <ul>
+                            <li>Character complexity and detailed design elements</li>
+                            <li>Markings, alternate outfits, and layered accessories</li>
+                            <li>Props, wings, armor, and effect-heavy details</li>
+                            <li>Extra characters or multi-character scene requests</li>
+                            <li>Rush deadlines and compressed timelines</li>
+                            <li>Physical material needs for handmade pieces</li>
+                        </ul>
+                        <p class="policy-soft-note">Estimate tools help with planning, but the final quote is confirmed after we review your exact request.</p>
+                    </article>
+
+                    <article class="pricing-policy-card">
+                        <h3>Revision Policy</h3>
+                        <p>We want your order to feel right, and clear communication helps us get there smoothly.</p>
+                        <ul>
+                            <li>Small changes may be possible before final approval</li>
+                            <li>Major revisions after work begins may affect price or timeline</li>
+                            <li>Finished or approved work may have limited revision availability</li>
+                        </ul>
+                    </article>
+
+                    <article class="pricing-policy-card">
+                        <h3>Due Date & Rush Policy</h3>
+                        <p>We prefer due dates because they help us plan responsibly and confirm what is realistic.</p>
+                        <ul>
+                            <li>Rush requests may be possible depending on current schedule</li>
+                            <li>Rush fees may apply when timelines are compressed</li>
+                            <li>Deadlines must be approved before an order is accepted</li>
+                        </ul>
+                    </article>
+
+                    <article class="pricing-policy-card tide-status-widget">
+                        <h3>Tide Status</h3>
+                        <div class="tide-status-badge ${tideClass}">${tideSnapshot.tide}</div>
+                        <p>${escapeHTML(tideSnapshot.note)}</p>
+                        <div class="tide-status-meta">
+                            <span>Current response time</span>
+                            <strong>${escapeHTML(tideSnapshot.availability.responseTime)}</strong>
+                        </div>
+                        <div class="tide-artist-row">
+                            <div>
+                                <strong>${escapeHTML(huskyAvailability.name)}</strong>
+                                <span>${escapeHTML(huskyAvailability.service)}</span>
+                            </div>
+                            <div class="availability-meta">
+                                <span class="status-pill ${getAvailabilityStatusClass(huskyAvailability.status)}">${escapeHTML(huskyAvailability.status)}</span>
+                                <span class="slot-pill">${escapeHTML(formatAvailabilitySlotLabel(huskyAvailability.slots))}</span>
+                            </div>
+                        </div>
+                        <div class="tide-artist-row">
+                            <div>
+                                <strong>${escapeHTML(lopsideAvailability.name)}</strong>
+                                <span>${escapeHTML(lopsideAvailability.service)}</span>
+                            </div>
+                            <div class="availability-meta">
+                                <span class="status-pill ${getAvailabilityStatusClass(lopsideAvailability.status)}">${escapeHTML(lopsideAvailability.status)}</span>
+                                <span class="slot-pill">${escapeHTML(formatAvailabilitySlotLabel(lopsideAvailability.slots))}</span>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
             <div class="pricing-section">
                 <h2>Husky's Art Commissions</h2>
                 <p>Payment upfront. Turnaround: 1–6 months depending on queue.</p>
@@ -1410,10 +1905,10 @@ function loadHuskyArtForm() {
                 <div class="form-group">
                     <label>Shading Style <span>*</span></label>
                     <select name="shadingStyle" class="form-select" required>
-                        <option value="Sketchy">Sketchy (Lower cost)</option>
+                        <option value="Sketch">Sketch</option>
                         <option value="Flat Color">Flat Color</option>
-                        <option value="Cel Shaded">Cel Shaded</option>
-                        <option value="Rendered">Rendered (Premium)</option>
+                        <option value="Sketchy Cel Shade">Sketchy Cel Shade</option>
+                        <option value="Rendered">Rendered</option>
                     </select>
                 </div>
                 <div class="form-group"><label>Number of Characters <span>*</span></label><input type="number" name="characterCount" class="form-input" required min="1" max="10" value="1"></div>
@@ -1802,28 +2297,108 @@ function loadSocialsPage() {
     renderDynamicMoon();
 
     appViewport.innerHTML = `
+        <div class="starbit-field" aria-hidden="true">
+            <span class="starbit starbit-cyan" style="left: 8%; top: 14%; --drift: 18px; --delay: 0s;"></span>
+            <span class="starbit starbit-pink" style="left: 18%; top: 52%; --drift: 22px; --delay: 0.8s;"></span>
+            <span class="starbit starbit-purple" style="left: 31%; top: 24%; --drift: 16px; --delay: 1.4s;"></span>
+            <span class="starbit starbit-yellow" style="left: 43%; top: 67%; --drift: 20px; --delay: 0.4s;"></span>
+            <span class="starbit starbit-white" style="left: 58%; top: 20%; --drift: 14px; --delay: 1.8s;"></span>
+            <span class="starbit starbit-cyan" style="left: 68%; top: 58%; --drift: 24px; --delay: 1.1s;"></span>
+            <span class="starbit starbit-pink" style="left: 79%; top: 26%; --drift: 18px; --delay: 0.6s;"></span>
+            <span class="starbit starbit-purple" style="left: 89%; top: 48%; --drift: 16px; --delay: 2.2s;"></span>
+        </div>
         <div class="galaxy-comet comet-a"></div><div class="galaxy-comet comet-b"></div><div class="galaxy-comet comet-c"></div>
-        <h1 style="color: #ffffff; text-shadow: 0 0 15px rgba(255,255,255,0.8); margin-bottom: 30px; font-size: 2.8rem;">Our Socials</h1>
+        <section class="meet-artists-heading">
+            <p class="meet-artists-kicker">Horizon Tide Studio</p>
+            <h1 class="meet-artists-title">Meet the Artists & Socials</h1>
+            <p class="meet-artists-subtitle">A warm hello from the two creators behind Horizon Tide. We blend dreamy digital storytelling with handmade physical craftsmanship.</p>
+        </section>
         <div class="socials-container">
-            <div class="profile-card card-green">
-                <img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/espeon.gif" alt="Shiny Espeon" class="card-espeon" style="filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.5));">
-                <img src="Lopside Our Socials/IMG_0721.jpg" alt="Lopside" class="profile-img" style="object-fit: cover; object-position: center;" onerror="handleImageError(this)">
-                <h2 class="starborn-name">Lopside</h2>
-                <a href="https://www.instagram.com/littlelopsidestudio?igsh=MW00OGFkbW13Zm5iOQ==" target="_blank" class="social-link-btn">Instagram</a>
-                <a href="https://www.tiktok.com/@little_lopside_studio?_r=1&_t=ZT-96eI2PAh4kn" target="_blank" class="social-link-btn">TikTok</a>
-                <a href="https://x.com/littlelopside?s=21" target="_blank" class="social-link-btn">X / Twitter</a>
-            </div>
-            <div class="profile-card card-pink">
+            <article class="profile-card card-pink">
                 <img src="https://img.pokemondb.net/sprites/black-white/anim/normal/espeon.gif" alt="Espeon" class="card-espeon" style="filter: drop-shadow(0 0 8px rgba(236, 72, 153, 0.5));">
                 <img src="Husky our socials/IMG_6379.jpg" alt="Husky" class="profile-img" style="object-fit: cover; object-position: center;" onerror="handleImageError(this)">
                 <h2 class="starborn-name">Husky</h2>
+                <p class="artist-role">Digital Artist • Animator • Website Creator</p>
+                <p class="artist-blurb">Husky handles digital art, animation, character artwork, and website building. Her style leans warm, emotional, and dreamy, with a focus on storytelling and personality.</p>
                 <a href="https://www.instagram.com/miraculously_cringe?igsh=Y3NoNjlydmxoZW1x&utm_source=qr" target="_blank" class="social-link-btn">Instagram</a>
                 <a href="https://www.tiktok.com/@sugarmew_2?_r=1&_t=ZT-96gjOKaomdh" target="_blank" class="social-link-btn">TikTok</a>
-            </div>
+            </article>
+            <article class="profile-card card-green">
+                <img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/espeon.gif" alt="Shiny Espeon" class="card-espeon" style="filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.5));">
+                <img src="Lopside Our Socials/IMG_0721.jpg" alt="Lopside" class="profile-img" style="object-fit: cover; object-position: center;" onerror="handleImageError(this)">
+                <h2 class="starborn-name">Lopside</h2>
+                <p class="artist-role">Fursuit Maker • Handmade Creator</p>
+                <p class="artist-blurb">Lopside handles fursuit creations, suit parts, and handmade physical commissions. Her approach is friendly, detail-focused, and deeply craft-driven.</p>
+                <a href="https://www.instagram.com/littlelopsidestudio?igsh=MW00OGFkbW13Zm5iOQ==" target="_blank" class="social-link-btn">Instagram</a>
+                <a href="https://www.tiktok.com/@little_lopside_studio?_r=1&_t=ZT-96eI2PAh4kn" target="_blank" class="social-link-btn">TikTok</a>
+                <a href="https://x.com/littlelopside?s=21" target="_blank" class="social-link-btn">X / Twitter</a>
+            </article>
         </div>
         <div class="socials-bio">
-            We are a small business and love to work together. Husky has a Bachelor's in Fine Arts, while Lopside has a Bachelor's in Hospitality. With Lopside's business mindset and Husky's artistic skills, both of these fine women try to make the best for themselves. Our goal is to bring a touch of magic and boundless creativity to everything we do. Whether it's through vibrant digital art, custom handcrafted fursuits, or charming merchandise, we put our whole hearts into our work. Thank you for joining us on this cosmic journey!
+            We are a small handmade studio built around trust, communication, and creativity. Husky leads digital projects and visual storytelling, while Lopside leads handmade and fursuit-focused work. Together, we keep each project personal, clear, and carefully crafted from first idea to final delivery.
         </div>
+        <section class="meet-faq-shell">
+            <h2>Frequently Asked Questions</h2>
+            <p class="meet-faq-intro">These quick answers cover the most common questions about ordering, timelines, updates, and Horizon Queue.</p>
+            <div class="faq-list">
+                <details class="faq-item" open>
+                    <summary>How do commissions work?</summary>
+                    <p>You submit a request through the order form, we review the details, then we contact you about pricing, timing, and next steps. Once everything is confirmed, your order can be added to Horizon Queue so you can follow public progress updates.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Do you prefer due dates?</summary>
+                    <p>Yes. Due dates help us plan better. Please include any important deadline when ordering. We cannot always guarantee rushed work, but knowing the date helps us decide whether the project is possible.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Can I order without a due date?</summary>
+                    <p>Yes. If there is no deadline, we will place the order into our normal queue and update progress as we work.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Why can the final quote differ from the calculator?</summary>
+                    <p>The calculator provides a planning estimate. Final pricing can change based on character complexity, markings/outfits, props, wings/armor, extra characters, rush deadlines, and physical materials if your request includes handmade work.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>How do I check my order or commission status?</summary>
+                    <p>Use Horizon Queue. Refund Queue shows refund progress, and Commission Queue shows current commission and work status while keeping private customer information protected.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>What if I need to update my request?</summary>
+                    <p>Contact us as soon as possible. Small updates may be possible before work begins, but larger changes may affect price, timeline, or whether the commission can still be completed as originally planned.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Do you offer refunds?</summary>
+                    <p>Refunds depend on the type of order, how much work has been completed, and the situation. Approved refunds are tracked through Horizon Queue so progress is clear and organized.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Why is some information public in Horizon Queue?</summary>
+                    <p>Horizon Queue only shows public-safe information like display names, queue status, and general progress notes. Private details such as emails, payment handles, legal names, addresses, and private notes are not shown publicly.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>How long do commissions take?</summary>
+                    <p>Turnaround time depends on the type of commission, complexity, materials, queue size, and due date. We try to keep communication clear and update the queue when progress changes.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Can I rush an order?</summary>
+                    <p>Rush orders may be possible depending on our schedule and the type of commission. Rush work may cost extra and must be approved before we accept the deadline.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Who works on what?</summary>
+                    <p>Husky focuses on digital art, animation, character art, and the website. Lopside focuses on fursuit creations, suit parts, and handmade physical commissions.</p>
+                </details>
+            </div>
+        </section>
+        <section class="meet-ordering-shell">
+            <h2>How Ordering Works</h2>
+            <ol>
+                <li>Submit a request</li>
+                <li>We review the details</li>
+                <li>We contact you with pricing and timeline</li>
+                <li>Payment and due date are confirmed</li>
+                <li>Your order enters the queue</li>
+                <li>Progress updates appear in Horizon Queue</li>
+            </ol>
+            <p class="meet-trust-note">We use Horizon Queue to keep public progress updates organized while protecting private customer information.</p>
+        </section>
         <button type="button" id="backHomeBtn" class="nav-btn" style="margin-top: 10px; border-color: #a855f7;">← Back to Horizon</button>
     `;
     document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
@@ -1917,6 +2492,245 @@ function loadAnnouncementsPage() {
     });
     
     attachInnerScrollListener();
+}
+
+function loadHuskysListPage() {
+    clearBubbles();
+    bodyElement.setAttribute('data-theme', 'huskys-list');
+    bodyElement.setAttribute('data-page', 'huskys-list');
+    renderDynamicMoon();
+    renderDashboardStars();
+
+    appViewport.innerHTML = `
+        <div class="refunds-page-container">
+            <div class="refunds-hero-card queue-reveal" style="--queue-stagger: 20ms;">
+                <div class="refunds-hero-copy">
+                    <h1>Horizon Queue</h1>
+                    <p class="refunds-subtitle">Refunds, Commissions, and Queue Updates</p>
+                    <p class="refunds-intro">This page keeps refund progress and commission work updates organized in one place. Public-facing queue details are shown here for clarity, while private payment and contact information remain hidden.</p>
+                </div>
+                <div class="refunds-meta-card">
+                    <span>Last updated:</span>
+                    <strong id="refundsLastUpdated">Loading...</strong>
+                </div>
+            </div>
+
+            <div class="huskys-list-public-note queue-reveal" style="--queue-stagger: 120ms;">Refund Queue shows refund progress. Commission Queue shows current commission/work status.</div>
+
+            <section class="queue-trust-strip queue-reveal" style="--queue-stagger: 150ms;">
+                <div class="queue-legend-block">
+                    <strong>Status Legend</strong>
+                    <div class="queue-legend-row">
+                        <span class="queue-legend-chip queue-chip-not-started">Not Started</span>
+                        <span class="queue-legend-chip queue-chip-started">Started</span>
+                        <span class="queue-legend-chip queue-chip-finished">Finished</span>
+                    </div>
+                </div>
+                <p>Queue updates are public-safe only. Private contact, payment, and admin notes remain private.</p>
+            </section>
+
+            <section class="queue-privacy-promise queue-reveal" style="--queue-stagger: 170ms;">
+                We only show public-safe queue information. Private details like emails, payment info, legal names, addresses, and private notes are never shown publicly.
+            </section>
+
+            <section class="huskys-list-section-shell queue-reveal" style="--queue-stagger: 200ms;">
+                <div class="huskys-list-section-head">
+                    <h2>Refund Queue</h2>
+                    <p>Public refund entries grouped by current refund progress.</p>
+                </div>
+                <div id="refundsGroupsContainer" class="refunds-groups-grid"></div>
+            </section>
+
+            <section class="huskys-list-section-shell queue-reveal" style="--queue-stagger: 280ms;">
+                <div class="huskys-list-section-head">
+                    <h2>Commission Queue</h2>
+                    <p>Public commission status updates for current work in the queue.</p>
+                </div>
+                <div id="commissionsGroupsContainer" class="refunds-groups-grid"></div>
+            </section>
+
+            <button type="button" id="backToPreorderBtn" class="nav-btn btn-spacing-top" style="border-color: #22c55e;">← Back to Preorder</button>
+            <p class="refunds-footer-note">Thank you for your patience. This page is updated as refund progress and commission movement are made.</p>
+        </div>
+    `;
+
+    document.getElementById('backToPreorderBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
+
+    if (window.publicRefundsUnsub) window.publicRefundsUnsub();
+    if (window.publicCommissionsUnsub) window.publicCommissionsUnsub();
+    const publicRefundsQuery = query(collection(db, 'refunds'), where('isPublic', '==', true));
+    window.publicRefundsUnsub = onSnapshot(publicRefundsQuery, (snapshot) => {
+        const refunds = [];
+        snapshot.forEach((docSnap) => {
+            refunds.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        
+        refunds.sort((a, b) => {
+            const aTime = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
+            const bTime = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
+            return bTime - aTime;
+        });
+
+        const container = document.getElementById('refundsGroupsContainer');
+        const lastUpdated = document.getElementById('refundsLastUpdated');
+        if (lastUpdated) {
+            lastUpdated.innerText = formatDisplayDate(new Date());
+        }
+
+        if (!container) return;
+
+        renderPublicQueueGroups(
+            container,
+            refunds,
+            renderPublicRefundCard,
+            'No public refund updates are visible yet. Check back soon for the latest queue progress.',
+            'No refunds in this section yet.'
+        );
+    }, (error) => {
+        const container = document.getElementById('refundsGroupsContainer');
+        if (container) {
+            container.innerHTML = `<div class="refunds-empty-state"><p>Unable to load refunds. Please check back later.</p></div>`;
+        }
+        console.error('Public refunds query failed', error);
+    });
+
+    const publicCommissionsQuery = query(collection(db, 'commissions'), where('isPublic', '==', true));
+    window.publicCommissionsUnsub = onSnapshot(publicCommissionsQuery, (snapshot) => {
+        const commissions = [];
+        snapshot.forEach((docSnap) => {
+            commissions.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        commissions.sort((a, b) => {
+            const aTime = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
+            const bTime = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
+            return bTime - aTime;
+        });
+
+        const container = document.getElementById('commissionsGroupsContainer');
+        const lastUpdated = document.getElementById('refundsLastUpdated');
+        if (lastUpdated) {
+            lastUpdated.innerText = formatDisplayDate(new Date());
+        }
+
+        if (!container) return;
+
+        renderPublicQueueGroups(
+            container,
+            commissions,
+            renderPublicCommissionCard,
+            'No public commission updates are visible yet. Check back soon for the latest queue progress.',
+            'No commissions in this section yet.'
+        );
+    }, (error) => {
+        const container = document.getElementById('commissionsGroupsContainer');
+        if (container) {
+            container.innerHTML = `<div class="refunds-empty-state"><p>Unable to load commissions. Please check back later.</p></div>`;
+        }
+        console.error('Public commissions query failed', error);
+    });
+
+    attachInnerScrollListener();
+}
+
+function renderPublicQueueGroups(container, items, renderCard, emptyMessage, emptySectionMessage) {
+    const groups = {
+        'Not Started': [],
+        'Started': [],
+        'Finished': []
+    };
+
+    items.forEach((item) => {
+        const status = item.queueStatus || 'Not Started';
+        if (!groups[status]) {
+            groups[status] = [];
+        }
+        groups[status].push(item);
+    });
+
+    if (items.length === 0) {
+        container.innerHTML = `
+            <div class="refunds-empty-state">
+                <p>${escapeHTML(emptyMessage)}</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    ['Not Started', 'Started', 'Finished'].forEach((groupName, groupIndex) => {
+        const groupItems = groups[groupName] || [];
+        html += `
+            <section class="refund-group-section queue-reveal" style="--queue-stagger: ${80 + (groupIndex * 110)}ms;">
+                <div class="refund-group-header">
+                    <h2>${groupName}</h2>
+                    <span class="refund-group-count">${groupItems.length} ${groupItems.length === 1 ? 'entry' : 'entries'}</span>
+                </div>
+                <div class="refund-group-list">
+                    ${groupItems.length > 0 ? groupItems.map((item, itemIndex) => renderCard(item, itemIndex)).join('') : `<div class="refunds-empty-section">${escapeHTML(emptySectionMessage)}</div>`}
+                </div>
+            </section>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+function renderPublicRefundCard(refund, index = 0) {
+    const progress = getProgressPercent(refund.amountPaid, refund.amountOwed);
+    const isCompleted = progress >= 100;
+    return `
+        <article class="refund-card queue-reveal ${isCompleted ? 'refund-card-completed' : ''}" style="--queue-stagger: ${140 + (index * 70)}ms;">
+            <div class="refund-card-top">
+                <div>
+                    <div class="refund-card-title">${escapeHTML(refund.refundId || 'N/A')}</div>
+                    <div class="refund-card-subtitle">${escapeHTML(refund.displayName || 'Anonymous')}</div>
+                </div>
+                <div class="refund-chip refund-chip-queue" style="background:${getQueueBadgeColor(refund.queueStatus)};">${escapeHTML(refund.queueStatus || 'Not Started')}</div>
+            </div>
+            <div class="refund-card-info">
+                <div class="refund-info-row"><strong>Source:</strong> ${escapeHTML(refund.sourceType || 'Other')}</div>
+                <div class="refund-info-row"><strong>Estimated Update:</strong> ${escapeHTML(refund.estimatedUpdate || 'TBD')}</div>
+                <div class="refund-info-row"><strong>Last Updated:</strong> ${escapeHTML(formatDisplayDate(refund.lastUpdated))}</div>
+            </div>
+            <div class="refund-amount-row">
+                <div><strong>Amount Owed:</strong> ${formatMoney(refund.amountOwed)}</div>
+                <div><strong>Amount Refunded:</strong> ${formatMoney(refund.amountPaid)}</div>
+            </div>
+            <div class="refund-progress-bar">
+                <div class="refund-progress-fill" style="width: ${progress}%; background: linear-gradient(135deg, #34d399, #818cf8);"></div>
+            </div>
+            <div class="refund-progress-label">${progress}% refunded</div>
+            <div class="refund-card-footer">
+                <span class="refund-chip refund-chip-detail" style="background:${getDetailBadgeColor(refund.detailedStatus)};">${escapeHTML(refund.detailedStatus || 'Pending')}</span>
+                <p class="refund-notes">${escapeHTML(refund.publicNotes || 'No public notes available.')}</p>
+            </div>
+        </article>
+    `;
+}
+
+function renderPublicCommissionCard(commission, index = 0) {
+    return `
+        <article class="refund-card commission-card queue-reveal" style="--queue-stagger: ${140 + (index * 70)}ms;">
+            <div class="refund-card-top">
+                <div>
+                    <div class="refund-card-title">${escapeHTML(commission.commissionId || 'N/A')}</div>
+                    <div class="refund-card-subtitle">${escapeHTML(commission.displayName || 'Anonymous')}</div>
+                </div>
+                <div class="refund-chip refund-chip-queue" style="background:${getQueueBadgeColor(commission.queueStatus)};">${escapeHTML(commission.queueStatus || 'Not Started')}</div>
+            </div>
+            <div class="refund-card-info">
+                <div class="refund-info-row"><strong>Commission Type:</strong> ${escapeHTML(commission.commissionType || 'Other')}</div>
+                <div class="refund-info-row"><strong>Estimated Start:</strong> ${escapeHTML(commission.estimatedStart || 'TBD')}</div>
+                <div class="refund-info-row"><strong>Estimated Update:</strong> ${escapeHTML(commission.estimatedUpdate || 'TBD')}</div>
+                <div class="refund-info-row"><strong>Last Updated:</strong> ${escapeHTML(formatDisplayDate(commission.lastUpdated))}</div>
+            </div>
+            <div class="refund-card-footer">
+                <span class="refund-chip refund-chip-detail" style="background:${getDetailBadgeColor(commission.detailedStatus)};">${escapeHTML(commission.detailedStatus || 'Pending')}</span>
+                <p class="refund-notes">${escapeHTML(commission.publicNotes || 'No public notes available.')}</p>
+            </div>
+        </article>
+    `;
 }
 
 function checkPreorderSpam() {
@@ -2551,10 +3365,16 @@ async function submitPreorder(event, orderType) {
                     <h2 class="success-headline">Yay! Order Sent!</h2>
                     <p class="success-subtext">We safely received your request, <strong>${escapeHTML(orderData.name)}</strong>!<br>A confirmation bottle is floating to your email: <br><strong style="color: #00f2fe;">${escapeHTML(orderData.email)}</strong></p>
                     <div class="order-number-card">
-                        <p style="color: #00f2fe; font-size: 0.95rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; font-weight: 500;">Your Tracking Number</p>
+                        <p style="color: #00f2fe; font-size: 0.95rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; font-weight: 500;">Save Your Order ID</p>
                         <h3 style="color: #ffffff; font-size: 2.2rem; letter-spacing: 2px; margin: 0; text-shadow: 0 0 10px rgba(0, 242, 254, 0.4);">${newOrderId}</h3>
                     </div>
-                    <p style="color: #a2b7cc; font-size: 0.95rem; margin-top: 5px; margin-bottom: 15px;">Please save this number for checking your order status.</p>
+                    <p style="color: #a2b7cc; font-size: 0.95rem; margin-top: 5px; margin-bottom: 8px;">Please keep this ID for status checks and support.</p>
+                    <ul class="success-next-steps">
+                        <li>Watch your email for follow-up updates from us.</li>
+                        <li>We will review your request and contact you with next steps.</li>
+                        <li>Approved work may enter Horizon Queue for public-safe progress updates.</li>
+                        <li>If something needs correction, contact us as soon as possible.</li>
+                    </ul>
                     <button type="button" class="nav-btn" style="width: 100%; max-width: 300px;" id="successBackBtn">← Back to Menu</button>
                 </div>
             `;
@@ -2573,21 +3393,104 @@ async function submitPreorder(event, orderType) {
 // =====================================
 // ADMIN DASHBOARD
 // =====================================
-document.getElementById('secretAdminTrigger')?.addEventListener('dblclick', async () => {
-    const email = prompt("🌌 Secure Admin Access. Enter Email:");
-    if (!email) return;
-    
-    const pass = prompt("Enter Password:");
-    if (!pass) return;
+function closeAdminLoginModal() {
+    const modal = document.getElementById('adminLoginModal');
+    if (!modal) return;
+    modal.remove();
+    document.body.classList.remove('admin-login-modal-open');
+}
 
-    try {
-        await signInWithEmailAndPassword(auth, email.trim(), pass);
-        cinematicTransition(null, loadAdminDashboard, '#admin');
-    } catch (error) {
-        alert("Authentication Failed: Invalid email or password.");
-        console.error(error);
-    }
-});
+function openAdminLoginModal() {
+    closeAdminLoginModal();
+
+    const modal = document.createElement('div');
+    modal.id = 'adminLoginModal';
+    modal.className = 'admin-login-modal';
+    modal.innerHTML = `
+        <div class="admin-login-modal__backdrop" data-admin-login-close="true"></div>
+        <div class="admin-login-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="adminLoginTitle">
+            <button type="button" class="admin-login-modal__close" id="adminLoginCloseBtn" aria-label="Close Secret Corner login">×</button>
+            <div class="admin-login-modal__eyebrow">Secret Corner Access</div>
+            <h2 id="adminLoginTitle" class="admin-login-modal__title">Admin Login</h2>
+            <p class="admin-login-modal__copy">Sign in to open the Horizon Admin Dashboard. This only changes the UI entry point and keeps the existing Firebase auth flow.</p>
+            <form id="adminLoginForm" class="admin-login-modal__form">
+                <label class="admin-login-modal__label" for="adminLoginEmail">Email</label>
+                <input type="email" id="adminLoginEmail" class="admin-login-modal__input" autocomplete="username" placeholder="you@example.com" required>
+                <label class="admin-login-modal__label" for="adminLoginPassword">Password</label>
+                <input type="password" id="adminLoginPassword" class="admin-login-modal__input" autocomplete="current-password" placeholder="Password" required>
+                <p id="adminLoginError" class="admin-login-modal__error" aria-live="polite"></p>
+                <div class="admin-login-modal__actions">
+                    <button type="button" id="adminLoginCancelBtn" class="admin-login-modal__btn admin-login-modal__btn--secondary">Cancel</button>
+                    <button type="submit" id="adminLoginSubmitBtn" class="admin-login-modal__btn admin-login-modal__btn--primary">Log In</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    document.body.classList.add('admin-login-modal-open');
+
+    const form = document.getElementById('adminLoginForm');
+    const emailInput = document.getElementById('adminLoginEmail');
+    const passwordInput = document.getElementById('adminLoginPassword');
+    const errorEl = document.getElementById('adminLoginError');
+    const submitBtn = document.getElementById('adminLoginSubmitBtn');
+    const cancelBtn = document.getElementById('adminLoginCancelBtn');
+    const closeBtn = document.getElementById('adminLoginCloseBtn');
+
+    const handleClose = () => closeAdminLoginModal();
+
+    modal.addEventListener('click', (event) => {
+        if (event.target instanceof HTMLElement && event.target.dataset.adminLoginClose === 'true') {
+            handleClose();
+        }
+    });
+
+    closeBtn?.addEventListener('click', handleClose);
+    cancelBtn?.addEventListener('click', handleClose);
+
+    const handleEscape = (event) => {
+        if (event.key === 'Escape') {
+            handleClose();
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+
+    form?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!emailInput || !passwordInput || !errorEl || !submitBtn) return;
+
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        errorEl.textContent = '';
+
+        if (!email || !password) {
+            errorEl.textContent = 'Please enter both your email and password.';
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Logging In...';
+
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            document.removeEventListener('keydown', handleEscape);
+            closeAdminLoginModal();
+            cinematicTransition(null, loadAdminDashboard, '#admin');
+        } catch (error) {
+            errorEl.textContent = 'Authentication failed. Please check your email and password.';
+            console.error(error);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Log In';
+        }
+    });
+
+    emailInput?.focus();
+}
+
+bindSecretCornerTrigger();
 
 function updateAdminPreview() {
     const dPercent = document.getElementById('adminDiscountPercent');
@@ -2654,6 +3557,12 @@ function renderActiveDiscountsList() {
 }
 
 function loadAdminDashboard() {
+    if (!auth.currentUser) {
+        alert('Secret Corner access requires signing in first.');
+        cinematicTransition(null, loadHomePage, '#home');
+        return;
+    }
+
     clearBubbles(); if(interactiveStarField) interactiveStarField.innerHTML = ""; bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'admin'); renderDynamicMoon(); renderDashboardStars();
     homeStarField.innerHTML = ""; dashboardStarField.innerHTML = "";
     
@@ -2670,7 +3579,143 @@ function loadAdminDashboard() {
             </div>
 
             ${getTemplateHTML('adminDiscountManagerTemplate')}
+            ${getTemplateHTML('adminAvailabilityManagerTemplate')}
             ${getTemplateHTML('adminAnnouncementsControlsTemplate')}
+
+            <div class="admin-card queue-manager-card">
+                <h3 class="admin-card-title">🌊 Horizon Queue Manager</h3>
+                <div class="admin-refund-banner">
+                    <p>Horizon Queue Manager: Public-safe refund and commission info appears on the public Horizon Queue page. Private notes/contact/payment info stay admin-only.</p>
+                </div>
+                <p class="admin-card-subtitle">Manage refund and commission queue entries in one place. Public-safe fields stay in their public collections, while admin-only details stay in their matching private collections.</p>
+
+                <div class="queue-manager-tabs" role="tablist" aria-label="Horizon Queue Manager Sections">
+                    <button type="button" class="queue-manager-tab-btn is-active" data-queue-tab="refunds" role="tab" aria-selected="true">Refunds</button>
+                    <button type="button" class="queue-manager-tab-btn" data-queue-tab="commissions" role="tab" aria-selected="false">Commissions</button>
+                </div>
+
+                <div class="queue-manager-panel" data-queue-panel="refunds">
+                    <div class="queue-manager-panel-head">
+                        <h4>Refund Queue</h4>
+                        <p>Public-safe refund data is stored in <code>refunds</code>. Private/admin-only refund details stay in <code>refundPrivate</code>.</p>
+                    </div>
+
+                    <div class="refund-admin-grid">
+                        <div class="refund-admin-form-column">
+                        <label class="admin-label">Refund ID<input type="text" id="refundIdField" class="admin-input" placeholder="e.g. 001"></label>
+                        <label class="admin-label">Display Name<input type="text" id="displayNameField" class="admin-input" placeholder="Public username or initials"></label>
+                        <label class="admin-label">Amount Owed<input type="number" id="amountOwedField" class="admin-input" placeholder="0" min="0" step="0.01"></label>
+                        <label class="admin-label">Amount Paid<input type="number" id="amountPaidField" class="admin-input" placeholder="0" min="0" step="0.01"></label>
+                        <label class="admin-label">Queue Status<select id="queueStatusField" class="admin-input"><option>Not Started</option><option>Started</option><option>Finished</option></select></label>
+                        <label class="admin-label">Detailed Status<select id="detailedStatusField" class="admin-input"><option>Pending</option><option>In Progress</option><option>Partially Paid</option><option>Completed</option><option>Contact Needed</option><option>On Hold</option></select></label>
+                        <label class="admin-label">Source Type<select id="sourceTypeField" class="admin-input"><option>Website Order</option><option>Off-site Commission</option><option>Social Media Order</option><option>Manual Entry</option><option>Other</option></select></label>
+                        <label class="admin-label">Estimated Update<input type="text" id="estimatedUpdateField" class="admin-input" placeholder="e.g. July 2026"></label>
+                        <label class="admin-label">Public Notes<textarea id="publicNotesField" class="admin-input admin-textarea" rows="3" placeholder="Public status note..."></textarea></label>
+                        <label class="admin-label">Last Updated<input type="text" id="lastUpdatedField" class="admin-input" placeholder="e.g. June 2026"></label>
+                        <label class="admin-label admin-checkbox-label-wrap"><input type="checkbox" id="isPublicField" class="admin-checkbox"> Show public</label>
+                        <label class="admin-label">Private Notes<textarea id="privateNotesField" class="admin-input admin-textarea" rows="3" placeholder="Admin-only notes..."></textarea></label>
+                        <label class="admin-label">Private Contact Info<input type="text" id="privateContactInfoField" class="admin-input" placeholder="Private contact info"></label>
+                        <label class="admin-label">Payment Handle<input type="text" id="paymentHandleField" class="admin-input" placeholder="Private payment handle"></label>
+                        <label class="admin-label">Email<input type="text" id="privateEmailField" class="admin-input" placeholder="Private email"></label>
+                        <label class="admin-label">Transaction Info<textarea id="transactionInfoField" class="admin-input admin-textarea" rows="2" placeholder="Private transaction info..."></textarea></label>
+                        <div class="admin-actions refund-manager-actions">
+                            <button type="button" id="saveRefundBtn" class="admin-btn-save">Save Refund</button>
+                            <button type="button" id="clearRefundFormBtn" class="admin-btn-publish" style="background: rgba(255,255,255,0.08);">Clear</button>
+                        </div>
+                        </div>
+                        <div class="refund-admin-list-column">
+                            <div class="admin-queue-tools">
+                                <label class="admin-queue-search" for="refundSearchField">
+                                    <span>Search refund entries</span>
+                                    <input type="search" id="refundSearchField" class="admin-input" placeholder="Search ID, name, source, or status">
+                                </label>
+                                <div class="admin-queue-filter-row">
+                                    <label class="admin-queue-filter" for="refundVisibilityFilter">
+                                        <span>Visibility</span>
+                                        <select id="refundVisibilityFilter" class="admin-input">
+                                            <option value="all">All</option>
+                                            <option value="public">Public</option>
+                                            <option value="hidden">Hidden</option>
+                                        </select>
+                                    </label>
+                                    <label class="admin-queue-filter" for="refundStatusFilter">
+                                        <span>Queue status</span>
+                                        <select id="refundStatusFilter" class="admin-input">
+                                            <option value="all">All</option>
+                                            <option value="Not Started">Not Started</option>
+                                            <option value="Started">Started</option>
+                                            <option value="Finished">Finished</option>
+                                        </select>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="refund-admin-list-header"><strong>Existing Refund Entries</strong></div>
+                            <div id="adminRefundsList" class="admin-refunds-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="queue-manager-panel is-hidden" data-queue-panel="commissions">
+                    <div class="queue-manager-panel-head">
+                        <h4>Commission Queue</h4>
+                        <p>Public-safe commission data is stored in <code>commissions</code>. Private/admin-only commission details stay in <code>commissionPrivate</code>.</p>
+                    </div>
+
+                    <div class="commission-admin-grid">
+                        <div class="commission-admin-form-column">
+                        <label class="admin-label">Commission ID<input type="text" id="commissionIdField" class="admin-input" placeholder="e.g. COM-001"></label>
+                        <label class="admin-label">Display Name<input type="text" id="commissionDisplayNameField" class="admin-input" placeholder="Public username or initials"></label>
+                        <label class="admin-label">Commission Type<input type="text" id="commissionTypeField" class="admin-input" placeholder="e.g. Badge, Fullbody, Suit Part"></label>
+                        <label class="admin-label">Queue Status<select id="commissionQueueStatusField" class="admin-input"><option>Not Started</option><option>Started</option><option>Finished</option></select></label>
+                        <label class="admin-label">Detailed Status<select id="commissionDetailedStatusField" class="admin-input"><option>Pending</option><option>Sketching</option><option>In Progress</option><option>Rendering</option><option>Sewing</option><option>Waiting on Client</option><option>Completed</option><option>On Hold</option></select></label>
+                        <label class="admin-label">Estimated Start<input type="text" id="commissionEstimatedStartField" class="admin-input" placeholder="e.g. July 2026"></label>
+                        <label class="admin-label">Estimated Update / Completion<input type="text" id="commissionEstimatedUpdateField" class="admin-input" placeholder="e.g. August 2026"></label>
+                        <label class="admin-label">Public Notes<textarea id="commissionPublicNotesField" class="admin-input admin-textarea" rows="3" placeholder="Public queue update..."></textarea></label>
+                        <label class="admin-label">Last Updated<input type="text" id="commissionLastUpdatedField" class="admin-input" placeholder="e.g. June 2026"></label>
+                        <label class="admin-label admin-checkbox-label-wrap"><input type="checkbox" id="commissionIsPublicField" class="admin-checkbox"> Show public</label>
+                        <label class="admin-label">Private Notes<textarea id="commissionPrivateNotesField" class="admin-input admin-textarea" rows="3" placeholder="Admin-only notes..."></textarea></label>
+                        <label class="admin-label">Private Contact Info<input type="text" id="commissionPrivateContactInfoField" class="admin-input" placeholder="Private contact info"></label>
+                        <label class="admin-label">Payment Handle<input type="text" id="commissionPaymentHandleField" class="admin-input" placeholder="Private payment handle"></label>
+                        <label class="admin-label">Email<input type="text" id="commissionPrivateEmailField" class="admin-input" placeholder="Private email"></label>
+                        <label class="admin-label">Transaction Info<textarea id="commissionTransactionInfoField" class="admin-input admin-textarea" rows="2" placeholder="Private transaction info..."></textarea></label>
+                        <label class="admin-label">Reference Info<textarea id="commissionReferenceInfoField" class="admin-input admin-textarea" rows="2" placeholder="Private reference info..."></textarea></label>
+                        <div class="admin-actions refund-manager-actions">
+                            <button type="button" id="saveCommissionBtn" class="admin-btn-save">Save Commission</button>
+                            <button type="button" id="clearCommissionFormBtn" class="admin-btn-publish" style="background: rgba(255,255,255,0.08);">Clear</button>
+                        </div>
+                        </div>
+                        <div class="commission-admin-list-column">
+                            <div class="admin-queue-tools">
+                                <label class="admin-queue-search" for="commissionSearchField">
+                                    <span>Search commission entries</span>
+                                    <input type="search" id="commissionSearchField" class="admin-input" placeholder="Search ID, name, type, or status">
+                                </label>
+                                <div class="admin-queue-filter-row">
+                                    <label class="admin-queue-filter" for="commissionVisibilityFilter">
+                                        <span>Visibility</span>
+                                        <select id="commissionVisibilityFilter" class="admin-input">
+                                            <option value="all">All</option>
+                                            <option value="public">Public</option>
+                                            <option value="hidden">Hidden</option>
+                                        </select>
+                                    </label>
+                                    <label class="admin-queue-filter" for="commissionStatusFilter">
+                                        <span>Queue status</span>
+                                        <select id="commissionStatusFilter" class="admin-input">
+                                            <option value="all">All</option>
+                                            <option value="Not Started">Not Started</option>
+                                            <option value="Started">Started</option>
+                                            <option value="Finished">Finished</option>
+                                        </select>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="commission-admin-list-header"><strong>Existing Commission Entries</strong></div>
+                            <div id="adminCommissionsList" class="admin-commissions-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div id="ordersGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; width: 100%;">
                 <p style="color: white; text-align: center; width: 100%;">Loading secure orders...</p>
@@ -2684,6 +3729,10 @@ function loadAdminDashboard() {
     updateAdminPreview();
     
     renderActiveDiscountsList();
+    renderAdminAvailabilitySettings();
+    setupQueueManagerTabs();
+    setupAdminRefundManager();
+    setupAdminCommissionManager();
 
     document.getElementById('btnSaveDiscount')?.addEventListener('click', async (e) => {
         const btn = e.target;
@@ -2717,6 +3766,48 @@ function loadAdminDashboard() {
             btn.innerText = "Add Discount";
             btn.disabled = false;
         }
+    });
+
+    document.getElementById('btnSaveAvailabilitySettings')?.addEventListener('click', async (e) => {
+        const btn = e.target;
+        const payload = normalizeHomeAvailability({
+            artists: {
+                husky: {
+                    name: document.getElementById('adminAvailHuskyName')?.value,
+                    service: document.getElementById('adminAvailHuskyService')?.value,
+                    status: document.getElementById('adminAvailHuskyStatus')?.value,
+                    slots: document.getElementById('adminAvailHuskySlots')?.value
+                },
+                lopside: {
+                    name: document.getElementById('adminAvailLopsideName')?.value,
+                    service: document.getElementById('adminAvailLopsideService')?.value,
+                    status: document.getElementById('adminAvailLopsideStatus')?.value,
+                    slots: document.getElementById('adminAvailLopsideSlots')?.value
+                }
+            },
+            responseTime: document.getElementById('adminAvailResponseTime')?.value
+        });
+
+        btn.disabled = true;
+        btn.innerText = 'Saving...';
+        try {
+            await setDoc(doc(db, 'settings', 'availability'), payload, { merge: true });
+            window.homeAvailability = payload;
+            applyHomeAvailabilityToCurrentDOM();
+            showAdminToast('Availability updated.');
+        } catch (error) {
+            console.error(error);
+            showAdminToast('Failed to update availability.', true);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = 'Save Availability';
+        }
+    });
+
+    document.getElementById('btnResetAvailabilityDefaults')?.addEventListener('click', () => {
+        window.homeAvailability = normalizeHomeAvailability(null);
+        renderAdminAvailabilitySettings();
+        showAdminToast('Default availability loaded in form. Save to publish.');
     });
 
     // --- ANNOUNCEMENTS BINDINGS ---
@@ -2846,6 +3937,8 @@ function loadAdminDashboard() {
             await signOut(auth);
             if(window.adminUnsubscribe) window.adminUnsubscribe();
             if(window.adminAnnounceUnsub) window.adminAnnounceUnsub();
+            if(window.adminRefundsUnsub) window.adminRefundsUnsub();
+            if(window.adminCommissionsUnsub) window.adminCommissionsUnsub();
         } catch (error) {
             console.error("Error signing out", error);
         }
@@ -2870,6 +3963,639 @@ function loadAdminDashboard() {
             ordersGrid.innerHTML = `<p style="color: #ef4444; text-align: center; width: 100%;">Access Denied: Please log in or check Firebase Security Rules.</p>`;
         }
     });
+}
+
+function renderAdminAvailabilitySettings() {
+    const availability = normalizeHomeAvailability(window.homeAvailability);
+    const husky = availability.artists.husky;
+    const lopside = availability.artists.lopside;
+
+    const huskyName = document.getElementById('adminAvailHuskyName');
+    const huskyService = document.getElementById('adminAvailHuskyService');
+    const huskyStatus = document.getElementById('adminAvailHuskyStatus');
+    const huskySlots = document.getElementById('adminAvailHuskySlots');
+
+    const lopsideName = document.getElementById('adminAvailLopsideName');
+    const lopsideService = document.getElementById('adminAvailLopsideService');
+    const lopsideStatus = document.getElementById('adminAvailLopsideStatus');
+    const lopsideSlots = document.getElementById('adminAvailLopsideSlots');
+
+    const responseTime = document.getElementById('adminAvailResponseTime');
+
+    if (huskyName) huskyName.value = husky.name;
+    if (huskyService) huskyService.value = husky.service;
+    if (huskyStatus) huskyStatus.value = husky.status;
+    if (huskySlots) huskySlots.value = husky.slots;
+
+    if (lopsideName) lopsideName.value = lopside.name;
+    if (lopsideService) lopsideService.value = lopside.service;
+    if (lopsideStatus) lopsideStatus.value = lopside.status;
+    if (lopsideSlots) lopsideSlots.value = lopside.slots;
+
+    if (responseTime) responseTime.value = availability.responseTime;
+}
+
+function setupAdminRefundManager() {
+    const saveBtn = document.getElementById('saveRefundBtn');
+    const clearBtn = document.getElementById('clearRefundFormBtn');
+    const refundsList = document.getElementById('adminRefundsList');
+
+    bindAdminQueueFilterControls('refund', applyRefundAdminFilters);
+
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+            if (!auth.currentUser) {
+                alert('Please log into the Secret Corner before saving refunds.');
+                return;
+            }
+
+            const refundId = document.getElementById('refundIdField').value.trim();
+            const displayName = document.getElementById('displayNameField').value.trim();
+            const amountOwed = Number(document.getElementById('amountOwedField').value) || 0;
+            const amountPaid = Number(document.getElementById('amountPaidField').value) || 0;
+            const queueStatus = document.getElementById('queueStatusField').value;
+            const detailedStatus = document.getElementById('detailedStatusField').value;
+            const sourceType = document.getElementById('sourceTypeField').value;
+            const estimatedUpdate = document.getElementById('estimatedUpdateField').value.trim();
+            const publicNotes = document.getElementById('publicNotesField').value.trim();
+            const lastUpdated = document.getElementById('lastUpdatedField').value.trim();
+            const isPublic = document.getElementById('isPublicField').checked;
+            const privateNotes = document.getElementById('privateNotesField').value.trim();
+            const privateContactInfo = document.getElementById('privateContactInfoField').value.trim();
+            const paymentHandle = document.getElementById('paymentHandleField').value.trim();
+            const privateEmail = document.getElementById('privateEmailField').value.trim();
+            const transactionInfo = document.getElementById('transactionInfoField').value.trim();
+
+            if (!refundId || !displayName) {
+                alert('Please provide both a refund ID and a display name.');
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.innerText = window.currentEditingRefundId ? 'Saving...' : 'Adding...';
+
+            const publicPayload = {
+                refundId,
+                displayName,
+                amountOwed,
+                amountPaid,
+                queueStatus,
+                detailedStatus,
+                sourceType,
+                estimatedUpdate,
+                publicNotes,
+                lastUpdated,
+                isPublic,
+                updatedAt: serverTimestamp()
+            };
+
+            const privatePayload = {
+                refundId,
+                privateNotes,
+                privateContactInfo,
+                paymentHandle,
+                email: privateEmail,
+                transactionInfo,
+                updatedAt: serverTimestamp()
+            };
+
+            try {
+                if (window.currentEditingRefundId) {
+                    await updateDoc(doc(db, 'refunds', window.currentEditingRefundId), publicPayload);
+                    await setDoc(doc(db, 'refundPrivate', window.currentEditingRefundId), privatePayload, { merge: true });
+                    showAdminToast('Refund updated! ✨');
+                } else {
+                    const docRef = await addDoc(collection(db, 'refunds'), {
+                        ...publicPayload,
+                        createdAt: serverTimestamp()
+                    });
+                    await setDoc(doc(db, 'refundPrivate', docRef.id), {
+                        ...privatePayload,
+                        createdAt: serverTimestamp()
+                    });
+                    showAdminToast('Refund added! ✨');
+                }
+                clearRefundForm();
+            } catch (error) {
+                console.error('Refund save failed', error);
+                showAdminToast('Failed to save refund.', true);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerText = 'Save Refund';
+            }
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            clearRefundForm();
+        });
+    }
+
+    if (!auth.currentUser) {
+        window.adminRefundEntries = [];
+        if (refundsList) {
+            refundsList.innerHTML = `<p style="color:#ef4444;">Sign into the Secret Corner to manage refunds.</p>`;
+        }
+        return;
+    }
+
+    if (window.adminRefundsUnsub) window.adminRefundsUnsub();
+    window.adminRefundsUnsub = onSnapshot(collection(db, 'refunds'), (snapshot) => {
+        const refunds = [];
+        snapshot.forEach((docSnap) => refunds.push({ id: docSnap.id, ...docSnap.data() }));
+        refunds.sort((a, b) => {
+            const aTime = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
+            const bTime = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
+            return bTime - aTime;
+        });
+        window.adminRefundEntries = refunds;
+        applyRefundAdminFilters();
+    }, (error) => {
+        if (refundsList) {
+            refundsList.innerHTML = `<p style="color:#ef4444;">Unable to load refunds.</p>`;
+        }
+        console.error('Refund manager load failed', error);
+    });
+}
+
+function setupQueueManagerTabs() {
+    const tabButtons = document.querySelectorAll('.queue-manager-tab-btn');
+    const panels = document.querySelectorAll('.queue-manager-panel');
+    if (tabButtons.length === 0 || panels.length === 0) return;
+
+    const activateTab = (tabName) => {
+        tabButtons.forEach((button) => {
+            const isActive = button.getAttribute('data-queue-tab') === tabName;
+            button.classList.toggle('is-active', isActive);
+            button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+
+        panels.forEach((panel) => {
+            const isActive = panel.getAttribute('data-queue-panel') === tabName;
+            panel.classList.toggle('is-hidden', !isActive);
+        });
+    };
+
+    tabButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            activateTab(button.getAttribute('data-queue-tab'));
+        });
+    });
+
+    activateTab('refunds');
+}
+
+function setupAdminCommissionManager() {
+    const saveBtn = document.getElementById('saveCommissionBtn');
+    const clearBtn = document.getElementById('clearCommissionFormBtn');
+    const commissionsList = document.getElementById('adminCommissionsList');
+
+    bindAdminQueueFilterControls('commission', applyCommissionAdminFilters);
+
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+            if (!auth.currentUser) {
+                alert('Please log into the Secret Corner before saving commissions.');
+                return;
+            }
+
+            const commissionId = document.getElementById('commissionIdField').value.trim();
+            const displayName = document.getElementById('commissionDisplayNameField').value.trim();
+            const commissionType = document.getElementById('commissionTypeField').value.trim();
+            const queueStatus = document.getElementById('commissionQueueStatusField').value;
+            const detailedStatus = document.getElementById('commissionDetailedStatusField').value;
+            const estimatedStart = document.getElementById('commissionEstimatedStartField').value.trim();
+            const estimatedUpdate = document.getElementById('commissionEstimatedUpdateField').value.trim();
+            const publicNotes = document.getElementById('commissionPublicNotesField').value.trim();
+            const lastUpdated = document.getElementById('commissionLastUpdatedField').value.trim();
+            const isPublic = document.getElementById('commissionIsPublicField').checked;
+            const privateNotes = document.getElementById('commissionPrivateNotesField').value.trim();
+            const privateContactInfo = document.getElementById('commissionPrivateContactInfoField').value.trim();
+            const paymentHandle = document.getElementById('commissionPaymentHandleField').value.trim();
+            const privateEmail = document.getElementById('commissionPrivateEmailField').value.trim();
+            const transactionInfo = document.getElementById('commissionTransactionInfoField').value.trim();
+            const referenceInfo = document.getElementById('commissionReferenceInfoField').value.trim();
+
+            if (!commissionId || !displayName || !commissionType) {
+                alert('Please provide a commission ID, display name, and commission type.');
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.innerText = window.currentEditingCommissionId ? 'Saving...' : 'Adding...';
+
+            const publicPayload = {
+                commissionId,
+                displayName,
+                commissionType,
+                queueStatus,
+                detailedStatus,
+                estimatedStart,
+                estimatedUpdate,
+                publicNotes,
+                lastUpdated,
+                isPublic,
+                updatedAt: serverTimestamp()
+            };
+
+            const privatePayload = {
+                commissionId,
+                privateNotes,
+                privateContactInfo,
+                paymentHandle,
+                email: privateEmail,
+                transactionInfo,
+                referenceInfo,
+                updatedAt: serverTimestamp()
+            };
+
+            try {
+                if (window.currentEditingCommissionId) {
+                    await updateDoc(doc(db, 'commissions', window.currentEditingCommissionId), publicPayload);
+                    await setDoc(doc(db, 'commissionPrivate', window.currentEditingCommissionId), privatePayload, { merge: true });
+                    showAdminToast('Commission updated! ✨');
+                } else {
+                    const docRef = await addDoc(collection(db, 'commissions'), {
+                        ...publicPayload,
+                        createdAt: serverTimestamp()
+                    });
+                    await setDoc(doc(db, 'commissionPrivate', docRef.id), {
+                        ...privatePayload,
+                        createdAt: serverTimestamp()
+                    });
+                    showAdminToast('Commission added! ✨');
+                }
+                clearCommissionForm();
+            } catch (error) {
+                console.error('Commission save failed', error);
+                showAdminToast('Failed to save commission.', true);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerText = 'Save Commission';
+            }
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            clearCommissionForm();
+        });
+    }
+
+    if (!auth.currentUser) {
+        window.adminCommissionEntries = [];
+        if (commissionsList) {
+            commissionsList.innerHTML = `<p style="color:#ef4444;">Sign into the Secret Corner to manage commissions.</p>`;
+        }
+        return;
+    }
+
+    if (window.adminCommissionsUnsub) window.adminCommissionsUnsub();
+    window.adminCommissionsUnsub = onSnapshot(collection(db, 'commissions'), (snapshot) => {
+        const commissions = [];
+        snapshot.forEach((docSnap) => commissions.push({ id: docSnap.id, ...docSnap.data() }));
+        commissions.sort((a, b) => {
+            const aTime = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
+            const bTime = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
+            return bTime - aTime;
+        });
+        window.adminCommissionEntries = commissions;
+        applyCommissionAdminFilters();
+    }, (error) => {
+        if (commissionsList) {
+            commissionsList.innerHTML = `<p style="color:#ef4444;">Unable to load commissions.</p>`;
+        }
+        console.error('Commission manager load failed', error);
+    });
+}
+
+function bindAdminQueueFilterControls(prefix, applyFn) {
+    const searchField = document.getElementById(`${prefix}SearchField`);
+    const visibilityField = document.getElementById(`${prefix}VisibilityFilter`);
+    const statusField = document.getElementById(`${prefix}StatusFilter`);
+
+    [searchField, visibilityField, statusField].forEach((field) => {
+        if (!field || field.dataset.filterBound === 'true') return;
+        field.dataset.filterBound = 'true';
+        field.addEventListener(field.tagName === 'INPUT' ? 'input' : 'change', () => applyFn());
+    });
+}
+
+function getAdminQueueFilterState(prefix) {
+    return {
+        search: document.getElementById(`${prefix}SearchField`)?.value.trim().toLowerCase() || '',
+        visibility: document.getElementById(`${prefix}VisibilityFilter`)?.value || 'all',
+        status: document.getElementById(`${prefix}StatusFilter`)?.value || 'all'
+    };
+}
+
+function matchesAdminQueueFilters(entry, filters, searchableFields) {
+    if (filters.visibility === 'public' && entry.isPublic !== true) return false;
+    if (filters.visibility === 'hidden' && entry.isPublic === true) return false;
+    if (filters.status !== 'all' && (entry.queueStatus || 'Not Started') !== filters.status) return false;
+
+    if (!filters.search) return true;
+
+    const haystack = searchableFields
+        .map((field) => (entry[field] ?? '').toString().toLowerCase())
+        .join(' ');
+
+    return haystack.includes(filters.search);
+}
+
+function applyRefundAdminFilters() {
+    const allRefunds = Array.isArray(window.adminRefundEntries) ? window.adminRefundEntries : [];
+    const filters = getAdminQueueFilterState('refund');
+    const filteredRefunds = allRefunds.filter((refund) => matchesAdminQueueFilters(refund, filters, [
+        'refundId',
+        'displayName',
+        'sourceType',
+        'queueStatus',
+        'detailedStatus',
+        'publicNotes'
+    ]));
+
+    renderAdminRefundList(filteredRefunds, allRefunds.length);
+}
+
+function applyCommissionAdminFilters() {
+    const allCommissions = Array.isArray(window.adminCommissionEntries) ? window.adminCommissionEntries : [];
+    const filters = getAdminQueueFilterState('commission');
+    const filteredCommissions = allCommissions.filter((commission) => matchesAdminQueueFilters(commission, filters, [
+        'commissionId',
+        'displayName',
+        'commissionType',
+        'queueStatus',
+        'detailedStatus',
+        'publicNotes'
+    ]));
+
+    renderAdminCommissionList(filteredCommissions, allCommissions.length);
+}
+
+function renderAdminRefundList(refunds, totalRefunds = refunds.length) {
+    const refundsList = document.getElementById('adminRefundsList');
+    const refundsHeader = document.querySelector('.refund-admin-list-header');
+    if (!refundsList) return;
+    refundsList.innerHTML = '';
+
+    if (refundsHeader) {
+        const countLabel = refunds.length === totalRefunds
+            ? `${refunds.length} ${refunds.length === 1 ? 'entry' : 'entries'}`
+            : `${refunds.length} of ${totalRefunds} shown`;
+        refundsHeader.innerHTML = `<strong>Existing Refund Entries</strong><span class="admin-list-count-badge">${countLabel}</span>`;
+    }
+
+    if (refunds.length === 0) {
+        refundsList.innerHTML = totalRefunds > 0
+            ? `<p style="color:#a2b7cc;">No refund entries match the current search or filters.</p>`
+            : `<p style="color:#a2b7cc;">No refund entries yet. Add one using the form.</p>`;
+        return;
+    }
+
+    refunds.forEach((refund) => {
+        const item = document.createElement('div');
+        item.className = 'admin-refund-item';
+        item.innerHTML = `
+            <div class="admin-queue-item-main">
+                <div class="admin-queue-item-head">
+                    <strong>${escapeHTML(refund.refundId || 'N/A')}</strong>
+                    <span class="admin-queue-status-badge" style="background:${getQueueBadgeColor(refund.queueStatus)};">${escapeHTML(refund.queueStatus || 'Not Started')}</span>
+                </div>
+                <div class="admin-queue-item-subline">${escapeHTML(refund.displayName || 'Anonymous')}</div>
+                <div class="admin-queue-meta-row">
+                    <span class="admin-queue-meta-pill">${escapeHTML(refund.sourceType || 'Other')}</span>
+                    <span class="admin-queue-meta-pill">${escapeHTML(refund.detailedStatus || 'Pending')}</span>
+                    <span class="admin-queue-meta-pill admin-queue-meta-pill-visibility">${refund.isPublic ? 'Public' : 'Hidden'}</span>
+                </div>
+            </div>
+            <div class="admin-queue-actions">
+                <button type="button" class="admin-btn-edit edit-refund-btn" data-id="${refund.id}">Edit</button>
+                <button type="button" class="admin-btn-delete delete-refund-btn" data-id="${refund.id}">Delete</button>
+            </div>
+        `;
+        refundsList.appendChild(item);
+    });
+
+    document.querySelectorAll('.edit-refund-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            if (!auth.currentUser) {
+                alert('Please log into the Secret Corner before editing refunds.');
+                return;
+            }
+            const id = e.target.getAttribute('data-id');
+            if (!id) return;
+            try {
+                const publicSnap = await getDoc(doc(db, 'refunds', id));
+                if (!publicSnap.exists()) return;
+                const data = publicSnap.data();
+                const privateSnap = await getDoc(doc(db, 'refundPrivate', id));
+                const privateData = privateSnap.exists() ? privateSnap.data() : {};
+                populateRefundForm({ id, ...data, ...privateData });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (err) {
+                console.error('Unable to load refund for editing', err);
+            }
+        });
+    });
+
+    document.querySelectorAll('.delete-refund-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            if (!auth.currentUser) {
+                alert('Please log into the Secret Corner before deleting refunds.');
+                return;
+            }
+            const id = e.target.getAttribute('data-id');
+            if (!id) return;
+            if (!confirm('Delete this refund entry permanently?')) return;
+            try {
+                await deleteDoc(doc(db, 'refunds', id));
+                await deleteDoc(doc(db, 'refundPrivate', id));
+                showAdminToast('Refund deleted.');
+                if (window.currentEditingRefundId === id) {
+                    clearRefundForm();
+                }
+            } catch (err) {
+                console.error('Failed to delete refund', err);
+                showAdminToast('Failed to delete refund.', true);
+            }
+        });
+    });
+}
+
+function populateRefundForm(refund) {
+    window.currentEditingRefundId = refund.id;
+    document.getElementById('refundIdField').value = refund.refundId || '';
+    document.getElementById('displayNameField').value = refund.displayName || '';
+    document.getElementById('amountOwedField').value = refund.amountOwed || 0;
+    document.getElementById('amountPaidField').value = refund.amountPaid || 0;
+    document.getElementById('queueStatusField').value = refund.queueStatus || 'Not Started';
+    document.getElementById('detailedStatusField').value = refund.detailedStatus || 'Pending';
+    document.getElementById('sourceTypeField').value = refund.sourceType || 'Manual Entry';
+    document.getElementById('estimatedUpdateField').value = refund.estimatedUpdate || '';
+    document.getElementById('publicNotesField').value = refund.publicNotes || '';
+    document.getElementById('lastUpdatedField').value = refund.lastUpdated || '';
+    document.getElementById('isPublicField').checked = refund.isPublic === true;
+    document.getElementById('privateNotesField').value = refund.privateNotes || '';
+    document.getElementById('privateContactInfoField').value = refund.privateContactInfo || '';
+    document.getElementById('paymentHandleField').value = refund.paymentHandle || '';
+    document.getElementById('privateEmailField').value = refund.email || '';
+    document.getElementById('transactionInfoField').value = refund.transactionInfo || '';
+    const saveBtn = document.getElementById('saveRefundBtn');
+    if (saveBtn) saveBtn.innerText = 'Save Refund';
+}
+
+function renderAdminCommissionList(commissions, totalCommissions = commissions.length) {
+    const commissionsList = document.getElementById('adminCommissionsList');
+    const commissionsHeader = document.querySelector('.commission-admin-list-header');
+    if (!commissionsList) return;
+    commissionsList.innerHTML = '';
+
+    if (commissionsHeader) {
+        const countLabel = commissions.length === totalCommissions
+            ? `${commissions.length} ${commissions.length === 1 ? 'entry' : 'entries'}`
+            : `${commissions.length} of ${totalCommissions} shown`;
+        commissionsHeader.innerHTML = `<strong>Existing Commission Entries</strong><span class="admin-list-count-badge">${countLabel}</span>`;
+    }
+
+    if (commissions.length === 0) {
+        commissionsList.innerHTML = totalCommissions > 0
+            ? `<p style="color:#a2b7cc;">No commission entries match the current search or filters.</p>`
+            : `<p style="color:#a2b7cc;">No commission entries yet. Add one using the form.</p>`;
+        return;
+    }
+
+    commissions.forEach((commission) => {
+        const item = document.createElement('div');
+        item.className = 'admin-commission-item';
+        item.innerHTML = `
+            <div class="admin-queue-item-main">
+                <div class="admin-queue-item-head">
+                    <strong>${escapeHTML(commission.commissionId || 'N/A')}</strong>
+                    <span class="admin-queue-status-badge" style="background:${getQueueBadgeColor(commission.queueStatus)};">${escapeHTML(commission.queueStatus || 'Not Started')}</span>
+                </div>
+                <div class="admin-queue-item-subline">${escapeHTML(commission.displayName || 'Anonymous')}</div>
+                <div class="admin-queue-meta-row">
+                    <span class="admin-queue-meta-pill">${escapeHTML(commission.commissionType || 'Other')}</span>
+                    <span class="admin-queue-meta-pill">${escapeHTML(commission.detailedStatus || 'Pending')}</span>
+                    <span class="admin-queue-meta-pill admin-queue-meta-pill-visibility">${commission.isPublic ? 'Public' : 'Hidden'}</span>
+                </div>
+            </div>
+            <div class="admin-queue-actions">
+                <button type="button" class="admin-btn-edit edit-commission-btn" data-id="${commission.id}">Edit</button>
+                <button type="button" class="admin-btn-delete delete-commission-btn" data-id="${commission.id}">Delete</button>
+            </div>
+        `;
+        commissionsList.appendChild(item);
+    });
+
+    document.querySelectorAll('.edit-commission-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            if (!auth.currentUser) {
+                alert('Please log into the Secret Corner before editing commissions.');
+                return;
+            }
+            const id = e.target.getAttribute('data-id');
+            if (!id) return;
+            try {
+                const publicSnap = await getDoc(doc(db, 'commissions', id));
+                if (!publicSnap.exists()) return;
+                const data = publicSnap.data();
+                const privateSnap = await getDoc(doc(db, 'commissionPrivate', id));
+                const privateData = privateSnap.exists() ? privateSnap.data() : {};
+                populateCommissionForm({ id, ...data, ...privateData });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (err) {
+                console.error('Unable to load commission for editing', err);
+            }
+        });
+    });
+
+    document.querySelectorAll('.delete-commission-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            if (!auth.currentUser) {
+                alert('Please log into the Secret Corner before deleting commissions.');
+                return;
+            }
+            const id = e.target.getAttribute('data-id');
+            if (!id) return;
+            if (!confirm('Delete this commission entry permanently?')) return;
+            try {
+                await deleteDoc(doc(db, 'commissions', id));
+                await deleteDoc(doc(db, 'commissionPrivate', id));
+                showAdminToast('Commission deleted.');
+                if (window.currentEditingCommissionId === id) {
+                    clearCommissionForm();
+                }
+            } catch (err) {
+                console.error('Failed to delete commission', err);
+                showAdminToast('Failed to delete commission.', true);
+            }
+        });
+    });
+}
+
+function populateCommissionForm(commission) {
+    window.currentEditingCommissionId = commission.id;
+    document.getElementById('commissionIdField').value = commission.commissionId || '';
+    document.getElementById('commissionDisplayNameField').value = commission.displayName || '';
+    document.getElementById('commissionTypeField').value = commission.commissionType || '';
+    document.getElementById('commissionQueueStatusField').value = commission.queueStatus || 'Not Started';
+    document.getElementById('commissionDetailedStatusField').value = commission.detailedStatus || 'Pending';
+    document.getElementById('commissionEstimatedStartField').value = commission.estimatedStart || '';
+    document.getElementById('commissionEstimatedUpdateField').value = commission.estimatedUpdate || '';
+    document.getElementById('commissionPublicNotesField').value = commission.publicNotes || '';
+    document.getElementById('commissionLastUpdatedField').value = commission.lastUpdated || '';
+    document.getElementById('commissionIsPublicField').checked = commission.isPublic === true;
+    document.getElementById('commissionPrivateNotesField').value = commission.privateNotes || '';
+    document.getElementById('commissionPrivateContactInfoField').value = commission.privateContactInfo || '';
+    document.getElementById('commissionPaymentHandleField').value = commission.paymentHandle || '';
+    document.getElementById('commissionPrivateEmailField').value = commission.email || '';
+    document.getElementById('commissionTransactionInfoField').value = commission.transactionInfo || '';
+    document.getElementById('commissionReferenceInfoField').value = commission.referenceInfo || '';
+    const saveBtn = document.getElementById('saveCommissionBtn');
+    if (saveBtn) saveBtn.innerText = 'Save Commission';
+}
+
+function clearRefundForm() {
+    window.currentEditingRefundId = null;
+    document.getElementById('refundIdField').value = '';
+    document.getElementById('displayNameField').value = '';
+    document.getElementById('amountOwedField').value = '';
+    document.getElementById('amountPaidField').value = '';
+    document.getElementById('queueStatusField').value = 'Not Started';
+    document.getElementById('detailedStatusField').value = 'Pending';
+    document.getElementById('sourceTypeField').value = 'Website Order';
+    document.getElementById('estimatedUpdateField').value = '';
+    document.getElementById('publicNotesField').value = '';
+    document.getElementById('lastUpdatedField').value = '';
+    document.getElementById('isPublicField').checked = false;
+    document.getElementById('privateNotesField').value = '';
+    document.getElementById('privateContactInfoField').value = '';
+    document.getElementById('paymentHandleField').value = '';
+    document.getElementById('privateEmailField').value = '';
+    document.getElementById('transactionInfoField').value = '';
+}
+
+function clearCommissionForm() {
+    window.currentEditingCommissionId = null;
+    document.getElementById('commissionIdField').value = '';
+    document.getElementById('commissionDisplayNameField').value = '';
+    document.getElementById('commissionTypeField').value = '';
+    document.getElementById('commissionQueueStatusField').value = 'Not Started';
+    document.getElementById('commissionDetailedStatusField').value = 'Pending';
+    document.getElementById('commissionEstimatedStartField').value = '';
+    document.getElementById('commissionEstimatedUpdateField').value = '';
+    document.getElementById('commissionPublicNotesField').value = '';
+    document.getElementById('commissionLastUpdatedField').value = '';
+    document.getElementById('commissionIsPublicField').checked = false;
+    document.getElementById('commissionPrivateNotesField').value = '';
+    document.getElementById('commissionPrivateContactInfoField').value = '';
+    document.getElementById('commissionPaymentHandleField').value = '';
+    document.getElementById('commissionPrivateEmailField').value = '';
+    document.getElementById('commissionTransactionInfoField').value = '';
+    document.getElementById('commissionReferenceInfoField').value = '';
 }
 
 function renderAdminOrders(ordersArr) {
@@ -3087,6 +4813,7 @@ const routes = {
     '#custom-keychain': loadCustomKeychainsForm,
     '#art': loadHuskyArtForm,
     '#fursuits': loadFursuitForm,
+    '#huskys-list': loadHuskysListPage,
     '#admin': loadAdminDashboard
 };
 
