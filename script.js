@@ -181,7 +181,8 @@ function containsProfanity(text) {
         'cock', 'porn', 'whore', 'slut', 'nigger', 'nigga', 'niga', 'niggah',
         'fag', 'fags', 'fagot', 'fagots', 'faggot', 'faggots', 'fagsy', 'faggy', 'fagging', 'fug', 'fugs', 'fut', 'futs',
         'kill', 'tranny', 'retard', 'retarded', 'rape', 'incest', 'nudes',
-        'kys', 'chink', 'spic', 'dyke', 'twat'
+        'kys', 'chink', 'spic', 'dyke', 'twat',
+        'trump', 'trumps', 'maga', 'nazi', 'nazis', 'hitler', 'fascist', 'fascists'
     ];
     
     const rawWords = rawTextLower.split(/[\s,.-]+/);
@@ -195,7 +196,8 @@ function containsProfanity(text) {
 
     const collapsedBadWords = [
         'fuck', 'shit', 'bitch', 'ashole', 'dick', 'cunt', 'pusy',
-        'cock', 'porn', 'whore', 'slut', 'fag', 'fags', 'faggot', 'faggots', 'fug', 'fugs', 'fut', 'futs', 'nudes', 'rape', 'dyke', 'twat', 'kys', 'kill'
+        'cock', 'porn', 'whore', 'slut', 'fag', 'fags', 'faggot', 'faggots', 'fug', 'fugs', 'fut', 'futs', 'nudes', 'rape', 'dyke', 'twat', 'kys', 'kill',
+        'trump', 'maga', 'nazi', 'hitler', 'fascist'
     ];
 
     if (collapsedWords.some(w => collapsedBadWords.includes(w))) return true;
@@ -206,7 +208,7 @@ function containsProfanity(text) {
     // Roots that rarely form accidentally across normal word boundaries
     const safeCollapsedRoots = [
         'fuck', 'bitch', 'whore', 'slut', 'porn', 'nudes', 
-        'nigger', 'nigga', 'niggah', 'faggot', 'fug', 'fut', 'tranny', 'retard', 'retarded', 'incest'
+        'nigger', 'nigga', 'niggah', 'faggot', 'fug', 'fut', 'trump', 'nazi', 'hitler', 'fascist', 'tranny', 'retard', 'retarded', 'incest'
     ];
 
     for (const root of safeCollapsedRoots) {
@@ -1926,12 +1928,67 @@ function checkPreorderSpam() {
     return true;
 }
 
+function getPendingCommentId() {
+    return localStorage.getItem('hz_comment_pending_id');
+}
+
+function setPendingCommentId(commentId) {
+    if (typeof commentId === 'string' && commentId.length > 0) {
+        localStorage.setItem('hz_comment_pending_id', commentId);
+    }
+}
+
+function clearPendingCommentId() {
+    localStorage.removeItem('hz_comment_pending_id');
+}
+
+function syncPendingCommentStatus() {
+    const pendingId = getPendingCommentId();
+    if (!pendingId) return;
+    const pendingComment = globalCommentsArray.find(c => c.id === pendingId);
+    if (pendingComment && Array.isArray(pendingComment.replies) && pendingComment.replies.length > 0) {
+        clearPendingCommentId();
+    }
+}
+
 function checkCommentSpam(newText, isAdmin) {
     if (isAdmin) return true; // Admins bypass spam checks
     
+    const pendingComment = getPendingCommentId();
+    if (pendingComment) {
+        return "Please wait for your previous message to receive a reply before sending another comment.";
+    }
+
     const now = Date.now();
+    const newTextLower = newText.toLowerCase();
     let history = JSON.parse(localStorage.getItem('hz_comment_history') || '[]');
     
+    // Block links and spammy referral patterns in comments
+    const blockedLinkPatterns = [
+        'http://', 'https://', 'www.', 'discord.gg', 'discordapp.com',
+        'instagram.com', 'tiktok.com', 'x.com', 'twitter.com', 'snapchat.com',
+        'paypal.me', 'cash.app', 'ko-fi.com'
+    ];
+    if (blockedLinkPatterns.some(pattern => newTextLower.includes(pattern))) {
+        return "Links are not allowed in comments. Please keep your message text-only.";
+    }
+
+    const blockedPoliticalTerms = ['trump', 'trumps', 'maga', 'nazi', 'nazis', 'hitler', 'fascist', 'fascists'];
+    if (blockedPoliticalTerms.some(pattern => newTextLower.includes(pattern))) {
+        return "Comments referencing extremist or political hate content are not allowed.";
+    }
+
+    const threatPhrases = [
+        'i will kill', 'i\'ll kill', 'im gonna kill', 'i\'m gonna kill',
+        'kill you', 'you are going to die', 'youre going to die', 'you\'re going to die',
+        'i will hurt', 'i\'ll hurt', 'hurt you', 'i am going to kill',
+        'i am going to hurt', 'i will stab', 'i will shoot', 'i will bomb',
+        'die bitch', 'die asshole'
+    ];
+    if (threatPhrases.some(pattern => newTextLower.includes(pattern))) {
+        return "Threats are not allowed in comments. Please keep the community safe.";
+    }
+
     // Clean up history older than 30 minutes (1800000 ms)
     history = history.filter(record => now - record.timestamp < 1800000);
     
@@ -1992,12 +2049,50 @@ function loadContactPage() {
         unsubscribeListener = onSnapshot(q, (snapshot) => {
             globalCommentsArray = [];
             snapshot.forEach((docSnap) => { globalCommentsArray.push({ id: docSnap.id, ...docSnap.data() }); });
+            syncPendingCommentStatus();
             renderFeedList();
         });
     }
     attachLiveFeedListener();
 
     commentsFeed.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('report-btn')) {
+            const id = e.target.getAttribute('data-id');
+            const comment = globalCommentsArray.find(c => c.id === id) || {};
+
+            const reason = prompt('Optional: why are you reporting this comment? (leave blank to skip)') || '';
+            const reporterEmail = prompt('Optional: your email (leave blank to report anonymously)') || '';
+
+            // Try to write a report to Firestore for server-side processing (preferred)
+            try {
+                const reportText = `Comment ID: ${id}\nAuthor: ${comment.name || 'Unknown'}\nComment text: ${comment.text || ''}\nReason: ${reason || 'None provided'}\nReporter email: ${reporterEmail || 'Anonymous'}`;
+                const reportHtml = `<p><strong>Comment ID:</strong> ${escapeHTML(id)}</p><p><strong>Author:</strong> ${escapeHTML(comment.name || 'Unknown')}</p><p><strong>Comment text:</strong> ${escapeHTML(comment.text || '')}</p><p><strong>Reason:</strong> ${escapeHTML(reason || 'None provided')}</p><p><strong>Reporter email:</strong> ${escapeHTML(reporterEmail || 'Anonymous')}</p>`;
+
+                await addDoc(collection(db, 'reports'), {
+                    commentId: id,
+                    commentText: comment.text || '',
+                    reporterEmail: reporterEmail || null,
+                    reason: reason || null,
+                    createdAt: serverTimestamp(),
+                    to: ['horizontidegallery@gmail.com'],
+                    message: {
+                        subject: 'New comment report - Horizon Tide Gallery',
+                        text: reportText,
+                        html: reportHtml
+                    }
+                });
+                alert('Thank you — your report was submitted for review.');
+                return;
+            } catch (err) {
+                // If Firestore write fails (offline or permissions), fall back to mailto draft
+                console.warn('Report write failed, falling back to mailto:', err);
+                const reportSubject = encodeURIComponent('Report comment on Horizon Tide Gallery');
+                const reportBody = encodeURIComponent(`I want to report this comment:\n\nComment ID: ${id}\nAuthor: ${comment.name || 'Unknown'}\nMessage: ${comment.text || ''}\n\nReason: ${reason}\nReporter: ${reporterEmail || 'anonymous'}`);
+                window.location.href = `mailto:horizontidegallery@gmail.com?subject=${reportSubject}&body=${reportBody}`;
+                return;
+            }
+        }
+
         if (e.target.classList.contains('reply-btn') || e.target.classList.contains('delete-btn')) {
             if (!auth.currentUser) {
                 alert("Security Check: You must log into the Admin Dashboard (Secret Corner) first before managing comments.");
@@ -2045,6 +2140,9 @@ function loadContactPage() {
                     await updateDoc(doc(db, "comments", targetId), { replies: newReplies });
                     form.reset();
                     document.getElementById(`reply-form-${targetId}`).style.display = 'none';
+                    if (getPendingCommentId() === targetId) {
+                        clearPendingCommentId();
+                    }
                 } catch (error) { 
                     alert("Failed to post reply. Database rejected the request."); 
                 }
@@ -2076,12 +2174,15 @@ function loadContactPage() {
         submitBtn.disabled = true;
 
         try {
-            await addDoc(collection(db, "comments"), {
+            const docRef = await addDoc(collection(db, "comments"), {
                 name: rawName,
                 text: rawText,
                 replies: [],
                 timestamp: serverTimestamp()
             });
+            if (docRef && docRef.id) {
+                setPendingCommentId(docRef.id);
+            }
             commentForm.reset();
         } catch (error) { alert("Failed to send message to the cloud."); }
         finally { submitBtn.textContent = "Post Message 🚀"; submitBtn.disabled = false; }
@@ -2109,9 +2210,11 @@ function loadContactPage() {
                     <div style="display: flex; gap: 8px;">
                         <button type="button" class="delete-btn" data-id="${comment.id}" style="background: none; border: 1px solid #ef4444; color: #ef4444; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 0.75rem; font-family: inherit; transition: 0.2s;">Delete</button>
                         <button type="button" class="reply-btn" data-id="${comment.id}" style="background: none; border: 1px solid #9b51e0; color: #9b51e0; border-radius: 4px; padding: 3px 10px; cursor: pointer; font-size: 0.8rem; font-family: inherit; transition: 0.2s;">Reply</button>
+                        <button type="button" class="report-btn" data-id="${comment.id}" style="background: none; border: 1px solid #f59e0b; color: #f59e0b; border-radius: 4px; padding: 3px 10px; cursor: pointer; font-size: 0.8rem; font-family: inherit; transition: 0.2s;">Report</button>
                     </div>
                 </div>
                 <p style="margin-top: 6px; color: #e5e7eb; font-size: 0.95rem; line-height: 1.4;">${escapeHTML(comment.text)}</p>
+                <p style="margin-top: 8px; color: #a3b8cc; font-size: 0.75rem; margin-bottom: 0;">Report opens an email draft to horizontidegallery@gmail.com for manual review.</p>
             `;
             commentWrap.appendChild(commentItem);
 

@@ -1,0 +1,26 @@
+[debug] [2026-06-19T00:57:28.059Z] ----------------------------------------------------------------------
+[debug] [2026-06-19T00:57:28.062Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Owner\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js login --reauth --no-localhost
+[debug] [2026-06-19T00:57:28.063Z] CLI Version:   15.22.0
+[debug] [2026-06-19T00:57:28.063Z] Platform:      win32
+[debug] [2026-06-19T00:57:28.063Z] Node Version:  v24.17.0
+[debug] [2026-06-19T00:57:28.063Z] Detected Agent: unknown
+[debug] [2026-06-19T00:57:28.064Z] Time:          Thu Jun 18 2026 20:57:28 GMT-0400 (Eastern Daylight Time)
+[debug] [2026-06-19T00:57:28.064Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-06-19T00:57:28.074Z] >>> [apiv2][query] POST https://auth.firebase.tools/attest [none]
+[debug] [2026-06-19T00:57:28.075Z] >>> [apiv2][body] POST https://auth.firebase.tools/attest {"session_id":"f20c5c60-4a4a-4904-ae8c-18327bc2d9d7"}
+[debug] [2026-06-19T00:57:28.280Z] <<< [apiv2][status] POST https://auth.firebase.tools/attest 200
+[debug] [2026-06-19T00:57:28.280Z] <<< [apiv2][body] POST https://auth.firebase.tools/attest {"token":"eQo9DMMNhHVqiJG3CSnOaCXqwqM2Ee6CK4QdRtLc-Wo"}
+[info] 
+[info] To sign in to the Firebase CLI:
+[info] 
+[info] 1. Take note of your session ID:
+[info] 
+[info]    F20C5
+[info] 
+[info] 2. Visit the URL below on any device and follow the instructions to get your code:
+[info] 
+[info]    https://auth.firebase.tools/login?code_challenge=5YPI5NlGL536JWCORpfOpDXc1nnLZKQySJbRWckAnPE&session=f20c5c60-4a4a-4904-ae8c-18327bc2d9d7&attest=eQo9DMMNhHVqiJG3CSnOaCXqwqM2Ee6CK4QdRtLc-Wo
+[info] 
+[info] 3. Paste or enter the authorization code below once you have it:
+[info] 
