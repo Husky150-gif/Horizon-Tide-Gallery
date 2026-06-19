@@ -69,6 +69,20 @@ window.adminCommissionEntries = [];
 let isGlobalScrollAttached = false;
 let globalQuoteIndex = 0;
 let globalQuoteInterval = null;
+let lastCursorSparkleTime = 0;
+let activeCursorSparkles = 0;
+
+const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const saveDataEnabled = Boolean(navigator.connection && navigator.connection.saveData);
+const lowPowerByCpu = Number.isFinite(navigator.hardwareConcurrency) && navigator.hardwareConcurrency > 0 && navigator.hardwareConcurrency <= 4;
+const lowPowerByMemory = Number.isFinite(navigator.deviceMemory) && navigator.deviceMemory > 0 && navigator.deviceMemory <= 4;
+const isLiteVisualMode = prefersReducedMotion || saveDataEnabled || lowPowerByCpu || lowPowerByMemory;
+
+function getAdaptiveCount(desktopCount, mobileCount) {
+    const base = window.innerWidth <= 768 ? mobileCount : desktopCount;
+    if (!isLiteVisualMode) return base;
+    return Math.max(3, Math.round(base * 0.55));
+}
 
 // === CENTRALIZED TOS CONTENT ===
 const TOS_CONTENT_HTML = `
@@ -648,8 +662,7 @@ function createBubbles() {
     if (!container) return;
     container.innerHTML = "";
     
-    const isMobile = window.innerWidth <= 768;
-    const bubbleCount = isMobile ? 10 : 45; 
+    const bubbleCount = getAdaptiveCount(28, 8);
     
     for (let i = 0; i < bubbleCount; i++) {
         const bubble = document.createElement('div');
@@ -673,8 +686,7 @@ function renderHomeStars() {
     if (!homeStarField) return;
     homeStarField.innerHTML = "";
     
-    const isMobile = window.innerWidth <= 768;
-    const countTarget = isMobile ? 50 : 200; 
+    const countTarget = getAdaptiveCount(120, 28);
     
     for (let i = 0; i < countTarget; i++) {
         const star = document.createElement('div');
@@ -748,7 +760,7 @@ function renderInteractiveStars() {
     if (bodyElement.getAttribute('data-page') !== 'home') return; 
     if (window.innerWidth <= 768) return; 
     
-    const countTarget = 12; 
+    const countTarget = isLiteVisualMode ? 5 : 10;
     for (let i = 0; i < countTarget; i++) {
         spawnSingleInteractiveStar(interactiveStarField);
     }
@@ -758,8 +770,7 @@ function renderDashboardStars() {
     if(!dashboardStarField) return;
     dashboardStarField.innerHTML = "";
     
-    const isMobile = window.innerWidth <= 768;
-    const countTarget = isMobile ? 8 : 28;
+    const countTarget = getAdaptiveCount(18, 6);
     
     for (let i = 1; i <= countTarget; i++) {
         const star = document.createElement('div');
@@ -788,7 +799,8 @@ function renderTOSConstellations() {
         `<svg width="150" height="150" viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="1.5" fill="#fff"/><circle cx="40" cy="50" r="1" fill="#fff"/><circle cx="90" cy="20" r="2" fill="#fff"/><circle cx="140" cy="80" r="1.5" fill="#fff"/><circle cx="30" cy="120" r="1" fill="#fff"/><circle cx="100" cy="130" r="1.5" fill="#fff"/><path pathLength="100" class="constellation-line" d="M10 10L40 50L90 20" stroke="rgba(255,255,255,0.4)" stroke-width="1"/><path pathLength="100" class="constellation-line" d="M30 120L100 130L140 80" stroke="rgba(255,255,255,0.4)" stroke-width="1"/></svg>`
     ];
 
-    for (let i = 0; i < 15; i++) {
+    const constellationCount = getAdaptiveCount(9, 6);
+    for (let i = 0; i < constellationCount; i++) {
         const svg = svgs[Math.floor(Math.random() * svgs.length)];
         const div = document.createElement('div');
         div.className = 'constellation-drift';
@@ -809,7 +821,8 @@ function renderTOSConstellations() {
     const stardust = document.querySelector('.tos-stardust');
     if(stardust) {
         stardust.innerHTML = "";
-        for(let i = 0; i < 150; i++) {
+        const stardustCount = getAdaptiveCount(80, 40);
+        for(let i = 0; i < stardustCount; i++) {
             const dot = document.createElement('div');
             dot.style.cssText = `position: absolute; width: ${Math.random()*2+1}px; height: ${Math.random()*2+1}px; background: white; border-radius: 50%; opacity: ${Math.random() * 0.6 + 0.2}; top: ${Math.random()*100}%; left: ${Math.random()*100}%;`;
             stardust.appendChild(dot);
@@ -1002,7 +1015,7 @@ function handleGlobalScroll(e) {
 
 function attachInnerScrollListener() {
     if (!isGlobalScrollAttached) {
-        window.addEventListener('scroll', handleGlobalScroll, true);
+        window.addEventListener('scroll', handleGlobalScroll, { capture: true, passive: true });
         isGlobalScrollAttached = true;
     }
     
@@ -1021,15 +1034,26 @@ function attachInnerScrollListener() {
 
 document.addEventListener('mousemove', (e) => {
     if (window.innerWidth <= 768) return; 
-    if (Math.random() > 0.6) return; 
+    if (isLiteVisualMode) return;
+
+    const now = performance.now();
+    if (now - lastCursorSparkleTime < 90) return;
+    if (activeCursorSparkles >= 8) return;
+    if (Math.random() > 0.35) return;
+
+    lastCursorSparkleTime = now;
+    activeCursorSparkles++;
     
     const sparkle = document.createElement('div');
     sparkle.className = 'cursor-sparkle';
     sparkle.style.left = e.clientX + 'px';
     sparkle.style.top = e.clientY + 'px';
     document.body.appendChild(sparkle);
-    setTimeout(() => sparkle.remove(), 600);
-});
+    setTimeout(() => {
+        sparkle.remove();
+        activeCursorSparkles = Math.max(0, activeCursorSparkles - 1);
+    }, 600);
+}, { passive: true });
 // ==========================================
 // PART 2 of 4: PAGE LOADERS & PRICING
 // ==========================================
@@ -1048,7 +1072,7 @@ function cinematicTransition(event, targetPageFunction, hashTarget = '') {
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
             
-            const particleCount = isMobile ? 5 : 30; 
+            const particleCount = isLiteVisualMode ? (isMobile ? 3 : 10) : (isMobile ? 4 : 20);
 
             for (let i = 0; i < particleCount; i++) {
                 const star = document.createElement('div');
@@ -1113,7 +1137,8 @@ function cinematicTransition(event, targetPageFunction, hashTarget = '') {
 
 function triggerConfetti() {
     const colors = ['#ec4899', '#00f2fe', '#22c55e', '#a855f7', '#f1c40f'];
-    for (let i = 0; i < 75; i++) {
+    const confettiCount = getAdaptiveCount(36, 20);
+    for (let i = 0; i < confettiCount; i++) {
         const conf = document.createElement('div');
         conf.className = 'confetti';
         conf.style.left = Math.random() * 100 + 'vw';
