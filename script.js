@@ -320,19 +320,26 @@ function getFileUploadHTML() {
     `;
 }
 
-function getChecklistHTML(excludeRefImage = false) {
+function getChecklistHTML(options = {}) {
+    const {
+        excludeRefImage = false,
+        includeHandmadeTiming = true,
+        includeInstantShipping = true
+    } = options;
+
     const refHtml = excludeRefImage ? '' : `<div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I have clear reference images ready</label></div>`;
+    const handmadeHtml = includeHandmadeTiming ? `<div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I know handmade/custom items take time</label></div>` : '';
+    const shippingHtml = includeInstantShipping ? `<div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I understand this is not instant shipping</label></div>` : '';
     
     return `
         <div class="before-order-checklist">
             <h4>📋 Before You Order:</h4>
-            <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I know handmade/custom items take time</label></div>
+            ${handmadeHtml}
             ${refHtml}
-            <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I understand this is not instant shipping</label></div>
+            ${shippingHtml}
             <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I understand prices are estimates and final pricing may vary</label></div>
             <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I understand due dates must be approved before acceptance</label></div>
             <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I understand private information will not be shown publicly</label></div>
-            <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I have read the TOS and refund policy</label></div>
             <div class="checklist-item tos-line" style="margin-top: 15px; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 10px;">
                 <input type="checkbox" class="req-check" id="tosAgreeGlobal" required style="width: 22px; height: 22px; cursor: pointer;"> 
                 <label for="tosAgreeGlobal" style="color: #00f2fe; font-weight: bold; cursor: pointer;">I have read and agree to the Terms of Service.</label>
@@ -541,11 +548,14 @@ function updateDiscountUI() {
             let msg = displaySale.message && displaySale.message.trim() !== '' ? escapeHTML(displaySale.message) : "Sale Event";
             banner.innerHTML = `🌙✨ <span id="bannerSaleMessage">${msg}</span> — Save <span id="bannerDiscountAmt">${displaySale.percentage}</span>%! ✨🌙`;
             banner.style.display = 'block';
-            document.body.style.paddingTop = '40px'; 
+            document.body.style.paddingTop = `${Math.max(40, banner.offsetHeight)}px`;
         } else {
             banner.style.display = 'none';
             document.body.style.paddingTop = '0px';
         }
+
+        updateFloatingUIOffsets();
+        window.dispatchEvent(new Event('floating-ui-offset-changed'));
     }
 
     if (bodyElement.getAttribute('data-page') === 'pricing') {
@@ -1245,8 +1255,17 @@ function attachDynamicEstimator(formId, baseType) {
 
         } else if (baseType === 'fursuit') {
             const typeSel = form.querySelector('[name="partType"]');
+            const addons = form.querySelectorAll('[name="addon"]:checked');
             if(typeSel) min = parseInt(typeSel.options[typeSel.selectedIndex].dataset.price || 0);
             max = min + (min * 0.5); 
+
+            addons.forEach(box => {
+                if (box.value === 'Rush Order') {
+                    min += 100;
+                    max += 100;
+                }
+            });
+
             isPlus = true;
 
         } else if (baseType === 'keychain' || baseType === 'sticker') {
@@ -1960,7 +1979,7 @@ function loadHuskyArtForm() {
                     <label>Add-ons (Optional)</label>
                     <div style="display:flex; flex-direction:column; gap:10px; margin-top:5px;">
                         <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Extra Character"> Extra Character (+60%)</label>
-                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Background"> Background (+$30-60)</label>
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Background"> Complex Backgrounds (+$30-60)</label>
                         <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Extra Outfit"> Extra Outfit (+$25)</label>
                         <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Complex Props"> Complex Props (+$10-20)</label>
                         <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Rush Order"> Rush Order (+$60)</label>
@@ -1972,7 +1991,11 @@ function loadHuskyArtForm() {
                 <div class="form-group"><label>Extra Notes</label><textarea name="notes" class="form-textarea" rows="2" maxlength="1000"></textarea></div>
                 
                 ${getPriceEstimatorHTML()}
-                ${getChecklistHTML(false)}
+                ${getChecklistHTML({
+                    excludeRefImage: false,
+                    includeHandmadeTiming: false,
+                    includeInstantShipping: false
+                })}
 
                 <button type="submit" class="preorder-btn" style="border-color: #ec4899;">Submit Preorder</button>
             </form>
@@ -2027,11 +2050,21 @@ function loadFursuitForm() {
                     <input type="checkbox" id="measurementsCheck" name="needsMeasurements">
                     <label for="measurementsCheck">I understand I may need to provide specific measurements or a DTD later.</label>
                 </div>
+                <div class="form-group">
+                    <label>Add-ons (Optional)</label>
+                    <div style="display:flex; flex-direction:column; gap:10px; margin-top:5px;">
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Rush Order"> Rush Order (+$100)</label>
+                    </div>
+                </div>
                 <div class="form-group"><label>Deadline (if any)</label><input type="text" name="deadline" class="form-input" maxlength="100"></div>
                 <div class="form-group"><label>Extra Notes</label><textarea name="notes" class="form-textarea" rows="2" maxlength="1000"></textarea></div>
                 
                 ${getPriceEstimatorHTML()}
-                ${getChecklistHTML(false)}
+                ${getChecklistHTML({
+                    excludeRefImage: false,
+                    includeHandmadeTiming: true,
+                    includeInstantShipping: true
+                })}
 
                 <button type="submit" class="preorder-btn" style="border-color: #22c55e;">Submit Request</button>
             </form>
@@ -2120,7 +2153,11 @@ function loadCustomKeychainsForm() {
                 <div class="form-group"><label>Extra Notes</label><textarea name="notes" class="form-textarea" rows="2" maxlength="1000"></textarea></div>
                 
                 ${getPriceEstimatorHTML()}
-                ${getChecklistHTML(false)}
+                ${getChecklistHTML({
+                    excludeRefImage: false,
+                    includeHandmadeTiming: true,
+                    includeInstantShipping: true
+                })}
 
                 <button type="submit" class="preorder-btn" style="border-color: #ec4899;">Submit Preorder</button>
             </form>
@@ -2203,7 +2240,11 @@ function loadCustomStickersForm() {
                 <div class="form-group"><label>Extra Notes</label><textarea name="notes" class="form-textarea" rows="2" maxlength="1000"></textarea></div>
                 
                 ${getPriceEstimatorHTML()}
-                ${getChecklistHTML(false)}
+                ${getChecklistHTML({
+                    excludeRefImage: false,
+                    includeHandmadeTiming: true,
+                    includeInstantShipping: true
+                })}
 
                 <button type="submit" class="preorder-btn" style="border-color: #ec4899;">Submit Preorder</button>
             </form>
@@ -2272,7 +2313,11 @@ function loadPremadeKeychainsForm() {
                 
                 ${getPriceEstimatorHTML()}
                 
-                ${getChecklistHTML(true)}
+                ${getChecklistHTML({
+                    excludeRefImage: true,
+                    includeHandmadeTiming: true,
+                    includeInstantShipping: true
+                })}
 
                 <button type="submit" class="preorder-btn" style="border-color: #ec4899;">Submit Order</button>
             </form>
@@ -4884,8 +4929,22 @@ musicBtn.id = 'globalMusicBtn';
 musicBtn.innerHTML = '🎵 Play Music';
 musicBtn.setAttribute('aria-label', 'Toggle background music');
 
+function getActiveSaleBannerHeight() {
+    const banner = document.getElementById('globalSaleBanner');
+    if (!banner || banner.style.display === 'none') return 0;
+    return banner.offsetHeight || 0;
+}
+
+function updateFloatingUIOffsets() {
+    const bannerHeight = getActiveSaleBannerHeight();
+    document.body.style.setProperty('--floating-top-offset', `${bannerHeight + 8}px`);
+}
+
 const applyResponsiveMusicPlacement = () => {
     const isMobile = window.innerWidth <= 768;
+    const bannerHeight = getActiveSaleBannerHeight();
+    const topOffset = bannerHeight + 14;
+
     musicBtn.style.cssText = `
         position: fixed; 
         z-index: 9999;
@@ -4900,12 +4959,21 @@ const applyResponsiveMusicPlacement = () => {
         font-size: 1rem;
         box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2); 
         transition: all 0.3s ease;
-        ${isMobile ? 'top: 20px; right: 20px; bottom: auto;' : 'bottom: 20px; right: 20px; top: auto;'}
+        ${isMobile ? `top: ${topOffset}px; right: 14px; bottom: auto;` : 'bottom: 20px; right: 20px; top: auto;'}
     `;
 };
 
+updateFloatingUIOffsets();
 applyResponsiveMusicPlacement();
-window.addEventListener('resize', applyResponsiveMusicPlacement);
+window.addEventListener('resize', () => {
+    updateFloatingUIOffsets();
+    applyResponsiveMusicPlacement();
+});
+
+window.addEventListener('floating-ui-offset-changed', () => {
+    updateFloatingUIOffsets();
+    applyResponsiveMusicPlacement();
+});
 
 musicBtn.onmouseover = () => musicBtn.style.background = "rgba(0, 242, 254, 0.2)";
 musicBtn.onmouseout = () => musicBtn.style.background = "rgba(10, 18, 38, 0.8)";

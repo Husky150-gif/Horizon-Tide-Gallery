@@ -2413,9 +2413,16 @@ body.admin-login-modal-open {
    ========================================== */
 #dynamicMoonContainer {
     position: absolute;
-    top: 55px;
+    top: calc(55px + var(--floating-top-offset, 0px));
     left: 20px;
     z-index: 999999;
+}
+
+@media (max-width: 768px) {
+    #dynamicMoonContainer {
+        top: calc(20px + var(--floating-top-offset, 0px));
+        left: 12px;
+    }
 }
 
 .dynamic-moon-phase {
