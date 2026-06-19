@@ -1364,7 +1364,7 @@ function loadHomePage() {
         <nav class="button-grid home-nav-grid">
             <button type="button" class="nav-btn" id="tosBtn">Our TOS</button>
             <button type="button" class="nav-btn" id="whatWeDoBtn">What we do</button>
-            <button type="button" class="nav-btn" id="socialsBtn">Meet the Artists</button>
+            <button type="button" class="nav-btn" id="socialsBtn">Meet the Artists + FAQ + How to Order</button>
             <button type="button" class="nav-btn" id="contactBtn">Contact us 💬</button>
         </nav>
 
