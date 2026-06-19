@@ -1608,7 +1608,7 @@ function loadPreorderPage() {
 
     appViewport.innerHTML = `
         <div class="preorder-card" style="position: relative;">
-            <button type="button" id="btnHuskysList" class="preorder-btn huskys-list-btn" style="position: absolute; top: 24px; right: 24px; max-width: 180px; font-size: 0.95rem; padding: 11px 18px; border-color: #22c55e; background: rgba(34,197,94,0.17); box-shadow: 0 0 18px rgba(34,197,94,0.3);">Horizon Queue</button>
+            <button type="button" id="btnHuskysList" class="preorder-btn huskys-list-btn">Horizon Queue</button>
             <h1 style="color: #ffffff; text-shadow: 0 0 15px rgba(255,255,255,0.8); margin-bottom: 10px; font-size: 2.8rem;">Preorder Menu</h1>
             <p style="color: #e0f7fa; font-size: 1.1rem;">Choose what you'd like to view or preorder from Horizon Tide Gallery.</p>
             <section class="preorder-prep-shell">

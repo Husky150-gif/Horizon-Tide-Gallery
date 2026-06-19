@@ -1118,6 +1118,18 @@ body.admin-login-modal-open {
     font-size: 0.94rem;
 }
 
+.huskys-list-btn {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    max-width: 180px;
+    font-size: 0.95rem;
+    padding: 11px 18px;
+    border-color: #22c55e;
+    background: rgba(34,197,94,0.17);
+    box-shadow: 0 0 18px rgba(34,197,94,0.3);
+}
+
 /* Glossy Ocean Pill Buttons */
 .preorder-btn {
     background: linear-gradient(135deg, rgba(0, 242, 254, 0.5), rgba(79, 172, 254, 0.5));
@@ -2216,6 +2228,12 @@ body.admin-login-modal-open {
         opacity: 0.45;
     }
     .preorder-section-grid { grid-template-columns: 1fr; gap: 15px; }
+
+    .huskys-list-btn {
+        position: static;
+        max-width: 100%;
+        margin: 0 0 14px;
+    }
     
     #footerCredit {
         position: relative !important;
