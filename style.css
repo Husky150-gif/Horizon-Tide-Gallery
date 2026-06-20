@@ -2759,7 +2759,11 @@ body.admin-login-modal-open {
 
 /* Husky's List Page Styles */
 [data-theme="huskys-list"] .bg-environment {
-    background: linear-gradient(180deg, #02050c 0%, #030710 55%, #02060f 100%);
+    background:
+        radial-gradient(circle at 12% 18%, rgba(117, 58, 211, 0.26), transparent 32%),
+        radial-gradient(circle at 88% 12%, rgba(250, 204, 21, 0.22), transparent 30%),
+        radial-gradient(circle at 82% 78%, rgba(239, 68, 68, 0.18), transparent 28%),
+        linear-gradient(180deg, #02040d 0%, #04081a 48%, #030715 100%);
 }
 
 .refunds-page-container {
@@ -2767,8 +2771,151 @@ body.admin-login-modal-open {
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 25px;
-    padding-bottom: 40px;
+    gap: 14px;
+    padding: 4px 0 44px;
+    position: relative;
+    isolation: isolate;
+}
+
+.refunds-page-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.22) 0.9px, transparent 0.9px);
+    background-size: 108px 108px;
+    opacity: 0.28;
+}
+
+.refunds-page-container > * {
+    position: relative;
+    z-index: 1;
+}
+
+.queue-starfield {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.star-bit {
+    position: absolute;
+    width: 32px;
+    aspect-ratio: 1;
+    clip-path: polygon(50% 0%, 62% 35%, 100% 50%, 62% 65%, 50% 100%, 38% 65%, 0% 50%, 38% 35%);
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.35));
+    opacity: 0.72;
+    animation: starBitDrift var(--float-duration, 22s) ease-in-out infinite alternate,
+               starBitPulse var(--pulse-duration, 8s) ease-in-out infinite;
+}
+
+.star-bit::after {
+    content: '';
+    position: absolute;
+    inset: 18% 20% 48% 26%;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.7);
+    transform: rotate(-20deg);
+    filter: blur(0.6px);
+}
+
+.star-bit-purple {
+    background: radial-gradient(circle at 30% 26%, #f5d0fe, #a855f7 54%, #581c87 100%);
+}
+
+.star-bit-gold {
+    background: radial-gradient(circle at 30% 26%, #fde68a, #f59e0b 56%, #b45309 100%);
+}
+
+.star-bit-red {
+    background: radial-gradient(circle at 30% 26%, #fecaca, #ef4444 56%, #991b1b 100%);
+}
+
+.star-bit-1 {
+    top: 8%;
+    left: 7%;
+    --float-duration: 19s;
+    --pulse-duration: 7.8s;
+}
+
+.star-bit-2 {
+    top: 7%;
+    right: 12%;
+    width: 48px;
+    --float-duration: 26s;
+}
+
+.star-bit-3 {
+    top: 24%;
+    right: 5%;
+    width: 34px;
+    --float-duration: 22s;
+}
+
+.star-bit-4 {
+    top: 39%;
+    left: 9%;
+    width: 26px;
+    --float-duration: 24s;
+}
+
+.star-bit-5 {
+    top: 52%;
+    right: 7%;
+    width: 30px;
+    --float-duration: 20s;
+}
+
+.star-bit-6 {
+    top: 70%;
+    left: 12%;
+    width: 24px;
+    --float-duration: 25s;
+}
+
+.star-bit-7 {
+    top: 82%;
+    right: 16%;
+    width: 46px;
+    --float-duration: 28s;
+}
+
+.star-bit-8 {
+    top: 92%;
+    left: 82%;
+    width: 34px;
+    --float-duration: 21s;
+}
+
+.star-bit-9 {
+    top: 16%;
+    left: 46%;
+    width: 22px;
+    --float-duration: 23s;
+}
+
+@keyframes starBitDrift {
+    0% {
+        transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+    100% {
+        transform: translate3d(8px, -14px, 0) rotate(9deg);
+    }
+}
+
+@keyframes starBitPulse {
+    0%,
+    100% {
+        opacity: 0.68;
+        filter: drop-shadow(0 0 7px rgba(255, 255, 255, 0.3));
+    }
+    50% {
+        opacity: 0.9;
+        filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.46));
+    }
 }
 
 .queue-reveal {
@@ -2783,36 +2930,6 @@ body.admin-login-modal-open {
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-.huskys-list-public-note {
-    background: linear-gradient(135deg, rgba(7, 15, 34, 0.96), rgba(8, 21, 41, 0.96));
-    border: 1px solid rgba(96, 165, 250, 0.18);
-    box-shadow: 0 0 24px rgba(96, 165, 250, 0.14), inset 0 0 10px rgba(255,255,255,0.03);
-    color: #dbeafe;
-    border-radius: 18px;
-    padding: 14px 18px;
-    line-height: 1.55;
-    font-size: 0.98rem;
-    letter-spacing: 0.01em;
-}
-
-.queue-trust-strip {
-    background: linear-gradient(135deg, rgba(8, 18, 40, 0.94), rgba(8, 24, 48, 0.9));
-    border: 1px solid rgba(147, 197, 253, 0.2);
-    border-radius: 18px;
-    padding: 14px 18px;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    color: #dbeafe;
-}
-
-.queue-legend-block {
-    display: grid;
-    gap: 6px;
 }
 
 .queue-legend-row {
@@ -2847,12 +2964,12 @@ body.admin-login-modal-open {
 .huskys-list-section-shell {
     display: flex;
     flex-direction: column;
-    gap: 18px;
-    background: linear-gradient(180deg, rgba(4, 10, 26, 0.92), rgba(3, 8, 22, 0.88));
-    border: 1px solid rgba(125, 211, 252, 0.12);
-    border-radius: 26px;
-    padding: 24px;
-    box-shadow: 0 0 26px rgba(56, 189, 248, 0.08);
+    gap: 14px;
+    background: linear-gradient(180deg, rgba(3, 10, 30, 0.9), rgba(4, 9, 25, 0.84));
+    border: 1px solid rgba(125, 211, 252, 0.16);
+    border-radius: 22px;
+    padding: 18px;
+    box-shadow: 0 10px 28px rgba(2, 8, 20, 0.28), 0 0 20px rgba(96, 165, 250, 0.08);
     position: relative;
     overflow: hidden;
 }
@@ -2870,36 +2987,38 @@ body.admin-login-modal-open {
 .huskys-list-section-head {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding-bottom: 6px;
+    gap: 5px;
+    padding-bottom: 10px;
     border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .huskys-list-section-head h2 {
     color: #f8fbff;
-    font-size: 1.8rem;
+    font-size: clamp(1.45rem, 2.05vw, 1.8rem);
+    font-weight: 700;
     margin: 0;
     letter-spacing: 0.01em;
+    line-height: 1.15;
 }
 
 .huskys-list-section-head p {
-    color: #a9c5dd;
+    color: #b6cbe0;
     margin: 0;
-    font-size: 0.98rem;
-    line-height: 1.65;
+    font-size: 0.95rem;
+    line-height: 1.48;
 }
 
 .refunds-hero-card {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: flex-start;
-    gap: 20px;
-    background: rgba(2, 7, 21, 0.95);
-    border: 1px solid rgba(0, 242, 254, 0.2);
-    box-shadow: 0 0 40px rgba(0, 242, 254, 0.18);
-    border-radius: 30px;
-    padding: 28px;
+    gap: 8px;
+    background: linear-gradient(140deg, rgba(4, 12, 34, 0.86), rgba(7, 16, 43, 0.72));
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.36), inset 0 0 18px rgba(255, 255, 255, 0.02);
+    border-radius: 18px;
+    padding: 12px 16px;
     position: relative;
     overflow: hidden;
 }
@@ -2907,12 +3026,12 @@ body.admin-login-modal-open {
 .refunds-hero-card::before {
     content: '';
     position: absolute;
-    width: 280px;
-    height: 280px;
-    top: -120px;
-    right: -40px;
+    width: 240px;
+    height: 240px;
+    top: -110px;
+    right: -55px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(96, 165, 250, 0.16), transparent 68%);
+    background: radial-gradient(circle, rgba(167, 139, 250, 0.18), transparent 68%);
     pointer-events: none;
 }
 
@@ -2920,11 +3039,11 @@ body.admin-login-modal-open {
     content: '';
     position: absolute;
     inset: auto auto 0 0;
-    width: 220px;
-    height: 220px;
-    transform: translate(-25%, 30%);
+    width: 190px;
+    height: 190px;
+    transform: translate(-24%, 35%);
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(52, 211, 153, 0.12), transparent 68%);
+    background: radial-gradient(circle, rgba(250, 204, 21, 0.12), transparent 68%);
     pointer-events: none;
 }
 
@@ -2932,41 +3051,76 @@ body.admin-login-modal-open {
     max-width: 720px;
 }
 
+.portal-hero-copy {
+    width: 100%;
+    max-width: none;
+}
+
+.portal-hero-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 2px;
+}
+
+.portal-last-updated {
+    color: #bcd2e5;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(8, 18, 42, 0.52);
+}
+
+.portal-last-updated strong {
+    color: #f8fbff;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+}
+
 .refunds-hero-card h1 {
     color: #ffffff;
-    font-size: clamp(2.5rem, 3vw, 3.4rem);
-    margin-bottom: 10px;
-    text-shadow: 0 0 18px rgba(79, 172, 254, 0.55);
-    line-height: 0.98;
-    letter-spacing: -0.02em;
+    font-size: clamp(1.95rem, 2.8vw, 3.05rem);
+    margin-bottom: 0;
+    text-shadow: 0 0 16px rgba(167, 139, 250, 0.46);
+    line-height: 1;
+    letter-spacing: -0.01em;
 }
 
 .refunds-subtitle {
     color: #8dd9ff;
-    font-size: 1.02rem;
-    margin-bottom: 14px;
+    font-size: 0.92rem;
+    margin-bottom: 10px;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     font-weight: 700;
 }
 
 .refunds-intro {
-    color: #c7d9ec;
-    line-height: 1.8;
+    color: #d4e2f1;
+    line-height: 1.5;
     max-width: 720px;
-    font-size: 1.02rem;
+    font-size: 0.98rem;
+    margin: 0;
 }
 
 .refunds-meta-card {
     min-width: 220px;
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid rgba(79, 172, 254, 0.25);
-    border-radius: 22px;
-    padding: 18px 22px;
+    border-radius: 16px;
+    padding: 14px 16px;
     color: #e2f8ff;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     box-shadow: inset 0 0 15px rgba(0, 242, 254, 0.08);
 }
 
@@ -2978,42 +3132,96 @@ body.admin-login-modal-open {
 
 .refunds-groups-grid {
     display: grid;
-    gap: 24px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
     position: relative;
 }
 
 .refund-group-section {
     display: flex;
     flex-direction: column;
-    gap: 18px;
-    background: linear-gradient(180deg, rgba(5, 14, 34, 0.68), rgba(3, 8, 22, 0.52));
-    border: 1px solid rgba(125, 211, 252, 0.09);
-    border-radius: 22px;
-    padding: 18px;
+    gap: 8px;
+    background: linear-gradient(180deg, rgba(6, 15, 38, 0.66), rgba(4, 11, 29, 0.56));
+    border: 1px solid rgba(125, 211, 252, 0.11);
+    border-radius: 16px;
+    padding: 10px;
     box-shadow: inset 0 0 14px rgba(255,255,255,0.02);
+    position: relative;
+}
+
+.refund-group-section::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    height: 3px;
+    border-radius: 22px 22px 0 0;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15), rgba(255,255,255,0));
+    pointer-events: none;
+}
+
+.refund-group-not-started {
+    border-color: rgba(96, 165, 250, 0.26);
+    box-shadow: inset 0 0 14px rgba(96,165,250,0.07), 0 10px 24px rgba(11, 32, 62, 0.24);
+}
+
+.refund-group-not-started::before {
+    background: linear-gradient(90deg, rgba(96, 165, 250, 0.95), rgba(96, 165, 250, 0.15));
+}
+
+.refund-group-started {
+    border-color: rgba(245, 158, 11, 0.3);
+    box-shadow: inset 0 0 14px rgba(245,158,11,0.07), 0 10px 24px rgba(62, 40, 11, 0.24);
+}
+
+.refund-group-started::before {
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.92), rgba(245, 158, 11, 0.12));
+}
+
+.refund-group-finished {
+    border-color: rgba(34, 197, 94, 0.3);
+    box-shadow: inset 0 0 14px rgba(34,197,94,0.07), 0 10px 24px rgba(11, 58, 30, 0.24);
+}
+
+.refund-group-finished::before {
+    background: linear-gradient(90deg, rgba(34, 197, 94, 0.92), rgba(34, 197, 94, 0.12));
+}
+
+.refund-group-not-started .refund-group-header h2 {
+    color: #bfdbfe;
+}
+
+.refund-group-started .refund-group-header h2 {
+    color: #fde68a;
+}
+
+.refund-group-finished .refund-group-header h2 {
+    color: #bbf7d0;
 }
 
 .refund-group-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    padding-bottom: 10px;
+    gap: 6px;
+    padding-bottom: 6px;
     border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .refund-group-header h2 {
     color: #ffffff;
-    font-size: 1.45rem;
-    line-height: 1.15;
+    font-size: 1.08rem;
+    font-weight: 700;
+    line-height: 1.18;
+    letter-spacing: 0.01em;
 }
 
 .refund-group-count {
     color: #dbeafe;
-    font-size: 0.82rem;
-    letter-spacing: 0.08em;
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    padding: 7px 12px;
+    padding: 4px 8px;
     border-radius: 999px;
     background: rgba(96, 165, 250, 0.12);
     border: 1px solid rgba(125, 211, 252, 0.14);
@@ -3021,17 +3229,17 @@ body.admin-login-modal-open {
 
 .refund-group-list {
     display: grid;
-    gap: 18px;
+    gap: 8px;
 }
 
 .refund-card {
     background: radial-gradient(circle at top left, rgba(18, 52, 86, 0.34), transparent 45%), rgba(3, 9, 26, 0.94);
     border: 1px solid rgba(79, 172, 254, 0.22);
-    border-radius: 24px;
-    padding: 24px;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.26), 0 0 35px rgba(0, 242, 254, 0.1);
+    border-radius: 14px;
+    padding: 10px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2), 0 0 14px rgba(0, 242, 254, 0.07);
     display: grid;
-    gap: 18px;
+    gap: 7px;
     position: relative;
     overflow: hidden;
 }
@@ -3055,32 +3263,33 @@ body.admin-login-modal-open {
 .refund-card-top {
     display: flex;
     justify-content: space-between;
-    gap: 15px;
+    gap: 10px;
     align-items: flex-start;
     flex-wrap: wrap;
 }
 
 .refund-card-title {
     color: #ffffff;
-    font-size: 1.22rem;
+    font-size: 0.86rem;
     font-weight: 700;
     line-height: 1.2;
     letter-spacing: 0.01em;
-    margin-bottom: 6px;
+    margin-bottom: 2px;
 }
 
 .refund-card-subtitle {
     color: #8dd9ff;
-    font-size: 0.98rem;
-    line-height: 1.45;
+    font-size: 0.75rem;
+    line-height: 1.28;
 }
 
 .refund-chip {
-    padding: 6px 12px;
+    padding: 3px 8px;
     border-radius: 999px;
     color: white;
-    font-size: 0.85rem;
+    font-size: 0.68rem;
     font-weight: 700;
+    letter-spacing: 0.015em;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -3088,23 +3297,27 @@ body.admin-login-modal-open {
 }
 
 .refund-chip-queue {
-    min-width: 120px;
+    min-width: 86px;
 }
 
 .refund-chip-detail {
-    min-width: 130px;
+    min-width: 98px;
 }
 
 .refund-card-info {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
 }
 
 .refund-info-row {
     color: #dbeafe;
-    font-size: 0.95rem;
-    line-height: 1.6;
+    font-size: 0.72rem;
+    line-height: 1.28;
+    padding: 6px 7px;
+    border-radius: 9px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+    border: 1px solid rgba(125, 211, 252, 0.08);
 }
 
 .refund-info-row strong,
@@ -3116,15 +3329,17 @@ body.admin-login-modal-open {
 .refund-amount-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 10px;
     color: #e2e8f0;
     font-weight: 600;
-    font-size: 0.96rem;
+    font-size: 0.72rem;
+    line-height: 1.3;
 }
 
 .refund-progress-bar {
     width: 100%;
-    height: 14px;
+    height: 6px;
+    margin: 3px 0 5px;
     background: rgba(255,255,255,0.08);
     border-radius: 999px;
     overflow: hidden;
@@ -3139,39 +3354,167 @@ body.admin-login-modal-open {
 
 .refund-progress-label {
     color: #a8dadc;
-    font-size: 0.9rem;
+    font-size: 0.67rem;
     font-weight: 600;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
 }
 
 .refund-card-footer {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 6px;
 }
 
 .refund-notes {
     color: #cbd5e1;
-    line-height: 1.8;
-    font-size: 0.97rem;
+    line-height: 1.34;
+    font-size: 0.71rem;
     white-space: pre-wrap;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .refunds-empty-state,
 .refunds-empty-section {
     background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
     border: 1px dashed rgba(0,242,254,0.24);
-    border-radius: 20px;
-    padding: 28px;
+    border-radius: 14px;
+    padding: 12px;
     color: #9ca3af;
     text-align: center;
 }
 
 .refunds-footer-note {
-    color: #a5b4fc;
+    color: #c4d5e6;
     font-size: 0.96rem;
     text-align: center;
-    line-height: 1.65;
+    line-height: 1.55;
+    margin-top: -2px;
+}
+
+.commission-public-list-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.commission-artist-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.commission-artist-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.028), rgba(255,255,255,0.014));
+    border: 1px solid rgba(125, 211, 252, 0.12);
+    box-shadow: inset 0 0 12px rgba(255,255,255,0.02), 0 8px 20px rgba(0,0,0,0.14);
+}
+
+.commission-artist-head {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.commission-artist-head h3 {
+    margin: 0;
+    color: #f8fbff;
+    font-size: 1.06rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.commission-artist-head p {
+    margin: 0;
+    color: #a9c5dd;
+    font-size: 0.86rem;
+    line-height: 1.42;
+}
+
+.commission-public-list {
+    display: grid;
+    gap: 6px;
+}
+
+.commission-public-item {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+    border-radius: 10px;
+    background: linear-gradient(145deg, rgba(6, 18, 30, 0.92), rgba(8, 24, 38, 0.88));
+    border: 1px solid rgba(110, 231, 183, 0.18);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.16), inset 0 0 10px rgba(255,255,255,0.02);
+}
+
+.commission-public-order {
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.18), rgba(14, 165, 233, 0.14));
+    border: 1px solid rgba(110, 231, 183, 0.2);
+    color: #f8fbff;
+    font-weight: 700;
+    font-size: 0.7rem;
+    box-shadow: 0 0 12px rgba(52, 211, 153, 0.1);
+}
+
+.commission-public-name {
+    color: #f8fbff;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    letter-spacing: 0.01em;
+    word-break: break-word;
+}
+
+.admin-commission-owner-group {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 18px;
+    padding: 16px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+    border: 1px solid rgba(125, 211, 252, 0.08);
+}
+
+.admin-commission-owner-group:last-child {
+    margin-bottom: 0;
+}
+
+.admin-commission-owner-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    color: #f8fbff;
+}
+
+.admin-commission-owner-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.admin-commission-owner-empty {
+    margin: 0;
+    color: #a2b7cc;
 }
 
 .refunds-page-container #backToPreorderBtn,
@@ -3285,8 +3628,9 @@ body.admin-login-modal-open {
 
 .queue-manager-card .admin-card-subtitle {
     color: #adc9dc;
-    max-width: 820px;
-    line-height: 1.65;
+    max-width: 760px;
+    line-height: 1.45;
+    font-size: 0.92rem;
 }
 
 .queue-manager-tabs {
@@ -3333,11 +3677,11 @@ body.admin-login-modal-open {
     grid-column: span 2;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 14px;
     background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.018));
     border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 22px;
-    padding: 20px;
+    border-radius: 16px;
+    padding: 14px;
     box-shadow: inset 0 0 12px rgba(255,255,255,0.02), 0 10px 26px rgba(0,0,0,0.16);
 }
 
@@ -3348,24 +3692,24 @@ body.admin-login-modal-open {
 .queue-manager-panel-head {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding-bottom: 12px;
+    gap: 4px;
+    padding-bottom: 8px;
     border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .queue-manager-panel-head h4 {
     margin: 0;
     color: #f8fbff;
-    font-size: 1.2rem;
+    font-size: 1.05rem;
     letter-spacing: 0.01em;
 }
 
 .queue-manager-panel-head p {
     margin: 0;
     color: #9fc3dc;
-    line-height: 1.55;
+    line-height: 1.4;
     max-width: 760px;
-    font-size: 0.96rem;
+    font-size: 0.86rem;
 }
 
 .queue-manager-card .admin-label {
@@ -3724,6 +4068,27 @@ body.admin-login-modal-open {
     height: 18px;
 }
 
+.queue-quick-note {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: rgba(4, 14, 36, 0.35);
+    border: 1px solid rgba(147, 197, 253, 0.13);
+    border-radius: 12px;
+    padding: 8px 10px;
+    color: #cfdeed;
+}
+
+.queue-quick-note p {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #c5d8e8;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
 @media (max-width: 960px) {
     .refund-admin-grid {
         grid-template-columns: 1fr;
@@ -3740,7 +4105,19 @@ body.admin-login-modal-open {
         position: static;
     }
     .refund-card-info {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .commission-artist-grid {
         grid-template-columns: 1fr;
+    }
+    .refunds-groups-grid {
+        grid-template-columns: 1fr;
+    }
+    .portal-hero-head {
+        align-items: flex-start;
+    }
+    .star-bit {
+        opacity: 0.58;
     }
 }
 
@@ -3759,13 +4136,63 @@ body.admin-login-modal-open {
         width: 100%;
     }
     .refunds-hero-card {
-        padding: 22px;
+        padding: 12px 13px;
     }
     .refund-card {
-        padding: 18px;
+        padding: 10px;
+    }
+    .refund-group-section {
+        padding: 10px;
+        gap: 10px;
+    }
+    .refund-group-list {
+        gap: 8px;
     }
     .huskys-list-section-shell {
-        padding: 18px;
+        padding: 12px;
+    }
+    .refunds-page-container {
+        gap: 12px;
+        padding-bottom: 40px;
+    }
+    .portal-last-updated {
+        width: auto;
+        justify-content: flex-start;
+    }
+    .refunds-groups-grid {
+        gap: 10px;
+    }
+    .huskys-list-public-note,
+    .queue-trust-strip,
+    .queue-privacy-promise {
+        padding: 16px;
+    }
+    .refund-card-info {
+        grid-template-columns: 1fr;
+    }
+    .commission-public-item {
+        grid-template-columns: 28px 1fr;
+        gap: 8px;
+        padding: 7px 8px;
+    }
+    .commission-artist-section {
+        padding: 10px;
+    }
+    .refunds-meta-card {
+        width: 100%;
+        min-width: 0;
+    }
+    .refund-group-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .admin-commission-owner-group {
+        padding: 14px;
+    }
+    .commission-public-order {
+        width: 26px;
+        height: 26px;
+        font-size: 0.7rem;
     }
     .huskys-list-btn {
         position: static;
@@ -3807,6 +4234,10 @@ body.admin-login-modal-open {
     .queue-reveal {
         opacity: 1;
         transform: none;
+        animation: none;
+    }
+
+    .star-bit {
         animation: none;
     }
 }
@@ -4520,6 +4951,79 @@ body.admin-login-modal-open {
     padding: 12px 16px;
     line-height: 1.62;
     font-size: 0.95rem;
+}
+
+.queue-professional-shell {
+    gap: 20px;
+}
+
+.queue-professional-shell .refunds-card,
+.queue-professional-shell .queue-card,
+.queue-professional-shell .refund-card,
+.queue-professional-shell section {
+    line-height: 1.65;
+}
+
+.queue-professional-shell h1,
+.queue-professional-shell h2,
+.queue-professional-shell h3 {
+    line-height: 1.2;
+}
+
+.commission-queue-simple {
+    background: linear-gradient(160deg, rgba(5, 14, 28, 0.92), rgba(11, 23, 39, 0.9));
+    border: 1px solid rgba(125, 211, 252, 0.18);
+    border-radius: 18px;
+    padding: 18px;
+}
+
+.commission-queue-simple .queue-item,
+.commission-queue-simple .refund-card,
+.commission-queue-simple .commission-card,
+.commission-queue-simple .queue-card,
+.commission-queue-simple li,
+.commission-queue-simple article {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(125, 211, 252, 0.12);
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+}
+
+.commission-queue-simple .queue-item:last-child,
+.commission-queue-simple .refund-card:last-child,
+.commission-queue-simple .commission-card:last-child,
+.commission-queue-simple .queue-card:last-child,
+.commission-queue-simple li:last-child,
+.commission-queue-simple article:last-child {
+    margin-bottom: 0;
+}
+
+.commission-queue-row {
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    align-items: center;
+    gap: 12px;
+}
+
+.commission-queue-order {
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(34, 197, 94, 0.16);
+    border: 1px solid rgba(34, 197, 94, 0.28);
+    color: #dcfce7;
+    font-weight: 700;
+}
+
+.commission-queue-name {
+    color: #f8fbff;
+    font-size: 1rem;
+    letter-spacing: 0.01em;
+    word-break: break-word;
 }
 
 .contact-policy-shell {

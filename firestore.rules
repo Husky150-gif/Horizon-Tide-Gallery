@@ -1,0 +1,123 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.email in [
+        'horizontidegallery@gmail.com',
+        'musicisbae6547@gmail.com',
+        'littlelopsidestudio@gmail.com'
+      ];
+    }
+
+    function preorderAllowedKeys() {
+      return request.resource.data.keys().hasOnly([
+        'name',
+        'email',
+        'discord',
+        'orderType',
+        'orderId',
+        'status',
+        'notes',
+        'description',
+        'materials',
+        'pose',
+        'species',
+        'deadline',
+        'quantity',
+        'artType',
+        'shadingStyle',
+        'characterCount',
+        'selectedAddons',
+        'partType',
+        'keychainType',
+        'stickerType',
+        'needsMeasurements',
+        'refLink',
+        'referenceImageUrls',
+        'createdAt'
+      ]);
+    }
+
+    function preorderHasSafeDefaults() {
+      return request.resource.data.orderId is string
+        && request.resource.data.orderId.matches('^HTG-2026-[A-Z0-9]{6}$')
+        && request.resource.data.orderType is string
+        && request.resource.data.name is string
+        && request.resource.data.status == 'Pending Review'
+        && request.resource.data.createdAt == request.time
+        && (!('email' in request.resource.data.keys()) || request.resource.data.email is string)
+        && (!('discord' in request.resource.data.keys()) || request.resource.data.discord is string)
+        && !('adminNotes' in request.resource.data.keys())
+        && !('privateNotes' in request.resource.data.keys())
+        && !('paymentStatus' in request.resource.data.keys())
+        && !('refundStatus' in request.resource.data.keys())
+        && !('isPrivate' in request.resource.data.keys());
+    }
+
+    match /preorders/{orderDocId} {
+      allow create: if preorderAllowedKeys() && preorderHasSafeDefaults();
+      allow get, list, update, delete: if isAdmin();
+    }
+
+    match /preorderStatusPublic/{orderId} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if request.resource.data.keys().hasOnly(['orderId', 'orderType', 'status', 'createdAt', 'updatedAt'])
+        && request.resource.data.orderId == orderId
+        && request.resource.data.orderId is string
+        && request.resource.data.orderId.matches('^HTG-2026-[A-Z0-9]{6}$')
+        && request.resource.data.orderType is string
+        && request.resource.data.status == 'Pending Review'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update, delete: if isAdmin();
+    }
+
+    match /announcements/{announcementId} {
+      allow get, list: if isAdmin() || resource.data.visible == true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /refunds/{refundId} {
+      allow get, list: if isAdmin() || resource.data.isPublic == true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /commissions/{commissionId} {
+      allow get, list: if isAdmin() || resource.data.isPublic == true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /refundPrivate/{refundPrivateId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /commissionPrivate/{commissionPrivateId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /comments/{commentId} {
+      allow get, list: if true;
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    match /reports/{reportId} {
+      allow create: if true;
+      allow get, list, update, delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

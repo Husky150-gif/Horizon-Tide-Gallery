@@ -3,7 +3,7 @@
 // ==========================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp, doc, updateDoc, deleteDoc, where, getDocs, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp, doc, updateDoc, deleteDoc, where, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
 import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
@@ -64,6 +64,24 @@ window.currentEditingRefundId = null;
 window.currentEditingCommissionId = null;
 window.adminRefundEntries = [];
 window.adminCommissionEntries = [];
+
+const ADMIN_EMAIL_ALLOWLIST = new Set([
+    'musicisbae6547@gmail.com',
+    'horizontidegallery@gmail.com',
+    'littlelopsidestudio@gmail.com'
+]);
+
+function isAdminSessionActive() {
+    const user = auth.currentUser;
+    if (!user || !user.email) return false;
+    return ADMIN_EMAIL_ALLOWLIST.has(String(user.email).toLowerCase());
+}
+
+function requireAdminSession(message = 'Please sign into an authorized admin account first.') {
+    if (isAdminSessionActive()) return true;
+    alert(message);
+    return false;
+}
 
 // UI State
 let isGlobalScrollAttached = false;
@@ -1178,7 +1196,7 @@ function bindSecretCornerTrigger() {
     if (!trigger || trigger.dataset.secretBound === 'true') return;
 
     trigger.addEventListener('dblclick', () => {
-        if (auth.currentUser) {
+        if (isAdminSessionActive()) {
             cinematicTransition(null, loadAdminDashboard, '#admin');
             return;
         }
@@ -2598,50 +2616,66 @@ function loadHuskysListPage() {
 
     appViewport.innerHTML = `
         <div class="refunds-page-container">
+            <div class="queue-starfield" aria-hidden="true">
+                <span class="star-bit star-bit-purple star-bit-1"></span>
+                <span class="star-bit star-bit-gold star-bit-2"></span>
+                <span class="star-bit star-bit-red star-bit-3"></span>
+                <span class="star-bit star-bit-purple star-bit-4"></span>
+                <span class="star-bit star-bit-gold star-bit-5"></span>
+                <span class="star-bit star-bit-red star-bit-6"></span>
+                <span class="star-bit star-bit-purple star-bit-7"></span>
+                <span class="star-bit star-bit-gold star-bit-8"></span>
+                <span class="star-bit star-bit-red star-bit-9"></span>
+            </div>
+
             <div class="refunds-hero-card queue-reveal" style="--queue-stagger: 20ms;">
-                <div class="refunds-hero-copy">
-                    <h1>Horizon Queue</h1>
-                    <p class="refunds-subtitle">Refunds, Commissions, and Queue Updates</p>
-                    <p class="refunds-intro">This page keeps refund progress and commission work updates organized in one place. Public-facing queue details are shown here for clarity, while private payment and contact information remain hidden.</p>
-                </div>
-                <div class="refunds-meta-card">
-                    <span>Last updated:</span>
-                    <strong id="refundsLastUpdated">Loading...</strong>
+                <div class="refunds-hero-copy portal-hero-copy">
+                    <div class="portal-hero-head">
+                        <h1>Horizon Queue</h1>
+                        <div class="portal-last-updated">Last Updated <strong id="refundsLastUpdated">Loading...</strong></div>
+                    </div>
+                    <p class="refunds-intro">Public refund and queue tracker. Private payment and contact details stay hidden.</p>
                 </div>
             </div>
 
-            <div class="huskys-list-public-note queue-reveal" style="--queue-stagger: 120ms;">Refund Queue shows refund progress. Commission Queue shows current commission/work status.</div>
-
-            <section class="queue-trust-strip queue-reveal" style="--queue-stagger: 150ms;">
-                <div class="queue-legend-block">
-                    <strong>Status Legend</strong>
-                    <div class="queue-legend-row">
-                        <span class="queue-legend-chip queue-chip-not-started">Not Started</span>
-                        <span class="queue-legend-chip queue-chip-started">Started</span>
-                        <span class="queue-legend-chip queue-chip-finished">Finished</span>
-                    </div>
+            <section class="queue-quick-note queue-reveal" style="--queue-stagger: 90ms;">
+                <p>Queue stages</p>
+                <div class="queue-legend-row">
+                    <span class="queue-legend-chip queue-chip-not-started">Not Started</span>
+                    <span class="queue-legend-chip queue-chip-started">Started</span>
+                    <span class="queue-legend-chip queue-chip-finished">Finished</span>
                 </div>
-                <p>Queue updates are public-safe only. Private contact, payment, and admin notes remain private.</p>
             </section>
 
-            <section class="queue-privacy-promise queue-reveal" style="--queue-stagger: 170ms;">
-                We only show public-safe queue information. Private details like emails, payment info, legal names, addresses, and private notes are never shown publicly.
-            </section>
-
-            <section class="huskys-list-section-shell queue-reveal" style="--queue-stagger: 200ms;">
+            <section class="huskys-list-section-shell queue-reveal" style="--queue-stagger: 120ms;">
                 <div class="huskys-list-section-head">
                     <h2>Refund Queue</h2>
-                    <p>Public refund entries grouped by current refund progress.</p>
+                    <p>Track all refunds in three quick-scan columns.</p>
                 </div>
                 <div id="refundsGroupsContainer" class="refunds-groups-grid"></div>
             </section>
 
-            <section class="huskys-list-section-shell queue-reveal" style="--queue-stagger: 280ms;">
+            <section class="huskys-list-section-shell queue-reveal" style="--queue-stagger: 170ms;">
                 <div class="huskys-list-section-head">
                     <h2>Commission Queue</h2>
-                    <p>Public commission status updates for current work in the queue.</p>
+                    <p>Public names only. Detailed commission progress stays in the preorder status tracker.</p>
                 </div>
-                <div id="commissionsGroupsContainer" class="refunds-groups-grid"></div>
+                <div class="commission-artist-grid">
+                    <section class="commission-artist-section">
+                        <div class="commission-artist-head">
+                            <h3>Husky's Queue</h3>
+                            <p>Digital art and illustration public queue entries.</p>
+                        </div>
+                        <div id="huskyCommissionQueueContainer" class="commission-public-list-shell"></div>
+                    </section>
+                    <section class="commission-artist-section">
+                        <div class="commission-artist-head">
+                            <h3>Lopside's Queue</h3>
+                            <p>Handmade and fursuit-focused public queue entries.</p>
+                        </div>
+                        <div id="lopsideCommissionQueueContainer" class="commission-public-list-shell"></div>
+                    </section>
+                </div>
             </section>
 
             <button type="button" id="backToPreorderBtn" class="nav-btn btn-spacing-top" style="border-color: #22c55e;">← Back to Preorder</button>
@@ -2699,33 +2733,85 @@ function loadHuskysListPage() {
         commissions.sort((a, b) => {
             const aTime = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
             const bTime = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
-            return bTime - aTime;
+            return aTime - bTime;
         });
 
-        const container = document.getElementById('commissionsGroupsContainer');
+        const lopsideContainer = document.getElementById('lopsideCommissionQueueContainer');
+        const huskyContainer = document.getElementById('huskyCommissionQueueContainer');
         const lastUpdated = document.getElementById('refundsLastUpdated');
         if (lastUpdated) {
             lastUpdated.innerText = formatDisplayDate(new Date());
         }
 
-        if (!container) return;
+        if (!lopsideContainer || !huskyContainer) return;
 
-        renderPublicQueueGroups(
-            container,
-            commissions,
-            renderPublicCommissionCard,
-            'No public commission updates are visible yet. Check back soon for the latest queue progress.',
-            'No commissions in this section yet.'
-        );
+        renderPublicCommissionArtistQueues(lopsideContainer, huskyContainer, commissions);
     }, (error) => {
-        const container = document.getElementById('commissionsGroupsContainer');
-        if (container) {
-            container.innerHTML = `<div class="refunds-empty-state"><p>Unable to load commissions. Please check back later.</p></div>`;
-        }
+        const lopsideContainer = document.getElementById('lopsideCommissionQueueContainer');
+        const huskyContainer = document.getElementById('huskyCommissionQueueContainer');
+        [lopsideContainer, huskyContainer].forEach((container) => {
+            if (container) {
+                container.innerHTML = `<div class="refunds-empty-state"><p>Unable to load commissions. Please check back later.</p></div>`;
+            }
+        });
         console.error('Public commissions query failed', error);
     });
 
     attachInnerScrollListener();
+}
+
+function inferCommissionQueueOwner(commission) {
+    const explicitOwner = String(commission.queueOwner || '').trim().toLowerCase();
+    if (explicitOwner === 'husky' || explicitOwner === 'lopside') {
+        return explicitOwner;
+    }
+
+    const typeText = String(commission.commissionType || '').toLowerCase();
+    const lopsideKeywords = ['fursuit', 'suit', 'paw', 'paws', 'tail', 'partial', 'head', 'feet', 'accessory', 'wearable', 'foam', 'fur'];
+    if (lopsideKeywords.some((keyword) => typeText.includes(keyword))) {
+        return 'lopside';
+    }
+
+    return 'husky';
+}
+
+function renderPublicCommissionArtistQueues(lopsideContainer, huskyContainer, items) {
+    const visibleQueue = items.filter((item) => String(item.queueStatus || '').toLowerCase() !== 'finished');
+    const lopsideQueue = visibleQueue.filter((item) => inferCommissionQueueOwner(item) === 'lopside');
+    const huskyQueue = visibleQueue.filter((item) => inferCommissionQueueOwner(item) === 'husky');
+
+    renderPublicCommissionList(lopsideContainer, lopsideQueue);
+    renderPublicCommissionList(huskyContainer, huskyQueue);
+}
+
+function renderPublicCommissionList(container, items) {
+    if (items.length === 0) {
+        container.innerHTML = `
+            <div class="refunds-empty-state">
+                <p>No public commission queue entries yet.</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="commission-public-list">
+            ${items.map((commission, index) => renderPublicCommissionListItem(commission, index)).join('')}
+        </div>
+    `;
+}
+
+function renderPublicCommissionListItem(commission, index = 0) {
+    const publicName = commission.displayName || commission.commissionId || `Queue Entry ${index + 1}`;
+
+    return `
+        <article class="commission-public-item queue-reveal" style="--queue-stagger: ${120 + (index * 55)}ms;">
+            <div class="commission-public-order">${index + 1}</div>
+            <div class="commission-public-copy">
+                <div class="commission-public-name">${escapeHTML(publicName)}</div>
+            </div>
+        </article>
+    `;
 }
 
 function renderPublicQueueGroups(container, items, renderCard, emptyMessage, emptySectionMessage) {
@@ -2755,8 +2841,9 @@ function renderPublicQueueGroups(container, items, renderCard, emptyMessage, emp
     let html = '';
     ['Not Started', 'Started', 'Finished'].forEach((groupName, groupIndex) => {
         const groupItems = groups[groupName] || [];
+        const groupClass = groupName.toLowerCase().replace(/\s+/g, '-');
         html += `
-            <section class="refund-group-section queue-reveal" style="--queue-stagger: ${80 + (groupIndex * 110)}ms;">
+            <section class="refund-group-section refund-group-${groupClass} queue-reveal" style="--queue-stagger: ${80 + (groupIndex * 110)}ms;">
                 <div class="refund-group-header">
                     <h2>${groupName}</h2>
                     <span class="refund-group-count">${groupItems.length} ${groupItems.length === 1 ? 'entry' : 'entries'}</span>
@@ -2799,30 +2886,6 @@ function renderPublicRefundCard(refund, index = 0) {
             <div class="refund-card-footer">
                 <span class="refund-chip refund-chip-detail" style="background:${getDetailBadgeColor(refund.detailedStatus)};">${escapeHTML(refund.detailedStatus || 'Pending')}</span>
                 <p class="refund-notes">${escapeHTML(refund.publicNotes || 'No public notes available.')}</p>
-            </div>
-        </article>
-    `;
-}
-
-function renderPublicCommissionCard(commission, index = 0) {
-    return `
-        <article class="refund-card commission-card queue-reveal" style="--queue-stagger: ${140 + (index * 70)}ms;">
-            <div class="refund-card-top">
-                <div>
-                    <div class="refund-card-title">${escapeHTML(commission.commissionId || 'N/A')}</div>
-                    <div class="refund-card-subtitle">${escapeHTML(commission.displayName || 'Anonymous')}</div>
-                </div>
-                <div class="refund-chip refund-chip-queue" style="background:${getQueueBadgeColor(commission.queueStatus)};">${escapeHTML(commission.queueStatus || 'Not Started')}</div>
-            </div>
-            <div class="refund-card-info">
-                <div class="refund-info-row"><strong>Commission Type:</strong> ${escapeHTML(commission.commissionType || 'Other')}</div>
-                <div class="refund-info-row"><strong>Estimated Start:</strong> ${escapeHTML(commission.estimatedStart || 'TBD')}</div>
-                <div class="refund-info-row"><strong>Estimated Update:</strong> ${escapeHTML(commission.estimatedUpdate || 'TBD')}</div>
-                <div class="refund-info-row"><strong>Last Updated:</strong> ${escapeHTML(formatDisplayDate(commission.lastUpdated))}</div>
-            </div>
-            <div class="refund-card-footer">
-                <span class="refund-chip refund-chip-detail" style="background:${getDetailBadgeColor(commission.detailedStatus)};">${escapeHTML(commission.detailedStatus || 'Pending')}</span>
-                <p class="refund-notes">${escapeHTML(commission.publicNotes || 'No public notes available.')}</p>
             </div>
         </article>
     `;
@@ -3021,10 +3084,7 @@ function loadContactPage() {
         }
 
         if (e.target.classList.contains('reply-btn') || e.target.classList.contains('delete-btn')) {
-            if (!auth.currentUser) {
-                alert("Security Check: You must log into the Admin Dashboard (Secret Corner) first before managing comments.");
-                return;
-            }
+            if (!requireAdminSession('Security Check: only authorized admin accounts can manage comments.')) return;
         }
 
         if (e.target.classList.contains('reply-btn')) {
@@ -3049,16 +3109,17 @@ function loadContactPage() {
         if (e.target.classList.contains('mini-reply-form')) {
             e.preventDefault();
             
-            if (!auth.currentUser) {
-                alert("Session expired. Please log in via the Secret Corner again.");
-                return;
-            }
+            if (!requireAdminSession('Session expired or unauthorized account. Please sign in as an approved admin.')) return;
 
             const form = e.target;
             const targetId = form.getAttribute('data-target');
             const text = form.elements[0].value.trim(); 
             
-            let adminName = auth.currentUser.email === 'musicisbae6547@gmail.com' ? "Admin Husky 🎨" : "Admin Lopside 🧵";
+            const adminEmail = String(auth.currentUser?.email || '').toLowerCase();
+            let adminName = 'Admin Team';
+            if (adminEmail === 'musicisbae6547@gmail.com') adminName = 'Admin Husky 🎨';
+            if (adminEmail === 'horizontidegallery@gmail.com') adminName = 'Admin Horizon 🌊';
+            if (adminEmail === 'littlelopsidestudio@gmail.com') adminName = 'Admin Lopside 🧵';
 
             const parentComment = globalCommentsArray.find(c => c.id === targetId);
             if (parentComment) {
@@ -3197,9 +3258,9 @@ function loadStatusCheckPage() {
     appViewport.innerHTML = `
         <div class="preorder-card">
             <h1 style="color: #ffffff; text-shadow: 0 0 15px #00f2fe; margin-bottom: 10px; font-size: 2.5rem;">Check Status</h1>
-            <p style="margin-bottom: 25px; color: #e0f7fa; font-size: 1.1rem;">Enter your Order Number or Email to check the status of your request.</p>
+            <p style="margin-bottom: 25px; color: #e0f7fa; font-size: 1.1rem;">Enter your Order Number to check the status of your request.</p>
             <form id="statusCheckForm" style="display: flex; flex-direction: column; gap: 15px;">
-                <input type="text" id="searchQuery" class="form-input" placeholder="e.g. HTG-2026-XXXXXX or email@example.com" required style="font-size: 1.1rem; text-align: center;">
+                <input type="text" id="searchQuery" class="form-input" placeholder="e.g. HTG-2026-XXXXXX" required style="font-size: 1.1rem; text-align: center;">
                 <button type="submit" class="preorder-btn" style="border-color: #a855f7;">Search ✨</button>
             </form>
             <div id="statusResults" style="margin-top: 25px; text-align: left; display: flex; flex-direction: column; gap: 15px;"></div>
@@ -3210,71 +3271,68 @@ function loadStatusCheckPage() {
 
     document.getElementById('statusCheckForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const queryVal = document.getElementById('searchQuery').value.trim();
+        const queryVal = document.getElementById('searchQuery').value.trim().toUpperCase();
         const resultsDiv = document.getElementById('statusResults');
         const btn = e.target.querySelector('button');
         btn.textContent = "Searching... 🌊";
         btn.disabled = true;
 
         try {
-            let qRef;
-            if (queryVal.includes('@')) {
-                qRef = query(collection(db, "preorders"), where("email", "==", queryVal.toLowerCase()));
-            } else {
-                qRef = query(collection(db, "preorders"), where("orderId", "==", queryVal.toUpperCase()));
-            }
-
-            const querySnapshot = await getDocs(qRef);
             resultsDiv.innerHTML = "";
 
-            if (querySnapshot.empty) {
-                resultsDiv.innerHTML = `<p style="color: #ef4444; text-align: center; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px;">No orders found matching that information.</p>`;
-            } else {
-                querySnapshot.forEach((docSnap) => {
-                    const data = docSnap.data();
-                    const orderDate = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleDateString() : 'Unknown Date';
-                    
-                    let statusColor = '#00f2fe'; 
-                    let iconAnim = '';
-                    
-                    if (data.status === 'Pending Review' || data.status === 'New') { 
-                        statusColor = '#a855f7'; 
-                        iconAnim = `
-                          <div class="loader-bottle-mini" style="margin: 15px auto; width: 20px; height: 35px; animation: gentleFloat 2s infinite ease-in-out;">
-                            <div class="loader-bottle-cork" style="width: 12px; height: 6px; left: 4px;"></div>
-                            <div class="loader-bottle-neck" style="width: 10px; height: 8px; left: 5px; top: 4px; border-color: #a855f7;"></div>
-                            <div class="loader-bottle-glass" style="height: 25px; border-color: #a855f7; box-shadow: inset 0 0 10px rgba(168,85,247,0.5);"></div>
-                          </div>`; 
-                    } 
-                    else if (data.status === 'Reviewed' || data.status === 'Accepted') { 
-                        statusColor = '#00f2fe'; 
-                        iconAnim = `<div style="font-size: 1.8rem; color: #00f2fe; text-shadow: 0 0 10px #00f2fe; margin: 10px 0;">🌊✧</div>`; 
-                    }
-                    else if (data.status === 'In Progress') { 
-                        statusColor = '#f1c40f'; 
-                        iconAnim = `<div style="font-size: 1.8rem; color: #f1c40f; text-shadow: 0 0 15px #f1c40f; animation: craftingGlow 2s infinite alternate; margin: 10px 0;">✂️✨</div>`; 
-                    }
-                    else if (['Finished', 'Shipped', 'Paid'].includes(data.status)) { 
-                        statusColor = '#22c55e'; 
-                        iconAnim = `<div style="font-size: 1.8rem; color: #22c55e; text-shadow: 0 0 15px #22c55e; animation: starBurst 3s infinite; margin: 10px 0;">★✦★</div>`; 
-                    }
-                    else if (['Cancelled', 'Not Accepted'].includes(data.status)) { 
-                        statusColor = '#ef4444'; 
-                        iconAnim = `<div style="font-size: 1.8rem; color: #ef4444; margin: 10px 0;">✕</div>`; 
-                    }
+            if (!/^HTG-2026-[A-Z0-9]{6}$/.test(queryVal)) {
+                resultsDiv.innerHTML = `<p style="color: #ef4444; text-align: center; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px;">Please enter a valid order number (HTG-2026-XXXXXX).</p>`;
+                return;
+            }
 
-                    resultsDiv.innerHTML += `
-                        <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid ${statusColor}; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: center;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 10px;">
-                                <strong style="color: #ffffff; font-size: 1.1rem; letter-spacing: 1px;">${escapeHTML(data.orderId || 'Unknown ID')}</strong>
-                                <span style="background: rgba(255,255,255,0.1); color: ${statusColor}; padding: 4px 12px; border-radius: 20px; font-size: 0.9rem; border: 1px solid ${statusColor};">${escapeHTML(data.status || 'Pending Review')}</span>
-                            </div>
-                            ${iconAnim}
-                            <p style="color: #a2b7cc; margin-top: 10px;"><strong>Order Type:</strong> ${escapeHTML(data.orderType)}</p>
-                            <p style="color: #a2b7cc; margin-bottom: 5px;"><strong>Date Submitted:</strong> ${orderDate}</p>
+            const statusDoc = await getDoc(doc(db, "preorderStatusPublic", queryVal));
+
+            if (!statusDoc.exists()) {
+                resultsDiv.innerHTML = `<p style="color: #f8d66d; text-align: center; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px;">Your order was not found in the public tracker yet. New submissions may appear after admin review. Please check back soon.</p>`;
+            } else {
+                const data = statusDoc.data();
+                const orderDate = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleDateString() : 'Unknown Date';
+
+                let statusColor = '#00f2fe';
+                let iconAnim = '';
+
+                if (data.status === 'Pending Review' || data.status === 'New') {
+                    statusColor = '#a855f7';
+                    iconAnim = `
+                      <div class="loader-bottle-mini" style="margin: 15px auto; width: 20px; height: 35px; animation: gentleFloat 2s infinite ease-in-out;">
+                        <div class="loader-bottle-cork" style="width: 12px; height: 6px; left: 4px;"></div>
+                        <div class="loader-bottle-neck" style="width: 10px; height: 8px; left: 5px; top: 4px; border-color: #a855f7;"></div>
+                        <div class="loader-bottle-glass" style="height: 25px; border-color: #a855f7; box-shadow: inset 0 0 10px rgba(168,85,247,0.5);"></div>
+                      </div>`;
+                }
+                else if (data.status === 'Reviewed' || data.status === 'Accepted') {
+                    statusColor = '#00f2fe';
+                    iconAnim = `<div style="font-size: 1.8rem; color: #00f2fe; text-shadow: 0 0 10px #00f2fe; margin: 10px 0;">🌊✧</div>`;
+                }
+                else if (data.status === 'In Progress') {
+                    statusColor = '#f1c40f';
+                    iconAnim = `<div style="font-size: 1.8rem; color: #f1c40f; text-shadow: 0 0 15px #f1c40f; animation: craftingGlow 2s infinite alternate; margin: 10px 0;">✂️✨</div>`;
+                }
+                else if (['Finished', 'Shipped', 'Paid'].includes(data.status)) {
+                    statusColor = '#22c55e';
+                    iconAnim = `<div style="font-size: 1.8rem; color: #22c55e; text-shadow: 0 0 15px #22c55e; animation: starBurst 3s infinite; margin: 10px 0;">★✦★</div>`;
+                }
+                else if (['Cancelled', 'Not Accepted'].includes(data.status)) {
+                    statusColor = '#ef4444';
+                    iconAnim = `<div style="font-size: 1.8rem; color: #ef4444; margin: 10px 0;">✕</div>`;
+                }
+
+                resultsDiv.innerHTML = `
+                    <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid ${statusColor}; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: center;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 10px;">
+                            <strong style="color: #ffffff; font-size: 1.1rem; letter-spacing: 1px;">${escapeHTML(data.orderId || 'Unknown ID')}</strong>
+                            <span style="background: rgba(255,255,255,0.1); color: ${statusColor}; padding: 4px 12px; border-radius: 20px; font-size: 0.9rem; border: 1px solid ${statusColor};">${escapeHTML(data.status || 'Pending Review')}</span>
                         </div>
-                    `;
-                });
+                        ${iconAnim}
+                        <p style="color: #a2b7cc; margin-top: 10px;"><strong>Order Type:</strong> ${escapeHTML(data.itemType || data.orderType || 'Unknown')}</p>
+                        <p style="color: #a2b7cc; margin-bottom: 5px;"><strong>Date Submitted:</strong> ${orderDate}</p>
+                    </div>
+                `;
             }
         } catch (error) {
             console.error("Status Check Error:", error);
@@ -3444,21 +3502,71 @@ async function submitPreorder(event, orderType) {
         }
     }
     
-    delete orderData.refFiles; 
-    if (uploadedImageUrls.length > 0) orderData.referenceImageUrls = uploadedImageUrls;
+    delete orderData.refFiles;
 
     const newOrderId = generateOrderID();
-    orderData.orderType = orderType; orderData.status = "Pending Review"; orderData.adminNotes = ""; orderData.orderId = newOrderId;
-    if (orderData.email) orderData.email = orderData.email.toLowerCase();
-    const compiledNotes = orderData.notes || orderData.description || orderData.materials || orderData.pose || "No additional notes provided.";
+    const safeBaseNotes = orderData.notes || orderData.description || orderData.materials || orderData.pose || "No additional notes provided.";
+
+    const detailEntries = [];
+    const appendDetail = (label, value) => {
+        if (typeof value !== 'string') return;
+        const trimmed = value.trim();
+        if (!trimmed) return;
+        detailEntries.push(`${label}: ${trimmed}`);
+    };
+
+    appendDetail('Art Type', orderData.artType);
+    appendDetail('Part Type', orderData.partType);
+    appendDetail('Keychain Type', orderData.keychainType);
+    appendDetail('Sticker Type', orderData.stickerType);
+    appendDetail('Species', orderData.species);
+    appendDetail('Materials', orderData.materials);
+    appendDetail('Pose', orderData.pose);
+    appendDetail('Deadline', orderData.deadline);
+    appendDetail('Quantity', orderData.quantity);
+    appendDetail('Description', orderData.description);
+    appendDetail('Character Count', orderData.characterCount);
+    appendDetail('Shading Style', orderData.shadingStyle);
+    appendDetail('Needs Measurements', orderData.needsMeasurements);
+    appendDetail('Reference Link', orderData.refLink);
+    if (addons.length > 0) appendDetail('Selected Add-ons', addons.join(', '));
+    if (uploadedImageUrls.length > 0) appendDetail('Reference Uploads', uploadedImageUrls.join(' | '));
+
+    const primaryAllowedFields = new Set(['name', 'email', 'discord', 'notes', 'refLink']);
+    Object.entries(orderData).forEach(([key, value]) => {
+        if (primaryAllowedFields.has(key) || key === 'addon' || key === 'refFiles') return;
+        if (typeof value !== 'string') return;
+        const trimmed = value.trim();
+        if (!trimmed) return;
+        if (detailEntries.some((entry) => entry.startsWith(`${key}:`) || entry.endsWith(`: ${trimmed}`))) return;
+        const label = key
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^./, (s) => s.toUpperCase());
+        appendDetail(label, trimmed);
+    });
+
+    const compiledNotes = detailEntries.length > 0
+        ? `${safeBaseNotes}\n\nDetails:\n${detailEntries.join('\n')}`
+        : safeBaseNotes;
+
+    const preorderPayload = {
+        orderId: newOrderId,
+        name: (orderData.name || '').trim(),
+        email: (orderData.email || '').trim().toLowerCase(),
+        discord: (orderData.discord || '').trim(),
+        itemType: orderType,
+        notes: compiledNotes,
+        refLink: (orderData.refLink || '').trim(),
+        status: 'Pending Review'
+    };
 
     try {
         submitBtn.innerHTML = submitLoaderHTML("Drifting to shore...");
-        await addDoc(collection(db, "preorders"), { ...orderData, createdAt: serverTimestamp() });
+        await addDoc(collection(db, "preorders"), { ...preorderPayload, createdAt: serverTimestamp() });
         
         localStorage.setItem('hz_preorder_cooldown', Date.now().toString());
 
-        const templateParams = { name: orderData.name, email: orderData.email, order_id: newOrderId.replace('HTG-', ''), request_type: orderType, message: compiledNotes };
+        const templateParams = { name: preorderPayload.name, email: preorderPayload.email, order_id: newOrderId.replace('HTG-', ''), request_type: preorderPayload.itemType, message: compiledNotes };
         emailjs.send("service_jn29dsl", "template_0p1cxof", templateParams).catch(e => console.error(e));
         triggerConfetti();
 
@@ -3476,7 +3584,7 @@ async function submitPreorder(event, orderType) {
                         <div class="success-sparkles"></div>
                     </div>
                     <h2 class="success-headline">Yay! Order Sent!</h2>
-                    <p class="success-subtext">We safely received your request, <strong>${escapeHTML(orderData.name)}</strong>!<br>A confirmation bottle is floating to your email: <br><strong style="color: #00f2fe;">${escapeHTML(orderData.email)}</strong></p>
+                    <p class="success-subtext">We safely received your request, <strong>${escapeHTML(preorderPayload.name)}</strong>!<br>A confirmation bottle is floating to your email: <br><strong style="color: #00f2fe;">${escapeHTML(preorderPayload.email)}</strong></p>
                     <div class="order-number-card">
                         <p style="color: #00f2fe; font-size: 0.95rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; font-weight: 500;">Save Your Order ID</p>
                         <h3 style="color: #ffffff; font-size: 2.2rem; letter-spacing: 2px; margin: 0; text-shadow: 0 0 10px rgba(0, 242, 254, 0.4);">${newOrderId}</h3>
@@ -3588,6 +3696,11 @@ function openAdminLoginModal() {
 
         try {
             await signInWithEmailAndPassword(auth, email, password);
+            if (!isAdminSessionActive()) {
+                await signOut(auth);
+                errorEl.textContent = 'This account is not authorized for admin access.';
+                return;
+            }
             document.removeEventListener('keydown', handleEscape);
             closeAdminLoginModal();
             cinematicTransition(null, loadAdminDashboard, '#admin');
@@ -3670,8 +3783,8 @@ function renderActiveDiscountsList() {
 }
 
 function loadAdminDashboard() {
-    if (!auth.currentUser) {
-        alert('Secret Corner access requires signing in first.');
+    if (!isAdminSessionActive()) {
+        alert('Secret Corner access requires an authorized admin sign-in.');
         cinematicTransition(null, loadHomePage, '#home');
         return;
     }
@@ -3703,7 +3816,7 @@ function loadAdminDashboard() {
                 <div class="admin-refund-banner">
                     <p>Horizon Queue Manager: Public-safe refund and commission info appears on the public Horizon Queue page. Private notes/contact/payment info stay admin-only.</p>
                 </div>
-                <p class="admin-card-subtitle">Manage refund and commission queue entries in one place. Public-safe fields stay in their public collections, while admin-only details stay in their matching private collections.</p>
+                <p class="admin-card-subtitle">Manage only the queue data needed for public display and internal tracking. Detailed customer-facing progress remains in the preorder status tracker.</p>
 
                 <div class="queue-manager-tabs" role="tablist" aria-label="Horizon Queue Manager Sections">
                     <button type="button" class="queue-manager-tab-btn is-active" data-queue-tab="refunds" role="tab" aria-selected="true">Refunds</button>
@@ -3774,27 +3887,21 @@ function loadAdminDashboard() {
                 <div class="queue-manager-panel is-hidden" data-queue-panel="commissions">
                     <div class="queue-manager-panel-head">
                         <h4>Commission Queue</h4>
-                        <p>Public-safe commission data is stored in <code>commissions</code>. Private/admin-only commission details stay in <code>commissionPrivate</code>.</p>
+                        <p>Keep this section minimal: public name, queue owner, queue stage, and visibility. Private notes/contact/payment remain in <code>commissionPrivate</code>.</p>
                     </div>
 
                     <div class="commission-admin-grid">
                         <div class="commission-admin-form-column">
                         <label class="admin-label">Commission ID<input type="text" id="commissionIdField" class="admin-input" placeholder="e.g. COM-001"></label>
                         <label class="admin-label">Display Name<input type="text" id="commissionDisplayNameField" class="admin-input" placeholder="Public username or initials"></label>
-                        <label class="admin-label">Commission Type<input type="text" id="commissionTypeField" class="admin-input" placeholder="e.g. Badge, Fullbody, Suit Part"></label>
+                        <label class="admin-label">Queue Owner<select id="commissionQueueOwnerField" class="admin-input"><option value="husky">Husky</option><option value="lopside">Lopside</option></select></label>
                         <label class="admin-label">Queue Status<select id="commissionQueueStatusField" class="admin-input"><option>Not Started</option><option>Started</option><option>Finished</option></select></label>
-                        <label class="admin-label">Detailed Status<select id="commissionDetailedStatusField" class="admin-input"><option>Pending</option><option>Sketching</option><option>In Progress</option><option>Rendering</option><option>Sewing</option><option>Waiting on Client</option><option>Completed</option><option>On Hold</option></select></label>
-                        <label class="admin-label">Estimated Start<input type="text" id="commissionEstimatedStartField" class="admin-input" placeholder="e.g. July 2026"></label>
-                        <label class="admin-label">Estimated Update / Completion<input type="text" id="commissionEstimatedUpdateField" class="admin-input" placeholder="e.g. August 2026"></label>
-                        <label class="admin-label">Public Notes<textarea id="commissionPublicNotesField" class="admin-input admin-textarea" rows="3" placeholder="Public queue update..."></textarea></label>
-                        <label class="admin-label">Last Updated<input type="text" id="commissionLastUpdatedField" class="admin-input" placeholder="e.g. June 2026"></label>
                         <label class="admin-label admin-checkbox-label-wrap"><input type="checkbox" id="commissionIsPublicField" class="admin-checkbox"> Show public</label>
                         <label class="admin-label">Private Notes<textarea id="commissionPrivateNotesField" class="admin-input admin-textarea" rows="3" placeholder="Admin-only notes..."></textarea></label>
                         <label class="admin-label">Private Contact Info<input type="text" id="commissionPrivateContactInfoField" class="admin-input" placeholder="Private contact info"></label>
                         <label class="admin-label">Payment Handle<input type="text" id="commissionPaymentHandleField" class="admin-input" placeholder="Private payment handle"></label>
                         <label class="admin-label">Email<input type="text" id="commissionPrivateEmailField" class="admin-input" placeholder="Private email"></label>
                         <label class="admin-label">Transaction Info<textarea id="commissionTransactionInfoField" class="admin-input admin-textarea" rows="2" placeholder="Private transaction info..."></textarea></label>
-                        <label class="admin-label">Reference Info<textarea id="commissionReferenceInfoField" class="admin-input admin-textarea" rows="2" placeholder="Private reference info..."></textarea></label>
                         <div class="admin-actions refund-manager-actions">
                             <button type="button" id="saveCommissionBtn" class="admin-btn-save">Save Commission</button>
                             <button type="button" id="clearCommissionFormBtn" class="admin-btn-publish" style="background: rgba(255,255,255,0.08);">Clear</button>
@@ -3804,7 +3911,7 @@ function loadAdminDashboard() {
                             <div class="admin-queue-tools">
                                 <label class="admin-queue-search" for="commissionSearchField">
                                     <span>Search commission entries</span>
-                                    <input type="search" id="commissionSearchField" class="admin-input" placeholder="Search ID, name, type, or status">
+                                    <input type="search" id="commissionSearchField" class="admin-input" placeholder="Search ID, name, owner, or status">
                                 </label>
                                 <div class="admin-queue-filter-row">
                                     <label class="admin-queue-filter" for="commissionVisibilityFilter">
@@ -3851,6 +3958,7 @@ function loadAdminDashboard() {
     setupAdminCommissionManager();
 
     document.getElementById('btnSaveDiscount')?.addEventListener('click', async (e) => {
+        if (!requireAdminSession('Please sign in with an authorized admin account before editing discounts.')) return;
         const btn = e.target;
         const dTarget = document.getElementById('adminDiscountTarget');
         const dMessage = document.getElementById('adminDiscountMessage');
@@ -3885,6 +3993,7 @@ function loadAdminDashboard() {
     });
 
     document.getElementById('btnSaveAvailabilitySettings')?.addEventListener('click', async (e) => {
+        if (!requireAdminSession('Please sign in with an authorized admin account before saving availability.')) return;
         const btn = e.target;
         const payload = normalizeHomeAvailability({
             artists: {
@@ -3931,6 +4040,7 @@ function loadAdminDashboard() {
 
     document.getElementById('adminAnnouncementForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (!requireAdminSession('Please sign in with an authorized admin account before managing announcements.')) return;
         const btn = document.getElementById('btnSaveAnnouncement');
         const title = document.getElementById('adminAnnounceTitle').value.trim();
         const date = document.getElementById('adminAnnounceDate').value;
@@ -4006,6 +4116,7 @@ function loadAdminDashboard() {
 
         document.querySelectorAll('.btn-toggle-vis').forEach(btn => {
             btn.addEventListener('click', async (e) => {
+                if (!requireAdminSession('Please sign in with an authorized admin account before updating announcement visibility.')) return;
                 const id = e.target.getAttribute('data-id');
                 const currentVis = e.target.getAttribute('data-vis') === 'true';
                 try {
@@ -4034,6 +4145,7 @@ function loadAdminDashboard() {
 
         document.querySelectorAll('.btn-delete-ann').forEach(btn => {
             btn.addEventListener('click', async (e) => {
+                if (!requireAdminSession('Please sign in with an authorized admin account before deleting announcements.')) return;
                 if(confirm("Permanently delete this announcement?")) {
                     const id = e.target.getAttribute('data-id');
                     try {
@@ -4123,10 +4235,7 @@ function setupAdminRefundManager() {
 
     if (saveBtn) {
         saveBtn.addEventListener('click', async () => {
-            if (!auth.currentUser) {
-                alert('Please log into the Secret Corner before saving refunds.');
-                return;
-            }
+            if (!requireAdminSession('Please log into the Secret Corner with an authorized admin account before saving refunds.')) return;
 
             const refundId = document.getElementById('refundIdField').value.trim();
             const displayName = document.getElementById('displayNameField').value.trim();
@@ -4211,7 +4320,7 @@ function setupAdminRefundManager() {
         });
     }
 
-    if (!auth.currentUser) {
+    if (!isAdminSessionActive()) {
         window.adminRefundEntries = [];
         if (refundsList) {
             refundsList.innerHTML = `<p style="color:#ef4444;">Sign into the Secret Corner to manage refunds.</p>`;
@@ -4274,30 +4383,21 @@ function setupAdminCommissionManager() {
 
     if (saveBtn) {
         saveBtn.addEventListener('click', async () => {
-            if (!auth.currentUser) {
-                alert('Please log into the Secret Corner before saving commissions.');
-                return;
-            }
+            if (!requireAdminSession('Please log into the Secret Corner with an authorized admin account before saving commissions.')) return;
 
             const commissionId = document.getElementById('commissionIdField').value.trim();
             const displayName = document.getElementById('commissionDisplayNameField').value.trim();
-            const commissionType = document.getElementById('commissionTypeField').value.trim();
+            const queueOwner = document.getElementById('commissionQueueOwnerField').value || 'husky';
             const queueStatus = document.getElementById('commissionQueueStatusField').value;
-            const detailedStatus = document.getElementById('commissionDetailedStatusField').value;
-            const estimatedStart = document.getElementById('commissionEstimatedStartField').value.trim();
-            const estimatedUpdate = document.getElementById('commissionEstimatedUpdateField').value.trim();
-            const publicNotes = document.getElementById('commissionPublicNotesField').value.trim();
-            const lastUpdated = document.getElementById('commissionLastUpdatedField').value.trim();
             const isPublic = document.getElementById('commissionIsPublicField').checked;
             const privateNotes = document.getElementById('commissionPrivateNotesField').value.trim();
             const privateContactInfo = document.getElementById('commissionPrivateContactInfoField').value.trim();
             const paymentHandle = document.getElementById('commissionPaymentHandleField').value.trim();
             const privateEmail = document.getElementById('commissionPrivateEmailField').value.trim();
             const transactionInfo = document.getElementById('commissionTransactionInfoField').value.trim();
-            const referenceInfo = document.getElementById('commissionReferenceInfoField').value.trim();
 
-            if (!commissionId || !displayName || !commissionType) {
-                alert('Please provide a commission ID, display name, and commission type.');
+            if (!commissionId || !displayName) {
+                alert('Please provide a commission ID and display name.');
                 return;
             }
 
@@ -4307,13 +4407,8 @@ function setupAdminCommissionManager() {
             const publicPayload = {
                 commissionId,
                 displayName,
-                commissionType,
+                queueOwner,
                 queueStatus,
-                detailedStatus,
-                estimatedStart,
-                estimatedUpdate,
-                publicNotes,
-                lastUpdated,
                 isPublic,
                 updatedAt: serverTimestamp()
             };
@@ -4325,7 +4420,6 @@ function setupAdminCommissionManager() {
                 paymentHandle,
                 email: privateEmail,
                 transactionInfo,
-                referenceInfo,
                 updatedAt: serverTimestamp()
             };
 
@@ -4362,7 +4456,7 @@ function setupAdminCommissionManager() {
         });
     }
 
-    if (!auth.currentUser) {
+    if (!isAdminSessionActive()) {
         window.adminCommissionEntries = [];
         if (commissionsList) {
             commissionsList.innerHTML = `<p style="color:#ef4444;">Sign into the Secret Corner to manage commissions.</p>`;
@@ -4444,10 +4538,9 @@ function applyCommissionAdminFilters() {
     const filteredCommissions = allCommissions.filter((commission) => matchesAdminQueueFilters(commission, filters, [
         'commissionId',
         'displayName',
-        'commissionType',
+        'queueOwner',
         'queueStatus',
-        'detailedStatus',
-        'publicNotes'
+        'isPublic'
     ]));
 
     renderAdminCommissionList(filteredCommissions, allCommissions.length);
@@ -4499,10 +4592,7 @@ function renderAdminRefundList(refunds, totalRefunds = refunds.length) {
 
     document.querySelectorAll('.edit-refund-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
-            if (!auth.currentUser) {
-                alert('Please log into the Secret Corner before editing refunds.');
-                return;
-            }
+            if (!requireAdminSession('Please log into the Secret Corner with an authorized admin account before editing refunds.')) return;
             const id = e.target.getAttribute('data-id');
             if (!id) return;
             try {
@@ -4521,10 +4611,7 @@ function renderAdminRefundList(refunds, totalRefunds = refunds.length) {
 
     document.querySelectorAll('.delete-refund-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
-            if (!auth.currentUser) {
-                alert('Please log into the Secret Corner before deleting refunds.');
-                return;
-            }
+            if (!requireAdminSession('Please log into the Secret Corner with an authorized admin account before deleting refunds.')) return;
             const id = e.target.getAttribute('data-id');
             if (!id) return;
             if (!confirm('Delete this refund entry permanently?')) return;
@@ -4585,10 +4672,13 @@ function renderAdminCommissionList(commissions, totalCommissions = commissions.l
         return;
     }
 
-    commissions.forEach((commission) => {
-        const item = document.createElement('div');
-        item.className = 'admin-commission-item';
-        item.innerHTML = `
+    const groupedCommissions = {
+        lopside: commissions.filter((commission) => (commission.queueOwner || inferCommissionQueueOwner(commission)) === 'lopside'),
+        husky: commissions.filter((commission) => (commission.queueOwner || inferCommissionQueueOwner(commission)) === 'husky')
+    };
+
+    const buildCommissionItemHtml = (commission) => `
+        <div class="admin-commission-item">
             <div class="admin-queue-item-main">
                 <div class="admin-queue-item-head">
                     <strong>${escapeHTML(commission.commissionId || 'N/A')}</strong>
@@ -4596,8 +4686,7 @@ function renderAdminCommissionList(commissions, totalCommissions = commissions.l
                 </div>
                 <div class="admin-queue-item-subline">${escapeHTML(commission.displayName || 'Anonymous')}</div>
                 <div class="admin-queue-meta-row">
-                    <span class="admin-queue-meta-pill">${escapeHTML(commission.commissionType || 'Other')}</span>
-                    <span class="admin-queue-meta-pill">${escapeHTML(commission.detailedStatus || 'Pending')}</span>
+                    <span class="admin-queue-meta-pill">${escapeHTML((commission.queueOwner || inferCommissionQueueOwner(commission)).replace(/^./, c => c.toUpperCase()))}</span>
                     <span class="admin-queue-meta-pill admin-queue-meta-pill-visibility">${commission.isPublic ? 'Public' : 'Hidden'}</span>
                 </div>
             </div>
@@ -4605,16 +4694,33 @@ function renderAdminCommissionList(commissions, totalCommissions = commissions.l
                 <button type="button" class="admin-btn-edit edit-commission-btn" data-id="${commission.id}">Edit</button>
                 <button type="button" class="admin-btn-delete delete-commission-btn" data-id="${commission.id}">Delete</button>
             </div>
-        `;
-        commissionsList.appendChild(item);
-    });
+        </div>
+    `;
+
+    commissionsList.innerHTML = `
+        <section class="admin-commission-owner-group">
+            <div class="admin-commission-owner-head">
+                <strong>Lopside's Queue Names</strong>
+                <span class="admin-list-count-badge">${groupedCommissions.lopside.length}</span>
+            </div>
+            <div class="admin-commission-owner-list">
+                ${groupedCommissions.lopside.length > 0 ? groupedCommissions.lopside.map(buildCommissionItemHtml).join('') : '<p class="admin-commission-owner-empty">No Lopside commission entries in this view.</p>'}
+            </div>
+        </section>
+        <section class="admin-commission-owner-group">
+            <div class="admin-commission-owner-head">
+                <strong>Husky\'s Queue Names</strong>
+                <span class="admin-list-count-badge">${groupedCommissions.husky.length}</span>
+            </div>
+            <div class="admin-commission-owner-list">
+                ${groupedCommissions.husky.length > 0 ? groupedCommissions.husky.map(buildCommissionItemHtml).join('') : '<p class="admin-commission-owner-empty">No Husky commission entries in this view.</p>'}
+            </div>
+        </section>
+    `;
 
     document.querySelectorAll('.edit-commission-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
-            if (!auth.currentUser) {
-                alert('Please log into the Secret Corner before editing commissions.');
-                return;
-            }
+            if (!requireAdminSession('Please log into the Secret Corner with an authorized admin account before editing commissions.')) return;
             const id = e.target.getAttribute('data-id');
             if (!id) return;
             try {
@@ -4633,10 +4739,7 @@ function renderAdminCommissionList(commissions, totalCommissions = commissions.l
 
     document.querySelectorAll('.delete-commission-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
-            if (!auth.currentUser) {
-                alert('Please log into the Secret Corner before deleting commissions.');
-                return;
-            }
+            if (!requireAdminSession('Please log into the Secret Corner with an authorized admin account before deleting commissions.')) return;
             const id = e.target.getAttribute('data-id');
             if (!id) return;
             if (!confirm('Delete this commission entry permanently?')) return;
@@ -4659,20 +4762,14 @@ function populateCommissionForm(commission) {
     window.currentEditingCommissionId = commission.id;
     document.getElementById('commissionIdField').value = commission.commissionId || '';
     document.getElementById('commissionDisplayNameField').value = commission.displayName || '';
-    document.getElementById('commissionTypeField').value = commission.commissionType || '';
+    document.getElementById('commissionQueueOwnerField').value = commission.queueOwner || inferCommissionQueueOwner(commission);
     document.getElementById('commissionQueueStatusField').value = commission.queueStatus || 'Not Started';
-    document.getElementById('commissionDetailedStatusField').value = commission.detailedStatus || 'Pending';
-    document.getElementById('commissionEstimatedStartField').value = commission.estimatedStart || '';
-    document.getElementById('commissionEstimatedUpdateField').value = commission.estimatedUpdate || '';
-    document.getElementById('commissionPublicNotesField').value = commission.publicNotes || '';
-    document.getElementById('commissionLastUpdatedField').value = commission.lastUpdated || '';
     document.getElementById('commissionIsPublicField').checked = commission.isPublic === true;
     document.getElementById('commissionPrivateNotesField').value = commission.privateNotes || '';
     document.getElementById('commissionPrivateContactInfoField').value = commission.privateContactInfo || '';
     document.getElementById('commissionPaymentHandleField').value = commission.paymentHandle || '';
     document.getElementById('commissionPrivateEmailField').value = commission.email || '';
     document.getElementById('commissionTransactionInfoField').value = commission.transactionInfo || '';
-    document.getElementById('commissionReferenceInfoField').value = commission.referenceInfo || '';
     const saveBtn = document.getElementById('saveCommissionBtn');
     if (saveBtn) saveBtn.innerText = 'Save Commission';
 }
@@ -4701,20 +4798,14 @@ function clearCommissionForm() {
     window.currentEditingCommissionId = null;
     document.getElementById('commissionIdField').value = '';
     document.getElementById('commissionDisplayNameField').value = '';
-    document.getElementById('commissionTypeField').value = '';
+    document.getElementById('commissionQueueOwnerField').value = 'husky';
     document.getElementById('commissionQueueStatusField').value = 'Not Started';
-    document.getElementById('commissionDetailedStatusField').value = 'Pending';
-    document.getElementById('commissionEstimatedStartField').value = '';
-    document.getElementById('commissionEstimatedUpdateField').value = '';
-    document.getElementById('commissionPublicNotesField').value = '';
-    document.getElementById('commissionLastUpdatedField').value = '';
     document.getElementById('commissionIsPublicField').checked = false;
     document.getElementById('commissionPrivateNotesField').value = '';
     document.getElementById('commissionPrivateContactInfoField').value = '';
     document.getElementById('commissionPaymentHandleField').value = '';
     document.getElementById('commissionPrivateEmailField').value = '';
     document.getElementById('commissionTransactionInfoField').value = '';
-    document.getElementById('commissionReferenceInfoField').value = '';
 }
 
 function renderAdminOrders(ordersArr) {
@@ -4739,7 +4830,7 @@ function renderAdminOrders(ordersArr) {
         }
 
         card.innerHTML = `
-            <h3>${escapeHTML(order.orderType)}</h3>
+            <h3>${escapeHTML(order.orderType || order.itemType || 'Order')}</h3>
             <div class="admin-detail"><strong>Name:</strong> ${escapeHTML(order.name)}</div>
             <div class="admin-detail"><strong>Order ID:</strong> ${escapeHTML(order.orderId || 'N/A')}</div>
             <div class="admin-detail"><strong>Discord:</strong> ${escapeHTML(order.discord)}</div>
@@ -4748,7 +4839,7 @@ function renderAdminOrders(ordersArr) {
             <div class="admin-detail" style="grid-column: span 2;">
                 <strong>Order Details:</strong>
                 <span style="color: #a2b7cc; font-size: 0.85rem;">
-                    (Type: ${escapeHTML(order.keychainType || order.stickerType || order.partType || order.artType || 'N/A')}, Qty: ${escapeHTML(order.quantity || '1')})
+                    (Type: ${escapeHTML(order.itemType || order.keychainType || order.stickerType || order.partType || order.artType || 'N/A')}, Qty: ${escapeHTML(order.quantity || '1')})
                     ${addonsText}
                     ${imagesHtml}
                 </span>
@@ -4776,8 +4867,26 @@ function renderAdminOrders(ordersArr) {
         ordersGrid.appendChild(card);
 
         document.getElementById(`status-${order.id}`).addEventListener('change', async (e) => {
+            if (!requireAdminSession('Please sign in with an authorized admin account before changing order statuses.')) {
+                e.target.value = order.status || 'Pending Review';
+                return;
+            }
             try { 
                 await updateDoc(doc(db, "preorders", order.id), { status: e.target.value });
+                if (order.orderId) {
+                    const publicStatusPayload = {
+                        orderId: order.orderId,
+                        itemType: order.itemType || order.orderType || 'Unknown',
+                        status: e.target.value,
+                        updatedAt: serverTimestamp()
+                    };
+                    if (order.createdAt) {
+                        publicStatusPayload.createdAt = order.createdAt;
+                    }
+                    await setDoc(doc(db, "preorderStatusPublic", order.orderId), {
+                        ...publicStatusPayload
+                    }, { merge: true });
+                }
                 showAdminToast("Status updated successfully ✨");
             } catch (err) { showAdminToast("Failed to update status.", true); }
         });
@@ -4815,8 +4924,15 @@ function filterOrders(status) {
 }
 
 async function deleteOrder(id) {
+    if (!requireAdminSession('Please sign in with an authorized admin account before deleting orders.')) return;
     if (confirm("Are you sure you want to permanently delete this order?")) {
-        try { await deleteDoc(doc(db, "preorders", id)); }
+        try {
+            const orderToDelete = (Array.isArray(window.allOrders) ? window.allOrders : []).find(o => o.id === id);
+            await deleteDoc(doc(db, "preorders", id));
+            if (orderToDelete && orderToDelete.orderId) {
+                await deleteDoc(doc(db, "preorderStatusPublic", orderToDelete.orderId));
+            }
+        }
         catch (e) { alert("Failed to delete order."); }
     }
 }
@@ -4904,14 +5020,10 @@ function exportCommissionsCSV() {
     const rows = (Array.isArray(window.adminCommissionEntries) ? window.adminCommissionEntries : []).map((commission) => ({
         commissionId: commission.commissionId || '',
         displayName: commission.displayName || '',
-        commissionType: commission.commissionType || '',
+        queueOwner: commission.queueOwner || inferCommissionQueueOwner(commission),
         queueStatus: commission.queueStatus || '',
-        detailedStatus: commission.detailedStatus || '',
-        estimatedStart: commission.estimatedStart || '',
-        estimatedUpdate: commission.estimatedUpdate || '',
-        lastUpdated: commission.lastUpdated || '',
         isPublic: commission.isPublic === true ? 'true' : 'false',
-        publicNotes: commission.publicNotes || ''
+        updatedAt: normalizeDateForCSV(commission.updatedAt)
     }));
 
     downloadCSV(`horizon-commissions-${new Date().toISOString().slice(0, 10)}.csv`, rows);
@@ -5078,15 +5190,25 @@ const routes = {
     '#custom-keychain': loadCustomKeychainsForm,
     '#art': loadHuskyArtForm,
     '#fursuits': loadFursuitForm,
-    '#huskys-list': loadHuskysListPage,
-    '#admin': loadAdminDashboard
+    '#huskys-list': loadHuskysListPage
 };
+
+function routeProtectedAdminHash() {
+    if (isAdminSessionActive()) {
+        cinematicTransition(null, loadAdminDashboard, '');
+        return;
+    }
+    window.location.hash = 'home';
+    cinematicTransition(null, loadHomePage, '');
+}
 
 function initRouter() {
     let initialHash = window.location.hash || '#home';
     resetViewportToTop();
 
-    if (routes[initialHash]) {
+    if (initialHash === '#admin') {
+        routeProtectedAdminHash();
+    } else if (routes[initialHash]) {
         routes[initialHash]();
     } else {
         loadHomePage();
@@ -5104,7 +5226,9 @@ function initRouter() {
 
         const currentHash = window.location.hash || '#home';
 
-        if (routes[currentHash]) {
+        if (currentHash === '#admin') {
+            routeProtectedAdminHash();
+        } else if (routes[currentHash]) {
             cinematicTransition(null, routes[currentHash], '');
         } else {
             cinematicTransition(null, loadHomePage, '');
