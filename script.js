@@ -2617,15 +2617,28 @@ function loadHuskysListPage() {
     appViewport.innerHTML = `
         <div class="refunds-page-container">
             <div class="queue-starfield" aria-hidden="true">
-                <span class="star-bit star-bit-purple star-bit-1"></span>
-                <span class="star-bit star-bit-gold star-bit-2"></span>
-                <span class="star-bit star-bit-red star-bit-3"></span>
-                <span class="star-bit star-bit-purple star-bit-4"></span>
-                <span class="star-bit star-bit-gold star-bit-5"></span>
-                <span class="star-bit star-bit-red star-bit-6"></span>
-                <span class="star-bit star-bit-purple star-bit-7"></span>
-                <span class="star-bit star-bit-gold star-bit-8"></span>
-                <span class="star-bit star-bit-red star-bit-9"></span>
+                <div class="queue-star-dust queue-star-dust-a"></div>
+                <div class="queue-star-dust queue-star-dust-b"></div>
+                <div class="queue-twinkle-layer queue-twinkle-layer-a"></div>
+                <div class="queue-twinkle-layer queue-twinkle-layer-b"></div>
+                <span class="star-bit star-bit-purple depth-mid star-bit-1"></span>
+                <span class="star-bit star-bit-gold depth-near star-bit-2"></span>
+                <span class="star-bit star-bit-red depth-near star-bit-3"></span>
+                <span class="star-bit star-bit-purple depth-far star-bit-4"></span>
+                <span class="star-bit star-bit-gold depth-mid star-bit-5"></span>
+                <span class="star-bit star-bit-red depth-mid star-bit-6"></span>
+                <span class="star-bit star-bit-purple depth-near star-bit-7"></span>
+                <span class="star-bit star-bit-gold depth-far star-bit-8"></span>
+                <span class="star-bit star-bit-red depth-far star-bit-9"></span>
+                <span class="star-bit star-bit-purple depth-mid star-bit-10"></span>
+                <span class="star-bit star-bit-gold depth-near star-bit-11"></span>
+                <span class="star-bit star-bit-red depth-mid star-bit-12"></span>
+                <span class="star-bit star-bit-purple depth-far star-bit-13"></span>
+                <span class="star-bit star-bit-gold depth-mid star-bit-14"></span>
+                <span class="star-bit star-bit-red depth-near star-bit-15"></span>
+                <span class="star-bit star-bit-purple depth-mid star-bit-16"></span>
+                <span class="star-bit star-bit-gold depth-far star-bit-17"></span>
+                <span class="star-bit star-bit-red depth-near star-bit-18"></span>
             </div>
 
             <div class="refunds-hero-card queue-reveal" style="--queue-stagger: 20ms;">
@@ -2647,15 +2660,7 @@ function loadHuskysListPage() {
                 </div>
             </section>
 
-            <section class="huskys-list-section-shell queue-reveal" style="--queue-stagger: 120ms;">
-                <div class="huskys-list-section-head">
-                    <h2>Refund Queue</h2>
-                    <p>Track all refunds in three quick-scan columns.</p>
-                </div>
-                <div id="refundsGroupsContainer" class="refunds-groups-grid"></div>
-            </section>
-
-            <section class="huskys-list-section-shell queue-reveal" style="--queue-stagger: 170ms;">
+            <section class="huskys-list-section-shell commission-priority-shell queue-reveal" style="--queue-stagger: 120ms;">
                 <div class="huskys-list-section-head">
                     <h2>Commission Queue</h2>
                     <p>Public names only. Detailed commission progress stays in the preorder status tracker.</p>
@@ -2676,6 +2681,14 @@ function loadHuskysListPage() {
                         <div id="lopsideCommissionQueueContainer" class="commission-public-list-shell"></div>
                     </section>
                 </div>
+            </section>
+
+            <section class="huskys-list-section-shell refund-focus-shell queue-reveal" style="--queue-stagger: 170ms;">
+                <div class="huskys-list-section-head">
+                    <h2>Refund Queue</h2>
+                    <p>Track all refunds in three quick-scan columns.</p>
+                </div>
+                <div id="refundsGroupsContainer" class="refunds-groups-grid"></div>
             </section>
 
             <button type="button" id="backToPreorderBtn" class="nav-btn btn-spacing-top" style="border-color: #22c55e;">← Back to Preorder</button>
@@ -2870,21 +2883,24 @@ function renderPublicRefundCard(refund, index = 0) {
                 </div>
                 <div class="refund-chip refund-chip-queue" style="background:${getQueueBadgeColor(refund.queueStatus)};">${escapeHTML(refund.queueStatus || 'Not Started')}</div>
             </div>
-            <div class="refund-card-info">
-                <div class="refund-info-row"><strong>Source:</strong> ${escapeHTML(refund.sourceType || 'Other')}</div>
-                <div class="refund-info-row"><strong>Estimated Update:</strong> ${escapeHTML(refund.estimatedUpdate || 'TBD')}</div>
-                <div class="refund-info-row"><strong>Last Updated:</strong> ${escapeHTML(formatDisplayDate(refund.lastUpdated))}</div>
+            <div class="refund-progress-wrap">
+                <div class="refund-progress-meta">
+                    <span class="refund-progress-percent">${progress}% refunded</span>
+                    <span class="refund-progress-amount">${formatMoney(refund.amountPaid)} of ${formatMoney(refund.amountOwed)}</span>
+                </div>
+                <div class="refund-progress-bar">
+                    <div class="refund-progress-fill" style="width: ${progress}%; background: linear-gradient(135deg, #34d399, #818cf8);"></div>
+                </div>
             </div>
-            <div class="refund-amount-row">
-                <div><strong>Amount Owed:</strong> ${formatMoney(refund.amountOwed)}</div>
-                <div><strong>Amount Refunded:</strong> ${formatMoney(refund.amountPaid)}</div>
+            <div class="refund-card-info refund-card-info-compact">
+                <div class="refund-info-row"><strong>Updated:</strong> ${escapeHTML(formatDisplayDate(refund.lastUpdated))}</div>
+                <div class="refund-info-row"><strong>Est.:</strong> ${escapeHTML(refund.estimatedUpdate || 'TBD')}</div>
             </div>
-            <div class="refund-progress-bar">
-                <div class="refund-progress-fill" style="width: ${progress}%; background: linear-gradient(135deg, #34d399, #818cf8);"></div>
-            </div>
-            <div class="refund-progress-label">${progress}% refunded</div>
             <div class="refund-card-footer">
-                <span class="refund-chip refund-chip-detail" style="background:${getDetailBadgeColor(refund.detailedStatus)};">${escapeHTML(refund.detailedStatus || 'Pending')}</span>
+                <div class="refund-card-footer-top">
+                    <span class="refund-chip refund-chip-detail" style="background:${getDetailBadgeColor(refund.detailedStatus)};">${escapeHTML(refund.detailedStatus || 'Pending')}</span>
+                    <span class="refund-source-tag">Source: ${escapeHTML(refund.sourceType || 'Other')}</span>
+                </div>
                 <p class="refund-notes">${escapeHTML(refund.publicNotes || 'No public notes available.')}</p>
             </div>
         </article>

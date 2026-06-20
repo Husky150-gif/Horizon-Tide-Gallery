@@ -2760,10 +2760,17 @@ body.admin-login-modal-open {
 /* Husky's List Page Styles */
 [data-theme="huskys-list"] .bg-environment {
     background:
-        radial-gradient(circle at 12% 18%, rgba(117, 58, 211, 0.26), transparent 32%),
-        radial-gradient(circle at 88% 12%, rgba(250, 204, 21, 0.22), transparent 30%),
-        radial-gradient(circle at 82% 78%, rgba(239, 68, 68, 0.18), transparent 28%),
-        linear-gradient(180deg, #02040d 0%, #04081a 48%, #030715 100%);
+        radial-gradient(circle at 14% 20%, rgba(147, 51, 234, 0.34), transparent 38%),
+        radial-gradient(circle at 84% 14%, rgba(250, 204, 21, 0.24), transparent 32%),
+        radial-gradient(circle at 80% 82%, rgba(239, 68, 68, 0.2), transparent 35%),
+        radial-gradient(circle at 52% 60%, rgba(56, 189, 248, 0.12), transparent 40%),
+        linear-gradient(180deg, #01030a 0%, #05081a 46%, #030715 100%);
+}
+
+[data-theme="huskys-list"] .ocean-horizon,
+[data-theme="huskys-list"] .sky-container,
+[data-theme="huskys-list"] #interactiveStarField {
+    display: none !important;
 }
 
 .refunds-page-container {
@@ -2785,7 +2792,19 @@ body.admin-login-modal-open {
     z-index: 0;
     background-image: radial-gradient(rgba(255, 255, 255, 0.22) 0.9px, transparent 0.9px);
     background-size: 108px 108px;
-    opacity: 0.28;
+    opacity: 0.22;
+}
+
+.refunds-page-container::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.18), transparent 46%),
+        radial-gradient(circle at 70% 58%, rgba(217, 70, 239, 0.1), transparent 48%),
+        radial-gradient(circle at 45% 90%, rgba(250, 204, 21, 0.1), transparent 44%);
 }
 
 .refunds-page-container > * {
@@ -2801,15 +2820,72 @@ body.admin-login-modal-open {
     overflow: hidden;
 }
 
+.queue-star-dust,
+.queue-twinkle-layer {
+    position: absolute;
+    inset: -15% -10%;
+    pointer-events: none;
+}
+
+.queue-star-dust {
+    opacity: 0.34;
+    background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.22) 0.9px, transparent 1.2px),
+        radial-gradient(circle, rgba(147, 197, 253, 0.18) 0.8px, transparent 1.3px);
+    background-size: 64px 64px, 98px 98px;
+    animation: cosmicDustPan 95s linear infinite;
+    mix-blend-mode: screen;
+}
+
+.queue-star-dust-b {
+    opacity: 0.24;
+    filter: blur(0.8px);
+    transform: scale(1.08);
+    animation-duration: 120s;
+    animation-direction: reverse;
+}
+
+.queue-twinkle-layer {
+    background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.9) 1.2px, transparent 1.8px),
+        radial-gradient(circle, rgba(196, 181, 253, 0.8) 1px, transparent 1.7px),
+        radial-gradient(circle, rgba(253, 230, 138, 0.75) 1px, transparent 1.7px);
+    background-size: 190px 190px, 260px 260px, 230px 230px;
+    background-position: 30px 60px, 120px 40px, 200px 150px;
+    opacity: 0.18;
+    animation: twinkleShift 42s ease-in-out infinite alternate;
+}
+
+.queue-twinkle-layer-b {
+    opacity: 0.13;
+    filter: blur(1px);
+    transform: scale(1.04);
+    animation-duration: 55s;
+}
+
 .star-bit {
     position: absolute;
     width: 32px;
     aspect-ratio: 1;
     clip-path: polygon(50% 0%, 62% 35%, 100% 50%, 62% 65%, 50% 100%, 38% 65%, 0% 50%, 38% 35%);
-    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.35));
-    opacity: 0.72;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.32));
+    opacity: 0.68;
     animation: starBitDrift var(--float-duration, 22s) ease-in-out infinite alternate,
                starBitPulse var(--pulse-duration, 8s) ease-in-out infinite;
+}
+
+.star-bit.depth-far {
+    opacity: 0.28;
+    filter: blur(0.9px) drop-shadow(0 0 5px rgba(255, 255, 255, 0.16));
+}
+
+.star-bit.depth-mid {
+    opacity: 0.65;
+}
+
+.star-bit.depth-near {
+    opacity: 0.88;
+    filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.5));
 }
 
 .star-bit::after {
@@ -2897,6 +2973,69 @@ body.admin-login-modal-open {
     --float-duration: 23s;
 }
 
+.star-bit-10 {
+    top: 33%;
+    right: 36%;
+    width: 20px;
+    --float-duration: 30s;
+}
+
+.star-bit-11 {
+    top: 45%;
+    left: 36%;
+    width: 44px;
+    --float-duration: 25s;
+}
+
+.star-bit-12 {
+    top: 58%;
+    right: 26%;
+    width: 28px;
+    --float-duration: 21s;
+}
+
+.star-bit-13 {
+    top: 63%;
+    left: 4%;
+    width: 18px;
+    --float-duration: 33s;
+}
+
+.star-bit-14 {
+    top: 76%;
+    left: 28%;
+    width: 24px;
+    --float-duration: 26s;
+}
+
+.star-bit-15 {
+    top: 87%;
+    right: 4%;
+    width: 52px;
+    --float-duration: 24s;
+}
+
+.star-bit-16 {
+    top: 97%;
+    left: 11%;
+    width: 26px;
+    --float-duration: 28s;
+}
+
+.star-bit-17 {
+    top: 9%;
+    left: 73%;
+    width: 16px;
+    --float-duration: 31s;
+}
+
+.star-bit-18 {
+    top: 49%;
+    right: 1%;
+    width: 22px;
+    --float-duration: 27s;
+}
+
 @keyframes starBitDrift {
     0% {
         transform: translate3d(0, 0, 0) rotate(0deg);
@@ -2915,6 +3054,29 @@ body.admin-login-modal-open {
     50% {
         opacity: 0.9;
         filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.46));
+    }
+}
+
+@keyframes cosmicDustPan {
+    0% {
+        transform: translate3d(0, 0, 0);
+    }
+    100% {
+        transform: translate3d(-80px, -56px, 0);
+    }
+}
+
+@keyframes twinkleShift {
+    0% {
+        opacity: 0.08;
+        transform: translate3d(0, 0, 0);
+    }
+    50% {
+        opacity: 0.17;
+    }
+    100% {
+        opacity: 0.11;
+        transform: translate3d(24px, -12px, 0);
     }
 }
 
@@ -2965,13 +3127,24 @@ body.admin-login-modal-open {
     display: flex;
     flex-direction: column;
     gap: 14px;
-    background: linear-gradient(180deg, rgba(3, 10, 30, 0.9), rgba(4, 9, 25, 0.84));
-    border: 1px solid rgba(125, 211, 252, 0.16);
+    background: linear-gradient(180deg, rgba(4, 11, 33, 0.93), rgba(4, 9, 26, 0.88));
+    border: 1px solid rgba(148, 163, 184, 0.24);
     border-radius: 22px;
     padding: 18px;
-    box-shadow: 0 10px 28px rgba(2, 8, 20, 0.28), 0 0 20px rgba(96, 165, 250, 0.08);
+    box-shadow: 0 14px 36px rgba(2, 8, 20, 0.34), 0 0 22px rgba(96, 165, 250, 0.1), inset 0 0 28px rgba(255, 255, 255, 0.012);
     position: relative;
     overflow: hidden;
+    backdrop-filter: blur(2px);
+}
+
+.commission-priority-shell {
+    border-color: rgba(167, 139, 250, 0.3);
+    box-shadow: 0 16px 38px rgba(76, 29, 149, 0.28), 0 0 24px rgba(196, 181, 253, 0.2);
+}
+
+.refund-focus-shell {
+    border-color: rgba(56, 189, 248, 0.24);
+    box-shadow: 0 14px 34px rgba(8, 47, 73, 0.3), 0 0 20px rgba(56, 189, 248, 0.14);
 }
 
 .huskys-list-section-shell::before {
@@ -3014,9 +3187,9 @@ body.admin-login-modal-open {
     justify-content: flex-start;
     align-items: flex-start;
     gap: 8px;
-    background: linear-gradient(140deg, rgba(4, 12, 34, 0.86), rgba(7, 16, 43, 0.72));
-    border: 1px solid rgba(148, 163, 184, 0.24);
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.36), inset 0 0 18px rgba(255, 255, 255, 0.02);
+    background: linear-gradient(140deg, rgba(6, 14, 38, 0.9), rgba(8, 18, 48, 0.78));
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.38), inset 0 0 22px rgba(255, 255, 255, 0.024);
     border-radius: 18px;
     padding: 12px 16px;
     position: relative;
@@ -3089,7 +3262,7 @@ body.admin-login-modal-open {
     color: #ffffff;
     font-size: clamp(1.95rem, 2.8vw, 3.05rem);
     margin-bottom: 0;
-    text-shadow: 0 0 16px rgba(167, 139, 250, 0.46);
+    text-shadow: 0 0 20px rgba(167, 139, 250, 0.52), 0 0 34px rgba(56, 189, 248, 0.2);
     line-height: 1;
     letter-spacing: -0.01em;
 }
@@ -3234,10 +3407,10 @@ body.admin-login-modal-open {
 
 .refund-card {
     background: radial-gradient(circle at top left, rgba(18, 52, 86, 0.34), transparent 45%), rgba(3, 9, 26, 0.94);
-    border: 1px solid rgba(79, 172, 254, 0.22);
+    border: 1px solid rgba(79, 172, 254, 0.3);
     border-radius: 14px;
     padding: 10px;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2), 0 0 14px rgba(0, 242, 254, 0.07);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.22), 0 0 16px rgba(0, 242, 254, 0.1), inset 0 0 16px rgba(255, 255, 255, 0.012);
     display: grid;
     gap: 7px;
     position: relative;
@@ -3310,6 +3483,10 @@ body.admin-login-modal-open {
     gap: 5px;
 }
 
+.refund-card-info-compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .refund-info-row {
     color: #dbeafe;
     font-size: 0.72rem;
@@ -3336,14 +3513,40 @@ body.admin-login-modal-open {
     line-height: 1.3;
 }
 
+.refund-progress-wrap {
+    display: grid;
+    gap: 4px;
+}
+
+.refund-progress-meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.refund-progress-percent {
+    color: #d1fae5;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.refund-progress-amount {
+    color: #cfe3f5;
+    font-size: 0.7rem;
+    line-height: 1.2;
+}
+
 .refund-progress-bar {
     width: 100%;
     height: 6px;
     margin: 3px 0 5px;
-    background: rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.06);
     border-radius: 999px;
     overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
 .refund-progress-fill {
@@ -3365,14 +3568,29 @@ body.admin-login-modal-open {
     gap: 6px;
 }
 
+.refund-card-footer-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.refund-source-tag {
+    color: #9db7cf;
+    font-size: 0.66rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
 .refund-notes {
     color: #cbd5e1;
-    line-height: 1.34;
+    line-height: 1.4;
     font-size: 0.71rem;
     white-space: pre-wrap;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -4074,7 +4292,7 @@ body.admin-login-modal-open {
     justify-content: flex-start;
     flex-wrap: wrap;
     gap: 8px;
-    background: rgba(4, 14, 36, 0.35);
+    background: linear-gradient(120deg, rgba(14, 20, 44, 0.56), rgba(6, 16, 39, 0.44));
     border: 1px solid rgba(147, 197, 253, 0.13);
     border-radius: 12px;
     padding: 8px 10px;
@@ -4170,6 +4388,14 @@ body.admin-login-modal-open {
     .refund-card-info {
         grid-template-columns: 1fr;
     }
+    .refund-card-info-compact {
+        grid-template-columns: 1fr;
+    }
+    .refund-progress-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 3px;
+    }
     .commission-public-item {
         grid-template-columns: 28px 1fr;
         gap: 8px;
@@ -4238,6 +4464,11 @@ body.admin-login-modal-open {
     }
 
     .star-bit {
+        animation: none;
+    }
+
+    .queue-star-dust,
+    .queue-twinkle-layer {
         animation: none;
     }
 }
