@@ -2828,7 +2828,7 @@ body.admin-login-modal-open {
 }
 
 .queue-star-dust {
-    opacity: 0.34;
+    opacity: 0.31;
     background-image:
         radial-gradient(circle, rgba(255, 255, 255, 0.22) 0.9px, transparent 1.2px),
         radial-gradient(circle, rgba(147, 197, 253, 0.18) 0.8px, transparent 1.3px);
@@ -2838,7 +2838,7 @@ body.admin-login-modal-open {
 }
 
 .queue-star-dust-b {
-    opacity: 0.24;
+    opacity: 0.2;
     filter: blur(0.8px);
     transform: scale(1.08);
     animation-duration: 120s;
@@ -2852,12 +2852,12 @@ body.admin-login-modal-open {
         radial-gradient(circle, rgba(253, 230, 138, 0.75) 1px, transparent 1.7px);
     background-size: 190px 190px, 260px 260px, 230px 230px;
     background-position: 30px 60px, 120px 40px, 200px 150px;
-    opacity: 0.18;
+    opacity: 0.16;
     animation: twinkleShift 42s ease-in-out infinite alternate;
 }
 
 .queue-twinkle-layer-b {
-    opacity: 0.13;
+    opacity: 0.11;
     filter: blur(1px);
     transform: scale(1.04);
     animation-duration: 55s;
@@ -2884,8 +2884,8 @@ body.admin-login-modal-open {
 }
 
 .star-bit.depth-near {
-    opacity: 0.88;
-    filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.5));
+    opacity: 0.84;
+    filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.44));
 }
 
 .star-bit::after {
@@ -3167,18 +3167,18 @@ body.admin-login-modal-open {
 
 .huskys-list-section-head h2 {
     color: #f8fbff;
-    font-size: clamp(1.45rem, 2.05vw, 1.8rem);
+    font-size: clamp(1.55rem, 2.2vw, 1.95rem);
     font-weight: 700;
     margin: 0;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.015em;
     line-height: 1.15;
 }
 
 .huskys-list-section-head p {
-    color: #b6cbe0;
+    color: #c4d4e6;
     margin: 0;
-    font-size: 0.95rem;
-    line-height: 1.48;
+    font-size: 0.97rem;
+    line-height: 1.5;
 }
 
 .refunds-hero-card {
@@ -3188,8 +3188,8 @@ body.admin-login-modal-open {
     align-items: flex-start;
     gap: 8px;
     background: linear-gradient(140deg, rgba(6, 14, 38, 0.9), rgba(8, 18, 48, 0.78));
-    border: 1px solid rgba(148, 163, 184, 0.28);
-    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.38), inset 0 0 22px rgba(255, 255, 255, 0.024);
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.34), inset 0 0 20px rgba(255, 255, 255, 0.02);
     border-radius: 18px;
     padding: 12px 16px;
     position: relative;
@@ -3248,8 +3248,8 @@ body.admin-login-modal-open {
     gap: 7px;
     padding: 4px 9px;
     border-radius: 999px;
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    background: rgba(8, 18, 42, 0.52);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    background: rgba(8, 18, 42, 0.42);
 }
 
 .portal-last-updated strong {
@@ -3439,21 +3439,23 @@ body.admin-login-modal-open {
     gap: 10px;
     align-items: flex-start;
     flex-wrap: wrap;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(203, 213, 225, 0.08);
 }
 
 .refund-card-title {
     color: #ffffff;
-    font-size: 0.86rem;
+    font-size: 0.9rem;
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1.24;
     letter-spacing: 0.01em;
     margin-bottom: 2px;
 }
 
 .refund-card-subtitle {
-    color: #8dd9ff;
-    font-size: 0.75rem;
-    line-height: 1.28;
+    color: #a8d7f8;
+    font-size: 0.77rem;
+    line-height: 1.32;
 }
 
 .refund-chip {
@@ -3534,8 +3536,8 @@ body.admin-login-modal-open {
 }
 
 .refund-progress-amount {
-    color: #cfe3f5;
-    font-size: 0.7rem;
+    color: #bdd4e9;
+    font-size: 0.68rem;
     line-height: 1.2;
 }
 
@@ -3577,7 +3579,7 @@ body.admin-login-modal-open {
 }
 
 .refund-source-tag {
-    color: #9db7cf;
+    color: #8ea8c1;
     font-size: 0.66rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -4302,7 +4304,7 @@ body.admin-login-modal-open {
 .queue-quick-note p {
     margin: 0;
     font-size: 0.78rem;
-    color: #c5d8e8;
+    color: #b8ccde;
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
