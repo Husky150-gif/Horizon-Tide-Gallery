@@ -111,6 +111,27 @@ function requireAdminSession(message = 'Please sign into an authorized admin acc
     return false;
 }
 
+function renderAdminReturnButtonMarkup(extraClass = '') {
+    if (!isAdminSessionActive()) return '';
+    const className = ['nav-btn', 'admin-return-dashboard-btn', extraClass].filter(Boolean).join(' ');
+    return `<button type="button" class="${className}" data-admin-return="true">Back to Admin Dashboard</button>`;
+}
+
+function bindAdminReturnButtons(root = document) {
+    if (!root || typeof root.querySelectorAll !== 'function') return;
+    root.querySelectorAll('[data-admin-return="true"]').forEach((button) => {
+        if (!(button instanceof HTMLButtonElement) || button.dataset.adminReturnBound === 'true') return;
+        button.dataset.adminReturnBound = 'true';
+        button.addEventListener('click', (event) => {
+            if (isAdminSessionActive()) {
+                cinematicTransition(event, loadAdminDashboard, '#admin');
+                return;
+            }
+            window.location.hash = '#admin';
+        });
+    });
+}
+
 // UI State
 let isGlobalScrollAttached = false;
 let globalQuoteIndex = 0;
@@ -2608,7 +2629,13 @@ function loadAnnouncementsPage() {
 
     appViewport.innerHTML = getTemplateHTML('announcementsPageTemplate');
 
+    const announcementsIntro = appViewport.querySelector('.announcements-container .intro-text');
+    if (announcementsIntro && isAdminSessionActive()) {
+        announcementsIntro.insertAdjacentHTML('afterend', `<div class="admin-return-nav admin-return-nav--top-right">${renderAdminReturnButtonMarkup()}</div>`);
+    }
+
     document.getElementById('backHomeFromUpdatesBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
+    bindAdminReturnButtons(appViewport);
     
     const listContainer = document.getElementById('announcementsList');
     if(!listContainer) return;
@@ -2712,6 +2739,7 @@ function loadHuskysListPage() {
                         <div class="portal-last-updated">Last Updated <strong id="refundsLastUpdated">Loading...</strong></div>
                     </div>
                     <p class="refunds-intro">Public refund and queue tracker. Private payment and contact details stay hidden.</p>
+                    ${isAdminSessionActive() ? `<div class="admin-return-nav admin-return-nav--hero">${renderAdminReturnButtonMarkup()}</div>` : ''}
                 </div>
             </div>
 
@@ -2761,6 +2789,7 @@ function loadHuskysListPage() {
     `;
 
     document.getElementById('backToPreorderBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
+    bindAdminReturnButtons(appViewport);
 
     if (window.publicRefundsUnsub) window.publicRefundsUnsub();
     if (window.publicCommissionsUnsub) window.publicCommissionsUnsub();
@@ -3182,6 +3211,7 @@ function loadReviewsPage() {
                     <button type="button" id="reviewsBackHomeBtn" class="nav-btn">← Back to Horizon</button>
                     <button type="button" id="reviewsJumpToFormBtn" class="nav-btn">Leave a Review</button>
                     <button type="button" id="reviewsContactBtn" class="nav-btn reviews-secondary-btn">Contact</button>
+                    ${renderAdminReturnButtonMarkup()}
                 </div>
             </header>
 
@@ -3262,6 +3292,7 @@ function loadReviewsPage() {
 
     document.getElementById('reviewsBackHomeBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
     document.getElementById('reviewsContactBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadContactPage, '#contact'));
+    bindAdminReturnButtons(appViewport);
     document.getElementById('reviewsJumpToFormBtn')?.addEventListener('click', () => {
         document.getElementById('leaveReviewSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -3454,7 +3485,10 @@ function loadContactPage() {
     appViewport.innerHTML = `
         <div class="gif-container"><img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/umbreon.gif" alt="Shiny Umbreon" class="active-pokemon-gif"></div>
         <header><h1>Contact Us</h1><h2>Drop a message in our galactic wave box</h2></header>
-        <button type="button" id="backHomeBtn" class="nav-btn" style="margin-bottom: 30px;">← Back to Horizon</button>
+        <div class="admin-public-nav-row">
+            <button type="button" id="backHomeBtn" class="nav-btn">← Back to Horizon</button>
+            ${renderAdminReturnButtonMarkup()}
+        </div>
         <div class="comment-section" style="width: 100%; max-width: 530px; text-align: left; background: rgba(10, 18, 38, 0.85); padding: 30px; border-radius: 20px; backdrop-filter: blur(10px); border: 2px solid rgba(0, 242, 254, 0.3);">
             <h3 style="margin-bottom: 15px; font-size: 1.4rem; color: #00f2fe;">Leave a Comment</h3>
             <p style="font-size: 0.9rem; color: #a3b8cc; margin-bottom: 15px;">Comments are public. Comment moderation and replies are managed in the admin dashboard.</p>
@@ -3487,6 +3521,7 @@ function loadContactPage() {
         </section>
     `;
     document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
+    bindAdminReturnButtons(appViewport);
 
     const commentForm = document.getElementById('commentForm');
     const commentsFeed = document.getElementById('commentsFeed');
@@ -3654,6 +3689,7 @@ function loadStatusCheckPage() {
 
     appViewport.innerHTML = `
         <div class="preorder-card">
+            ${isAdminSessionActive() ? `<div class="admin-return-nav admin-return-nav--top-right">${renderAdminReturnButtonMarkup()}</div>` : ''}
             <h1 style="color: #ffffff; text-shadow: 0 0 15px #00f2fe; margin-bottom: 10px; font-size: 2.5rem;">Check Status</h1>
             <p style="margin-bottom: 25px; color: #e0f7fa; font-size: 1.1rem;">Enter your Order Number to check the status of your request.</p>
             <form id="statusCheckForm" style="display: flex; flex-direction: column; gap: 15px;">
@@ -3665,6 +3701,7 @@ function loadStatusCheckPage() {
         </div>
     `;
     document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
+    bindAdminReturnButtons(appViewport);
 
     document.getElementById('statusCheckForm').addEventListener('submit', async (e) => {
         e.preventDefault();

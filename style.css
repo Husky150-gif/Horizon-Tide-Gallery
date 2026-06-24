@@ -2165,6 +2165,22 @@ body.admin-login-modal-open {
         width: 95%;
         border-width: 2px;
     }
+
+    .admin-public-nav-row,
+    .admin-return-nav {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .admin-return-nav--top-right,
+    .admin-return-nav--hero {
+        justify-content: stretch;
+    }
+
+    .admin-public-nav-row .nav-btn,
+    .admin-return-nav .nav-btn {
+        width: 100%;
+    }
     
     .pricing-container {
         max-height: 85vh;
@@ -7042,6 +7058,42 @@ body[data-page="reviews"] {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+}
+
+.admin-return-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.admin-return-nav--top-right,
+.admin-return-nav--hero {
+    justify-content: flex-end;
+}
+
+.admin-return-nav--top-right {
+    margin-bottom: 16px;
+}
+
+.admin-return-nav--hero {
+    margin-top: 12px;
+}
+
+.admin-public-nav-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 30px;
+}
+
+.admin-public-nav-row .nav-btn,
+.admin-return-nav .nav-btn {
+    margin-bottom: 0;
+}
+
+.admin-return-dashboard-btn {
+    border-color: rgba(34, 211, 238, 0.55);
 }
 
 .reviews-secondary-btn {
