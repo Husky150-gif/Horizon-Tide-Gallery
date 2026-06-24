@@ -6612,13 +6612,58 @@ function exportCommissionsCSV() {
 // MUSIC & EASTER EGGS
 // =====================================
 let bgMusic = null;
-const MUSIC_SRC = null;
+const MUSIC_SRC = 'sonican-lo-fi-music-loop-sentimental-jazzy-love-473154.mp3';
+const MUSIC_LABELS = {
+    play: '♪ Play Music',
+    pause: '♪ Pause Music',
+    tap: '♪ Tap To Play',
+    unavailable: '♪ Unavailable'
+};
 
 const musicBtn = document.createElement('button');
 musicBtn.type = 'button';
 musicBtn.id = 'globalMusicBtn';
-musicBtn.innerHTML = '🎵 Play Music';
+musicBtn.textContent = window.matchMedia('(pointer: coarse)').matches ? MUSIC_LABELS.tap : MUSIC_LABELS.play;
 musicBtn.setAttribute('aria-label', 'Toggle background music');
+
+function setMusicButtonLabel(label) {
+    musicBtn.textContent = label;
+}
+
+function isAutoplayBlockedError(err) {
+    if (!err) return false;
+    return err.name === 'NotAllowedError' || err.name === 'AbortError';
+}
+
+function ensureBgMusic() {
+    if (bgMusic instanceof HTMLAudioElement) return bgMusic;
+
+    const existingAudio = document.getElementById('globalMusicAudio');
+    if (existingAudio instanceof HTMLAudioElement) {
+        bgMusic = existingAudio;
+        return bgMusic;
+    }
+
+    const audioEl = document.createElement('audio');
+    audioEl.id = 'globalMusicAudio';
+    audioEl.src = MUSIC_SRC;
+    audioEl.loop = true;
+    audioEl.volume = 0.5;
+    audioEl.preload = 'none';
+    audioEl.setAttribute('aria-hidden', 'true');
+    audioEl.style.display = 'none';
+
+    audioEl.addEventListener('play', () => setMusicButtonLabel(MUSIC_LABELS.pause));
+    audioEl.addEventListener('pause', () => {
+        if (audioEl.ended) return;
+        setMusicButtonLabel(MUSIC_LABELS.play);
+    });
+    audioEl.addEventListener('error', () => setMusicButtonLabel(MUSIC_LABELS.unavailable));
+
+    document.body.appendChild(audioEl);
+    bgMusic = audioEl;
+    return bgMusic;
+}
 
 function getActiveSaleBannerHeight() {
     const banner = document.getElementById('globalSaleBanner');
@@ -6650,7 +6695,7 @@ const applyResponsiveMusicPlacement = () => {
         font-size: 1rem;
         box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2); 
         transition: all 0.3s ease;
-        ${isMobile ? `top: ${topOffset}px; right: 14px; bottom: auto;` : 'bottom: 20px; right: 20px; top: auto;'}
+        ${isMobile ? `top: ${topOffset}px; right: 14px; bottom: auto;` : 'bottom: 20px; right: 72px; top: auto;'}
     `;
 };
 
@@ -6670,29 +6715,35 @@ musicBtn.onmouseover = () => musicBtn.style.background = "rgba(0, 242, 254, 0.2)
 musicBtn.onmouseout = () => musicBtn.style.background = "rgba(10, 18, 38, 0.8)";
 document.body.appendChild(musicBtn);
 
-musicBtn.addEventListener('click', () => {
-    if (!MUSIC_SRC) {
-        musicBtn.innerHTML = '🎵 Music Unavailable';
+musicBtn.addEventListener('click', async () => {
+    if (!MUSIC_SRC || !String(MUSIC_SRC).trim()) {
+        setMusicButtonLabel(MUSIC_LABELS.unavailable);
         return;
     }
 
-    if (!bgMusic) {
-        bgMusic = new Audio(MUSIC_SRC);
-        bgMusic.loop = true;
-        bgMusic.volume = 0.5;
+    const audioEl = ensureBgMusic();
+
+    if (audioEl.paused) {
+        try {
+            await audioEl.play();
+            setMusicButtonLabel(MUSIC_LABELS.pause);
+        } catch (err) {
+            if (isAutoplayBlockedError(err)) {
+                setMusicButtonLabel(MUSIC_LABELS.tap);
+                return;
+            }
+
+            const failedToLoad = audioEl.error || err?.name === 'NotSupportedError';
+            setMusicButtonLabel(failedToLoad ? MUSIC_LABELS.unavailable : MUSIC_LABELS.tap);
+            if (failedToLoad) {
+                console.warn('Music file failed to load:', err);
+            }
+        }
+        return;
     }
 
-    if (bgMusic.paused) {
-        bgMusic.play().then(() => {
-            musicBtn.innerHTML = '⏸️ Pause Music';
-        }).catch(() => {
-            musicBtn.innerHTML = '🎵 Music Unavailable';
-            console.warn('Audio playback unavailable in this environment.');
-        });
-    } else {
-        bgMusic.pause();
-        musicBtn.innerHTML = '🎵 Play Music';
-    }
+    audioEl.pause();
+    setMusicButtonLabel(MUSIC_LABELS.play);
 });
 
 let isEvolving = false;
