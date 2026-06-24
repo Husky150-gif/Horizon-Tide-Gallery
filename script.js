@@ -3451,7 +3451,7 @@ function loadContactPage() {
         <button type="button" id="backHomeBtn" class="nav-btn" style="margin-bottom: 30px;">← Back to Horizon</button>
         <div class="comment-section" style="width: 100%; max-width: 530px; text-align: left; background: rgba(10, 18, 38, 0.85); padding: 30px; border-radius: 20px; backdrop-filter: blur(10px); border: 2px solid rgba(0, 242, 254, 0.3);">
             <h3 style="margin-bottom: 15px; font-size: 1.4rem; color: #00f2fe;">Leave a Comment</h3>
-            <p style="font-size: 0.9rem; color: #a3b8cc; margin-bottom: 15px;">Comments are public. Use the reply button on comments below to respond as an admin.</p>
+            <p style="font-size: 0.9rem; color: #a3b8cc; margin-bottom: 15px;">Comments are public. Comment moderation and replies are managed in the admin dashboard.</p>
             <form id="commentForm" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px;">
                 <input type="text" id="commentName" aria-label="Your name or alias" placeholder="Your Name or Alias" required maxlength="50" style="padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.4); background: rgba(0,0,0,0.4); color: white; font-family: inherit;">
                 <textarea id="commentText" aria-label="Comment message" placeholder="Write your message here..." rows="3" required maxlength="500" style="padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.4); background: rgba(0,0,0,0.4); color: white; font-family: inherit; resize: none;"></textarea>
@@ -3541,59 +3541,6 @@ function loadContactPage() {
             }
         }
 
-        if (e.target.classList.contains('reply-btn') || e.target.classList.contains('delete-btn')) {
-            if (!requireAdminSession('Security Check: only authorized admin accounts can manage comments.')) return;
-        }
-
-        if (e.target.classList.contains('reply-btn')) {
-            const id = e.target.getAttribute('data-id');
-            const formWrap = document.getElementById(`reply-form-${id}`);
-            formWrap.style.display = formWrap.style.display === 'none' ? 'block' : 'none';
-        }
-
-        if (e.target.classList.contains('delete-btn')) {
-            const id = e.target.getAttribute('data-id');
-            if (confirm("Are you sure you want to permanently delete this comment?")) {
-                try { 
-                    await deleteDoc(doc(db, "comments", id)); 
-                } catch (error) { 
-                    alert("Failed to delete the message. Database blocked the request."); 
-                }
-            }
-        }
-    });
-
-    commentsFeed.addEventListener('submit', async (e) => {
-        if (e.target.classList.contains('mini-reply-form')) {
-            e.preventDefault();
-            
-            if (!requireAdminSession('Session expired or unauthorized account. Please sign in as an approved admin.')) return;
-
-            const form = e.target;
-            const targetId = form.getAttribute('data-target');
-            const text = form.elements[0].value.trim(); 
-            
-            const adminEmail = String(auth.currentUser?.email || '').toLowerCase();
-            let adminName = 'Admin Team';
-            if (adminEmail === 'musicisbae6547@gmail.com') adminName = 'Admin Husky 🎨';
-            if (adminEmail === 'horizontidegallery@gmail.com') adminName = 'Admin Horizon 🌊';
-            if (adminEmail === 'littlelopsidestudio@gmail.com') adminName = 'Admin Lopside 🧵';
-
-            const parentComment = globalCommentsArray.find(c => c.id === targetId);
-            if (parentComment) {
-                const newReplies = [...(parentComment.replies || []), { name: adminName, text: text }];
-                try {
-                    await updateDoc(doc(db, "comments", targetId), { replies: newReplies });
-                    form.reset();
-                    document.getElementById(`reply-form-${targetId}`).style.display = 'none';
-                    if (getPendingCommentId() === targetId) {
-                        clearPendingCommentId();
-                    }
-                } catch (error) { 
-                    alert("Failed to post reply. Database rejected the request."); 
-                }
-            }
-        }
     });
 
     commentForm.addEventListener('submit', async (e) => {
@@ -3641,20 +3588,12 @@ function loadContactPage() {
             return;
         }
 
-        const adminCanManageComments = isAdminSessionActive();
-
         globalCommentsArray.forEach(comment => {
             const commentWrap = document.createElement('div');
             commentWrap.style.marginBottom = "15px";
             const isAnswered = comment.replies && comment.replies.length > 0;
             const statusBadge = isAnswered ? `<span style="font-size: 0.75rem; background: rgba(34, 197, 94, 0.2); color: #22c55e; padding: 3px 6px; border-radius: 4px; margin-left: 8px; vertical-align: middle;">✓ Answered</span>` : "";
             const borderColor = isAnswered ? "#22c55e" : "#00f2fe";
-            const adminCommentActions = adminCanManageComments
-                ? `
-                        <button type="button" class="delete-btn" data-id="${comment.id}" style="background: none; border: 1px solid #ef4444; color: #ef4444; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 0.75rem; font-family: inherit; transition: 0.2s;">Delete</button>
-                        <button type="button" class="reply-btn" data-id="${comment.id}" style="background: none; border: 1px solid #9b51e0; color: #9b51e0; border-radius: 4px; padding: 3px 10px; cursor: pointer; font-size: 0.8rem; font-family: inherit; transition: 0.2s;">Reply</button>
-                    `
-                : '';
 
             const commentItem = document.createElement('div');
             commentItem.style.cssText = `background: rgba(255,255,255,0.02); padding: 15px; border-left: 4px solid ${borderColor}; border-radius: 8px;`;
@@ -3662,7 +3601,6 @@ function loadContactPage() {
                 <div style="display: flex; justify-content: space-between; align-items: start;">
                     <div style="display: flex; align-items: center;"><strong style="color: #00f2fe; font-size: 1.05rem;">${escapeHTML(comment.name)}</strong>${statusBadge}</div>
                     <div style="display: flex; gap: 8px;">
-                        ${adminCommentActions}
                         <button type="button" class="report-btn" data-id="${comment.id}" style="background: none; border: 1px solid #f59e0b; color: #f59e0b; border-radius: 4px; padding: 3px 10px; cursor: pointer; font-size: 0.8rem; font-family: inherit; transition: 0.2s;">Report</button>
                     </div>
                 </div>
@@ -3685,20 +3623,6 @@ function loadContactPage() {
                 commentWrap.appendChild(repliesContainer);
             }
 
-            if (adminCanManageComments) {
-                const replyFormWrap = document.createElement('div');
-                replyFormWrap.id = `reply-form-${comment.id}`;
-                replyFormWrap.style.cssText = "display: none; margin-left: 20px; margin-top: 10px;";
-                
-                replyFormWrap.innerHTML = `
-                    <form class="mini-reply-form" data-target="${comment.id}" style="display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px; border: 1px dashed #9b51e0;">
-                        <p style="font-size: 0.8rem; color: #9b51e0; margin-bottom: 2px;">Posting as Admin</p>
-                        <textarea placeholder="Write your reply..." rows="2" required maxlength="500" style="padding: 8px; border-radius: 6px; border: 1px solid rgba(155, 81, 224, 0.4); background: rgba(0,0,0,0.6); color: white; font-family: inherit; resize: none; font-size: 0.85rem;"></textarea>
-                        <button type="submit" style="background: rgba(155, 81, 224, 0.2); border: 1px solid #9b51e0; color: white; padding: 8px; border-radius: 6px; cursor: pointer; font-family: inherit;">Post Secure Reply</button>
-                    </form>
-                `;
-                commentWrap.appendChild(replyFormWrap);
-            }
             commentsFeed.appendChild(commentWrap);
         });
 
@@ -4871,25 +4795,50 @@ function updateAdminDashboardOverview() {
 
     const metrics = computeAdminDashboardMetrics();
 
-    const cards = [
-        { group: 'Mission Control', label: 'Pending Reviews', value: metrics.pendingOrdersCount },
-        { group: 'Mission Control', label: 'Waiting Payments', value: metrics.waitingPaymentsCount },
-        { group: 'Mission Control', label: 'Urgent Actions', value: metrics.urgentActionsCount },
-        { group: 'Studio Health', label: 'Revenue', value: formatMoney(metrics.estimatedAcceptedRevenue) },
-        { group: 'Studio Health', label: 'Open Slots', value: metrics.huskyOpenSlots + metrics.lopsideOpenSlots },
-        { group: 'Studio Health', label: 'Response Time', value: metrics.responseTimeLabel },
-        { group: 'Studio Health', label: 'Active Work', value: metrics.activeCommissionsCount },
-        { group: 'Studio Radar', label: 'Reviews', value: metrics.reviewCount },
-        { group: 'Studio Radar', label: 'Refund Updates', value: metrics.refundCount },
-        { group: 'Studio Radar', label: 'Active Sale', value: metrics.activeSaleLabel }
+    const overviewRows = [
+        {
+            rowClass: 'admin-overview-row--action',
+            title: 'Action Required',
+            cards: [
+                { group: 'Action Required', label: 'Pending Reviews', value: metrics.pendingOrdersCount },
+                { group: 'Action Required', label: 'Waiting Payments', value: metrics.waitingPaymentsCount },
+                { group: 'Action Required', label: 'Urgent Actions', value: metrics.urgentActionsCount }
+            ]
+        },
+        {
+            rowClass: 'admin-overview-row--business',
+            title: 'Business Health',
+            cards: [
+                { group: 'Business Health', label: 'Revenue', value: formatMoney(metrics.estimatedAcceptedRevenue) },
+                { group: 'Business Health', label: 'Active Work', value: metrics.activeCommissionsCount },
+                { group: 'Business Health', label: 'Open Slots', value: metrics.huskyOpenSlots + metrics.lopsideOpenSlots }
+            ]
+        },
+        {
+            rowClass: 'admin-overview-row--info',
+            title: 'Information',
+            cards: [
+                { group: 'Information', label: 'Response Time', value: metrics.responseTimeLabel },
+                { group: 'Information', label: 'Reviews', value: metrics.reviewCount },
+                { group: 'Information', label: 'Refund Updates', value: metrics.refundCount },
+                { group: 'Information', label: 'Sale', value: metrics.activeSaleLabel }
+            ]
+        }
     ];
 
-    container.innerHTML = cards.map((card) => `
-        <article class="admin-overview-card">
-            <p class="admin-overview-group">${escapeHTML(card.group)}</p>
-            <p class="admin-overview-label">${escapeHTML(card.label)}</p>
-            <strong class="admin-overview-value">${escapeHTML(String(card.value))}</strong>
-        </article>
+    container.innerHTML = overviewRows.map((row) => `
+        <section class="admin-overview-row ${row.rowClass}">
+            <p class="admin-overview-row-title">${escapeHTML(row.title)}</p>
+            <div class="admin-overview-row-grid">
+                ${row.cards.map((card) => `
+                    <article class="admin-overview-card">
+                        <p class="admin-overview-group">${escapeHTML(card.group)}</p>
+                        <p class="admin-overview-label">${escapeHTML(card.label)}</p>
+                        <strong class="admin-overview-value">${escapeHTML(String(card.value))}</strong>
+                    </article>
+                `).join('')}
+            </div>
+        </section>
     `).join('');
 
     const creatorRows = [
@@ -4998,10 +4947,49 @@ function updateAdminDashboardOverview() {
     activities.sort((a, b) => (b.timestampMs || 0) - (a.timestampMs || 0));
     activityContainer.innerHTML = renderActivityRows(activities);
 
-    const ordersSection = document.getElementById('adminSectionOrders');
-    const customerSection = document.getElementById('adminSectionCustomer');
-    if (ordersSection) ordersSection.open = metrics.pendingOrdersCount > 0;
-    if (customerSection) customerSection.open = metrics.refundCount > 0 || metrics.reviewCount > 0;
+}
+
+const ADMIN_PANEL_STATE_KEY = 'hz_admin_panel_state_v1';
+
+function initializeAdminCollapsibleState() {
+    const panels = Array.from(document.querySelectorAll('.admin-collapsible[id]'));
+    if (!panels.length) return;
+
+    let savedState = null;
+    try {
+        const raw = localStorage.getItem(ADMIN_PANEL_STATE_KEY);
+        savedState = raw ? JSON.parse(raw) : null;
+    } catch (_) {
+        savedState = null;
+    }
+
+    const hasSavedState = savedState && typeof savedState === 'object';
+    panels.forEach((panel) => {
+        if (!(panel instanceof HTMLDetailsElement)) return;
+        if (hasSavedState && Object.prototype.hasOwnProperty.call(savedState, panel.id)) {
+            panel.open = Boolean(savedState[panel.id]);
+            return;
+        }
+        panel.open = panel.id === 'adminSectionOrders';
+    });
+
+    const persistState = () => {
+        const state = {};
+        panels.forEach((panel) => {
+            if (panel instanceof HTMLDetailsElement && panel.id) {
+                state[panel.id] = panel.open;
+            }
+        });
+        try {
+            localStorage.setItem(ADMIN_PANEL_STATE_KEY, JSON.stringify(state));
+        } catch (_) {
+            // Ignore storage limits and private mode write failures.
+        }
+    };
+
+    panels.forEach((panel) => {
+        panel.addEventListener('toggle', persistState);
+    });
 }
 
 function bindAdminDashboardNavigation() {
@@ -5534,19 +5522,38 @@ function loadAdminDashboard() {
             <aside class="admin-sidebar">
                 <h2 class="admin-sidebar-title">Mission Control</h2>
                 <nav class="admin-sidebar-nav">
-                    <button type="button" id="adminNavDashboard" class="admin-side-link" data-admin-scroll="adminTopDashboard">Dashboard</button>
-                    <button type="button" id="adminNavOrders" class="admin-side-link" data-admin-scroll="adminSectionOrders">Orders</button>
-                    <button type="button" id="adminNavPreorders" class="admin-side-link" data-admin-scroll="adminSectionOrders">Preorders</button>
-                    <button type="button" id="adminNavCommissions" class="admin-side-link" data-admin-scroll="adminQueueManagerCard" data-queue-tab-focus="commissions">Commissions</button>
-                    <button type="button" id="adminNavRefunds" class="admin-side-link" data-admin-scroll="adminQueueManagerCard" data-queue-tab-focus="refunds">Refunds</button>
-                    <button type="button" id="adminNavReviews" class="admin-side-link" data-admin-scroll="adminSectionCustomer">Reviews</button>
-                    <button type="button" id="adminNavComments" class="admin-side-link" data-admin-scroll="adminSectionCustomer">Comments</button>
-                    <button type="button" id="adminNavDiscounts" class="admin-side-link" data-admin-scroll="adminDiscountManagerSection">Discounts</button>
-                    <button type="button" id="adminNavAvailability" class="admin-side-link" data-admin-scroll="adminAvailabilitySection">Availability</button>
-                    <button type="button" id="adminNavAnnouncements" class="admin-side-link" data-admin-scroll="adminAnnouncementsSection">Announcements</button>
-                    <button type="button" id="adminNavTools" class="admin-side-link" data-admin-scroll="adminSectionTools">Admin Tools</button>
-                    <button type="button" class="admin-side-link" id="sidebarHomeBtn">Back to Home</button>
-                    <button type="button" class="admin-side-link" id="sidebarLockBtn">Lock Dashboard</button>
+                    <div class="admin-sidebar-group">
+                        <p class="admin-sidebar-group-title">Mission Control</p>
+                        <button type="button" id="adminNavDashboard" class="admin-side-link" data-admin-scroll="adminTopDashboard">Dashboard</button>
+                    </div>
+
+                    <div class="admin-sidebar-group">
+                        <p class="admin-sidebar-group-title">Orders</p>
+                        <button type="button" id="adminNavOrders" class="admin-side-link" data-admin-scroll="adminSectionOrders">Orders</button>
+                        <button type="button" id="adminNavPreorders" class="admin-side-link" data-admin-scroll="adminSectionOrders">Preorders</button>
+                        <button type="button" id="adminNavCommissions" class="admin-side-link" data-admin-scroll="adminSectionQueue" data-queue-tab-focus="commissions">Commissions</button>
+                        <button type="button" id="adminNavRefunds" class="admin-side-link" data-admin-scroll="adminSectionQueue" data-queue-tab-focus="refunds">Refunds</button>
+                    </div>
+
+                    <div class="admin-sidebar-group">
+                        <p class="admin-sidebar-group-title">Community</p>
+                        <button type="button" id="adminNavReviews" class="admin-side-link" data-admin-scroll="adminSectionReviews">Reviews</button>
+                        <button type="button" id="adminNavComments" class="admin-side-link" data-admin-scroll="adminSectionComments">Comments</button>
+                    </div>
+
+                    <div class="admin-sidebar-group">
+                        <p class="admin-sidebar-group-title">Business</p>
+                        <button type="button" id="adminNavDiscounts" class="admin-side-link" data-admin-scroll="adminDiscountManagerSection">Discounts</button>
+                        <button type="button" id="adminNavAvailability" class="admin-side-link" data-admin-scroll="adminAvailabilitySection">Availability</button>
+                        <button type="button" id="adminNavAnnouncements" class="admin-side-link" data-admin-scroll="adminAnnouncementsSection">Announcements</button>
+                    </div>
+
+                    <div class="admin-sidebar-group">
+                        <p class="admin-sidebar-group-title">System</p>
+                        <button type="button" id="adminNavTools" class="admin-side-link" data-admin-scroll="adminSectionTools">Admin Tools</button>
+                        <button type="button" class="admin-side-link" id="sidebarHomeBtn">Back Home</button>
+                        <button type="button" class="admin-side-link" id="sidebarLockBtn">Lock Dashboard</button>
+                    </div>
                 </nav>
             </aside>
 
@@ -5573,7 +5580,7 @@ function loadAdminDashboard() {
                     <ul id="adminRecentActivityList"></ul>
                 </section>
 
-                <details class="admin-collapsible" id="adminSectionOrders">
+                <details class="admin-collapsible" id="adminSectionOrders" open>
                     <summary>Orders & Preorders</summary>
                     <div class="admin-collapsible-body">
                         <div class="admin-filters">
@@ -5616,12 +5623,23 @@ function loadAdminDashboard() {
                             <button type="button" class="nav-btn" id="adminQueueFocusCommissions">Open Commission Queue</button>
                             <button type="button" class="nav-btn" id="adminOpenContactPageBtn">Open Contact Inbox</button>
                         </div>
+                    </div>
+                </details>
+
+                <details class="admin-collapsible" id="adminSectionReviews">
+                    <summary>Review Management</summary>
+                    <div class="admin-collapsible-body">
                         <div class="admin-card admin-reviews-card" id="adminReviewsManagerCard">
                             <h3 class="admin-card-title">Review Management</h3>
                             <p class="admin-card-subtitle">Moderate testimonials only. Reviews stay separate from public comments.</p>
                             <div id="adminReviewsList" class="admin-reviews-list"></div>
                         </div>
+                    </div>
+                </details>
 
+                <details class="admin-collapsible" id="adminSectionComments">
+                    <summary>Comment Management</summary>
+                    <div class="admin-collapsible-body">
                         <div class="admin-card admin-comments-card" id="adminCommentsManagerCard">
                             <h3 class="admin-card-title">Comments Management</h3>
                             <p class="admin-card-subtitle">Manage public comments separately from reviews: reply, delete spam/unsafe entries, and mark reviewed.</p>
@@ -5648,6 +5666,9 @@ function loadAdminDashboard() {
                     </div>
                 </details>
 
+                <details class="admin-collapsible" id="adminSectionQueue">
+                <summary>Queue Manager</summary>
+                <div class="admin-collapsible-body">
                 <div class="admin-card queue-manager-card" id="adminQueueManagerCard">
                 <h3 class="admin-card-title">🌊 Horizon Queue Manager</h3>
                 <div class="admin-refund-banner">
@@ -5776,6 +5797,8 @@ function loadAdminDashboard() {
                     </div>
                 </div>
             </div>
+            </div>
+            </details>
 
             </section>
             </div>
@@ -5859,6 +5882,7 @@ function loadAdminDashboard() {
     updateAdminPreview();
 
     bindAdminDashboardNavigation();
+    initializeAdminCollapsibleState();
     setupAdminDashboardDelegation();
     
     renderActiveDiscountsList();
@@ -6138,13 +6162,13 @@ function loadAdminDashboard() {
     });
 
     document.getElementById('adminNavReviews')?.addEventListener('click', () => {
-        const customerSection = document.getElementById('adminSectionCustomer');
-        if (customerSection instanceof HTMLDetailsElement) customerSection.open = true;
+        const reviewsSection = document.getElementById('adminSectionReviews');
+        if (reviewsSection instanceof HTMLDetailsElement) reviewsSection.open = true;
     });
 
     document.getElementById('adminNavComments')?.addEventListener('click', () => {
-        const customerSection = document.getElementById('adminSectionCustomer');
-        if (customerSection instanceof HTMLDetailsElement) customerSection.open = true;
+        const commentsSection = document.getElementById('adminSectionComments');
+        if (commentsSection instanceof HTMLDetailsElement) commentsSection.open = true;
         const commentCard = document.getElementById('adminCommentsManagerCard');
         if (commentCard) commentCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -7103,17 +7127,29 @@ function renderAdminOrders(ordersArr) {
         }
 
         card.innerHTML = `
-            <h3>${escapeHTML(order.orderType || order.itemType || 'Order')} <span class="admin-order-badge" style="background:${badgeColor};">${escapeHTML(attentionBadge)}</span></h3>
-            <div class="admin-detail"><strong>Status:</strong> ${escapeHTML(currentStatus)}</div>
-            <div class="admin-detail"><strong>Name:</strong> ${escapeHTML(displayName)}</div>
-            <div class="admin-detail"><strong>Order ID:</strong> ${escapeHTML(order.orderId || 'N/A')}</div>
-            <div class="admin-detail"><strong>Date:</strong> ${orderDate}</div>
-            <div class="admin-detail"><strong>Creator:</strong> ${escapeHTML(creatorLabel)}</div>
-            <div class="admin-detail"><strong>Estimated:</strong> ${escapeHTML(estimatedPrice)}</div>
-            <div class="admin-detail admin-order-preview"><strong>Notes Preview:</strong> ${escapeHTML(notesPreview)}</div>
-            
-            <div class="admin-actions">
+            <div class="admin-order-title-row">
+                <h3>${escapeHTML(order.orderType || order.itemType || 'Order')}</h3>
+                <span class="admin-order-badge" style="background:${badgeColor};">${escapeHTML(attentionBadge)}</span>
+            </div>
+
+            <div class="admin-order-meta-row">
+                <span class="admin-order-meta-pill"><strong>ID:</strong> ${escapeHTML(order.orderId || 'N/A')}</span>
+                <span class="admin-order-meta-pill"><strong>Customer:</strong> ${escapeHTML(displayName)}</span>
+                <span class="admin-order-meta-pill"><strong>Creator:</strong> ${escapeHTML(creatorLabel)}</span>
+                <span class="admin-order-meta-pill"><strong>Date:</strong> ${escapeHTML(orderDate)}</span>
+                <span class="admin-order-meta-pill"><strong>Estimate:</strong> ${escapeHTML(estimatedPrice)}</span>
+                <span class="admin-order-meta-pill"><strong>Status:</strong> ${escapeHTML(currentStatus)}</span>
+            </div>
+
+            <div class="admin-order-preview-wrap">
+                <div class="admin-detail admin-order-preview"><strong>Notes Preview:</strong> ${escapeHTML(notesPreview)}</div>
+            </div>
+
+            <div class="admin-order-view-row">
                 <button type="button" id="view-${order.id}" class="admin-view-details-btn" data-order-id="${order.id}">View Details</button>
+            </div>
+
+            <div class="admin-actions">
                 <select id="status-${order.id}" class="admin-order-status-select" data-order-id="${order.id}">
                     <option value="Pending Review" ${order.status === 'Pending Review' || order.status === 'New' ? 'selected' : ''}>Pending Review</option>
                     <option value="Reviewed" ${order.status === 'Reviewed' ? 'selected' : ''}>Reviewed</option>

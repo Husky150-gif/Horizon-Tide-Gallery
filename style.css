@@ -2730,7 +2730,7 @@ body.admin-login-modal-open {
 
 .admin-lockable {
     display: grid;
-    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-columns: 220px minmax(0, 1fr);
     gap: 14px;
     align-items: start;
 }
@@ -3348,6 +3348,26 @@ body.admin-login-modal-open {
     gap: 8px;
 }
 
+.admin-sidebar-group {
+    display: grid;
+    gap: 6px;
+}
+
+.admin-sidebar-group-title {
+    margin: 4px 2px 0;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9fb7d4;
+    font-weight: 700;
+}
+
+.admin-sidebar-divider {
+    height: 1px;
+    background: linear-gradient(90deg, rgba(56, 189, 248, 0), rgba(56, 189, 248, 0.35), rgba(56, 189, 248, 0));
+    margin: 6px 0;
+}
+
 .admin-side-link {
     text-align: left;
     border-radius: 10px;
@@ -3364,9 +3384,18 @@ body.admin-login-modal-open {
     background: rgba(14, 165, 233, 0.16);
 }
 
+.admin-side-link--section {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #c7ddf7;
+    background: rgba(9, 15, 30, 0.5);
+}
+
 .admin-main-area {
     display: grid;
     gap: 12px;
+    min-width: 0;
+    width: 100%;
 }
 
 .admin-top-header {
@@ -3414,8 +3443,27 @@ body.admin-login-modal-open {
 
 .admin-overview-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.admin-overview-row {
+    display: grid;
     gap: 10px;
+}
+
+.admin-overview-row-title {
+    margin: 0;
+    font-size: 0.76rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #a6c3dc;
+    font-weight: 700;
+}
+
+.admin-overview-row-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .admin-overview-card {
@@ -3534,6 +3582,68 @@ body.admin-login-modal-open {
     margin-bottom: 4px;
 }
 
+.admin-overview-row--action .admin-overview-row-title {
+    color: #fde68a;
+}
+
+.admin-overview-row--action .admin-overview-card {
+    border-color: rgba(251, 191, 36, 0.45);
+    background: linear-gradient(180deg, rgba(34, 20, 3, 0.9), rgba(20, 12, 3, 0.88));
+    box-shadow: 0 14px 26px rgba(24, 14, 2, 0.42), inset 0 0 18px rgba(251, 191, 36, 0.08);
+}
+
+.admin-overview-row--action .admin-overview-group,
+.admin-overview-row--action .admin-overview-label {
+    color: #fcd34d;
+}
+
+.admin-overview-row--action .admin-overview-value {
+    color: #fff7d6;
+    font-size: 1.28rem;
+    text-shadow: 0 0 18px rgba(245, 158, 11, 0.42);
+}
+
+.admin-overview-row--business .admin-overview-card {
+    border-color: rgba(56, 189, 248, 0.28);
+}
+
+.admin-overview-row--business .admin-overview-value {
+    font-size: 1.14rem;
+}
+
+.admin-overview-row--info .admin-overview-row-title {
+    color: #8da8c1;
+}
+
+.admin-overview-row--info .admin-overview-card {
+    border-color: rgba(148, 163, 184, 0.24);
+    background: linear-gradient(180deg, rgba(8, 15, 34, 0.82), rgba(6, 13, 28, 0.8));
+    box-shadow: 0 8px 16px rgba(2, 8, 18, 0.24), inset 0 0 10px rgba(255, 255, 255, 0.015);
+}
+
+.admin-overview-row--info .admin-overview-group,
+.admin-overview-row--info .admin-overview-label {
+    color: #9bb5cc;
+}
+
+.admin-overview-row--info .admin-overview-value {
+    color: #d9e5f2;
+    font-size: 1.02rem;
+    text-shadow: none;
+}
+
+@media (max-width: 900px) {
+    .admin-overview-row-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+    .admin-overview-row-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .admin-activity-panel ul {
     margin: 0;
     padding-left: 0;
@@ -3596,11 +3706,31 @@ body.admin-login-modal-open {
 
 .admin-collapsible > summary {
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     padding: 12px 14px;
     color: #e4f2ff;
     font-weight: 700;
     letter-spacing: 0.04em;
     list-style: none;
+    background: linear-gradient(180deg, rgba(12, 26, 52, 0.84), rgba(7, 17, 36, 0.9));
+}
+
+.admin-collapsible > summary::after {
+    content: '▾';
+    font-size: 0.9rem;
+    color: #9fd6ff;
+    transform: rotate(-90deg);
+    transition: transform 0.2s ease;
+}
+
+.admin-collapsible[open] > summary::after {
+    transform: rotate(0deg);
+}
+
+.admin-collapsible[open] > summary {
+    border-bottom: 1px solid rgba(125, 211, 252, 0.2);
 }
 
 .admin-collapsible > summary::-webkit-details-marker {
@@ -3663,7 +3793,7 @@ body.admin-login-modal-open {
 }
 
 @media (max-width: 1100px) {
-    .admin-mission-shell {
+    .admin-lockable {
         grid-template-columns: 1fr;
     }
 
@@ -5736,6 +5866,7 @@ body.admin-login-modal-open {
 .admin-reviews-list {
     display: grid;
     gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .admin-review-filter-row {
@@ -5843,6 +5974,14 @@ body.admin-login-modal-open {
 .admin-comments-list {
     display: grid;
     gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 980px) {
+    .admin-reviews-list,
+    .admin-comments-list {
+        grid-template-columns: 1fr;
+    }
 }
 
 .admin-comment-filter-row {
@@ -7120,14 +7259,45 @@ body[data-page="reviews"] {
 
 .admin-order-card {
     padding: 14px;
-    gap: 10px;
-    min-height: 300px;
+    gap: 8px;
+    min-height: 0;
     align-content: start;
 }
 
 .admin-order-card h3 {
     font-size: 1.04rem;
-    margin-bottom: 2px;
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.admin-order-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.admin-order-meta-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.admin-order-meta-pill {
+    font-size: 0.78rem;
+    color: #cfe4ff;
+    background: rgba(15, 23, 42, 0.52);
+    border: 1px solid rgba(125, 211, 252, 0.24);
+    border-radius: 8px;
+    padding: 5px 8px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.admin-order-meta-pill strong {
+    color: #f472b6;
 }
 
 .admin-order-preview {
@@ -7136,11 +7306,38 @@ body[data-page="reviews"] {
     line-height: 1.45;
     white-space: normal;
     word-break: break-word;
+    overflow-wrap: anywhere;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
     line-clamp: 3;
     overflow: hidden;
+    min-height: calc(1.45em * 3);
+    max-height: calc(1.45em * 3);
+}
+
+.admin-order-preview-wrap {
+    position: relative;
+    min-height: calc(1.45em * 3);
+    max-height: calc(1.45em * 3);
+    overflow: hidden;
+}
+
+.admin-order-preview-wrap::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1.7em;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(6, 12, 26, 0), rgba(6, 12, 26, 0.94));
+}
+
+.admin-order-view-row {
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
 }
 
 .admin-order-card .admin-detail {
@@ -7152,6 +7349,7 @@ body[data-page="reviews"] {
 .admin-order-card .admin-actions {
     flex-wrap: wrap;
     align-items: center;
+    margin-top: 2px;
 }
 
 .admin-order-card .admin-actions > * {
@@ -7242,8 +7440,11 @@ body[data-page="reviews"] {
 }
 
 .admin-overview-grid {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 12px;
+}
+
+.admin-overview-row-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .admin-overview-card {
@@ -7436,6 +7637,35 @@ body[data-page="reviews"] {
     overflow: hidden;
 }
 
+.admin-order-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.admin-order-meta-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.admin-order-meta-pill {
+    font-size: 0.78rem;
+    color: #cfe4ff;
+    background: rgba(15, 23, 42, 0.52);
+    border: 1px solid rgba(125, 211, 252, 0.24);
+    border-radius: 8px;
+    padding: 5px 8px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.admin-order-meta-pill strong {
+    color: #f472b6;
+}
+
 .admin-order-card .admin-detail {
     overflow: visible;
     text-overflow: clip;
@@ -7454,12 +7684,39 @@ body[data-page="reviews"] {
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
     line-clamp: 3;
+    line-height: 1.45;
+    min-height: calc(1.45em * 3);
+    max-height: calc(1.45em * 3);
     overflow-wrap: anywhere;
+}
+
+.admin-order-preview-wrap {
+    position: relative;
+    min-height: calc(1.45em * 3);
+    max-height: calc(1.45em * 3);
+    overflow: hidden;
+}
+
+.admin-order-preview-wrap::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1.7em;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(6, 12, 26, 0), rgba(6, 12, 26, 0.94));
+}
+
+.admin-order-view-row {
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
 }
 
 .admin-order-card .admin-actions {
     grid-column: 1;
-    margin-top: auto;
+    margin-top: 2px;
     align-items: stretch;
 }
 
@@ -7517,6 +7774,10 @@ body[data-page="reviews"] {
     .admin-order-card {
         min-height: auto;
         max-height: none;
+    }
+
+    .admin-order-meta-row {
+        grid-template-columns: 1fr;
     }
 
     .admin-pipeline-legend {
