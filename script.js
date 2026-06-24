@@ -2887,12 +2887,18 @@ function renderPublicCommissionList(container, items) {
 
 function renderPublicCommissionListItem(commission, index = 0) {
     const publicName = commission.displayName || commission.commissionId || `Queue Entry ${index + 1}`;
+    const publishedFinalPrice = commission.finalPricePublished === true
+        ? parseAdminPriceInput(commission.finalPrice)
+        : null;
+    const estimatePrice = getCommissionEstimatedPriceValue(commission);
 
     return `
         <article class="commission-public-item queue-reveal" style="--queue-stagger: ${120 + (index * 55)}ms;">
             <div class="commission-public-order">${index + 1}</div>
             <div class="commission-public-copy">
                 <div class="commission-public-name">${escapeHTML(publicName)}</div>
+                ${estimatePrice != null ? `<div class="commission-public-price-line"><strong>Estimate:</strong> ${escapeHTML(formatMoney(estimatePrice))}</div>` : ''}
+                ${publishedFinalPrice != null ? `<div class="commission-public-price-line commission-public-price-line--final"><strong>Final Price:</strong> ${escapeHTML(formatMoney(publishedFinalPrice))}</div>` : ''}
             </div>
         </article>
     `;
@@ -3683,6 +3689,10 @@ function loadStatusCheckPage() {
             } else {
                 const data = statusDoc.data();
                 const orderDate = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleDateString() : 'Unknown Date';
+                const estimatePrice = parseAdminPriceInput(data.estimatedPrice);
+                const publishedFinalPrice = data.finalPricePublished === true
+                    ? parseAdminPriceInput(data.finalPrice)
+                    : null;
 
                 let statusColor = '#00f2fe';
                 let iconAnim = '';
@@ -3722,6 +3732,8 @@ function loadStatusCheckPage() {
                         ${iconAnim}
                         <p style="color: #a2b7cc; margin-top: 10px;"><strong>Order Type:</strong> ${escapeHTML(data.itemType || data.orderType || 'Unknown')}</p>
                         <p style="color: #a2b7cc; margin-bottom: 5px;"><strong>Date Submitted:</strong> ${orderDate}</p>
+                        ${estimatePrice != null ? `<p style="color: #cfe3f6; margin: 4px 0;"><strong>Estimate:</strong> ${escapeHTML(formatMoney(estimatePrice))}</p>` : ''}
+                        ${publishedFinalPrice != null ? `<p style="color: #bbf7d0; margin: 4px 0;"><strong>Final Price:</strong> ${escapeHTML(formatMoney(publishedFinalPrice))}</p>` : ''}
                     </div>
                 `;
             }
@@ -4544,6 +4556,28 @@ function estimateOrderRevenue(order) {
     return Math.round(base * quantity);
 }
 
+function parseAdminPriceInput(value) {
+    const normalized = String(value || '').replace(/[^0-9.\-]/g, '').trim();
+    if (!normalized) return null;
+    const parsed = Number(normalized);
+    if (!Number.isFinite(parsed) || parsed < 0) return null;
+    return Math.round(parsed * 100) / 100;
+}
+
+function getOrderPublishedFinalPrice(order) {
+    if (!order || order.finalPricePublished !== true) return null;
+    const parsed = parseAdminPriceInput(order.finalPrice);
+    return parsed == null ? null : parsed;
+}
+
+function getCommissionEstimatedPriceValue(commission) {
+    if (!commission) return null;
+    const parsed = parseAdminPriceInput(
+        commission.estimatedPrice ?? commission.quoteAmount ?? commission.amountOwed ?? commission.estimate
+    );
+    return parsed == null ? null : parsed;
+}
+
 function getOrderTimestampMs(order) {
     if (!order || !order.createdAt) return 0;
     try {
@@ -4700,13 +4734,21 @@ function getRelativeTimeLabel(timestampMs) {
 }
 
 function renderActivityRows(rows) {
+    const getActivityToneClass = (type) => {
+        const normalized = String(type || '').toLowerCase();
+        if (normalized === 'order' || normalized === 'review' || normalized === 'comment') return 'is-amber';
+        if (normalized === 'refund' || normalized === 'discount') return 'is-purple';
+        if (normalized === 'announcement' || normalized === 'commission' || normalized === 'system') return 'is-cyan';
+        return 'is-cyan';
+    };
+
     if (!Array.isArray(rows) || rows.length === 0) {
-        return '<li class="admin-activity-row"><span class="admin-activity-type">System</span><span class="admin-activity-desc">No recent admin activity yet.</span><span class="admin-activity-time">Now</span></li>';
+        return '<li class="admin-activity-row"><span class="admin-activity-type is-cyan">System</span><span class="admin-activity-desc">No recent admin activity yet.</span><span class="admin-activity-time">Now</span></li>';
     }
 
     return rows.map((row) => `
         <li class="admin-activity-row">
-            <span class="admin-activity-type">${escapeHTML(row.type)}</span>
+            <span class="admin-activity-type ${getActivityToneClass(row.type)}">${escapeHTML(row.type)}</span>
             <span class="admin-activity-desc">${escapeHTML(row.description)}</span>
             <span class="admin-activity-time">${escapeHTML(row.time)}</span>
         </li>
@@ -4795,6 +4837,15 @@ function updateAdminDashboardOverview() {
 
     const metrics = computeAdminDashboardMetrics();
 
+    const getOverviewCardToneClass = (label) => {
+        const normalized = String(label || '').toLowerCase();
+        if (normalized.includes('pending') || normalized.includes('urgent')) return 'is-amber';
+        if (normalized.includes('waiting payment')) return 'is-purple';
+        if (normalized.includes('revenue') || normalized.includes('sale')) return 'is-purple';
+        if (normalized.includes('open slots') || normalized.includes('active work')) return 'is-green';
+        return 'is-cyan';
+    };
+
     const overviewRows = [
         {
             rowClass: 'admin-overview-row--action',
@@ -4831,7 +4882,7 @@ function updateAdminDashboardOverview() {
             <p class="admin-overview-row-title">${escapeHTML(row.title)}</p>
             <div class="admin-overview-row-grid">
                 ${row.cards.map((card) => `
-                    <article class="admin-overview-card">
+                    <article class="admin-overview-card ${getOverviewCardToneClass(card.label)}">
                         <p class="admin-overview-group">${escapeHTML(card.group)}</p>
                         <p class="admin-overview-label">${escapeHTML(card.label)}</p>
                         <strong class="admin-overview-value">${escapeHTML(String(card.value))}</strong>
@@ -4947,48 +4998,50 @@ function updateAdminDashboardOverview() {
     activities.sort((a, b) => (b.timestampMs || 0) - (a.timestampMs || 0));
     activityContainer.innerHTML = renderActivityRows(activities);
 
-}
+    const allComments = Array.isArray(window.adminCommentsEntries) ? window.adminCommentsEntries : [];
+    const reviewEntries = allComments.filter((entry) => isReviewEntry(entry));
+    const commentEntries = allComments.filter((entry) => !isReviewEntry(entry));
+    const pendingReviewCount = reviewEntries.filter((entry) => !isReviewApproved(entry)).length;
+    const commentsNeedingReplyCount = commentEntries.filter((entry) => !(Array.isArray(entry.replies) && entry.replies.length > 0)).length;
+    const queueOpenCount = metrics.refundCount + metrics.activeCommissionsCount;
 
-const ADMIN_PANEL_STATE_KEY = 'hz_admin_panel_state_v1';
+    const setPanelBadge = (id, value) => {
+        const badge = document.getElementById(id);
+        if (!badge) return;
+        const safeValue = Math.max(0, Number(value) || 0);
+        badge.textContent = String(safeValue);
+        badge.setAttribute('aria-label', `${safeValue} items`);
+
+        const tone = badge.dataset.tone || 'cyan';
+        badge.classList.remove('is-amber', 'is-cyan', 'is-green', 'is-purple', 'is-red', 'is-active');
+        badge.classList.add(`is-${tone}`);
+        if (safeValue > 0) badge.classList.add('is-active');
+    };
+
+    setPanelBadge('adminOrdersCountBadge', metrics.pendingOrdersCount);
+    setPanelBadge('adminCustomerCountBadge', commentsNeedingReplyCount);
+    setPanelBadge('adminReviewsCountBadge', pendingReviewCount);
+    setPanelBadge('adminCommentsCountBadge', commentEntries.length);
+    setPanelBadge('adminQueueCountBadge', queueOpenCount);
+    setPanelBadge('adminToolsCountBadge', metrics.urgentActionsCount);
+}
 
 function initializeAdminCollapsibleState() {
     const panels = Array.from(document.querySelectorAll('.admin-collapsible[id]'));
     if (!panels.length) return;
 
-    let savedState = null;
-    try {
-        const raw = localStorage.getItem(ADMIN_PANEL_STATE_KEY);
-        savedState = raw ? JSON.parse(raw) : null;
-    } catch (_) {
-        savedState = null;
-    }
-
-    const hasSavedState = savedState && typeof savedState === 'object';
-    panels.forEach((panel) => {
-        if (!(panel instanceof HTMLDetailsElement)) return;
-        if (hasSavedState && Object.prototype.hasOwnProperty.call(savedState, panel.id)) {
-            panel.open = Boolean(savedState[panel.id]);
-            return;
-        }
-        panel.open = panel.id === 'adminSectionOrders';
-    });
-
-    const persistState = () => {
-        const state = {};
-        panels.forEach((panel) => {
-            if (panel instanceof HTMLDetailsElement && panel.id) {
-                state[panel.id] = panel.open;
-            }
-        });
-        try {
-            localStorage.setItem(ADMIN_PANEL_STATE_KEY, JSON.stringify(state));
-        } catch (_) {
-            // Ignore storage limits and private mode write failures.
-        }
+    const defaultOpenMap = {
+        adminSectionOrders: true,
+        adminSectionCustomer: false,
+        adminSectionReviews: false,
+        adminSectionComments: false,
+        adminSectionQueue: false,
+        adminSectionTools: false
     };
 
     panels.forEach((panel) => {
-        panel.addEventListener('toggle', persistState);
+        if (!(panel instanceof HTMLDetailsElement)) return;
+        panel.open = Boolean(defaultOpenMap[panel.id]);
     });
 }
 
@@ -5389,6 +5442,155 @@ function setupAdminDashboardDelegation() {
         if (button.matches('.admin-order-delete-btn')) {
             const orderId = button.getAttribute('data-order-id');
             if (orderId) await deleteOrder(orderId);
+            return;
+        }
+
+        if (button.matches('.admin-save-final-price-btn')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before saving final prices.')) return;
+            const orderId = button.getAttribute('data-order-id');
+            const order = (Array.isArray(window.allOrders) ? window.allOrders : []).find((entry) => entry.id === orderId);
+            const priceInput = orderId ? document.getElementById(`final-price-${orderId}`) : null;
+            if (!orderId || !order || !(priceInput instanceof HTMLInputElement)) return;
+
+            const parsedFinalPrice = parseAdminPriceInput(priceInput.value);
+            if (parsedFinalPrice == null) {
+                showAdminToast('Enter a valid non-negative final price before saving.', true);
+                return;
+            }
+
+            button.disabled = true;
+            try {
+                await updateDoc(doc(db, 'preorders', orderId), {
+                    finalPrice: parsedFinalPrice,
+                    finalPriceUpdatedAt: serverTimestamp(),
+                    finalPriceUpdatedBy: auth.currentUser?.email || 'admin'
+                });
+                showAdminToast('Final price saved as draft.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to save final price.', true);
+            } finally {
+                button.disabled = false;
+            }
+            return;
+        }
+
+        if (button.matches('.admin-toggle-final-price-btn')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before publishing final prices.')) return;
+            const orderId = button.getAttribute('data-order-id');
+            const order = (Array.isArray(window.allOrders) ? window.allOrders : []).find((entry) => entry.id === orderId);
+            const priceInput = orderId ? document.getElementById(`final-price-${orderId}`) : null;
+            if (!orderId || !order || !(priceInput instanceof HTMLInputElement)) return;
+
+            const isCurrentlyPublished = button.getAttribute('data-final-published') === 'true';
+            const parsedInput = parseAdminPriceInput(priceInput.value);
+            const storedFinalPrice = parseAdminPriceInput(order.finalPrice);
+            const finalPriceToUse = parsedInput != null ? parsedInput : storedFinalPrice;
+
+            if (!isCurrentlyPublished && finalPriceToUse == null) {
+                showAdminToast('Set a final price before publishing.', true);
+                return;
+            }
+
+            button.disabled = true;
+            try {
+                const finalPricePublished = !isCurrentlyPublished;
+                const updatePayload = {
+                    finalPricePublished,
+                    finalPriceUpdatedAt: serverTimestamp(),
+                    finalPriceUpdatedBy: auth.currentUser?.email || 'admin'
+                };
+                if (finalPriceToUse != null) updatePayload.finalPrice = finalPriceToUse;
+                await updateDoc(doc(db, 'preorders', orderId), updatePayload);
+
+                if (order.orderId) {
+                    const publicPayload = {
+                        orderId: order.orderId,
+                        itemType: order.itemType || order.orderType || 'Unknown',
+                        status: order.status || 'Pending Review',
+                        estimatedPrice: estimateOrderRevenue(order),
+                        finalPricePublished,
+                        finalPrice: finalPricePublished && finalPriceToUse != null ? finalPriceToUse : null,
+                        updatedAt: serverTimestamp()
+                    };
+                    if (order.createdAt) publicPayload.createdAt = order.createdAt;
+                    await setDoc(doc(db, 'preorderStatusPublic', order.orderId), publicPayload, { merge: true });
+                }
+
+                showAdminToast(finalPricePublished ? 'Final price published to client.' : 'Final price unpublished from client view.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to update final price publishing.', true);
+            } finally {
+                button.disabled = false;
+            }
+            return;
+        }
+
+        if (button.matches('.admin-save-commission-final-price-btn')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before saving commission final prices.')) return;
+            const id = button.getAttribute('data-id');
+            const priceInput = id ? document.getElementById(`commission-final-price-${id}`) : null;
+            if (!id || !(priceInput instanceof HTMLInputElement)) return;
+
+            const parsedFinalPrice = parseAdminPriceInput(priceInput.value);
+            if (parsedFinalPrice == null) {
+                showAdminToast('Enter a valid commission final price first.', true);
+                return;
+            }
+
+            button.disabled = true;
+            try {
+                await updateDoc(doc(db, 'commissions', id), {
+                    finalPrice: parsedFinalPrice,
+                    finalPriceUpdatedAt: serverTimestamp(),
+                    finalPriceUpdatedBy: auth.currentUser?.email || 'admin'
+                });
+                showAdminToast('Commission final price saved as draft.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to save commission final price.', true);
+            } finally {
+                button.disabled = false;
+            }
+            return;
+        }
+
+        if (button.matches('.admin-toggle-commission-final-price-btn')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before publishing commission final prices.')) return;
+            const id = button.getAttribute('data-id');
+            const commission = (Array.isArray(window.adminCommissionEntries) ? window.adminCommissionEntries : []).find((entry) => entry.id === id);
+            const priceInput = id ? document.getElementById(`commission-final-price-${id}`) : null;
+            if (!id || !commission || !(priceInput instanceof HTMLInputElement)) return;
+
+            const isCurrentlyPublished = button.getAttribute('data-final-published') === 'true';
+            const parsedInput = parseAdminPriceInput(priceInput.value);
+            const storedFinalPrice = parseAdminPriceInput(commission.finalPrice);
+            const finalPriceToUse = parsedInput != null ? parsedInput : storedFinalPrice;
+
+            if (!isCurrentlyPublished && finalPriceToUse == null) {
+                showAdminToast('Set a commission final price before publishing.', true);
+                return;
+            }
+
+            button.disabled = true;
+            try {
+                const finalPricePublished = !isCurrentlyPublished;
+                const updatePayload = {
+                    finalPricePublished,
+                    finalPriceUpdatedAt: serverTimestamp(),
+                    finalPriceUpdatedBy: auth.currentUser?.email || 'admin'
+                };
+                if (finalPriceToUse != null) updatePayload.finalPrice = finalPriceToUse;
+                await updateDoc(doc(db, 'commissions', id), updatePayload);
+                showAdminToast(finalPricePublished ? 'Commission final price published.' : 'Commission final price unpublished.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to update commission final price publishing.', true);
+            } finally {
+                button.disabled = false;
+            }
+            return;
         }
     });
 
@@ -5410,10 +5612,14 @@ function setupAdminDashboardDelegation() {
         try {
             await updateDoc(doc(db, 'preorders', orderId), { status: statusSelect.value });
             if (order.orderId) {
+                const publishedFinalPrice = getOrderPublishedFinalPrice(order);
                 const publicStatusPayload = {
                     orderId: order.orderId,
                     itemType: order.itemType || order.orderType || 'Unknown',
                     status: statusSelect.value,
+                    estimatedPrice: estimateOrderRevenue(order),
+                    finalPricePublished: order.finalPricePublished === true,
+                    finalPrice: publishedFinalPrice != null ? publishedFinalPrice : null,
                     updatedAt: serverTimestamp()
                 };
                 if (order.createdAt) publicStatusPayload.createdAt = order.createdAt;
@@ -5571,17 +5777,40 @@ function loadAdminDashboard() {
                     </div>
                 </header>
 
-                <section class="admin-overview-grid" id="adminOverviewCards"></section>
-
-                <section class="admin-revenue-grid" id="adminRevenuePanels"></section>
-
-                <section class="admin-activity-panel">
-                    <h2>Recent Activity</h2>
-                    <ul id="adminRecentActivityList"></ul>
+                <section class="admin-card admin-quick-actions-card" id="adminQuickActionsCard" aria-label="Quick actions">
+                    <h3 class="admin-card-title">Quick Actions</h3>
+                    <div class="admin-quick-actions-grid">
+                        <button type="button" class="nav-btn" id="adminQuickNewAnnouncementBtn">New Announcement</button>
+                        <button type="button" class="nav-btn" id="adminQuickReviewQueueBtn">Review Queue</button>
+                        <button type="button" class="nav-btn" id="adminQueueFocusRefunds">Refund Queue</button>
+                        <button type="button" class="nav-btn" id="adminQueueFocusCommissions">Commission Queue</button>
+                        <button type="button" class="nav-btn" id="adminOpenContactPageBtn">Contact Inbox</button>
+                        <button type="button" class="nav-btn" id="adminToolsOpenQueuePageBtn">Open Public Queue</button>
+                    </div>
                 </section>
 
+                <section class="admin-dashboard-band" aria-labelledby="adminMissionStatusHeading">
+                    <h2 id="adminMissionStatusHeading" class="admin-zone-heading">Mission Status Cards</h2>
+                    <section class="admin-overview-grid" id="adminOverviewCards"></section>
+                </section>
+
+                <section class="admin-dashboard-band" aria-labelledby="adminAnalyticsHeading">
+                    <h2 id="adminAnalyticsHeading" class="admin-zone-heading">Analytics</h2>
+                    <section class="admin-revenue-grid" id="adminRevenuePanels"></section>
+                </section>
+
+                <section class="admin-dashboard-band" aria-labelledby="adminRecentActivityHeading">
+                    <h2 id="adminRecentActivityHeading" class="admin-zone-heading">Recent Activity</h2>
+                    <section class="admin-activity-panel">
+                        <ul id="adminRecentActivityList"></ul>
+                    </section>
+                </section>
+
+                <section class="admin-management-zone" aria-labelledby="adminManagementHeading">
+                <h2 id="adminManagementHeading" class="admin-zone-heading">Management Panels</h2>
+
                 <details class="admin-collapsible" id="adminSectionOrders" open>
-                    <summary>Orders & Preorders</summary>
+                    <summary><span class="admin-summary-label">Orders <span class="admin-panel-badge" id="adminOrdersCountBadge" data-tone="amber">0</span></span></summary>
                     <div class="admin-collapsible-body">
                         <div class="admin-filters">
                             <button type="button" class="nav-btn" id="filterAll">All Orders</button>
@@ -5594,40 +5823,15 @@ function loadAdminDashboard() {
                     </div>
                 </details>
 
-                <details class="admin-collapsible" id="adminSectionStudio">
-                    <summary>Studio Management</summary>
-                    <div class="admin-collapsible-body">
-                        <div class="admin-management-strip">
-                            <button type="button" class="nav-btn" id="adminSetAllOpenBtn">Open Both Creators</button>
-                            <button type="button" class="nav-btn" id="adminSetAllClosedBtn">Close Both Creators</button>
-                            <button type="button" class="nav-btn" id="adminResetDiscountEditorBtn">New Discount</button>
-                            <button type="button" class="nav-btn" id="adminPreviewAnnouncementsBtn">Preview Announcements</button>
-                        </div>
-                        <section id="adminAvailabilitySection">
-                            ${getTemplateHTML('adminAvailabilityManagerTemplate')}
-                        </section>
-                        <section id="adminDiscountManagerSection">
-                            ${getTemplateHTML('adminDiscountManagerTemplate')}
-                        </section>
-                        <section id="adminAnnouncementsSection">
-                            ${getTemplateHTML('adminAnnouncementsControlsTemplate')}
-                        </section>
-                    </div>
-                </details>
-
                 <details class="admin-collapsible" id="adminSectionCustomer">
-                    <summary>Customer Management</summary>
+                    <summary><span class="admin-summary-label">Customer <span class="admin-panel-badge" id="adminCustomerCountBadge" data-tone="amber">0</span></span></summary>
                     <div class="admin-collapsible-body">
-                        <div class="admin-management-strip">
-                            <button type="button" class="nav-btn" id="adminQueueFocusRefunds">Open Refund Queue</button>
-                            <button type="button" class="nav-btn" id="adminQueueFocusCommissions">Open Commission Queue</button>
-                            <button type="button" class="nav-btn" id="adminOpenContactPageBtn">Open Contact Inbox</button>
-                        </div>
+                        <p class="admin-section-note">Use Quick Actions to jump into refunds, commissions, reviews, and the contact inbox.</p>
                     </div>
                 </details>
 
                 <details class="admin-collapsible" id="adminSectionReviews">
-                    <summary>Review Management</summary>
+                    <summary><span class="admin-summary-label">Reviews <span class="admin-panel-badge" id="adminReviewsCountBadge" data-tone="amber">0</span></span></summary>
                     <div class="admin-collapsible-body">
                         <div class="admin-card admin-reviews-card" id="adminReviewsManagerCard">
                             <h3 class="admin-card-title">Review Management</h3>
@@ -5638,7 +5842,7 @@ function loadAdminDashboard() {
                 </details>
 
                 <details class="admin-collapsible" id="adminSectionComments">
-                    <summary>Comment Management</summary>
+                    <summary><span class="admin-summary-label">Comments <span class="admin-panel-badge" id="adminCommentsCountBadge" data-tone="cyan">0</span></span></summary>
                     <div class="admin-collapsible-body">
                         <div class="admin-card admin-comments-card" id="adminCommentsManagerCard">
                             <h3 class="admin-card-title">Comments Management</h3>
@@ -5648,26 +5852,8 @@ function loadAdminDashboard() {
                     </div>
                 </details>
 
-                <details class="admin-collapsible" id="adminSectionTools">
-                    <summary>Admin Tools</summary>
-                    <div class="admin-collapsible-body">
-                        <div class="admin-filters">
-                            <button type="button" class="nav-btn" id="adminToolsRefreshBtn">Refresh Mission Data</button>
-                            <button type="button" class="nav-btn" id="adminToolsClearSearchBtn">Clear All Search Filters</button>
-                            <button type="button" class="nav-btn" id="adminToolsCollapsePanelsBtn">Collapse Detail Panels</button>
-                            <button type="button" class="nav-btn" id="adminToolsSessionCheckBtn">Verify Security Session</button>
-                            <button type="button" class="nav-btn" id="adminToolsOpenQueuePageBtn">Open Public Queue View</button>
-                            <button type="button" class="nav-btn" id="adminToolsOpenUpdatesPageBtn">Open Public Updates</button>
-                            <button type="button" class="nav-btn" id="exportPreordersCsvBtn">Export Preorders CSV</button>
-                            <button type="button" class="nav-btn" id="exportRefundsCsvBtn">Export Refunds CSV</button>
-                            <button type="button" class="nav-btn" id="exportCommissionsCsvBtn">Export Commissions CSV</button>
-                            <button type="button" class="nav-btn" id="adminToolsExportAllBtn">Export All CSVs</button>
-                        </div>
-                    </div>
-                </details>
-
                 <details class="admin-collapsible" id="adminSectionQueue">
-                <summary>Queue Manager</summary>
+                <summary><span class="admin-summary-label">Queue <span class="admin-panel-badge" id="adminQueueCountBadge" data-tone="purple">0</span></span></summary>
                 <div class="admin-collapsible-body">
                 <div class="admin-card queue-manager-card" id="adminQueueManagerCard">
                 <h3 class="admin-card-title">🌊 Horizon Queue Manager</h3>
@@ -5799,6 +5985,42 @@ function loadAdminDashboard() {
             </div>
             </div>
             </details>
+
+                <details class="admin-collapsible" id="adminSectionTools">
+                    <summary><span class="admin-summary-label">Admin Tools <span class="admin-panel-badge" id="adminToolsCountBadge" data-tone="cyan">0</span></span></summary>
+                    <div class="admin-collapsible-body">
+                        <div class="admin-tools-studio-block">
+                            <div class="admin-management-strip">
+                                <button type="button" class="nav-btn" id="adminSetAllOpenBtn">Open Both Creators</button>
+                                <button type="button" class="nav-btn" id="adminSetAllClosedBtn">Close Both Creators</button>
+                                <button type="button" class="nav-btn" id="adminResetDiscountEditorBtn">New Discount</button>
+                            </div>
+                            <section id="adminAvailabilitySection">
+                                ${getTemplateHTML('adminAvailabilityManagerTemplate')}
+                            </section>
+                            <section id="adminDiscountManagerSection">
+                                ${getTemplateHTML('adminDiscountManagerTemplate')}
+                            </section>
+                            <section id="adminAnnouncementsSection">
+                                ${getTemplateHTML('adminAnnouncementsControlsTemplate')}
+                            </section>
+                        </div>
+
+                        <div class="admin-filters">
+                            <button type="button" class="nav-btn" id="adminToolsRefreshBtn">Refresh Mission Data</button>
+                            <button type="button" class="nav-btn" id="adminToolsClearSearchBtn">Clear All Search Filters</button>
+                            <button type="button" class="nav-btn" id="adminToolsCollapsePanelsBtn">Collapse Detail Panels</button>
+                            <button type="button" class="nav-btn" id="adminToolsSessionCheckBtn">Verify Security Session</button>
+                            <button type="button" class="nav-btn" id="adminToolsOpenUpdatesPageBtn">Open Public Updates</button>
+                            <button type="button" class="nav-btn" id="exportPreordersCsvBtn">Export Preorders CSV</button>
+                            <button type="button" class="nav-btn" id="exportRefundsCsvBtn">Export Refunds CSV</button>
+                            <button type="button" class="nav-btn" id="exportCommissionsCsvBtn">Export Commissions CSV</button>
+                            <button type="button" class="nav-btn" id="adminToolsExportAllBtn">Export All CSVs</button>
+                        </div>
+                    </div>
+                </details>
+
+                </section>
 
             </section>
             </div>
@@ -6115,7 +6337,20 @@ function loadAdminDashboard() {
     });
 
     document.getElementById('btnPreviewAnnouncementsPublic')?.addEventListener('click', (e) => cinematicTransition(e, loadAnnouncementsPage, '#updates'));
-    document.getElementById('adminPreviewAnnouncementsBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadAnnouncementsPage, '#updates'));
+
+    document.getElementById('adminQuickNewAnnouncementBtn')?.addEventListener('click', () => {
+        const toolsSection = document.getElementById('adminSectionTools');
+        if (toolsSection instanceof HTMLDetailsElement) toolsSection.open = true;
+        const announcementSection = document.getElementById('adminAnnouncementsSection');
+        if (announcementSection) announcementSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    document.getElementById('adminQuickReviewQueueBtn')?.addEventListener('click', () => {
+        const reviewsSection = document.getElementById('adminSectionReviews');
+        if (reviewsSection instanceof HTMLDetailsElement) reviewsSection.open = true;
+        const reviewCard = document.getElementById('adminReviewsManagerCard');
+        if (reviewCard) reviewCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 
     document.getElementById('adminQueueFocusRefunds')?.addEventListener('click', () => {
         openAdminQueueTab('refunds');
@@ -6754,7 +6989,17 @@ function renderAdminCommissionList(commissions, totalCommissions = commissions.l
         husky: commissions.filter((commission) => normalizeCommissionQueueOwnerValue(commission.queueOwner, commission) === 'husky')
     };
 
-    const buildCommissionItemHtml = (commission) => `
+    const buildCommissionItemHtml = (commission) => {
+        const estimatedPrice = getCommissionEstimatedPriceValue(commission);
+        const finalPrice = parseAdminPriceInput(commission.finalPrice);
+        const isFinalPublished = commission.finalPricePublished === true;
+        const finalPriceInputValue = finalPrice != null ? String(finalPrice) : '';
+        const estimateText = estimatedPrice != null ? formatMoney(estimatedPrice) : 'Not set';
+        const finalStateLabel = isFinalPublished
+            ? `Published to Client: ${finalPrice != null ? formatMoney(finalPrice) : 'No value set'}`
+            : 'Draft / Admin Only';
+
+        return `
         <div class="admin-commission-item">
             <div class="admin-queue-item-main">
                 <div class="admin-queue-item-head">
@@ -6766,13 +7011,22 @@ function renderAdminCommissionList(commissions, totalCommissions = commissions.l
                     <span class="admin-queue-meta-pill">${escapeHTML(normalizeCommissionQueueOwnerValue(commission.queueOwner, commission).replace(/^./, c => c.toUpperCase()))}</span>
                     <span class="admin-queue-meta-pill admin-queue-meta-pill-visibility">${commission.isPublic ? 'Public' : 'Hidden'}</span>
                 </div>
+                <div class="admin-final-price-control-row">
+                    <span class="admin-queue-meta-pill"><strong>Estimate:</strong> ${escapeHTML(estimateText)}</span>
+                    <label class="admin-final-price-label" for="commission-final-price-${commission.id}">Final Price</label>
+                    <input type="number" step="0.01" min="0" id="commission-final-price-${commission.id}" class="admin-input admin-final-price-input" value="${escapeHTML(finalPriceInputValue)}" placeholder="e.g. 125.00">
+                    <span class="admin-final-price-state ${isFinalPublished ? 'is-published' : 'is-draft'}">${escapeHTML(finalStateLabel)}</span>
+                </div>
             </div>
             <div class="admin-queue-actions">
+                <button type="button" class="admin-btn-edit admin-save-commission-final-price-btn" data-id="${commission.id}">Save Final</button>
+                <button type="button" class="admin-btn-edit admin-toggle-commission-final-price-btn" data-id="${commission.id}" data-final-published="${isFinalPublished ? 'true' : 'false'}">${isFinalPublished ? 'Unpublish Final' : 'Publish Final'}</button>
                 <button type="button" class="admin-btn-edit edit-commission-btn" data-id="${commission.id}">Edit</button>
                 <button type="button" class="admin-btn-delete delete-commission-btn" data-id="${commission.id}">Delete</button>
             </div>
         </div>
     `;
+    };
 
     commissionsList.innerHTML = `
         <section class="admin-commission-owner-group">
@@ -6927,15 +7181,15 @@ function renderAdminReviewsManager() {
                     ${commissionType ? `<span class="admin-review-service">${escapeHTML(commissionType)}</span>` : ''}
                 </div>
                 <div class="admin-review-flags">
-                    <span class="admin-review-flag ${isApproved ? 'is-on' : ''}">Approved: ${isApproved ? 'Yes' : 'No'}</span>
-                    <span class="admin-review-flag ${isSafe ? 'is-on' : ''}">Safe For Public Display: ${isSafe ? 'Yes' : 'No'}</span>
+                    <span class="admin-review-flag ${isApproved ? 'is-on is-success' : 'is-warning'}">Approved: ${isApproved ? 'Yes' : 'No'}</span>
+                    <span class="admin-review-flag ${isSafe ? 'is-on is-success' : 'is-danger'}">Safe For Public Display: ${isSafe ? 'Yes' : 'No'}</span>
                 </div>
                 <p class="admin-review-row-text">${escapeHTML(shortText || 'No text provided')}</p>
                 ${reviewImageUrl ? `<a class="admin-review-image-link" href="${encodeURI(reviewImageUrl)}" target="_blank" rel="noopener noreferrer"><img class="admin-review-image-thumb" src="${encodeURI(reviewImageUrl)}" alt="Review image by ${escapeHTML(displayName)}" loading="lazy"></a>` : ''}
                 <div class="admin-review-row-actions">
-                    <button type="button" class="admin-btn-edit admin-toggle-review-approval-btn" data-id="${review.id}" data-approved="${isApproved ? 'true' : 'false'}">${isApproved ? 'Unapprove' : 'Approve'}</button>
-                    <button type="button" class="admin-btn-edit admin-toggle-review-safe-btn" data-id="${review.id}" data-safe="${isSafe ? 'true' : 'false'}">${isSafe ? 'Unset Safe For Public Display' : 'Safe For Public Display'}</button>
-                    <button type="button" class="admin-btn-edit admin-copy-review-btn" data-review="${encodeURIComponent(excerpt || '')}">Copy Text</button>
+                    <button type="button" class="admin-btn-edit admin-btn-success admin-toggle-review-approval-btn" data-id="${review.id}" data-approved="${isApproved ? 'true' : 'false'}">${isApproved ? 'Unapprove' : 'Approve'}</button>
+                    <button type="button" class="admin-btn-edit admin-btn-success admin-toggle-review-safe-btn" data-id="${review.id}" data-safe="${isSafe ? 'true' : 'false'}">${isSafe ? 'Unset Safe For Public Display' : 'Safe For Public Display'}</button>
+                    <button type="button" class="admin-btn-edit admin-btn-neutral admin-copy-review-btn" data-review="${encodeURIComponent(excerpt || '')}">Copy Text</button>
                     <button type="button" class="admin-btn-delete admin-delete-review-btn" data-id="${review.id}">Delete</button>
                 </div>
             </article>
@@ -7007,16 +7261,16 @@ function renderAdminCommentsManager() {
                 </div>
                 <div class="admin-comment-meta-row">
                     <span class="admin-comment-meta-pill">Source: ${escapeHTML(sourceText)}</span>
-                    <span class="admin-comment-meta-pill ${hasReplies ? 'is-on' : ''}">Replies: ${hasReplies ? 'Yes' : 'No'}</span>
-                    <span class="admin-comment-meta-pill ${isReviewed ? 'is-on' : ''}">Reviewed: ${isReviewed ? 'Yes' : 'No'}</span>
+                    <span class="admin-comment-meta-pill ${hasReplies ? 'is-on' : 'is-needs-action'}">Replies: ${hasReplies ? 'Yes' : 'No'}</span>
+                    <span class="admin-comment-meta-pill ${isReviewed ? 'is-on' : 'is-needs-action'}">Reviewed: ${isReviewed ? 'Yes' : 'No'}</span>
                 </div>
                 <p class="admin-comment-row-text">${escapeHTML(shortText || 'No text provided')}</p>
                 ${hasReplies ? `<div class="admin-comment-replies-preview">${(comment.replies || []).slice(-2).map((reply) => `<p><strong>${escapeHTML(reply.name || 'Admin')}:</strong> ${escapeHTML(reply.text || '')}</p>`).join('')}</div>` : ''}
                 <div class="admin-comment-row-actions">
-                    <button type="button" class="admin-btn-edit admin-reply-comment-btn" data-id="${comment.id}">Reply</button>
+                    <button type="button" class="admin-btn-edit admin-btn-neutral admin-reply-comment-btn" data-id="${comment.id}">Reply</button>
                     <button type="button" class="admin-btn-delete admin-delete-comment-btn" data-id="${comment.id}">Delete</button>
-                    <button type="button" class="admin-btn-edit admin-copy-comment-btn" data-comment="${encodeURIComponent(excerpt || '')}">Copy Text</button>
-                    <button type="button" class="admin-btn-edit admin-mark-comment-reviewed-btn" data-id="${comment.id}" data-reviewed="${isReviewed ? 'true' : 'false'}">${isReviewed ? 'Unmark Reviewed' : 'Mark Reviewed'}</button>
+                    <button type="button" class="admin-btn-edit admin-btn-neutral admin-copy-comment-btn" data-comment="${encodeURIComponent(excerpt || '')}">Copy Text</button>
+                    <button type="button" class="admin-btn-edit admin-btn-success admin-mark-comment-reviewed-btn" data-id="${comment.id}" data-reviewed="${isReviewed ? 'true' : 'false'}">${isReviewed ? 'Unmark Reviewed' : 'Mark Reviewed'}</button>
                 </div>
                 <div class="admin-comment-reply-wrap" id="adminCommentReplyWrap-${comment.id}" hidden>
                     <form class="admin-comment-reply-form" data-target-id="${comment.id}">
@@ -7104,18 +7358,24 @@ function renderAdminOrders(ordersArr) {
         const serviceType = getOrderServiceType(order);
         const creatorLabel = getOrderCreator(serviceType) === 'lopside' ? 'Lopside' : 'Husky';
         const estimatedPrice = formatMoney(estimateOrderRevenue(order));
+        const rawFinalPrice = parseAdminPriceInput(order.finalPrice);
+        const finalPriceInputValue = rawFinalPrice != null ? String(rawFinalPrice) : '';
+        const isFinalPublished = order.finalPricePublished === true;
+        const finalPriceStateLabel = isFinalPublished
+            ? `Published to Client: ${rawFinalPrice != null ? formatMoney(rawFinalPrice) : 'No value set'}`
+            : 'Draft / Admin Only';
         const notesPreview = getPreviewText(notes, 150);
         const attentionBadge = getOrderAttentionBadge(order);
         const currentStatus = order.status || 'Pending Review';
-        const badgeColorMap = {
-            'New': '#38bdf8',
-            'Pending Review': '#60a5fa',
-            'Needs Reply': '#f59e0b',
-            'Waiting Payment': '#a855f7',
-            'In Progress': '#f97316',
-            'Completed': '#22c55e'
+        const badgeToneMap = {
+            'New': 'is-amber',
+            'Pending Review': 'is-amber',
+            'Needs Reply': 'is-amber',
+            'Waiting Payment': 'is-purple',
+            'In Progress': 'is-cyan',
+            'Completed': 'is-green'
         };
-        const badgeColor = badgeColorMap[attentionBadge] || '#60a5fa';
+        const badgeToneClass = badgeToneMap[attentionBadge] || 'is-cyan';
         
         let imagesHtml = '';
         if (order.referenceImageUrls && order.referenceImageUrls.length > 0) {
@@ -7129,7 +7389,7 @@ function renderAdminOrders(ordersArr) {
         card.innerHTML = `
             <div class="admin-order-title-row">
                 <h3>${escapeHTML(order.orderType || order.itemType || 'Order')}</h3>
-                <span class="admin-order-badge" style="background:${badgeColor};">${escapeHTML(attentionBadge)}</span>
+                <span class="admin-order-badge ${badgeToneClass}">${escapeHTML(attentionBadge)}</span>
             </div>
 
             <div class="admin-order-meta-row">
@@ -7139,6 +7399,14 @@ function renderAdminOrders(ordersArr) {
                 <span class="admin-order-meta-pill"><strong>Date:</strong> ${escapeHTML(orderDate)}</span>
                 <span class="admin-order-meta-pill"><strong>Estimate:</strong> ${escapeHTML(estimatedPrice)}</span>
                 <span class="admin-order-meta-pill"><strong>Status:</strong> ${escapeHTML(currentStatus)}</span>
+            </div>
+
+            <div class="admin-final-price-control-row">
+                <label class="admin-final-price-label" for="final-price-${order.id}">Final Price</label>
+                <input type="number" step="0.01" min="0" id="final-price-${order.id}" class="admin-input admin-final-price-input" value="${escapeHTML(finalPriceInputValue)}" placeholder="e.g. 125.00">
+                <button type="button" class="admin-btn-edit admin-save-final-price-btn" data-order-id="${order.id}">Save Final</button>
+                <button type="button" class="admin-btn-edit admin-toggle-final-price-btn" data-order-id="${order.id}" data-final-published="${isFinalPublished ? 'true' : 'false'}">${isFinalPublished ? 'Unpublish Final' : 'Publish Final'}</button>
+                <span class="admin-final-price-state ${isFinalPublished ? 'is-published' : 'is-draft'}">${escapeHTML(finalPriceStateLabel)}</span>
             </div>
 
             <div class="admin-order-preview-wrap">
