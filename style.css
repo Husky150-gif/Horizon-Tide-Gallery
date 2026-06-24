@@ -2799,8 +2799,8 @@ body.admin-login-modal-open {
 #adminIdleLockScreen .admin-idle-lock-screen__scene {
     position: relative;
     width: min(440px, 92vw);
-    height: 300px;
-    margin: 18px auto 10px;
+    height: 210px;
+    margin: 14px auto 6px;
     isolation: isolate;
 }
 
@@ -2813,19 +2813,19 @@ body.admin-login-modal-open {
 
 #adminIdleLockScreen .admin-idle-moon {
     position: absolute;
-    top: 8px;
-    right: 18px;
-    width: 74px;
-    height: 74px;
+    top: 18px;
+    right: 38px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     background:
         radial-gradient(circle at 34% 34%, rgba(223, 249, 255, 0.98), rgba(143, 220, 255, 0.92) 46%, rgba(20, 184, 226, 0.38) 68%, rgba(20, 184, 226, 0.04) 100%);
     box-shadow:
-        0 0 26px rgba(125, 211, 252, 0.24),
-        0 0 70px rgba(45, 212, 255, 0.2),
-        inset 0 0 12px rgba(255, 255, 255, 0.34);
-    opacity: 0.9;
-    animation: adminIdleMoonPulse 7.8s ease-in-out infinite;
+        0 0 16px rgba(125, 211, 252, 0.18),
+        0 0 36px rgba(45, 212, 255, 0.12),
+        inset 0 0 8px rgba(255, 255, 255, 0.26);
+    opacity: 0.54;
+    animation: adminIdleMoonPulse 10.5s ease-in-out infinite;
 }
 
 #adminIdleLockScreen .admin-idle-moon::before {
@@ -2852,8 +2852,8 @@ body.admin-login-modal-open {
 }
 
 #adminIdleLockScreen .admin-idle-star {
-    background: rgba(240, 250, 255, 0.95);
-    box-shadow: 0 0 12px rgba(125, 211, 252, 0.52), 0 0 22px rgba(56, 189, 248, 0.2);
+    background: rgba(240, 250, 255, 0.82);
+    box-shadow: 0 0 8px rgba(125, 211, 252, 0.32);
     animation-name: adminIdleStarTwinkle;
     animation-timing-function: ease-in-out;
     animation-iteration-count: infinite;
@@ -2865,73 +2865,35 @@ body.admin-login-modal-open {
 }
 
 #adminIdleLockScreen .admin-idle-drift {
-    background: rgba(186, 242, 255, 0.84);
-    box-shadow: 0 0 18px rgba(56, 189, 248, 0.44);
-    filter: blur(0.2px);
-    animation-name: adminIdleDriftFloat;
-    animation-timing-function: linear;
-    animation-iteration-count: infinite;
+    display: none;
 }
 
 #adminIdleLockScreen .admin-idle-drift::before {
-    content: '';
-    position: absolute;
-    inset: -7px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(162, 243, 255, 0.36), transparent 68%);
-    opacity: 0.85;
+    content: none;
 }
 
 #adminIdleLockScreen .admin-idle-shooting-star {
-    position: absolute;
-    width: 150px;
-    height: 2px;
-    opacity: 0;
-    transform: translate3d(0, 0, 0) rotate(-22deg);
-    animation: adminIdleShootingStarFly 12s linear infinite;
+    display: none;
 }
 
 #adminIdleLockScreen .admin-idle-shooting-star::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 999px;
-    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(220, 250, 255, 0.95), rgba(56, 189, 248, 0.2));
-    box-shadow: 0 0 14px rgba(125, 211, 252, 0.5);
+    content: none;
 }
 
 #adminIdleLockScreen .admin-idle-zzz {
-    position: absolute;
-    top: 8px;
-    left: 60%;
-    width: 160px;
-    height: 138px;
-    transform: translateX(-50%);
-    pointer-events: none;
-    color: rgba(240, 250, 255, 0.96);
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    overflow: visible;
-    z-index: 3;
+    display: none;
 }
 
 #adminIdleLockScreen .admin-idle-zzz__particle {
-    position: absolute;
-    bottom: 0;
-    display: block;
-    text-shadow: 0 0 16px rgba(125, 211, 252, 0.56);
-    color: rgba(246, 252, 255, 0.98);
-    font-weight: 800;
-    animation: adminIdleZzzFloat 5.2s ease-out forwards;
-    will-change: transform, opacity;
+    display: none;
 }
 
 #adminIdleLockScreen .admin-idle-ripple {
     position: absolute;
     left: 50%;
-    bottom: 12px;
-    width: 280px;
-    height: 164px;
+    bottom: 2px;
+    width: 156px;
+    height: 84px;
     transform: translateX(-50%);
     pointer-events: none;
     overflow: visible;
@@ -2943,10 +2905,9 @@ body.admin-login-modal-open {
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    border: 2px solid rgba(111, 231, 255, 0.82);
-    box-shadow: 0 0 34px rgba(56, 189, 248, 0.42), inset 0 0 18px rgba(56, 189, 248, 0.14);
-    background: radial-gradient(circle, transparent 60%, rgba(111, 231, 255, 0.12) 64%, transparent 70%);
-    mix-blend-mode: screen;
+    border: 1.5px solid rgba(111, 231, 255, 0.44);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.16);
+    background: radial-gradient(circle, transparent 60%, rgba(111, 231, 255, 0.05) 64%, transparent 70%);
     opacity: 0;
     transform: scale(0.72);
     will-change: transform, opacity;
@@ -2974,39 +2935,29 @@ body.admin-login-modal-open {
 #adminIdleLockScreen .admin-idle-cat {
     position: absolute;
     left: 50%;
-    bottom: 14px;
-    width: 352px;
-    height: 220px;
+    bottom: 6px;
+    width: 226px;
+    height: 142px;
     transform: translateX(-50%);
     z-index: 2;
-    filter: drop-shadow(0 0 14px rgba(96, 220, 255, 0.2));
-    animation: adminIdleCatBreathe var(--admin-idle-breathe-duration, 5.4s) ease-in-out infinite;
+    filter: drop-shadow(0 0 8px rgba(96, 220, 255, 0.14));
+    animation: adminIdleCatBreathe var(--admin-idle-breathe-duration, 7.8s) ease-in-out infinite;
 }
 
 #adminIdleLockScreen .admin-idle-cat::before {
-    content: '';
-    position: absolute;
-    left: 50%;
-    width: 240px;
-    bottom: 20px;
-    height: 58px;
-    transform: translateX(-50%);
-    border-radius: 50%;
-    background: radial-gradient(ellipse at center, rgba(125, 211, 252, 0.62), rgba(56, 189, 248, 0.26) 48%, transparent 80%);
-    filter: blur(11px);
-    opacity: 0.96;
+    content: none;
 }
 
 #adminIdleLockScreen .admin-idle-cat__shadow {
     position: absolute;
     left: 50%;
-    width: 220px;
-    bottom: 24px;
-    height: 26px;
+    width: 150px;
+    bottom: 12px;
+    height: 18px;
     transform: translateX(-50%);
     border-radius: 50%;
-    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.56), rgba(0, 0, 0, 0));
-    animation: adminIdleShadowBreathe var(--admin-idle-shadow-duration, 5.4s) ease-in-out infinite;
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.42), rgba(0, 0, 0, 0));
+    animation: adminIdleShadowBreathe var(--admin-idle-shadow-duration, 7.8s) ease-in-out infinite;
     z-index: 1;
 }
 
@@ -3021,22 +2972,35 @@ body.admin-login-modal-open {
 
 #adminIdleLockScreen .admin-idle-cat__body-fill,
 #adminIdleLockScreen .admin-idle-cat__head-fill,
+#adminIdleLockScreen .admin-idle-cat__belly-fill,
 #adminIdleLockScreen .admin-idle-cat__ear-fill,
 #adminIdleLockScreen .admin-idle-cat__paw-fill {
     fill: #060b1b;
 }
 
+#adminIdleLockScreen .admin-idle-cat__belly-fill {
+    fill: rgba(9, 20, 43, 0.9);
+}
+
+#adminIdleLockScreen .admin-idle-cat__cheek-fill {
+    fill: rgba(156, 215, 255, 0.24);
+}
+
 #adminIdleLockScreen .admin-idle-cat__rim {
     fill: none;
-    stroke: rgba(125, 211, 252, 0.3);
+    stroke: rgba(125, 211, 252, 0.28);
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
 
+#adminIdleLockScreen .admin-idle-cat__head-group {
+    transform-origin: 236px 156px;
+    animation: none;
+}
+
 #adminIdleLockScreen .admin-idle-cat__tail-group {
-    transform-origin: 232px 170px;
-    animation: adminIdleTailTwitch var(--admin-idle-tail-duration, 11s) ease-in-out infinite;
+    display: none;
 }
 
 #adminIdleLockScreen .admin-idle-cat__tail-stroke {
@@ -3057,19 +3021,19 @@ body.admin-login-modal-open {
 }
 
 #adminIdleLockScreen .admin-idle-cat__ear-group {
-    animation: adminIdleEarFlick var(--admin-idle-ear-duration, 12s) ease-in-out infinite;
+    animation: none;
     transform-box: fill-box;
 }
 
 #adminIdleLockScreen .admin-idle-cat__ear-group--left {
     --ear-rot: -2deg;
-    transform-origin: 220px 126px;
+    transform-origin: 224px 128px;
     animation-delay: -4.8s;
 }
 
 #adminIdleLockScreen .admin-idle-cat__ear-group--right {
     --ear-rot: 2deg;
-    transform-origin: 246px 126px;
+    transform-origin: 247px 127px;
     animation-delay: -1.7s;
 }
 
@@ -3087,9 +3051,21 @@ body.admin-login-modal-open {
 #adminIdleLockScreen .admin-idle-cat__mouth-stroke {
     fill: none;
     stroke: rgba(228, 246, 255, 0.84);
-    stroke-width: 2.1;
+    stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
+}
+
+#adminIdleLockScreen .admin-idle-cat__whisker-stroke {
+    fill: none;
+    stroke: rgba(181, 233, 255, 0.68);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+}
+
+#adminIdleLockScreen .admin-idle-cat__paw-group {
+    transform-origin: 216px 184px;
+    animation: none;
 }
 
 #adminIdleLockScreen .admin-idle-lock-screen__dots {
@@ -3121,6 +3097,40 @@ body.admin-login-modal-open {
     flex-wrap: wrap;
     gap: 10px;
     margin-top: 18px;
+}
+
+@media (max-width: 640px) {
+    #adminIdleLockScreen .admin-idle-lock-screen__panel {
+        padding: 22px 16px 24px;
+    }
+
+    #adminIdleLockScreen .admin-idle-lock-screen__scene {
+        width: min(360px, 100%);
+        height: 180px;
+    }
+
+    #adminIdleLockScreen .admin-idle-moon {
+        top: 16px;
+        right: 20px;
+        width: 44px;
+        height: 44px;
+    }
+
+    #adminIdleLockScreen .admin-idle-ripple {
+        width: 134px;
+        height: 70px;
+        bottom: 2px;
+    }
+
+    #adminIdleLockScreen .admin-idle-cat {
+        width: 194px;
+        height: 122px;
+        bottom: 4px;
+    }
+
+    #adminIdleLockScreen .admin-idle-zzz {
+        display: none;
+    }
 }
 
 @keyframes adminIdleCatBreathe {
@@ -5719,6 +5729,10 @@ body.admin-login-modal-open {
     grid-template-columns: 1fr;
 }
 
+.admin-comments-card {
+    grid-template-columns: 1fr;
+}
+
 .admin-reviews-list {
     display: grid;
     gap: 10px;
@@ -5824,6 +5838,138 @@ body.admin-login-modal-open {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+}
+
+.admin-comments-list {
+    display: grid;
+    gap: 10px;
+}
+
+.admin-comment-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-comment-filter-btn {
+    border: 1px solid rgba(129, 140, 248, 0.38);
+    background: rgba(10, 22, 45, 0.68);
+    color: #dbeafe;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 0.78rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.admin-comment-filter-btn:hover {
+    border-color: rgba(129, 140, 248, 0.7);
+    background: rgba(30, 41, 93, 0.72);
+    transform: translateY(-1px);
+}
+
+.admin-comment-filter-btn.is-active {
+    border-color: rgba(34, 197, 94, 0.75);
+    background: rgba(21, 128, 61, 0.36);
+    color: #dcfce7;
+}
+
+.admin-comment-row {
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 10px;
+    padding: 10px;
+    background: rgba(15, 23, 42, 0.5);
+    display: grid;
+    gap: 8px;
+}
+
+.admin-comment-row-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    color: #dbeafe;
+    font-size: 0.83rem;
+}
+
+.admin-comment-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-comment-meta-pill {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 999px;
+    padding: 2px 8px;
+    background: rgba(30, 41, 59, 0.45);
+    color: #cfe3f6;
+    font-size: 0.74rem;
+}
+
+.admin-comment-meta-pill.is-on {
+    border-color: rgba(34, 197, 94, 0.5);
+    background: rgba(21, 128, 61, 0.28);
+    color: #dcfce7;
+}
+
+.admin-comment-row-text {
+    margin: 0;
+    color: #cfe3f6;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+.admin-comment-replies-preview {
+    display: grid;
+    gap: 5px;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px dashed rgba(99, 102, 241, 0.4);
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.admin-comment-replies-preview p {
+    margin: 0;
+    color: #dbeafe;
+    font-size: 0.76rem;
+    line-height: 1.35;
+}
+
+.admin-comment-row-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.admin-comment-reply-wrap {
+    margin-top: 2px;
+}
+
+.admin-comment-reply-form {
+    display: grid;
+    gap: 8px;
+    border: 1px dashed rgba(129, 140, 248, 0.5);
+    border-radius: 8px;
+    padding: 8px;
+    background: rgba(7, 15, 34, 0.6);
+}
+
+.admin-comment-reply-form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 8px;
+    border: 1px solid rgba(129, 140, 248, 0.4);
+    background: rgba(2, 6, 23, 0.85);
+    color: #f8fafc;
+    padding: 8px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 58px;
 }
 
 .admin-list-header-actions {
@@ -7375,5 +7521,17 @@ body[data-page="reviews"] {
 
     .admin-pipeline-legend {
         grid-template-columns: 1fr;
+    }
+}
+
+@keyframes adminIdlePawNudge {
+    0%, 86%, 100% {
+        transform: translateY(0);
+    }
+    90% {
+        transform: translateY(-1.5px);
+    }
+    94% {
+        transform: translateY(0.8px);
     }
 }

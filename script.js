@@ -87,6 +87,9 @@ window.adminOrderFilterState = {
 window.adminReviewFilterState = {
     status: 'all'
 };
+window.adminCommentFilterState = {
+    status: 'all'
+};
 window.adminAnnouncementsEntries = [];
 window.adminCommentsEntries = [];
 window.adminCommentsUnsub = null;
@@ -3638,12 +3641,20 @@ function loadContactPage() {
             return;
         }
 
+        const adminCanManageComments = isAdminSessionActive();
+
         globalCommentsArray.forEach(comment => {
             const commentWrap = document.createElement('div');
             commentWrap.style.marginBottom = "15px";
             const isAnswered = comment.replies && comment.replies.length > 0;
             const statusBadge = isAnswered ? `<span style="font-size: 0.75rem; background: rgba(34, 197, 94, 0.2); color: #22c55e; padding: 3px 6px; border-radius: 4px; margin-left: 8px; vertical-align: middle;">✓ Answered</span>` : "";
             const borderColor = isAnswered ? "#22c55e" : "#00f2fe";
+            const adminCommentActions = adminCanManageComments
+                ? `
+                        <button type="button" class="delete-btn" data-id="${comment.id}" style="background: none; border: 1px solid #ef4444; color: #ef4444; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 0.75rem; font-family: inherit; transition: 0.2s;">Delete</button>
+                        <button type="button" class="reply-btn" data-id="${comment.id}" style="background: none; border: 1px solid #9b51e0; color: #9b51e0; border-radius: 4px; padding: 3px 10px; cursor: pointer; font-size: 0.8rem; font-family: inherit; transition: 0.2s;">Reply</button>
+                    `
+                : '';
 
             const commentItem = document.createElement('div');
             commentItem.style.cssText = `background: rgba(255,255,255,0.02); padding: 15px; border-left: 4px solid ${borderColor}; border-radius: 8px;`;
@@ -3651,8 +3662,7 @@ function loadContactPage() {
                 <div style="display: flex; justify-content: space-between; align-items: start;">
                     <div style="display: flex; align-items: center;"><strong style="color: #00f2fe; font-size: 1.05rem;">${escapeHTML(comment.name)}</strong>${statusBadge}</div>
                     <div style="display: flex; gap: 8px;">
-                        <button type="button" class="delete-btn" data-id="${comment.id}" style="background: none; border: 1px solid #ef4444; color: #ef4444; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 0.75rem; font-family: inherit; transition: 0.2s;">Delete</button>
-                        <button type="button" class="reply-btn" data-id="${comment.id}" style="background: none; border: 1px solid #9b51e0; color: #9b51e0; border-radius: 4px; padding: 3px 10px; cursor: pointer; font-size: 0.8rem; font-family: inherit; transition: 0.2s;">Reply</button>
+                        ${adminCommentActions}
                         <button type="button" class="report-btn" data-id="${comment.id}" style="background: none; border: 1px solid #f59e0b; color: #f59e0b; border-radius: 4px; padding: 3px 10px; cursor: pointer; font-size: 0.8rem; font-family: inherit; transition: 0.2s;">Report</button>
                     </div>
                 </div>
@@ -3675,18 +3685,20 @@ function loadContactPage() {
                 commentWrap.appendChild(repliesContainer);
             }
 
-            const replyFormWrap = document.createElement('div');
-            replyFormWrap.id = `reply-form-${comment.id}`;
-            replyFormWrap.style.cssText = "display: none; margin-left: 20px; margin-top: 10px;";
-            
-            replyFormWrap.innerHTML = `
-                <form class="mini-reply-form" data-target="${comment.id}" style="display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px; border: 1px dashed #9b51e0;">
-                    <p style="font-size: 0.8rem; color: #9b51e0; margin-bottom: 2px;">Posting as Admin</p>
-                    <textarea placeholder="Write your reply..." rows="2" required maxlength="500" style="padding: 8px; border-radius: 6px; border: 1px solid rgba(155, 81, 224, 0.4); background: rgba(0,0,0,0.6); color: white; font-family: inherit; resize: none; font-size: 0.85rem;"></textarea>
-                    <button type="submit" style="background: rgba(155, 81, 224, 0.2); border: 1px solid #9b51e0; color: white; padding: 8px; border-radius: 6px; cursor: pointer; font-family: inherit;">Post Secure Reply</button>
-                </form>
-            `;
-            commentWrap.appendChild(replyFormWrap);
+            if (adminCanManageComments) {
+                const replyFormWrap = document.createElement('div');
+                replyFormWrap.id = `reply-form-${comment.id}`;
+                replyFormWrap.style.cssText = "display: none; margin-left: 20px; margin-top: 10px;";
+                
+                replyFormWrap.innerHTML = `
+                    <form class="mini-reply-form" data-target="${comment.id}" style="display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px; border: 1px dashed #9b51e0;">
+                        <p style="font-size: 0.8rem; color: #9b51e0; margin-bottom: 2px;">Posting as Admin</p>
+                        <textarea placeholder="Write your reply..." rows="2" required maxlength="500" style="padding: 8px; border-radius: 6px; border: 1px solid rgba(155, 81, 224, 0.4); background: rgba(0,0,0,0.6); color: white; font-family: inherit; resize: none; font-size: 0.85rem;"></textarea>
+                        <button type="submit" style="background: rgba(155, 81, 224, 0.2); border: 1px solid #9b51e0; color: white; padding: 8px; border-radius: 6px; cursor: pointer; font-family: inherit;">Post Secure Reply</button>
+                    </form>
+                `;
+                commentWrap.appendChild(replyFormWrap);
+            }
             commentsFeed.appendChild(commentWrap);
         });
 
@@ -4333,7 +4345,7 @@ function showAdminIdleLockScreen() {
         }
     };
 
-    seedAtmosphere(document.getElementById('adminIdleStarField'), 42, 'admin-idle-star', (star) => {
+    seedAtmosphere(document.getElementById('adminIdleStarField'), 10, 'admin-idle-star', (star) => {
         const size = Math.random() * 2.3 + 1.2;
         star.style.left = `${(Math.random() * 100).toFixed(1)}%`;
         star.style.top = `${(Math.random() * 64).toFixed(1)}%`;
@@ -5243,6 +5255,71 @@ function setupAdminDashboardDelegation() {
             return;
         }
 
+        if (button.matches('.admin-comment-filter-btn')) {
+            const nextFilter = String(button.getAttribute('data-comment-filter') || 'all').toLowerCase();
+            if (!['all', 'needs-reply', 'has-replies', 'reviewed'].includes(nextFilter)) return;
+            window.adminCommentFilterState.status = nextFilter;
+            renderAdminCommentsManager();
+            return;
+        }
+
+        if (button.matches('.admin-copy-comment-btn')) {
+            const payload = button.getAttribute('data-comment');
+            if (!payload) return;
+            try {
+                await navigator.clipboard.writeText(decodeURIComponent(payload));
+                showAdminToast('Comment text copied.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Unable to copy comment text.', true);
+            }
+            return;
+        }
+
+        if (button.matches('.admin-delete-comment-btn')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before deleting comments.')) return;
+            const id = button.getAttribute('data-id');
+            if (!id || !confirm('Delete this comment permanently?')) return;
+            try {
+                await deleteDoc(doc(db, 'comments', id));
+                showAdminToast('Comment deleted.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to delete comment.', true);
+            }
+            return;
+        }
+
+        if (button.matches('.admin-mark-comment-reviewed-btn')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before updating comment review status.')) return;
+            const id = button.getAttribute('data-id');
+            if (!id) return;
+            const isReviewed = button.getAttribute('data-reviewed') === 'true';
+            try {
+                await updateDoc(doc(db, 'comments', id), { adminReviewed: !isReviewed });
+                showAdminToast(!isReviewed ? 'Comment marked reviewed.' : 'Comment marked not reviewed.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to update comment review status.', true);
+            }
+            return;
+        }
+
+        if (button.matches('.admin-reply-comment-btn')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before replying to comments.')) return;
+            const id = button.getAttribute('data-id');
+            if (!id) return;
+            const wrap = document.getElementById(`adminCommentReplyWrap-${id}`);
+            if (!wrap) return;
+            const currentlyHidden = wrap.hasAttribute('hidden');
+            if (currentlyHidden) {
+                wrap.removeAttribute('hidden');
+            } else {
+                wrap.setAttribute('hidden', 'hidden');
+            }
+            return;
+        }
+
         if (button.matches('.admin-toggle-review-approval-btn')) {
             if (!requireAdminSession('Please sign in with an authorized admin account before changing review approval.')) return;
             const id = button.getAttribute('data-id');
@@ -5360,6 +5437,54 @@ function setupAdminDashboardDelegation() {
             showAdminToast('Failed to update status.', true);
         }
     });
+
+    appViewport.addEventListener('submit', async (event) => {
+        const form = event.target instanceof Element ? event.target.closest('.admin-comment-reply-form') : null;
+        if (!(form instanceof HTMLFormElement)) return;
+        event.preventDefault();
+
+        if (!requireAdminSession('Session expired or unauthorized account. Please sign in as an approved admin.')) return;
+
+        const targetId = form.getAttribute('data-target-id');
+        const textarea = form.querySelector('textarea');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const text = String(textarea?.value || '').trim();
+
+        if (!targetId || !text) return;
+
+        const adminEmail = String(auth.currentUser?.email || '').toLowerCase();
+        let adminName = 'Admin Team';
+        if (adminEmail === 'musicisbae6547@gmail.com') adminName = 'Admin Husky 🎨';
+        if (adminEmail === 'horizontidegallery@gmail.com') adminName = 'Admin Horizon 🌊';
+        if (adminEmail === 'littlelopsidestudio@gmail.com') adminName = 'Admin Lopside 🧵';
+
+        const sourceComment = (Array.isArray(window.adminCommentsEntries) ? window.adminCommentsEntries : []).find((entry) => entry.id === targetId);
+        if (!sourceComment) return;
+
+        const newReplies = [...(Array.isArray(sourceComment.replies) ? sourceComment.replies : []), { name: adminName, text }];
+
+        if (submitBtn instanceof HTMLButtonElement) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Posting...';
+        }
+
+        try {
+            await updateDoc(doc(db, 'comments', targetId), { replies: newReplies, adminReviewed: true });
+            form.reset();
+            const wrap = document.getElementById(`adminCommentReplyWrap-${targetId}`);
+            if (wrap) wrap.setAttribute('hidden', 'hidden');
+            if (getPendingCommentId() === targetId) clearPendingCommentId();
+            showAdminToast('Comment reply posted.');
+        } catch (error) {
+            console.error(error);
+            showAdminToast('Failed to post comment reply.', true);
+        } finally {
+            if (submitBtn instanceof HTMLButtonElement) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Post Reply';
+            }
+        }
+    });
 }
 
 function applyAdminOrderFilters() {
@@ -5415,6 +5540,7 @@ function loadAdminDashboard() {
                     <button type="button" id="adminNavCommissions" class="admin-side-link" data-admin-scroll="adminQueueManagerCard" data-queue-tab-focus="commissions">Commissions</button>
                     <button type="button" id="adminNavRefunds" class="admin-side-link" data-admin-scroll="adminQueueManagerCard" data-queue-tab-focus="refunds">Refunds</button>
                     <button type="button" id="adminNavReviews" class="admin-side-link" data-admin-scroll="adminSectionCustomer">Reviews</button>
+                    <button type="button" id="adminNavComments" class="admin-side-link" data-admin-scroll="adminSectionCustomer">Comments</button>
                     <button type="button" id="adminNavDiscounts" class="admin-side-link" data-admin-scroll="adminDiscountManagerSection">Discounts</button>
                     <button type="button" id="adminNavAvailability" class="admin-side-link" data-admin-scroll="adminAvailabilitySection">Availability</button>
                     <button type="button" id="adminNavAnnouncements" class="admin-side-link" data-admin-scroll="adminAnnouncementsSection">Announcements</button>
@@ -5492,8 +5618,14 @@ function loadAdminDashboard() {
                         </div>
                         <div class="admin-card admin-reviews-card" id="adminReviewsManagerCard">
                             <h3 class="admin-card-title">Review Management</h3>
-                            <p class="admin-card-subtitle">Moderate comments directly here: review text, copy contact context, and delete unsafe or spam content.</p>
+                            <p class="admin-card-subtitle">Moderate testimonials only. Reviews stay separate from public comments.</p>
                             <div id="adminReviewsList" class="admin-reviews-list"></div>
+                        </div>
+
+                        <div class="admin-card admin-comments-card" id="adminCommentsManagerCard">
+                            <h3 class="admin-card-title">Comments Management</h3>
+                            <p class="admin-card-subtitle">Manage public comments separately from reviews: reply, delete spam/unsafe entries, and mark reviewed.</p>
+                            <div id="adminCommentsList" class="admin-comments-list"></div>
                         </div>
                     </div>
                 </details>
@@ -5669,33 +5801,38 @@ function loadAdminDashboard() {
                             <span class="admin-idle-cat__shadow"></span>
                             <svg class="admin-idle-cat__svg" viewBox="0 0 340 220" role="img" aria-label="Sleeping cat mascot">
                                 <g class="admin-idle-cat__art">
-                                    <ellipse cx="166" cy="154" rx="96" ry="50" class="admin-idle-cat__body-fill"></ellipse>
-                                    <ellipse cx="166" cy="154" rx="96" ry="50" class="admin-idle-cat__rim"></ellipse>
+                                    <path d="M68 157 C76 126, 109 110, 154 111 C195 112, 228 125, 242 147 C248 156, 249 168, 245 176 C240 186, 226 192, 207 194 C186 196, 162 194, 137 191 C113 188, 94 183, 81 176 C71 170, 66 164, 68 157 Z" class="admin-idle-cat__body-fill"></path>
+                                    <path d="M68 157 C76 126, 109 110, 154 111 C195 112, 228 125, 242 147 C248 156, 249 168, 245 176 C240 186, 226 192, 207 194 C186 196, 162 194, 137 191 C113 188, 94 183, 81 176 C71 170, 66 164, 68 157 Z" class="admin-idle-cat__rim"></path>
+                                    <ellipse cx="149" cy="158" rx="70" ry="30" class="admin-idle-cat__belly-fill"></ellipse>
 
-                                    <path d="M220 123 C245 121, 266 134, 268 154 C269 173, 253 186, 232 186 C218 186, 206 181, 199 171 C192 161, 193 148, 199 138 C204 130, 212 125, 220 123 Z" class="admin-idle-cat__head-fill"></path>
-                                    <path d="M220 123 C245 121, 266 134, 268 154 C269 173, 253 186, 232 186 C218 186, 206 181, 199 171 C192 161, 193 148, 199 138 C204 130, 212 125, 220 123 Z" class="admin-idle-cat__rim"></path>
+                                    <g class="admin-idle-cat__head-group">
+                                        <path d="M210 125 C228 116, 252 119, 267 134 C281 148, 281 169, 266 182 C252 194, 231 194, 215 184 C201 175, 194 158, 199 144 C201 136, 205 129, 210 125 Z" class="admin-idle-cat__head-fill"></path>
+                                        <path d="M210 125 C228 116, 252 119, 267 134 C281 148, 281 169, 266 182 C252 194, 231 194, 215 184 C201 175, 194 158, 199 144 C201 136, 205 129, 210 125 Z" class="admin-idle-cat__rim"></path>
 
-                                    <g class="admin-idle-cat__ear-group admin-idle-cat__ear-group--left">
-                                        <path d="M206 127 L220 102 L234 126 Z" class="admin-idle-cat__ear-fill"></path>
-                                        <path d="M206 127 L220 102 L234 126" class="admin-idle-cat__rim"></path>
+                                        <g class="admin-idle-cat__ear-group admin-idle-cat__ear-group--left">
+                                            <path d="M211 133 L224 106 L236 130 Z" class="admin-idle-cat__ear-fill"></path>
+                                            <path d="M211 133 L224 106 L236 130" class="admin-idle-cat__rim"></path>
+                                        </g>
+                                        <g class="admin-idle-cat__ear-group admin-idle-cat__ear-group--right">
+                                            <path d="M233 128 L248 104 L261 129 Z" class="admin-idle-cat__ear-fill"></path>
+                                            <path d="M233 128 L248 104 L261 129" class="admin-idle-cat__rim"></path>
+                                        </g>
+
+                                        <ellipse cx="220" cy="160" rx="5.2" ry="3.2" class="admin-idle-cat__cheek-fill"></ellipse>
+                                        <ellipse cx="251" cy="159" rx="5.2" ry="3.2" class="admin-idle-cat__cheek-fill"></ellipse>
+                                        <path d="M217 149 Q224 144 231 149" class="admin-idle-cat__eye-stroke"></path>
+                                        <path d="M238 149 Q245 144 252 149" class="admin-idle-cat__eye-stroke"></path>
+                                        <path d="M232.5 155.2 L237.6 155.2 L235.1 158.4 Z" class="admin-idle-cat__nose-fill"></path>
+                                        <path d="M235.1 159.3 Q231.8 162.5 228.8 159.6" class="admin-idle-cat__mouth-stroke"></path>
+                                        <path d="M235.1 159.3 Q238.4 162.5 241.4 159.6" class="admin-idle-cat__mouth-stroke"></path>
+                                        <path d="M214 157 C206 156, 200 159, 196 164" class="admin-idle-cat__whisker-stroke"></path>
+                                        <path d="M256 156 C264 155, 271 158, 275 163" class="admin-idle-cat__whisker-stroke"></path>
                                     </g>
-                                    <g class="admin-idle-cat__ear-group admin-idle-cat__ear-group--right">
-                                        <path d="M231 124 L246 101 L261 126 Z" class="admin-idle-cat__ear-fill"></path>
-                                        <path d="M231 124 L246 101 L261 126" class="admin-idle-cat__rim"></path>
+
+                                    <g class="admin-idle-cat__paw-group">
+                                        <rect x="194" y="178" width="24" height="10" rx="5" class="admin-idle-cat__paw-fill"></rect>
+                                        <rect x="218" y="179" width="24" height="10" rx="5" class="admin-idle-cat__paw-fill"></rect>
                                     </g>
-
-                                    <g class="admin-idle-cat__tail-group">
-                                        <path d="M232 170 C266 165, 292 173, 304 191 C310 201, 307 212, 298 216 C287 220, 277 213, 275 204 C273 195, 279 188, 289 187 C277 173, 257 166, 234 166 C223 166, 212 168, 202 172" class="admin-idle-cat__tail-stroke"></path>
-                                        <path d="M232 170 C266 165, 292 173, 304 191 C310 201, 307 212, 298 216 C287 220, 277 213, 275 204 C273 195, 279 188, 289 187 C277 173, 257 166, 234 166 C223 166, 212 168, 202 172" class="admin-idle-cat__tail-rim"></path>
-                                    </g>
-
-                                    <rect x="200" y="179" width="24" height="10" rx="5" class="admin-idle-cat__paw-fill"></rect>
-                                    <rect x="224" y="179" width="24" height="10" rx="5" class="admin-idle-cat__paw-fill"></rect>
-
-                                    <path d="M214 146 Q220 142 226 146" class="admin-idle-cat__eye-stroke"></path>
-                                    <path d="M236 146 Q242 142 248 146" class="admin-idle-cat__eye-stroke"></path>
-                                    <path d="M230 152 L235 152 L232.5 155.3 Z" class="admin-idle-cat__nose-fill"></path>
-                                    <path d="M232.5 156 Q238.3 158.8 232.5 161.6 Q238.3 164.4 232.5 167.2" class="admin-idle-cat__mouth-stroke"></path>
                                 </g>
                             </svg>
                         </div>
@@ -5730,6 +5867,7 @@ function loadAdminDashboard() {
     setupAdminRefundManager();
     setupAdminCommissionManager();
     renderAdminReviewsManager();
+    renderAdminCommentsManager();
     updateAdminDashboardOverview();
 
     window.adminOrderFilterState = { status: 'All', search: '' };
@@ -5944,10 +6082,12 @@ function loadAdminDashboard() {
         window.adminCommentsEntries = comments;
         updateAdminDashboardOverview();
         renderAdminReviewsManager();
+        renderAdminCommentsManager();
     }, () => {
         window.adminCommentsEntries = [];
         updateAdminDashboardOverview();
         renderAdminReviewsManager();
+        renderAdminCommentsManager();
     });
 
     document.getElementById('btnPreviewAnnouncementsPublic')?.addEventListener('click', (e) => cinematicTransition(e, loadAnnouncementsPage, '#updates'));
@@ -6002,6 +6142,13 @@ function loadAdminDashboard() {
         if (customerSection instanceof HTMLDetailsElement) customerSection.open = true;
     });
 
+    document.getElementById('adminNavComments')?.addEventListener('click', () => {
+        const customerSection = document.getElementById('adminSectionCustomer');
+        if (customerSection instanceof HTMLDetailsElement) customerSection.open = true;
+        const commentCard = document.getElementById('adminCommentsManagerCard');
+        if (commentCard) commentCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
     document.getElementById('filterAll')?.addEventListener('click', () => filterOrders('All'));
     document.getElementById('filterNew')?.addEventListener('click', () => filterOrders('Pending Review'));
     document.getElementById('filterInProgress')?.addEventListener('click', () => filterOrders('In Progress'));
@@ -6010,6 +6157,7 @@ function loadAdminDashboard() {
         applyRefundAdminFilters();
         applyCommissionAdminFilters();
         renderAdminReviewsManager();
+        renderAdminCommentsManager();
         updateAdminDashboardOverview();
         showAdminToast('Mission data refreshed.');
     });
@@ -6765,6 +6913,92 @@ function renderAdminReviewsManager() {
                     <button type="button" class="admin-btn-edit admin-toggle-review-safe-btn" data-id="${review.id}" data-safe="${isSafe ? 'true' : 'false'}">${isSafe ? 'Unset Safe For Public Display' : 'Safe For Public Display'}</button>
                     <button type="button" class="admin-btn-edit admin-copy-review-btn" data-review="${encodeURIComponent(excerpt || '')}">Copy Text</button>
                     <button type="button" class="admin-btn-delete admin-delete-review-btn" data-id="${review.id}">Delete</button>
+                </div>
+            </article>
+        `;
+    }).join('');
+}
+
+function renderAdminCommentsManager() {
+    const listEl = document.getElementById('adminCommentsList');
+    if (!listEl) return;
+
+    const allComments = Array.isArray(window.adminCommentsEntries)
+        ? window.adminCommentsEntries.filter((entry) => !isReviewEntry(entry)).sort((a, b) => {
+            const aTime = a.timestamp && a.timestamp.toDate ? a.timestamp.toDate().getTime() : 0;
+            const bTime = b.timestamp && b.timestamp.toDate ? b.timestamp.toDate().getTime() : 0;
+            return bTime - aTime;
+        })
+        : [];
+
+    const activeFilter = String(window.adminCommentFilterState?.status || 'all').toLowerCase();
+    const comments = allComments.filter((entry) => {
+        const hasReplies = Array.isArray(entry.replies) && entry.replies.length > 0;
+        const isReviewed = entry.adminReviewed === true;
+        if (activeFilter === 'needs-reply') return !hasReplies;
+        if (activeFilter === 'has-replies') return hasReplies;
+        if (activeFilter === 'reviewed') return isReviewed;
+        return true;
+    });
+
+    const countAll = allComments.length;
+    const countNeedsReply = allComments.filter((entry) => !(Array.isArray(entry.replies) && entry.replies.length > 0)).length;
+    const countHasReplies = allComments.filter((entry) => Array.isArray(entry.replies) && entry.replies.length > 0).length;
+    const countReviewed = allComments.filter((entry) => entry.adminReviewed === true).length;
+
+    const filterBarHtml = `
+        <div class="admin-comment-filter-row" role="group" aria-label="Filter comments">
+            <button type="button" class="admin-comment-filter-btn ${activeFilter === 'all' ? 'is-active' : ''}" data-comment-filter="all">All (${countAll})</button>
+            <button type="button" class="admin-comment-filter-btn ${activeFilter === 'needs-reply' ? 'is-active' : ''}" data-comment-filter="needs-reply">Needs Reply (${countNeedsReply})</button>
+            <button type="button" class="admin-comment-filter-btn ${activeFilter === 'has-replies' ? 'is-active' : ''}" data-comment-filter="has-replies">Has Replies (${countHasReplies})</button>
+            <button type="button" class="admin-comment-filter-btn ${activeFilter === 'reviewed' ? 'is-active' : ''}" data-comment-filter="reviewed">Reviewed (${countReviewed})</button>
+        </div>
+    `;
+
+    if (allComments.length === 0) {
+        listEl.innerHTML = `${filterBarHtml}<p style="color:#a2b7cc;">No public comments available yet.</p>`;
+        return;
+    }
+
+    if (comments.length === 0) {
+        listEl.innerHTML = `${filterBarHtml}<p style="color:#a2b7cc;">No comments match this filter.</p>`;
+        return;
+    }
+
+    listEl.innerHTML = filterBarHtml + comments.slice(0, 25).map((comment) => {
+        const ts = comment.timestamp && comment.timestamp.toDate ? comment.timestamp.toDate().getTime() : 0;
+        const hasReplies = Array.isArray(comment.replies) && comment.replies.length > 0;
+        const isReviewed = comment.adminReviewed === true;
+        const sourceLabel = String(comment.sourcePage || comment.page || comment.source || comment.entrySource || '').trim();
+        const sourceText = sourceLabel || 'Not provided';
+        const excerpt = String(comment.text || '').replace(/\s+/g, ' ').trim();
+        const shortText = excerpt.length > 190 ? `${excerpt.slice(0, 190)}...` : excerpt;
+        const displayName = comment.name || 'Guest';
+
+        return `
+            <article class="admin-comment-row">
+                <div class="admin-comment-row-head">
+                    <strong>${escapeHTML(displayName)}</strong>
+                    <span>${escapeHTML(getRelativeTimeLabel(ts))}</span>
+                </div>
+                <div class="admin-comment-meta-row">
+                    <span class="admin-comment-meta-pill">Source: ${escapeHTML(sourceText)}</span>
+                    <span class="admin-comment-meta-pill ${hasReplies ? 'is-on' : ''}">Replies: ${hasReplies ? 'Yes' : 'No'}</span>
+                    <span class="admin-comment-meta-pill ${isReviewed ? 'is-on' : ''}">Reviewed: ${isReviewed ? 'Yes' : 'No'}</span>
+                </div>
+                <p class="admin-comment-row-text">${escapeHTML(shortText || 'No text provided')}</p>
+                ${hasReplies ? `<div class="admin-comment-replies-preview">${(comment.replies || []).slice(-2).map((reply) => `<p><strong>${escapeHTML(reply.name || 'Admin')}:</strong> ${escapeHTML(reply.text || '')}</p>`).join('')}</div>` : ''}
+                <div class="admin-comment-row-actions">
+                    <button type="button" class="admin-btn-edit admin-reply-comment-btn" data-id="${comment.id}">Reply</button>
+                    <button type="button" class="admin-btn-delete admin-delete-comment-btn" data-id="${comment.id}">Delete</button>
+                    <button type="button" class="admin-btn-edit admin-copy-comment-btn" data-comment="${encodeURIComponent(excerpt || '')}">Copy Text</button>
+                    <button type="button" class="admin-btn-edit admin-mark-comment-reviewed-btn" data-id="${comment.id}" data-reviewed="${isReviewed ? 'true' : 'false'}">${isReviewed ? 'Unmark Reviewed' : 'Mark Reviewed'}</button>
+                </div>
+                <div class="admin-comment-reply-wrap" id="adminCommentReplyWrap-${comment.id}" hidden>
+                    <form class="admin-comment-reply-form" data-target-id="${comment.id}">
+                        <textarea rows="2" maxlength="500" required placeholder="Write admin reply..."></textarea>
+                        <button type="submit" class="admin-btn-publish">Post Reply</button>
+                    </form>
                 </div>
             </article>
         `;
