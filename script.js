@@ -84,6 +84,9 @@ window.adminOrderFilterState = {
     status: 'All',
     search: ''
 };
+window.adminReviewFilterState = {
+    status: 'all'
+};
 window.adminAnnouncementsEntries = [];
 window.adminCommentsEntries = [];
 window.adminCommentsUnsub = null;
@@ -1213,6 +1216,7 @@ function triggerConfetti() {
 function bindCoreMenuControls() {
     document.getElementById('whatWeDoBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadWhatWeDoPage, '#whatwedo'));
     document.getElementById('contactBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadContactPage, '#contact'));
+    document.getElementById('reviewsBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadReviewsPage, '#reviews'));
     document.getElementById('tosBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadTOSPage, '#tos'));
     document.getElementById('socialsBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadSocialsPage, '#socials'));
     
@@ -1468,6 +1472,7 @@ function loadHomePage() {
             <button type="button" class="nav-btn" id="tosBtn">Our TOS</button>
             <button type="button" class="nav-btn" id="whatWeDoBtn">What we do</button>
             <button type="button" class="nav-btn" id="socialsBtn">Meet the Artists + FAQ + How to Order</button>
+            <button type="button" class="nav-btn" id="reviewsBtn">Reviews</button>
             <button type="button" class="nav-btn" id="contactBtn">Contact us 💬</button>
         </nav>
 
@@ -3104,6 +3109,333 @@ function checkCommentSpam(newText, isAdmin) {
     return true;
 }
 
+function isReviewEntry(entry) {
+    if (!entry || typeof entry !== 'object') return false;
+    const kind = String(entry.entryType || entry.type || entry.kind || '').trim().toLowerCase();
+    if (kind === 'review' || kind === 'testimonial') return true;
+    if (entry.isReview === true) return true;
+    return false;
+}
+
+function isReviewApproved(entry) {
+    if (!entry || typeof entry !== 'object') return false;
+    if (entry.approved === true || entry.isApproved === true || entry.publicApproved === true) return true;
+    const moderationStatus = String(entry.moderationStatus || entry.status || '').trim().toLowerCase();
+    return moderationStatus === 'approved';
+}
+
+function isReviewSafeForPublic(entry) {
+    if (!entry || typeof entry !== 'object') return false;
+    if (entry.safeForPublic === true || entry.safeForPublicDisplay === true) return true;
+    const safetyStatus = String(entry.safetyStatus || '').trim().toLowerCase();
+    return safetyStatus === 'safe' || safetyStatus === 'approved-safe';
+}
+
+function getReviewDateLabel(entry) {
+    const timestamp = entry?.timestamp;
+    const rawDate = entry?.date;
+    if (timestamp?.toDate) {
+        return timestamp.toDate().toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+    if (rawDate) return formatDisplayDate(rawDate);
+    return 'Date unavailable';
+}
+
+function getReviewStarsHtml(value) {
+    const clamped = Math.max(1, Math.min(5, Number(value) || 0));
+    return '★'.repeat(clamped) + '☆'.repeat(5 - clamped);
+}
+
+function loadReviewsPage() {
+    clearBubbles();
+    bodyElement.setAttribute('data-theme', 'reviews');
+    bodyElement.setAttribute('data-page', 'reviews');
+    renderDynamicMoon();
+    renderDashboardStars();
+
+    const reviewImageUploadEnabled = true;
+
+    appViewport.innerHTML = `
+        <section class="reviews-page-shell" aria-label="Customer reviews page">
+            <header class="reviews-hero">
+                <h1>Customer Reviews</h1>
+                <h2>Five-star feedback from Horizon Tide clients</h2>
+                <p class="reviews-hero-note">SFW reviews and images only. Every submission goes through admin approval before it appears publicly.</p>
+                <div class="reviews-policy-strip" role="note" aria-label="Review page guidelines">
+                    <p><strong>SFW Notice:</strong> Keep text and images safe for public display.</p>
+                    <p><strong>Pending Approval:</strong> Your review is saved instantly, then reviewed by an admin before it shows on this page.</p>
+                </div>
+                <div class="reviews-hero-actions">
+                    <button type="button" id="reviewsBackHomeBtn" class="nav-btn">← Back to Horizon</button>
+                    <button type="button" id="reviewsJumpToFormBtn" class="nav-btn">Leave a Review</button>
+                    <button type="button" id="reviewsContactBtn" class="nav-btn reviews-secondary-btn">Contact</button>
+                </div>
+            </header>
+
+            <section class="reviews-display-shell" aria-labelledby="approvedReviewsHeading">
+                <div class="reviews-section-head">
+                    <h3 id="approvedReviewsHeading">Approved Reviews</h3>
+                    <p>Only approved submissions are displayed here.</p>
+                </div>
+                <div id="approvedReviewsFeed" class="reviews-card-grid">
+                    <p class="reviews-loading-msg">Loading approved reviews...</p>
+                </div>
+            </section>
+
+            <section id="leaveReviewSection" class="reviews-form-shell" aria-labelledby="leaveReviewHeading">
+                <div class="reviews-section-head">
+                    <h3 id="leaveReviewHeading">Submit Your Experience</h3>
+                    <p>Share your experience with Horizon Tide Gallery. Reviews are manually reviewed before appearing publicly.</p>
+                </div>
+
+                <form id="publicReviewForm" class="reviews-form-grid" novalidate>
+                    <div class="reviews-top-row reviews-field-full">
+                        <label class="reviews-field reviews-top-field">
+                            <span>Display Name</span>
+                            <input type="text" id="reviewDisplayName" maxlength="50" required placeholder="Your name or alias">
+                        </label>
+
+                        <div class="reviews-field reviews-star-fieldset reviews-top-field" id="reviewStarFieldset" role="group" aria-label="Star Rating">
+                            <div class="reviews-star-picker" role="radiogroup" aria-label="Choose a star rating from 1 to 5">
+                                <input type="radio" id="reviewRating5" name="reviewRatingStars" value="5" required>
+                                <label for="reviewRating5" aria-label="5 stars" title="5 stars">★</label>
+
+                                <input type="radio" id="reviewRating4" name="reviewRatingStars" value="4" required>
+                                <label for="reviewRating4" aria-label="4 stars" title="4 stars">★</label>
+
+                                <input type="radio" id="reviewRating3" name="reviewRatingStars" value="3" required>
+                                <label for="reviewRating3" aria-label="3 stars" title="3 stars">★</label>
+
+                                <input type="radio" id="reviewRating2" name="reviewRatingStars" value="2" required>
+                                <label for="reviewRating2" aria-label="2 stars" title="2 stars">★</label>
+
+                                <input type="radio" id="reviewRating1" name="reviewRatingStars" value="1" required>
+                                <label for="reviewRating1" aria-label="1 star" title="1 star">★</label>
+                            </div>
+                            <small id="reviewRatingPreview" class="reviews-rating-preview" aria-live="polite">Select a rating</small>
+                        </div>
+                    </div>
+
+                    <label class="reviews-field reviews-field-full">
+                        <span>Review</span>
+                        <textarea id="reviewText" rows="4" maxlength="500" required placeholder="Share your experience"></textarea>
+                    </label>
+
+                    <label class="reviews-field">
+                        <span>Commission Type (Optional)</span>
+                        <input type="text" id="reviewCommissionType" maxlength="80" placeholder="Example: Digital Art, Fursuit, Keychain">
+                    </label>
+
+                    <div class="reviews-field reviews-field-full reviews-upload-panel">
+                        <div class="reviews-upload-head">
+                            <span>Optional finished commission image</span>
+                            <small class="reviews-upload-sfw">SFW images only. Unsafe uploads are not shown publicly.</small>
+                        </div>
+                        <div class="reviews-image-options">
+                            <label class="reviews-image-upload" for="reviewImageFile">📷 Upload Finished Commission Image</label>
+                            <input type="file" id="reviewImageFile" class="reviews-image-input-hidden" accept="image/*" aria-label="Optional finished commission image upload">
+                            <small id="reviewImageSelectedName" class="reviews-image-selected">Selected: none</small>
+                            <span class="reviews-image-or">OR paste image URL</span>
+                            <input type="url" id="reviewImageLink" maxlength="300" placeholder="https://...">
+                        </div>
+                        <small class="reviews-image-note">Image is optional. If upload fails, your review can still submit with a link or without an image.</small>
+                    </div>
+
+                    <button type="submit" id="submitReviewBtn" class="nav-btn reviews-submit-btn reviews-field-full">Submit Review</button>
+                </form>
+            </section>
+        </section>
+    `;
+
+    document.getElementById('reviewsBackHomeBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
+    document.getElementById('reviewsContactBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadContactPage, '#contact'));
+    document.getElementById('reviewsJumpToFormBtn')?.addEventListener('click', () => {
+        document.getElementById('leaveReviewSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    const feedEl = document.getElementById('approvedReviewsFeed');
+    const reviewForm = document.getElementById('publicReviewForm');
+    const submitBtn = document.getElementById('submitReviewBtn');
+    const ratingRadios = Array.from(document.querySelectorAll('input[name="reviewRatingStars"]'));
+    const ratingPreview = document.getElementById('reviewRatingPreview');
+    const imageFileInput = document.getElementById('reviewImageFile');
+    const imageSelectedName = document.getElementById('reviewImageSelectedName');
+
+    const renderApprovedReviews = (items) => {
+        if (!feedEl) return;
+        if (!Array.isArray(items) || items.length === 0) {
+            feedEl.innerHTML = `
+                <div class="reviews-empty-msg" role="status">
+                    <span class="reviews-empty-stars" aria-hidden="true">★★★★★</span>
+                    <strong>No reviews have been approved yet.</strong>
+                    <p>Once approved, customer reviews and optional images will appear here.</p>
+                </div>
+            `;
+            return;
+        }
+
+        feedEl.innerHTML = items.map((review) => {
+            const displayName = review.displayName || review.name || 'Guest';
+            const rating = Math.max(1, Math.min(5, Number(review.rating) || Number(review.reviewRating) || 5));
+            const text = review.reviewText || review.text || '';
+            const commissionType = review.commissionType || review.itemType || '';
+            const reviewImageRaw = review.reviewImageUrl || review.commissionImageUrl || review.imageUrl || '';
+            const reviewImageUrl = /^https?:\/\//i.test(String(reviewImageRaw || '').trim())
+                ? String(reviewImageRaw).trim()
+                : '';
+            const dateLabel = getReviewDateLabel(review);
+            const stars = getReviewStarsHtml(rating);
+
+            return `
+                <article class="review-card" aria-label="Review by ${escapeHTML(displayName)}">
+                    <div class="review-card-head">
+                        <div class="review-identity">
+                            <strong class="review-name">${escapeHTML(displayName)}</strong>
+                            <span class="review-date">${escapeHTML(dateLabel)}</span>
+                        </div>
+                        <span class="review-approved-pill">Approved</span>
+                    </div>
+                    <div class="review-stars-row">
+                        <div class="review-stars" aria-label="${rating} out of 5 stars">${stars}</div>
+                        <span class="review-rating-value">${rating}.0/5</span>
+                    </div>
+                    <p class="review-body">${escapeHTML(text || 'No review text provided.')}</p>
+                    ${commissionType ? `<p class="review-meta review-commission-pill">${escapeHTML(commissionType)}</p>` : ''}
+                    ${reviewImageUrl ? `<a class="review-image-link" href="${encodeURI(reviewImageUrl)}" target="_blank" rel="noopener noreferrer"><img class="review-image-thumb" src="${encodeURI(reviewImageUrl)}" alt="Finished commission image by ${escapeHTML(displayName)}" loading="lazy"></a>` : ''}
+                </article>
+            `;
+        }).join('');
+    };
+
+    if (unsubscribeListener) unsubscribeListener();
+    const reviewsQuery = query(collection(db, 'comments'), orderBy('timestamp', 'desc'), limit(60));
+    unsubscribeListener = onSnapshot(reviewsQuery, (snapshot) => {
+        const approvedReviews = [];
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (!isReviewEntry(data)) return;
+            if (!isReviewApproved(data)) return;
+            if (!isReviewSafeForPublic(data)) return;
+            approvedReviews.push({ id: docSnap.id, ...data });
+        });
+        renderApprovedReviews(approvedReviews);
+    }, () => {
+        if (!feedEl) return;
+        feedEl.innerHTML = `
+            <div class="reviews-empty-msg" role="status">
+                <span class="reviews-empty-stars" aria-hidden="true">★★★★★</span>
+                <strong>No reviews have been approved yet.</strong>
+                <p>Once approved, customer reviews and optional images will appear here.</p>
+            </div>
+        `;
+    });
+
+    const updateRatingPreview = () => {
+        const selected = document.querySelector('input[name="reviewRatingStars"]:checked');
+        const rating = Math.max(1, Math.min(5, Number(selected?.value) || 0));
+        ratingPreview.textContent = rating > 0 ? `${rating} star${rating === 1 ? '' : 's'} selected` : 'Select a rating';
+    };
+
+    ratingRadios.forEach((input) => {
+        input.addEventListener('change', updateRatingPreview);
+    });
+
+    imageFileInput?.addEventListener('change', () => {
+        if (!imageSelectedName) return;
+        const selected = imageFileInput.files?.[0]?.name || 'none';
+        imageSelectedName.textContent = `Selected: ${selected}`;
+    });
+
+    reviewForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const displayName = document.getElementById('reviewDisplayName')?.value.trim() || '';
+        const selectedRatingInput = document.querySelector('input[name="reviewRatingStars"]:checked');
+        const rating = Math.max(1, Math.min(5, Number(selectedRatingInput?.value) || 0));
+        const reviewText = document.getElementById('reviewText')?.value.trim() || '';
+        const commissionType = document.getElementById('reviewCommissionType')?.value.trim() || '';
+        const imageLink = document.getElementById('reviewImageLink')?.value.trim() || '';
+        const imageFile = document.getElementById('reviewImageFile')?.files?.[0] || null;
+
+        if (!displayName || !rating || !reviewText) {
+            alert('Please complete display name, star rating, and review text.');
+            return;
+        }
+
+        if (containsProfanity(displayName) || containsProfanity(reviewText)) {
+            alert('Please keep reviews respectful and family-friendly.');
+            return;
+        }
+
+        if (imageLink && !/^https?:\/\//i.test(imageLink)) {
+            alert('Please enter a valid image link starting with http:// or https://');
+            return;
+        }
+
+        let reviewImageUrl = imageLink;
+
+        if (imageFile && reviewImageUploadEnabled) {
+            const isImageType = /^image\//i.test(imageFile.type || '');
+            if (!isImageType) {
+                alert('Uploaded file must be an image.');
+                return;
+            }
+
+            if (imageFile.size > (5 * 1024 * 1024)) {
+                alert('Please upload an image smaller than 5MB.');
+                return;
+            }
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+
+        try {
+            if (imageFile && reviewImageUploadEnabled) {
+                try {
+                    const safeName = (imageFile.name || 'review-image').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 90);
+                    const storageRef = ref(storage, `review-images/${Date.now()}_${safeName}`);
+                    await uploadBytes(storageRef, imageFile);
+                    reviewImageUrl = await getDownloadURL(storageRef);
+                } catch (uploadError) {
+                    reviewImageUrl = imageLink;
+                }
+            }
+
+            await addDoc(collection(db, 'comments'), {
+                entryType: 'review',
+                approved: false,
+                safeForPublic: false,
+                displayName,
+                name: displayName,
+                rating,
+                reviewRating: rating,
+                reviewText,
+                text: reviewText,
+                commissionType,
+                reviewImageUrl: reviewImageUrl || '',
+                timestamp: serverTimestamp(),
+                replies: []
+            });
+            reviewForm.reset();
+            if (ratingPreview) ratingPreview.textContent = 'Select a rating';
+            if (imageSelectedName) imageSelectedName.textContent = 'Selected: none';
+            alert('Thank you! Your review was submitted and is pending admin approval.');
+        } catch (error) {
+            alert('Unable to submit your review right now. Please try again in a moment.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Review';
+        }
+    });
+
+    attachInnerScrollListener();
+}
+
 function loadContactPage() {
     clearBubbles();
     bodyElement.setAttribute('data-theme', 'horizon');
@@ -3154,8 +3486,14 @@ function loadContactPage() {
         if (unsubscribeListener) unsubscribeListener();
         const q = query(collection(db, "comments"), orderBy("timestamp", "desc"), limit(commentDisplayLimit));
         unsubscribeListener = onSnapshot(q, (snapshot) => {
-            globalCommentsArray = [];
-            snapshot.forEach((docSnap) => { globalCommentsArray.push({ id: docSnap.id, ...docSnap.data() }); });
+            const comments = [];
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                if (!isReviewEntry(data)) {
+                    comments.push({ id: docSnap.id, ...data });
+                }
+            });
+            globalCommentsArray = comments;
             syncPendingCommentStatus();
             renderFeedList();
         });
@@ -4897,6 +5235,44 @@ function setupAdminDashboardDelegation() {
             return;
         }
 
+        if (button.matches('.admin-review-filter-btn')) {
+            const nextFilter = String(button.getAttribute('data-filter') || 'all').toLowerCase();
+            if (!['all', 'pending', 'approved', 'safe'].includes(nextFilter)) return;
+            window.adminReviewFilterState.status = nextFilter;
+            renderAdminReviewsManager();
+            return;
+        }
+
+        if (button.matches('.admin-toggle-review-approval-btn')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before changing review approval.')) return;
+            const id = button.getAttribute('data-id');
+            if (!id) return;
+            const currentApproved = button.getAttribute('data-approved') === 'true';
+            try {
+                await updateDoc(doc(db, 'comments', id), { approved: !currentApproved });
+                showAdminToast(!currentApproved ? 'Review marked approved.' : 'Review approval removed.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to update review approval.', true);
+            }
+            return;
+        }
+
+        if (button.matches('.admin-toggle-review-safe-btn')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before changing review safety.')) return;
+            const id = button.getAttribute('data-id');
+            if (!id) return;
+            const currentSafe = button.getAttribute('data-safe') === 'true';
+            try {
+                await updateDoc(doc(db, 'comments', id), { safeForPublic: !currentSafe });
+                showAdminToast(!currentSafe ? 'Safe For Public Display enabled.' : 'Safe For Public Display removed.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to update review safety flag.', true);
+            }
+            return;
+        }
+
         if (button.matches('.admin-view-details-btn')) {
             const orderId = button.getAttribute('data-order-id');
             const detailsPanel = orderId ? document.getElementById(`details-${orderId}`) : null;
@@ -6312,31 +6688,81 @@ function renderAdminReviewsManager() {
     const listEl = document.getElementById('adminReviewsList');
     if (!listEl) return;
 
-    const reviews = Array.isArray(window.adminCommentsEntries)
-        ? [...window.adminCommentsEntries].sort((a, b) => {
+    const allReviews = Array.isArray(window.adminCommentsEntries)
+        ? window.adminCommentsEntries.filter((entry) => isReviewEntry(entry)).sort((a, b) => {
             const aTime = a.timestamp && a.timestamp.toDate ? a.timestamp.toDate().getTime() : 0;
             const bTime = b.timestamp && b.timestamp.toDate ? b.timestamp.toDate().getTime() : 0;
             return bTime - aTime;
         })
         : [];
 
-    if (reviews.length === 0) {
-        listEl.innerHTML = '<p style="color:#a2b7cc;">No reviews/comments available yet.</p>';
+    const activeFilter = String(window.adminReviewFilterState?.status || 'all').toLowerCase();
+    const reviews = allReviews.filter((review) => {
+        const isApproved = isReviewApproved(review);
+        const isSafe = isReviewSafeForPublic(review);
+        if (activeFilter === 'pending') return !isApproved;
+        if (activeFilter === 'approved') return isApproved;
+        if (activeFilter === 'safe') return isSafe;
+        return true;
+    });
+
+    const countAll = allReviews.length;
+    const countPending = allReviews.filter((review) => !isReviewApproved(review)).length;
+    const countApproved = allReviews.filter((review) => isReviewApproved(review)).length;
+    const countSafe = allReviews.filter((review) => isReviewSafeForPublic(review)).length;
+
+    const filterBarHtml = `
+        <div class="admin-review-filter-row" role="group" aria-label="Filter reviews">
+            <button type="button" class="admin-review-filter-btn ${activeFilter === 'all' ? 'is-active' : ''}" data-filter="all">All (${countAll})</button>
+            <button type="button" class="admin-review-filter-btn ${activeFilter === 'pending' ? 'is-active' : ''}" data-filter="pending">Pending (${countPending})</button>
+            <button type="button" class="admin-review-filter-btn ${activeFilter === 'approved' ? 'is-active' : ''}" data-filter="approved">Approved (${countApproved})</button>
+            <button type="button" class="admin-review-filter-btn ${activeFilter === 'safe' ? 'is-active' : ''}" data-filter="safe">Safe (${countSafe})</button>
+        </div>
+    `;
+
+    if (allReviews.length === 0) {
+        listEl.innerHTML = `${filterBarHtml}<p style="color:#a2b7cc;">No review submissions available yet.</p>`;
         return;
     }
 
-    listEl.innerHTML = reviews.slice(0, 20).map((review) => {
+    if (reviews.length === 0) {
+        listEl.innerHTML = `${filterBarHtml}<p style="color:#a2b7cc;">No reviews match this filter.</p>`;
+        return;
+    }
+
+    listEl.innerHTML = filterBarHtml + reviews.slice(0, 20).map((review) => {
         const ts = review.timestamp && review.timestamp.toDate ? review.timestamp.toDate().getTime() : 0;
-        const excerpt = String(review.text || '').replace(/\s+/g, ' ').trim();
+        const excerpt = String(review.reviewText || review.text || '').replace(/\s+/g, ' ').trim();
         const shortText = excerpt.length > 170 ? `${excerpt.slice(0, 170)}...` : excerpt;
+        const displayName = review.displayName || review.name || 'Guest';
+        const rating = Math.max(1, Math.min(5, Number(review.rating) || Number(review.reviewRating) || 0));
+        const ratingStars = rating > 0 ? '★'.repeat(rating) + '☆'.repeat(5 - rating) : 'Not rated';
+        const commissionType = String(review.commissionType || review.itemType || '').trim();
+        const reviewImageRaw = review.reviewImageUrl || review.commissionImageUrl || review.imageUrl || '';
+        const reviewImageUrl = /^https?:\/\//i.test(String(reviewImageRaw || '').trim())
+            ? String(reviewImageRaw).trim()
+            : '';
+        const isApproved = isReviewApproved(review);
+        const isSafe = isReviewSafeForPublic(review);
         return `
             <article class="admin-review-row">
                 <div class="admin-review-row-head">
-                    <strong>${escapeHTML(review.name || 'Guest')}</strong>
+                    <strong>${escapeHTML(displayName)}</strong>
                     <span>${escapeHTML(getRelativeTimeLabel(ts))}</span>
                 </div>
+                <div class="admin-review-meta-row">
+                    <span class="admin-review-stars" aria-label="${rating || 0} out of 5 stars">${escapeHTML(ratingStars)}</span>
+                    ${commissionType ? `<span class="admin-review-service">${escapeHTML(commissionType)}</span>` : ''}
+                </div>
+                <div class="admin-review-flags">
+                    <span class="admin-review-flag ${isApproved ? 'is-on' : ''}">Approved: ${isApproved ? 'Yes' : 'No'}</span>
+                    <span class="admin-review-flag ${isSafe ? 'is-on' : ''}">Safe For Public Display: ${isSafe ? 'Yes' : 'No'}</span>
+                </div>
                 <p class="admin-review-row-text">${escapeHTML(shortText || 'No text provided')}</p>
+                ${reviewImageUrl ? `<a class="admin-review-image-link" href="${encodeURI(reviewImageUrl)}" target="_blank" rel="noopener noreferrer"><img class="admin-review-image-thumb" src="${encodeURI(reviewImageUrl)}" alt="Review image by ${escapeHTML(displayName)}" loading="lazy"></a>` : ''}
                 <div class="admin-review-row-actions">
+                    <button type="button" class="admin-btn-edit admin-toggle-review-approval-btn" data-id="${review.id}" data-approved="${isApproved ? 'true' : 'false'}">${isApproved ? 'Unapprove' : 'Approve'}</button>
+                    <button type="button" class="admin-btn-edit admin-toggle-review-safe-btn" data-id="${review.id}" data-safe="${isSafe ? 'true' : 'false'}">${isSafe ? 'Unset Safe For Public Display' : 'Safe For Public Display'}</button>
                     <button type="button" class="admin-btn-edit admin-copy-review-btn" data-review="${encodeURIComponent(excerpt || '')}">Copy Text</button>
                     <button type="button" class="admin-btn-delete admin-delete-review-btn" data-id="${review.id}">Delete</button>
                 </div>
@@ -6695,7 +7121,7 @@ const applyResponsiveMusicPlacement = () => {
         font-size: 1rem;
         box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2); 
         transition: all 0.3s ease;
-        ${isMobile ? `top: ${topOffset}px; right: 14px; bottom: auto;` : 'bottom: 20px; right: 72px; top: auto;'}
+        ${isMobile ? `top: ${topOffset}px; right: 14px; bottom: auto;` : 'bottom: var(--floating-bottom-clearance, 20px); right: 20px; top: auto;'}
     `;
 };
 
@@ -6810,6 +7236,7 @@ const routes = {
     '#preorder': loadPreorderPage,
     '#pricing': loadPricingPage,
     '#updates': loadAnnouncementsPage,
+    '#reviews': loadReviewsPage,
     '#contact': loadContactPage,
     '#tos': loadTOSPage,
     '#socials': loadSocialsPage,
