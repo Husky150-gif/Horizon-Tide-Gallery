@@ -19,7 +19,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=28">
+    <link rel="stylesheet" href="style.css?v=31">
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
@@ -222,24 +222,21 @@
                     <label for="adminAnnounceVisible" class="admin-checkbox-label">Visible to public?</label>
                 </div>
 
+                <div class="admin-checkbox-group">
+                    <input type="checkbox" id="adminAnnouncePinned" class="admin-checkbox">
+                    <label for="adminAnnouncePinned" class="admin-checkbox-label">Pin to top?</label>
+                </div>
+
                 <div class="admin-submit-wrapper">
                     <button type="submit" id="btnSaveAnnouncement" class="admin-btn-publish">Publish Announcement</button>
+                    <button type="button" id="btnPreviewAnnouncementsPublic" class="admin-btn-edit">Preview Public Page</button>
                 </div>
             </form>
 
             <div class="existing-announcements-admin">
                 <h4 class="existing-announcements-title">Existing Announcements</h4>
                 <div id="adminAnnouncementsList" class="admin-announcements-list">
-                    <div class="admin-announce-item">
-                        <div class="announce-item-info">
-                            <strong class="announce-item-title">Sample Announcement Title</strong>
-                            <span class="announce-item-meta">June 15, 2026 - [Visible]</span>
-                        </div>
-                        <div class="announce-item-actions">
-                            <button type="button" class="admin-btn-edit">Edit</button>
-                            <button type="button" class="admin-btn-delete">Delete</button>
-                        </div>
-                    </div>
+                    <p class="admin-detail">Announcements will appear here after loading.</p>
                 </div>
             </div>
         </div>
@@ -310,7 +307,7 @@
         </div>
     </template>
 
-    <script type="module" src="script.js?v=30"></script>
+    <script type="module" src="script.js?v=32"></script>
 
     <script>
         window.addEventListener('load', function() {

@@ -5,7 +5,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp, doc, updateDoc, deleteDoc, where, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
-import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence, inMemoryPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
 // === INITIALIZE EMAILJS ===
 emailjs.init("3stRxyurkRVP3ym8o");
@@ -60,6 +60,7 @@ window.publicRefundsUnsub = null;
 window.publicCommissionsUnsub = null;
 window.announcementsUnsubscribe = null;
 window.currentEditingAnnounceId = null;
+window.currentEditingDiscountId = null;
 window.currentEditingRefundId = null;
 window.currentEditingCommissionId = null;
 window.adminRefundEntries = [];
@@ -70,6 +71,27 @@ const ADMIN_EMAIL_ALLOWLIST = new Set([
     'horizontidegallery@gmail.com',
     'littlelopsidestudio@gmail.com'
 ]);
+
+const ADMIN_PERSISTENCE_PREF_KEY = 'hz_admin_stay_signed_in';
+const ADMIN_REVENUE_STATUSES = new Set(['accepted', 'approved', 'paid', 'in progress', 'finished', 'shipped']);
+const ADMIN_IDLE_TIMEOUT_MS = 10 * 60 * 1000;
+const NAVIGATION_ENTRY = typeof performance !== 'undefined' && typeof performance.getEntriesByType === 'function'
+    ? performance.getEntriesByType('navigation')[0]
+    : null;
+const IS_HARD_RELOAD = NAVIGATION_ENTRY?.type === 'reload';
+
+window.adminOrderFilterState = {
+    status: 'All',
+    search: ''
+};
+window.adminAnnouncementsEntries = [];
+window.adminCommentsEntries = [];
+window.adminCommentsUnsub = null;
+
+let adminIdleTimerId = null;
+let adminIdleActivityController = null;
+let adminIdleLocked = false;
+let adminIdleZzzTimerId = null;
 
 function isAdminSessionActive() {
     const user = auth.currentUser;
@@ -507,7 +529,11 @@ function attachGlobalSettingsListener() {
             
             // Support for new activeSales array format
             if (data.activeSales && Array.isArray(data.activeSales)) {
-                window.activeSales = data.activeSales;
+                window.activeSales = data.activeSales.map((sale, index) => ({
+                    ...sale,
+                    id: sale.id || `sale_${index}`,
+                    enabled: sale.enabled !== false
+                }));
             }
             
             // Backward compatibility for legacy single-discount format
@@ -518,7 +544,8 @@ function attachGlobalSettingsListener() {
                         id: 'legacy_sale',
                         target: data.target || 'all',
                         percentage: data.percentage,
-                        message: data.message || "Sale Event"
+                        message: data.message || "Sale Event",
+                        enabled: true
                     });
                 }
             }
@@ -545,6 +572,7 @@ function getBestDiscount(type) {
     
     let bestPct = 0;
     window.activeSales.forEach(sale => {
+        if (sale.enabled === false) return;
         if (sale.target === 'all' || sale.target === type) {
             if (sale.percentage > bestPct) bestPct = sale.percentage;
         }
@@ -554,12 +582,15 @@ function getBestDiscount(type) {
 
 function updateDiscountUI() {
     const banner = document.getElementById('globalSaleBanner');
+    const activeVisibleSales = Array.isArray(window.activeSales)
+        ? window.activeSales.filter((sale) => sale.enabled !== false)
+        : [];
     
     if(banner) {
-        if (window.activeSales && window.activeSales.length > 0) {
+        if (activeVisibleSales.length > 0) {
             // Display the highest value discount globally
-            let displaySale = window.activeSales[0];
-            window.activeSales.forEach(sale => {
+            let displaySale = activeVisibleSales[0];
+            activeVisibleSales.forEach(sale => {
                 if (sale.percentage > displaySale.percentage) displaySale = sale;
             });
             
@@ -1087,6 +1118,8 @@ document.addEventListener('mousemove', (e) => {
 // ==========================================
 
 function cinematicTransition(event, targetPageFunction, hashTarget = '') {
+    stopAdminIdleLock();
+
     let btn = null;
     const isMobile = window.innerWidth <= 768;
     
@@ -1399,10 +1432,18 @@ function attachCharCounters() {
     });
 }
 
+function setEnvironmentInteractivity(pageName) {
+    const bgEnvironment = document.querySelector('.bg-environment');
+    if (!(bgEnvironment instanceof HTMLElement)) return;
+    bgEnvironment.style.pointerEvents = pageName === 'home' ? 'auto' : 'none';
+}
+
 function loadHomePage() {
     clearBubbles();
     bodyElement.setAttribute('data-theme', 'horizon');
     bodyElement.setAttribute('data-page', 'home');
+    setEnvironmentInteractivity('home');
+    if (appViewport) appViewport.style.pointerEvents = '';
     renderHomeStars();
     renderInteractiveStars();
     renderDynamicMoon();
@@ -2567,12 +2608,27 @@ function loadAnnouncementsPage() {
     if (window.announcementsUnsubscribe) window.announcementsUnsubscribe();
     const q = query(collection(db, "announcements"), orderBy("timestamp", "desc"));
     window.announcementsUnsubscribe = onSnapshot(q, (snapshot) => {
+        const visibleAnnouncements = [];
+
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (!data.visible) return;
+            visibleAnnouncements.push({ id: docSnap.id, ...data });
+        });
+
+        visibleAnnouncements.sort((a, b) => {
+            if ((a.pinned ? 1 : 0) !== (b.pinned ? 1 : 0)) {
+                return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
+            }
+            const aTime = a.timestamp && a.timestamp.toDate ? a.timestamp.toDate().getTime() : 0;
+            const bTime = b.timestamp && b.timestamp.toDate ? b.timestamp.toDate().getTime() : 0;
+            return bTime - aTime;
+        });
+
         let html = '';
         let hasVisible = false;
-        
-        snapshot.forEach(docSnap => {
-            const data = docSnap.data();
-            if(!data.visible) return; 
+
+        visibleAnnouncements.forEach((data) => {
             hasVisible = true;
             
             let badgeColor = "#00f2fe";
@@ -2587,7 +2643,7 @@ function loadAnnouncementsPage() {
                         <h3 class="announcement-title" style="color: ${badgeColor};">${escapeHTML(data.title)}</h3>
                         <span class="announcement-date">${escapeHTML(data.date)}</span>
                     </div>
-                    <span class="announcement-badge" data-type="${escapeHTML(data.category)}">${escapeHTML(data.category)}</span>
+                    <span class="announcement-badge" data-type="${escapeHTML(data.category)}">${escapeHTML(data.category)}${data.pinned ? ' | Pinned' : ''}</span>
                     <p class="announcement-body">${escapeHTML(data.body)}</p>
                 </div>
             `;
@@ -2788,6 +2844,13 @@ function inferCommissionQueueOwner(commission) {
     return 'husky';
 }
 
+function normalizeCommissionQueueOwnerValue(value, commission = null) {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized === 'husky' || normalized === "husky's queue") return 'husky';
+    if (normalized === 'lopside' || normalized === "lopside's queue") return 'lopside';
+    return commission ? inferCommissionQueueOwner(commission) : 'husky';
+}
+
 function renderPublicCommissionArtistQueues(lopsideContainer, huskyContainer, items) {
     const visibleQueue = items.filter((item) => String(item.queueStatus || '').toLowerCase() !== 'finished');
     const lopsideQueue = visibleQueue.filter((item) => inferCommissionQueueOwner(item) === 'lopside');
@@ -2898,13 +2961,46 @@ function renderPublicRefundCard(refund, index = 0) {
             </div>
             <div class="refund-card-footer">
                 <div class="refund-card-footer-top">
-                    <span class="refund-chip refund-chip-detail" style="background:${getDetailBadgeColor(refund.detailedStatus)};">${escapeHTML(refund.detailedStatus || 'Pending')}</span>
-                    <span class="refund-source-tag">Source: ${escapeHTML(refund.sourceType || 'Other')}</span>
+                    <div class="refund-chip refund-chip-detail" style="background:${getDetailBadgeColor(refund.detailedStatus)};">${escapeHTML(refund.detailedStatus || 'Pending')}</div>
+                    <span class="refund-source-tag">${escapeHTML(refund.sourceType || 'Manual Entry')}</span>
                 </div>
                 <p class="refund-notes">${escapeHTML(refund.publicNotes || 'No public notes available.')}</p>
             </div>
         </article>
     `;
+}
+
+function openAdminQueueTab(tabName, options = {}) {
+    const { scroll = true, openDetails = true } = options;
+    const normalizedTab = tabName === 'commissions' ? 'commissions' : 'refunds';
+    const managerCard = document.getElementById('adminQueueManagerCard');
+    if (!managerCard) return;
+
+    if (openDetails) {
+        let current = managerCard.parentElement;
+        while (current) {
+            if (current instanceof HTMLDetailsElement) current.open = true;
+            current = current.parentElement;
+        }
+    }
+
+    document.querySelectorAll('.queue-manager-tab-btn').forEach((button) => {
+        if (!(button instanceof HTMLElement)) return;
+        const isActive = button.getAttribute('data-queue-tab') === normalizedTab;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+
+    document.querySelectorAll('.queue-manager-panel').forEach((panel) => {
+        if (!(panel instanceof HTMLElement)) return;
+        const isActive = panel.getAttribute('data-queue-panel') === normalizedTab;
+        panel.classList.toggle('is-hidden', !isActive);
+        panel.toggleAttribute('hidden', !isActive);
+    });
+
+    if (scroll) {
+        managerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 function checkPreorderSpam() {
@@ -2917,31 +3013,30 @@ function checkPreorderSpam() {
 }
 
 function getPendingCommentId() {
-    return localStorage.getItem('hz_comment_pending_id');
+    return localStorage.getItem('hz_pending_comment_id');
 }
 
-function setPendingCommentId(commentId) {
-    if (typeof commentId === 'string' && commentId.length > 0) {
-        localStorage.setItem('hz_comment_pending_id', commentId);
-    }
+function setPendingCommentId(id) {
+    if (!id) return;
+    localStorage.setItem('hz_pending_comment_id', id);
 }
 
 function clearPendingCommentId() {
-    localStorage.removeItem('hz_comment_pending_id');
+    localStorage.removeItem('hz_pending_comment_id');
 }
 
 function syncPendingCommentStatus() {
     const pendingId = getPendingCommentId();
     if (!pendingId) return;
-    const pendingComment = globalCommentsArray.find(c => c.id === pendingId);
-    if (pendingComment && Array.isArray(pendingComment.replies) && pendingComment.replies.length > 0) {
+    const pendingComment = globalCommentsArray.find((comment) => comment.id === pendingId);
+    if (!pendingComment) return;
+    if (Array.isArray(pendingComment.replies) && pendingComment.replies.length > 0) {
         clearPendingCommentId();
     }
 }
 
 function checkCommentSpam(newText, isAdmin) {
     if (isAdmin) return true; // Admins bypass spam checks
-    
     const pendingComment = getPendingCommentId();
     if (pendingComment) {
         return "Please wait for your previous message to receive a reply before sending another comment.";
@@ -2950,12 +3045,19 @@ function checkCommentSpam(newText, isAdmin) {
     const now = Date.now();
     const newTextLower = newText.toLowerCase();
     let history = JSON.parse(localStorage.getItem('hz_comment_history') || '[]');
-    
+
     // Block links and spammy referral patterns in comments
     const blockedLinkPatterns = [
-        'http://', 'https://', 'www.', 'discord.gg', 'discordapp.com',
-        'instagram.com', 'tiktok.com', 'x.com', 'twitter.com', 'snapchat.com',
-        'paypal.me', 'cash.app', 'ko-fi.com'
+        'http://',
+        'https://',
+        'www.',
+        '.com',
+        '.gg/',
+        'discord.gg',
+        'telegram',
+        'cashapp',
+        'venmo',
+        'paypal.me'
     ];
     if (blockedLinkPatterns.some(pattern => newTextLower.includes(pattern))) {
         return "Links are not allowed in comments. Please keep your message text-only.";
@@ -2967,7 +3069,6 @@ function checkCommentSpam(newText, isAdmin) {
     }
 
     const threatPhrases = [
-        'i will kill', 'i\'ll kill', 'im gonna kill', 'i\'m gonna kill',
         'kill you', 'you are going to die', 'youre going to die', 'you\'re going to die',
         'i will hurt', 'i\'ll hurt', 'hurt you', 'i am going to kill',
         'i am going to hurt', 'i will stab', 'i will shoot', 'i will bomb',
@@ -3637,8 +3738,10 @@ function closeAdminLoginModal() {
     document.body.classList.remove('admin-login-modal-open');
 }
 
-function openAdminLoginModal() {
+function openAdminLoginModal(options = {}) {
     closeAdminLoginModal();
+
+    const { onSuccess } = options;
 
     const modal = document.createElement('div');
     modal.id = 'adminLoginModal';
@@ -3655,6 +3758,10 @@ function openAdminLoginModal() {
                 <input type="email" id="adminLoginEmail" class="admin-login-modal__input" autocomplete="username" placeholder="you@example.com" required>
                 <label class="admin-login-modal__label" for="adminLoginPassword">Password</label>
                 <input type="password" id="adminLoginPassword" class="admin-login-modal__input" autocomplete="current-password" placeholder="Password" required>
+                <label class="admin-login-modal__remember">
+                    <input type="checkbox" id="adminLoginRemember" class="admin-login-modal__remember-input">
+                    <span>Stay Signed In</span>
+                </label>
                 <p id="adminLoginError" class="admin-login-modal__error" aria-live="polite"></p>
                 <div class="admin-login-modal__actions">
                     <button type="button" id="adminLoginCancelBtn" class="admin-login-modal__btn admin-login-modal__btn--secondary">Cancel</button>
@@ -3670,6 +3777,7 @@ function openAdminLoginModal() {
     const form = document.getElementById('adminLoginForm');
     const emailInput = document.getElementById('adminLoginEmail');
     const passwordInput = document.getElementById('adminLoginPassword');
+    const rememberInput = document.getElementById('adminLoginRemember');
     const errorEl = document.getElementById('adminLoginError');
     const submitBtn = document.getElementById('adminLoginSubmitBtn');
     const cancelBtn = document.getElementById('adminLoginCancelBtn');
@@ -3694,6 +3802,10 @@ function openAdminLoginModal() {
     };
     document.addEventListener('keydown', handleEscape);
 
+    if (rememberInput) {
+        rememberInput.checked = localStorage.getItem(ADMIN_PERSISTENCE_PREF_KEY) === '1';
+    }
+
     form?.addEventListener('submit', async (event) => {
         event.preventDefault();
         if (!emailInput || !passwordInput || !errorEl || !submitBtn) return;
@@ -3711,15 +3823,22 @@ function openAdminLoginModal() {
         submitBtn.textContent = 'Logging In...';
 
         try {
+            const shouldStaySignedIn = Boolean(rememberInput && rememberInput.checked);
+            await setPersistence(auth, shouldStaySignedIn ? browserLocalPersistence : inMemoryPersistence);
             await signInWithEmailAndPassword(auth, email, password);
             if (!isAdminSessionActive()) {
                 await signOut(auth);
                 errorEl.textContent = 'This account is not authorized for admin access.';
                 return;
             }
+            localStorage.setItem(ADMIN_PERSISTENCE_PREF_KEY, shouldStaySignedIn ? '1' : '0');
             document.removeEventListener('keydown', handleEscape);
             closeAdminLoginModal();
-            cinematicTransition(null, loadAdminDashboard, '#admin');
+            if (typeof onSuccess === 'function') {
+                onSuccess();
+            } else {
+                cinematicTransition(null, loadAdminDashboard, '#admin');
+            }
         } catch (error) {
             errorEl.textContent = 'Authentication failed. Please check your email and password.';
             console.error(error);
@@ -3733,6 +3852,274 @@ function openAdminLoginModal() {
 }
 
 bindSecretCornerTrigger();
+
+function clearAdminRealtimeListeners() {
+    if (window.adminUnsubscribe) {
+        window.adminUnsubscribe();
+        window.adminUnsubscribe = null;
+    }
+    if (window.adminAnnounceUnsub) {
+        window.adminAnnounceUnsub();
+        window.adminAnnounceUnsub = null;
+    }
+    if (window.adminRefundsUnsub) {
+        window.adminRefundsUnsub();
+        window.adminRefundsUnsub = null;
+    }
+    if (window.adminCommissionsUnsub) {
+        window.adminCommissionsUnsub();
+        window.adminCommissionsUnsub = null;
+    }
+    if (window.adminCommentsUnsub) {
+        window.adminCommentsUnsub();
+        window.adminCommentsUnsub = null;
+    }
+}
+
+function hideAdminIdleLockScreen() {
+    const dashboardView = document.getElementById('adminDashboardView');
+    const lockScreen = document.getElementById('adminIdleLockScreen');
+
+    dashboardView?.classList.remove('is-idle-locked');
+    bodyElement.classList.remove('admin-idle-locked');
+
+    if (lockScreen) {
+        lockScreen.hidden = true;
+    }
+
+    if (adminIdleZzzTimerId) {
+        window.clearTimeout(adminIdleZzzTimerId);
+        adminIdleZzzTimerId = null;
+    }
+
+    const zzzCloud = document.getElementById('adminIdleZzzCloud');
+    if (zzzCloud) {
+        zzzCloud.replaceChildren();
+    }
+}
+
+function stopAdminIdleLock(options = {}) {
+    const { preserveLockedScreen = false } = options;
+
+    if (adminIdleTimerId) {
+        window.clearTimeout(adminIdleTimerId);
+        adminIdleTimerId = null;
+    }
+
+    if (adminIdleZzzTimerId) {
+        window.clearTimeout(adminIdleZzzTimerId);
+        adminIdleZzzTimerId = null;
+    }
+
+    if (adminIdleActivityController) {
+        adminIdleActivityController.abort();
+        adminIdleActivityController = null;
+    }
+
+    adminIdleLocked = false;
+
+    if (!preserveLockedScreen) {
+        hideAdminIdleLockScreen();
+    } else {
+        const zzzCloud = document.getElementById('adminIdleZzzCloud');
+        if (zzzCloud) {
+            zzzCloud.replaceChildren();
+        }
+    }
+}
+
+async function clearAdminSession() {
+    localStorage.removeItem(ADMIN_PERSISTENCE_PREF_KEY);
+    clearAdminRealtimeListeners();
+
+    try {
+        await signOut(auth);
+    } catch (error) {
+        console.error('Error signing out', error);
+    }
+}
+
+function scheduleAdminIdleLock() {
+    if (bodyElement.getAttribute('data-page') !== 'admin' || adminIdleLocked || !isAdminSessionActive()) return;
+
+    if (adminIdleTimerId) {
+        window.clearTimeout(adminIdleTimerId);
+    }
+
+    adminIdleTimerId = window.setTimeout(() => {
+        void lockAdminForIdle();
+    }, ADMIN_IDLE_TIMEOUT_MS);
+}
+
+function showAdminIdleLockScreen() {
+    const dashboardView = document.getElementById('adminDashboardView');
+    const lockScreen = document.getElementById('adminIdleLockScreen');
+    const motionDurations = {
+        breathe: `${(Math.random() * 0.7 + 3.2).toFixed(2)}s`,
+        shadow: `${(Math.random() * 0.7 + 3.5).toFixed(2)}s`,
+        head: `${(Math.random() * 0.6 + 3.4).toFixed(2)}s`,
+        ripple: `${(Math.random() * 0.7 + 4.2).toFixed(2)}s`,
+        tail: `${(Math.random() * 10 + 10).toFixed(2)}s`,
+        ear: `${(Math.random() * 10 + 14).toFixed(2)}s`,
+        paw: `${(Math.random() * 1.8 + 6.2).toFixed(2)}s`
+    };
+
+    if (!dashboardView || !lockScreen) return;
+
+    lockScreen.style.setProperty('--admin-idle-breathe-duration', motionDurations.breathe);
+    lockScreen.style.setProperty('--admin-idle-shadow-duration', motionDurations.shadow);
+    lockScreen.style.setProperty('--admin-idle-head-duration', motionDurations.head);
+    lockScreen.style.setProperty('--admin-idle-ripple-duration', motionDurations.ripple);
+    lockScreen.style.setProperty('--admin-idle-tail-duration', motionDurations.tail);
+    lockScreen.style.setProperty('--admin-idle-ear-duration', motionDurations.ear);
+    lockScreen.style.setProperty('--admin-idle-paw-duration', motionDurations.paw);
+
+    dashboardView.classList.add('is-idle-locked');
+    bodyElement.classList.add('admin-idle-locked');
+    lockScreen.hidden = false;
+
+    const dots = lockScreen.querySelectorAll('.admin-idle-lock-screen__dots span');
+    dots.forEach((dot, index) => {
+        dot.style.animationDuration = `${(Math.random() * 0.55 + 1.35 + (index * 0.12)).toFixed(2)}s`;
+        dot.style.animationDelay = `${(Math.random() * 0.7 + index * 0.2).toFixed(2)}s`;
+    });
+
+    const seedAtmosphere = (container, count, className, factory) => {
+        if (!container) return;
+        container.replaceChildren();
+        for (let index = 0; index < count; index += 1) {
+            const item = document.createElement('span');
+            item.className = className;
+            factory(item, index);
+            container.appendChild(item);
+        }
+    };
+
+    seedAtmosphere(document.getElementById('adminIdleStarField'), 42, 'admin-idle-star', (star) => {
+        const size = Math.random() * 2.3 + 1.2;
+        star.style.left = `${(Math.random() * 100).toFixed(1)}%`;
+        star.style.top = `${(Math.random() * 64).toFixed(1)}%`;
+        star.style.width = `${size}px`;
+        star.style.height = `${size}px`;
+        star.style.animationDuration = `${(1.8 + Math.random() * 4.6).toFixed(2)}s`;
+        star.style.animationDelay = `${(Math.random() * 4.5).toFixed(2)}s`;
+    });
+
+    seedAtmosphere(document.getElementById('adminIdleDriftField'), 12, 'admin-idle-drift', (drift) => {
+        const size = Math.random() * 4 + 3;
+        drift.style.left = `${(Math.random() * 100).toFixed(1)}%`;
+        drift.style.top = `${(Math.random() * 62).toFixed(1)}%`;
+        drift.style.width = `${size}px`;
+        drift.style.height = `${size}px`;
+        drift.style.animationDuration = `${(8 + Math.random() * 5).toFixed(2)}s`;
+        drift.style.animationDelay = `${(Math.random() * 5.5).toFixed(2)}s`;
+    });
+
+    seedAtmosphere(document.getElementById('adminIdleShootingStars'), 4, 'admin-idle-shooting-star', (shoot) => {
+        shoot.style.left = `${(Math.random() * 70 + 18).toFixed(1)}%`;
+        shoot.style.top = `${(Math.random() * 42 + 4).toFixed(1)}%`;
+        shoot.style.animationDuration = `${(10 + Math.random() * 5).toFixed(2)}s`;
+        shoot.style.animationDelay = `${(Math.random() * 7.5).toFixed(2)}s`;
+    });
+
+    const zzzCloud = document.getElementById('adminIdleZzzCloud');
+    if (zzzCloud) {
+        zzzCloud.replaceChildren();
+    }
+
+    const seedZzzParticle = (leftPercent, sizeRem, driftPx, delaySeconds) => {
+        if (!zzzCloud) return;
+        const particle = document.createElement('span');
+        particle.className = 'admin-idle-zzz__particle';
+        particle.textContent = Math.random() > 0.5 ? 'Z' : 'z';
+        particle.style.left = `${leftPercent}%`;
+        particle.style.fontSize = `${sizeRem}rem`;
+        particle.style.setProperty('--zzz-drift', `${driftPx}px`);
+        particle.style.animationDuration = `${(5.8 + Math.random() * 1.2).toFixed(2)}s`;
+        particle.style.animationDelay = `${delaySeconds}s`;
+        zzzCloud.appendChild(particle);
+
+        window.setTimeout(() => {
+            particle.remove();
+        }, 7600);
+    };
+
+    seedZzzParticle(16, 0.9, -12, 0);
+    seedZzzParticle(31, 1.05, -2, 0.12);
+    seedZzzParticle(47, 1.18, 12, 0.28);
+
+    const spawnZzzParticle = () => {
+        if (!adminIdleLocked || bodyElement.getAttribute('data-page') !== 'admin') return;
+
+        const cloud = document.getElementById('adminIdleZzzCloud');
+        if (!cloud) return;
+
+        const particle = document.createElement('span');
+        particle.className = 'admin-idle-zzz__particle';
+        particle.textContent = Math.random() > 0.5 ? 'Z' : 'z';
+        particle.style.left = `${(Math.random() * 58 + 10).toFixed(1)}%`;
+        particle.style.fontSize = `${(Math.random() * 0.45 + 0.88).toFixed(2)}rem`;
+        particle.style.setProperty('--zzz-drift', `${(Math.random() * 30 - 15).toFixed(1)}px`);
+        const duration = Math.random() * 1.0 + 5.0;
+        particle.style.animationDuration = `${duration.toFixed(2)}s`;
+        particle.style.animationDelay = `${(Math.random() * 0.35).toFixed(2)}s`;
+        cloud.appendChild(particle);
+
+        window.setTimeout(() => {
+            particle.remove();
+        }, (duration + 0.3) * 1000);
+
+        const nextDelay = Math.random() * 1400 + 800;
+        adminIdleZzzTimerId = window.setTimeout(spawnZzzParticle, nextDelay);
+    };
+
+    adminIdleZzzTimerId = window.setTimeout(spawnZzzParticle, Math.random() * 600 + 180);
+}
+
+function bindAdminIdleLock() {
+    stopAdminIdleLock();
+
+    const dashboardView = document.getElementById('adminDashboardView');
+    if (!dashboardView) return;
+
+    hideAdminIdleLockScreen();
+    adminIdleActivityController = new AbortController();
+
+    const eventOptions = { capture: true, passive: true, signal: adminIdleActivityController.signal };
+    const activityHandler = () => {
+        scheduleAdminIdleLock();
+    };
+
+    document.addEventListener('mousemove', activityHandler, eventOptions);
+    document.addEventListener('mousedown', activityHandler, eventOptions);
+    document.addEventListener('keydown', activityHandler, { capture: true, signal: adminIdleActivityController.signal });
+    window.addEventListener('scroll', activityHandler, eventOptions);
+    dashboardView.addEventListener('scroll', activityHandler, eventOptions);
+    document.addEventListener('touchstart', activityHandler, eventOptions);
+    document.addEventListener('touchmove', activityHandler, eventOptions);
+
+    scheduleAdminIdleLock();
+}
+
+async function lockAdminForIdle() {
+    if (bodyElement.getAttribute('data-page') !== 'admin' || adminIdleLocked) return;
+
+    adminIdleLocked = true;
+    closeAdminLoginModal();
+
+    if (adminIdleTimerId) {
+        window.clearTimeout(adminIdleTimerId);
+        adminIdleTimerId = null;
+    }
+
+    if (adminIdleActivityController) {
+        adminIdleActivityController.abort();
+        adminIdleActivityController = null;
+    }
+
+    await clearAdminSession();
+    showAdminIdleLockScreen();
+}
 
 function updateAdminPreview() {
     const dPercent = document.getElementById('adminDiscountPercent');
@@ -3754,6 +4141,68 @@ function updateAdminPreview() {
     }
 }
 
+function setDiscountEditState(sale = null) {
+    const percentInput = document.getElementById('adminDiscountPercent');
+    const targetInput = document.getElementById('adminDiscountTarget');
+    const messageInput = document.getElementById('adminDiscountMessage');
+    const saveBtn = document.getElementById('btnSaveDiscount');
+    if (!percentInput || !targetInput || !messageInput || !saveBtn) return;
+
+    if (!sale) {
+        window.currentEditingDiscountId = null;
+        percentInput.value = '';
+        targetInput.value = 'all';
+        messageInput.value = '';
+        saveBtn.textContent = 'Add Discount';
+        updateAdminPreview();
+        return;
+    }
+
+    window.currentEditingDiscountId = sale.id;
+    percentInput.value = String(sale.percentage || '');
+    targetInput.value = sale.target || 'all';
+    messageInput.value = sale.message || '';
+    saveBtn.textContent = 'Save Discount';
+    updateAdminPreview();
+    percentInput.focus();
+}
+
+function populateAnnouncementForm(id, data = {}) {
+    const titleField = document.getElementById('adminAnnounceTitle');
+    const dateField = document.getElementById('adminAnnounceDate');
+    const badgeField = document.getElementById('adminAnnounceBadge');
+    const bodyField = document.getElementById('adminAnnounceBody');
+    const visibleField = document.getElementById('adminAnnounceVisible');
+    const pinnedField = document.getElementById('adminAnnouncePinned');
+    const saveBtn = document.getElementById('btnSaveAnnouncement');
+    if (!titleField || !dateField || !badgeField || !bodyField || !visibleField || !pinnedField || !saveBtn) return;
+
+    titleField.value = data.title || '';
+    dateField.value = data.date || '';
+    badgeField.value = data.category || 'Update';
+    bodyField.value = data.body || '';
+    visibleField.checked = data.visible !== false;
+    pinnedField.checked = data.pinned === true;
+    window.currentEditingAnnounceId = id || null;
+    saveBtn.textContent = id ? 'Update Announcement' : 'Publish Announcement';
+
+    if (id) {
+        document.querySelector('.announcements-manager-card')?.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+function openRefundCreatePanel() {
+    const collapse = document.getElementById('refundInlinePanel');
+    if (collapse instanceof HTMLDetailsElement) collapse.open = true;
+    document.getElementById('refundIdField')?.focus();
+}
+
+function openCommissionCreatePanel() {
+    const collapse = document.getElementById('commissionInlinePanel');
+    if (collapse instanceof HTMLDetailsElement) collapse.open = true;
+    document.getElementById('commissionIdField')?.focus();
+}
+
 function renderActiveDiscountsList() {
     const listEl = document.getElementById('adminActiveDiscountsList');
     if(!listEl) return;
@@ -3761,6 +4210,7 @@ function renderActiveDiscountsList() {
     
     if(!window.activeSales || window.activeSales.length === 0) {
         listEl.innerHTML = '<p style="color:#a2b7cc; font-size:0.9rem;">No active discounts.</p>';
+        window.currentEditingDiscountId = null;
         return;
     }
 
@@ -3770,32 +4220,800 @@ function renderActiveDiscountsList() {
         div.innerHTML = `
             <div class="discount-item-info">
                 <span class="discount-item-title">${sale.percentage}% OFF - ${sale.target.toUpperCase()}</span>
-                <span class="discount-item-meta">Msg: ${escapeHTML(sale.message || 'None')}</span>
+                <span class="discount-item-meta">${sale.enabled === false ? 'Disabled' : 'Enabled'} | Msg: ${escapeHTML(sale.message || 'None')}</span>
             </div>
-            <button type="button" class="admin-btn-delete btn-delete-discount" data-id="${sale.id}">Delete</button>
+            <div class="announce-item-actions">
+                <button type="button" class="admin-btn-edit btn-edit-discount" data-id="${sale.id}">Edit</button>
+                <button type="button" class="admin-btn-edit btn-toggle-discount" data-id="${sale.id}" data-enabled="${sale.enabled === false ? 'false' : 'true'}">${sale.enabled === false ? 'Enable' : 'Disable'}</button>
+                <button type="button" class="admin-btn-delete btn-delete-discount" data-id="${sale.id}">Delete</button>
+            </div>
         `;
         listEl.appendChild(div);
     });
+}
 
-    document.querySelectorAll('.btn-delete-discount').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const id = e.target.getAttribute('data-id');
-            if(confirm("Remove this discount?")) {
-                const newSales = window.activeSales.filter(s => s.id !== id);
-                try {
-                    const isLegacy = id === 'legacy_sale';
-                    let updatePayload = { activeSales: newSales };
-                    if (isLegacy) {
-                        updatePayload.enabled = false;
-                    }
-                    await setDoc(doc(db, "settings", "discount"), updatePayload, { merge: true });
-                    showAdminToast("Discount removed.");
-                } catch(err) {
-                    showAdminToast("Failed to remove discount.", true);
-                }
+function normalizeOrderStatus(status) {
+    return String(status || 'Pending Review').trim().toLowerCase();
+}
+
+function getOrderServiceType(order) {
+    const raw = String(order.itemType || order.orderType || order.keychainType || order.stickerType || order.partType || order.artType || '').toLowerCase();
+    if (raw.includes('fursuit') || raw.includes('paw') || raw.includes('tail') || raw.includes('partial') || raw.includes('head')) return 'fursuits';
+    if (raw.includes('sticker')) return 'stickers';
+    if (raw.includes('keychain')) return 'keychains';
+    if (raw.includes('animation')) return 'animation';
+    if (raw.includes('art') || raw.includes('icon') || raw.includes('bust') || raw.includes('fullbody') || raw.includes('scene') || raw.includes('ref')) return 'art';
+    return 'other';
+}
+
+function getOrderCreator(serviceType) {
+    return serviceType === 'fursuits' ? 'lopside' : 'husky';
+}
+
+function isRevenueEligible(order) {
+    return ADMIN_REVENUE_STATUSES.has(normalizeOrderStatus(order.status));
+}
+
+function estimateOrderRevenue(order) {
+    const quantity = Math.max(1, Number(order.quantity) || 1);
+    const serviceType = getOrderServiceType(order);
+    const baseByType = {
+        art: 85,
+        animation: 140,
+        fursuits: 530,
+        keychains: 15,
+        stickers: 20,
+        other: 45
+    };
+
+    const base = baseByType[serviceType] || baseByType.other;
+    return Math.round(base * quantity);
+}
+
+function getOrderTimestampMs(order) {
+    if (!order || !order.createdAt) return 0;
+    try {
+        if (order.createdAt.toDate) return order.createdAt.toDate().getTime();
+        const value = new Date(order.createdAt).getTime();
+        return Number.isFinite(value) ? value : 0;
+    } catch {
+        return 0;
+    }
+}
+
+function getOrderAttentionBadge(order) {
+    const status = normalizeOrderStatus(order.status);
+    if (status === 'pending review' || status === 'new') return 'Pending Review';
+    if (status === 'reviewed') return 'Needs Reply';
+    if (status === 'accepted') return 'Waiting Payment';
+    if (status === 'paid' || status === 'in progress') return 'In Progress';
+    if (status === 'finished' || status === 'shipped') return 'Completed';
+    return 'New';
+}
+
+function getMonthBuckets(monthCount = 6) {
+    const buckets = [];
+    const now = new Date();
+    for (let i = monthCount - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const label = d.toLocaleDateString(undefined, { month: 'short' });
+        buckets.push({ key, label, value: 0 });
+    }
+    return buckets;
+}
+
+function getMonthKeyFromMs(ms) {
+    if (!ms) return '';
+    const d = new Date(ms);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function computeAdminDashboardMetrics() {
+    const orders = Array.isArray(window.allOrders) ? window.allOrders : [];
+    const refunds = Array.isArray(window.adminRefundEntries) ? window.adminRefundEntries : [];
+    const commissions = Array.isArray(window.adminCommissionEntries) ? window.adminCommissionEntries : [];
+    const comments = Array.isArray(window.adminCommentsEntries) ? window.adminCommentsEntries : [];
+    const announcements = Array.isArray(window.adminAnnouncementsEntries) ? window.adminAnnouncementsEntries : [];
+
+    const pendingOrders = orders.filter((o) => {
+        const status = normalizeOrderStatus(o.status);
+        return status === 'pending review' || status === 'new';
+    });
+
+    const activeCommissions = commissions.filter((c) => {
+        const status = String(c.queueStatus || '').toLowerCase();
+        return status === 'started' || status === 'not started';
+    });
+
+    const openRefunds = refunds.filter((r) => String(r.queueStatus || '').toLowerCase() !== 'finished');
+    const waitingPayments = orders.filter((o) => normalizeOrderStatus(o.status) === 'accepted');
+    const urgentActions = pendingOrders.length + openRefunds.length + waitingPayments.length;
+    const activeSale = Array.isArray(window.activeSales) && window.activeSales.length > 0 ? window.activeSales[0] : null;
+    const availability = normalizeHomeAvailability(window.homeAvailability);
+
+    const acceptedOrders = orders.filter(isRevenueEligible);
+    const completedOrders = orders.filter((o) => {
+        const status = normalizeOrderStatus(o.status);
+        return status === 'finished' || status === 'shipped';
+    });
+    const pendingRevenueOrders = orders.filter((o) => {
+        const status = normalizeOrderStatus(o.status);
+        return status === 'pending review' || status === 'new' || status === 'reviewed' || status === 'accepted';
+    });
+
+    const estimatedAcceptedRevenue = acceptedOrders.reduce((sum, order) => sum + estimateOrderRevenue(order), 0);
+    const estimatedPendingRevenue = pendingRevenueOrders.reduce((sum, order) => sum + estimateOrderRevenue(order), 0);
+    const estimatedCompletedRevenue = completedOrders.reduce((sum, order) => sum + estimateOrderRevenue(order), 0);
+
+    const revenueByCreator = { husky: 0, lopside: 0 };
+    const revenueByService = { art: 0, animation: 0, fursuits: 0, keychains: 0, stickers: 0 };
+    acceptedOrders.forEach((order) => {
+        const serviceType = getOrderServiceType(order);
+        const creator = getOrderCreator(serviceType);
+        const value = estimateOrderRevenue(order);
+        revenueByCreator[creator] += value;
+        if (revenueByService[serviceType] != null) revenueByService[serviceType] += value;
+    });
+
+    const monthlyBuckets = getMonthBuckets(6);
+    acceptedOrders.forEach((order) => {
+        const key = getMonthKeyFromMs(getOrderTimestampMs(order));
+        const bucket = monthlyBuckets.find((item) => item.key === key);
+        if (bucket) bucket.value += estimateOrderRevenue(order);
+    });
+
+    const newestOrder = [...orders].sort((a, b) => getOrderTimestampMs(b) - getOrderTimestampMs(a))[0] || null;
+    const latestRefund = [...refunds].sort((a, b) => {
+        const aTime = a.updatedAt && a.updatedAt.toDate ? a.updatedAt.toDate().getTime() : 0;
+        const bTime = b.updatedAt && b.updatedAt.toDate ? b.updatedAt.toDate().getTime() : 0;
+        return bTime - aTime;
+    })[0] || null;
+    const latestCommission = [...commissions].sort((a, b) => {
+        const aTime = a.updatedAt && a.updatedAt.toDate ? a.updatedAt.toDate().getTime() : 0;
+        const bTime = b.updatedAt && b.updatedAt.toDate ? b.updatedAt.toDate().getTime() : 0;
+        return bTime - aTime;
+    })[0] || null;
+    const latestComment = [...comments].sort((a, b) => {
+        const aTime = a.timestamp && a.timestamp.toDate ? a.timestamp.toDate().getTime() : 0;
+        const bTime = b.timestamp && b.timestamp.toDate ? b.timestamp.toDate().getTime() : 0;
+        return bTime - aTime;
+    })[0] || null;
+    const latestAnnouncement = [...announcements].sort((a, b) => {
+        const aTime = a.timestamp && a.timestamp.toDate ? a.timestamp.toDate().getTime() : 0;
+        const bTime = b.timestamp && b.timestamp.toDate ? b.timestamp.toDate().getTime() : 0;
+        return bTime - aTime;
+    })[0] || null;
+
+    return {
+        pendingOrdersCount: pendingOrders.length,
+        waitingPaymentsCount: waitingPayments.length,
+        urgentActionsCount: urgentActions,
+        activeCommissionsCount: activeCommissions.length,
+        preorderCount: orders.length,
+        refundCount: openRefunds.length,
+        reviewCount: comments.length,
+        activeSaleLabel: activeSale ? `${activeSale.percentage || 0}%` : 'None',
+        huskyOpenSlots: Math.max(0, Number(availability.artists.husky.slots) || 0),
+        lopsideOpenSlots: Math.max(0, Number(availability.artists.lopside.slots) || 0),
+        responseTimeLabel: availability.responseTime || 'Not set',
+        estimatedAcceptedRevenue,
+        estimatedPendingRevenue,
+        estimatedCompletedRevenue,
+        revenueByCreator,
+        revenueByService,
+        monthlyBuckets,
+        newestOrder,
+        latestRefund,
+        latestCommission,
+        latestComment,
+        latestAnnouncement
+    };
+}
+
+function getRelativeTimeLabel(timestampMs) {
+    if (!timestampMs) return 'Just now';
+    const diffMs = Math.max(0, Date.now() - timestampMs);
+    const minutes = Math.floor(diffMs / 60000);
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    const date = new Date(timestampMs);
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function renderActivityRows(rows) {
+    if (!Array.isArray(rows) || rows.length === 0) {
+        return '<li class="admin-activity-row"><span class="admin-activity-type">System</span><span class="admin-activity-desc">No recent admin activity yet.</span><span class="admin-activity-time">Now</span></li>';
+    }
+
+    return rows.map((row) => `
+        <li class="admin-activity-row">
+            <span class="admin-activity-type">${escapeHTML(row.type)}</span>
+            <span class="admin-activity-desc">${escapeHTML(row.description)}</span>
+            <span class="admin-activity-time">${escapeHTML(row.time)}</span>
+        </li>
+    `).join('');
+}
+
+function renderMiniLineChart(rows) {
+    if (!Array.isArray(rows) || rows.length === 0) return '<p class="admin-chart-empty">No monthly data yet.</p>';
+    const values = rows.map((row) => row.value);
+    const max = Math.max(...values, 1);
+    const stepX = rows.length > 1 ? 100 / (rows.length - 1) : 100;
+
+    const points = rows.map((row, index) => {
+        const x = Math.round(index * stepX * 100) / 100;
+        const y = Math.round((100 - ((row.value / max) * 100)) * 100) / 100;
+        return `${x},${y}`;
+    }).join(' ');
+
+    const areaPoints = `${points} 100,100 0,100`;
+
+    const labels = rows.map((row) => `<span>${escapeHTML(row.label)}</span>`).join('');
+
+    return `
+        <div class="admin-line-chart-wrap">
+            <svg viewBox="0 0 100 100" class="admin-line-chart" preserveAspectRatio="none" aria-hidden="true">
+                <polygon points="${areaPoints}" class="admin-line-chart-area"></polygon>
+                <polyline points="${points}" class="admin-line-chart-path"></polyline>
+            </svg>
+            <div class="admin-line-chart-labels">${labels}</div>
+        </div>
+    `;
+}
+
+function renderWidgetStatChips(chips) {
+    if (!Array.isArray(chips) || chips.length === 0) return '';
+    return `<div class="admin-widget-chip-row">${chips.map((chip) => `
+        <span class="admin-widget-chip"><strong>${escapeHTML(chip.label)}</strong><em>${escapeHTML(chip.value)}</em></span>
+    `).join('')}</div>`;
+}
+
+function renderMiniColumnChart(rows) {
+    if (!Array.isArray(rows) || rows.length === 0) return '<p class="admin-chart-empty">No data yet.</p>';
+    const maxValue = Math.max(...rows.map((row) => row.value), 1);
+    return `
+        <div class="admin-mini-columns">
+            ${rows.map((row) => {
+                const height = Math.max(10, Math.round((row.value / maxValue) * 100));
+                return `
+                    <div class="admin-mini-column-item">
+                        <div class="admin-mini-column-track">
+                            <span class="admin-mini-column-fill" style="height:${height}%"></span>
+                        </div>
+                        <span class="admin-mini-column-label">${escapeHTML(row.label)}</span>
+                        <span class="admin-mini-column-value">${formatMoney(row.value)}</span>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+function renderPipelineChart(rows) {
+    if (!Array.isArray(rows) || rows.length === 0) return '<p class="admin-chart-empty">No pipeline data.</p>';
+    const total = Math.max(1, rows.reduce((sum, row) => sum + (Number(row.value) || 0), 0));
+    return `
+        <div class="admin-pipeline-chart">
+            <div class="admin-pipeline-track">
+                ${rows.map((row) => {
+                    const pct = Math.max(6, Math.round(((Number(row.value) || 0) / total) * 100));
+                    const safeLabel = escapeHTML(row.label);
+                    return `<span class="admin-pipeline-segment" style="flex-basis:${pct}%"><em>${safeLabel}</em></span>`;
+                }).join('')}
+            </div>
+            <div class="admin-pipeline-legend">
+                ${rows.map((row) => `<span><strong>${escapeHTML(row.label)}</strong> ${formatMoney(row.value)}</span>`).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function updateAdminDashboardOverview() {
+    const container = document.getElementById('adminOverviewCards');
+    const chartContainer = document.getElementById('adminRevenuePanels');
+    const activityContainer = document.getElementById('adminRecentActivityList');
+    if (!container || !chartContainer || !activityContainer) return;
+
+    const metrics = computeAdminDashboardMetrics();
+
+    const cards = [
+        { group: 'Mission Control', label: 'Pending Reviews', value: metrics.pendingOrdersCount },
+        { group: 'Mission Control', label: 'Waiting Payments', value: metrics.waitingPaymentsCount },
+        { group: 'Mission Control', label: 'Urgent Actions', value: metrics.urgentActionsCount },
+        { group: 'Studio Health', label: 'Revenue', value: formatMoney(metrics.estimatedAcceptedRevenue) },
+        { group: 'Studio Health', label: 'Open Slots', value: metrics.huskyOpenSlots + metrics.lopsideOpenSlots },
+        { group: 'Studio Health', label: 'Response Time', value: metrics.responseTimeLabel },
+        { group: 'Studio Health', label: 'Active Work', value: metrics.activeCommissionsCount },
+        { group: 'Studio Radar', label: 'Reviews', value: metrics.reviewCount },
+        { group: 'Studio Radar', label: 'Refund Updates', value: metrics.refundCount },
+        { group: 'Studio Radar', label: 'Active Sale', value: metrics.activeSaleLabel }
+    ];
+
+    container.innerHTML = cards.map((card) => `
+        <article class="admin-overview-card">
+            <p class="admin-overview-group">${escapeHTML(card.group)}</p>
+            <p class="admin-overview-label">${escapeHTML(card.label)}</p>
+            <strong class="admin-overview-value">${escapeHTML(String(card.value))}</strong>
+        </article>
+    `).join('');
+
+    const creatorRows = [
+        { label: 'Husky', value: metrics.revenueByCreator.husky },
+        { label: 'Lopside', value: metrics.revenueByCreator.lopside }
+    ];
+    const serviceRows = [
+        { label: 'Art', value: metrics.revenueByService.art },
+        { label: 'Animation', value: metrics.revenueByService.animation },
+        { label: 'Fursuits', value: metrics.revenueByService.fursuits },
+        { label: 'Keychains', value: metrics.revenueByService.keychains },
+        { label: 'Stickers', value: metrics.revenueByService.stickers }
+    ];
+    const statusRows = [
+        { label: 'Pending', value: metrics.estimatedPendingRevenue },
+        { label: 'Accepted', value: metrics.estimatedAcceptedRevenue },
+        { label: 'Completed', value: metrics.estimatedCompletedRevenue }
+    ];
+
+    chartContainer.innerHTML = `
+        <article class="admin-chart-card">
+            <h3>Revenue Observatory | By Month</h3>
+            <p>Glowing monthly trend from accepted and active work.</p>
+            ${renderWidgetStatChips([
+                { label: 'This Month', value: formatMoney(metrics.monthlyBuckets[metrics.monthlyBuckets.length - 1]?.value || 0) },
+                { label: 'Accepted Total', value: formatMoney(metrics.estimatedAcceptedRevenue) }
+            ])}
+            ${renderMiniLineChart(metrics.monthlyBuckets.map((item) => ({ label: item.label, value: item.value })))}
+        </article>
+        <article class="admin-chart-card">
+            <h3>Revenue Observatory | By Creator</h3>
+            <p>Compact creator split across Husky and Lopside.</p>
+            ${renderWidgetStatChips([
+                { label: 'Husky', value: formatMoney(metrics.revenueByCreator.husky) },
+                { label: 'Lopside', value: formatMoney(metrics.revenueByCreator.lopside) }
+            ])}
+            ${renderMiniColumnChart(creatorRows)}
+        </article>
+        <article class="admin-chart-card">
+            <h3>Revenue Observatory | By Service</h3>
+            <p>Service mix for art, animation, fursuits, keychains, and stickers.</p>
+            ${renderMiniColumnChart(serviceRows)}
+        </article>
+        <article class="admin-chart-card">
+            <h3>Commission Pipeline</h3>
+            <p>Pending vs accepted vs completed estimated value flow.</p>
+            ${renderPipelineChart(statusRows)}
+        </article>
+    `;
+
+    const activities = [];
+    if (metrics.newestOrder) {
+        const timestampMs = getOrderTimestampMs(metrics.newestOrder);
+        activities.push({
+            type: 'Order',
+            description: `New order submitted: ${metrics.newestOrder.orderId || metrics.newestOrder.name || 'Unknown'}`,
+            time: getRelativeTimeLabel(timestampMs),
+            timestampMs
+        });
+    }
+    if (metrics.latestRefund) {
+        const ts = metrics.latestRefund.updatedAt && metrics.latestRefund.updatedAt.toDate ? metrics.latestRefund.updatedAt.toDate().getTime() : 0;
+        activities.push({
+            type: 'Refund',
+            description: `Refund updated: ${metrics.latestRefund.refundId || metrics.latestRefund.displayName || 'Unknown'}`,
+            time: getRelativeTimeLabel(ts),
+            timestampMs: ts
+        });
+    }
+    if (metrics.latestCommission) {
+        const ts = metrics.latestCommission.updatedAt && metrics.latestCommission.updatedAt.toDate ? metrics.latestCommission.updatedAt.toDate().getTime() : 0;
+        activities.push({
+            type: 'Commission',
+            description: `Commission status updated: ${metrics.latestCommission.commissionId || metrics.latestCommission.displayName || 'Unknown'}`,
+            time: getRelativeTimeLabel(ts),
+            timestampMs: ts
+        });
+    }
+    if (metrics.latestComment) {
+        const ts = metrics.latestComment.timestamp && metrics.latestComment.timestamp.toDate ? metrics.latestComment.timestamp.toDate().getTime() : 0;
+        activities.push({
+            type: 'Review',
+            description: `Review/comment submitted by ${metrics.latestComment.name || 'Guest reviewer'}`,
+            time: getRelativeTimeLabel(ts),
+            timestampMs: ts
+        });
+    }
+    if (metrics.latestAnnouncement) {
+        const ts = metrics.latestAnnouncement.timestamp && metrics.latestAnnouncement.timestamp.toDate ? metrics.latestAnnouncement.timestamp.toDate().getTime() : 0;
+        activities.push({
+            type: 'Announcement',
+            description: `Announcement updated: ${metrics.latestAnnouncement.title || 'Studio update'}`,
+            time: getRelativeTimeLabel(ts),
+            timestampMs: ts
+        });
+    }
+    if (Array.isArray(window.activeSales) && window.activeSales[0]) {
+        activities.push({
+            type: 'Discount',
+            description: `Sale updated: ${window.activeSales[0].percentage || 0}% on ${window.activeSales[0].target || 'all'}`,
+            time: 'Active',
+            timestampMs: Date.now()
+        });
+    }
+
+    activities.sort((a, b) => (b.timestampMs || 0) - (a.timestampMs || 0));
+    activityContainer.innerHTML = renderActivityRows(activities);
+
+    const ordersSection = document.getElementById('adminSectionOrders');
+    const customerSection = document.getElementById('adminSectionCustomer');
+    if (ordersSection) ordersSection.open = metrics.pendingOrdersCount > 0;
+    if (customerSection) customerSection.open = metrics.refundCount > 0 || metrics.reviewCount > 0;
+}
+
+function bindAdminDashboardNavigation() {
+    document.querySelectorAll('[data-admin-scroll]').forEach((button) => {
+        if (!(button instanceof HTMLElement) || button.dataset.scrollBound === 'true') return;
+        button.dataset.scrollBound = 'true';
+        button.addEventListener('click', () => {
+            const targetId = button.getAttribute('data-admin-scroll');
+            const target = targetId ? document.getElementById(targetId) : null;
+            if (!target) return;
+
+            let current = target;
+            while (current) {
+                if (current instanceof HTMLDetailsElement) current.open = true;
+                current = current.parentElement;
             }
+
+            const targetTab = button.getAttribute('data-queue-tab-focus');
+            if (targetTab) {
+                openAdminQueueTab(targetTab, { scroll: false, openDetails: false });
+            }
+
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
     });
+}
+
+function setupAdminDashboardDelegation() {
+    if (!appViewport || appViewport.dataset.adminDelegationBound === 'true') return;
+    appViewport.dataset.adminDelegationBound = 'true';
+
+    appViewport.addEventListener('click', async (event) => {
+        const target = event.target instanceof Element ? event.target : null;
+        const dashboardRoot = target?.closest('#adminDashboardView');
+        if (!dashboardRoot) return;
+
+        const button = target.closest('button');
+        if (!button) return;
+
+        if (button.matches('.btn-edit-discount')) {
+            const id = button.getAttribute('data-id');
+            const sale = window.activeSales.find((entry) => entry.id === id);
+            if (sale) setDiscountEditState(sale);
+            return;
+        }
+
+        if (button.matches('.btn-toggle-discount')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before changing discounts.')) return;
+            const id = button.getAttribute('data-id');
+            const enabled = button.getAttribute('data-enabled') === 'true';
+            const newSales = window.activeSales.map((sale) => sale.id === id ? { ...sale, enabled: !enabled } : sale);
+            try {
+                await setDoc(doc(db, 'settings', 'discount'), { activeSales: newSales }, { merge: true });
+                showAdminToast(enabled ? 'Discount disabled.' : 'Discount enabled.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to update discount state.', true);
+            }
+            return;
+        }
+
+        if (button.matches('.btn-delete-discount')) {
+            const id = button.getAttribute('data-id');
+            if (!id || !confirm('Remove this discount?')) return;
+            const newSales = window.activeSales.filter((sale) => sale.id !== id);
+            try {
+                const updatePayload = id === 'legacy_sale'
+                    ? { activeSales: newSales, enabled: false }
+                    : { activeSales: newSales };
+                await setDoc(doc(db, 'settings', 'discount'), updatePayload, { merge: true });
+                if (window.currentEditingDiscountId === id) {
+                    setDiscountEditState(null);
+                }
+                showAdminToast('Discount removed.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to remove discount.', true);
+            }
+            return;
+        }
+
+        if (button.matches('.btn-toggle-vis')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before updating announcement visibility.')) return;
+            const id = button.getAttribute('data-id');
+            const currentVis = button.getAttribute('data-vis') === 'true';
+            try {
+                await updateDoc(doc(db, 'announcements', id), { visible: !currentVis });
+                updateAdminDashboardOverview();
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to update visibility', true);
+            }
+            return;
+        }
+
+        if (button.matches('.btn-edit-ann')) {
+            const id = button.getAttribute('data-id');
+            const dataStr = button.getAttribute('data-raw');
+            if (dataStr) {
+                populateAnnouncementForm(id, JSON.parse(decodeURIComponent(dataStr)));
+            }
+            return;
+        }
+
+        if (button.matches('.btn-toggle-pin')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before updating announcement pinning.')) return;
+            const id = button.getAttribute('data-id');
+            const currentPin = button.getAttribute('data-pin') === 'true';
+            try {
+                await updateDoc(doc(db, 'announcements', id), { pinned: !currentPin });
+                showAdminToast(currentPin ? 'Announcement unpinned.' : 'Announcement pinned.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to update pin state.', true);
+            }
+            return;
+        }
+
+        if (button.matches('.btn-delete-ann')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before deleting announcements.')) return;
+            const id = button.getAttribute('data-id');
+            if (!id || !confirm('Permanently delete this announcement?')) return;
+            try {
+                await deleteDoc(doc(db, 'announcements', id));
+                showAdminToast('Announcement deleted.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to delete announcement', true);
+            }
+            return;
+        }
+
+        if (button.id === 'refundOpenCreateBtn') {
+            openRefundCreatePanel();
+            return;
+        }
+
+        if (button.matches('.edit-refund-btn')) {
+            if (!requireAdminSession('Please log into the Secret Corner with an authorized admin account before editing refunds.')) return;
+            const id = button.getAttribute('data-id');
+            if (!id) return;
+            try {
+                const publicSnap = await getDoc(doc(db, 'refunds', id));
+                if (!publicSnap.exists()) return;
+                const privateSnap = await getDoc(doc(db, 'refundPrivate', id));
+                populateRefundForm({
+                    id,
+                    ...publicSnap.data(),
+                    ...(privateSnap.exists() ? privateSnap.data() : {})
+                });
+                const collapse = document.getElementById('refundInlinePanel');
+                if (collapse instanceof HTMLDetailsElement) collapse.open = true;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (error) {
+                console.error('Unable to load refund for editing', error);
+            }
+            return;
+        }
+
+        if (button.matches('.delete-refund-btn')) {
+            if (!requireAdminSession('Please log into the Secret Corner with an authorized admin account before deleting refunds.')) return;
+            const id = button.getAttribute('data-id');
+            if (!id || !confirm('Delete this refund entry permanently?')) return;
+            try {
+                await deleteDoc(doc(db, 'refunds', id));
+                await deleteDoc(doc(db, 'refundPrivate', id));
+                showAdminToast('Refund deleted.');
+                if (window.currentEditingRefundId === id) clearRefundForm();
+            } catch (error) {
+                console.error('Failed to delete refund', error);
+                showAdminToast('Failed to delete refund.', true);
+            }
+            return;
+        }
+
+        if (button.id === 'commissionOpenCreateBtn') {
+            openCommissionCreatePanel();
+            return;
+        }
+
+        if (button.matches('.edit-commission-btn')) {
+            if (!requireAdminSession('Please log into the Secret Corner with an authorized admin account before editing commissions.')) return;
+            const id = button.getAttribute('data-id');
+            if (!id) return;
+            try {
+                const publicSnap = await getDoc(doc(db, 'commissions', id));
+                if (!publicSnap.exists()) return;
+                const privateSnap = await getDoc(doc(db, 'commissionPrivate', id));
+                populateCommissionForm({
+                    id,
+                    ...publicSnap.data(),
+                    ...(privateSnap.exists() ? privateSnap.data() : {})
+                });
+                const collapse = document.getElementById('commissionInlinePanel');
+                if (collapse instanceof HTMLDetailsElement) collapse.open = true;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (error) {
+                console.error('Unable to load commission for editing', error);
+            }
+            return;
+        }
+
+        if (button.matches('.delete-commission-btn')) {
+            if (!requireAdminSession('Please log into the Secret Corner with an authorized admin account before deleting commissions.')) return;
+            const id = button.getAttribute('data-id');
+            if (!id || !confirm('Delete this commission entry permanently?')) return;
+            try {
+                await deleteDoc(doc(db, 'commissions', id));
+                await deleteDoc(doc(db, 'commissionPrivate', id));
+                showAdminToast('Commission deleted.');
+                if (window.currentEditingCommissionId === id) clearCommissionForm();
+            } catch (error) {
+                console.error('Failed to delete commission', error);
+                showAdminToast('Failed to delete commission.', true);
+            }
+            return;
+        }
+
+        if (button.matches('.admin-copy-review-btn')) {
+            const payload = button.getAttribute('data-review');
+            if (!payload) return;
+            try {
+                await navigator.clipboard.writeText(decodeURIComponent(payload));
+                showAdminToast('Review text copied.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Unable to copy review text.', true);
+            }
+            return;
+        }
+
+        if (button.matches('.admin-delete-review-btn')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before deleting reviews.')) return;
+            const id = button.getAttribute('data-id');
+            if (!id || !confirm('Delete this review/comment permanently?')) return;
+            try {
+                await deleteDoc(doc(db, 'comments', id));
+                showAdminToast('Review deleted.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to delete review.', true);
+            }
+            return;
+        }
+
+        if (button.matches('.admin-view-details-btn')) {
+            const orderId = button.getAttribute('data-order-id');
+            const detailsPanel = orderId ? document.getElementById(`details-${orderId}`) : null;
+            if (!detailsPanel) return;
+            const isHidden = detailsPanel.hasAttribute('hidden');
+            if (isHidden) {
+                detailsPanel.removeAttribute('hidden');
+                button.textContent = 'Hide Details';
+            } else {
+                detailsPanel.setAttribute('hidden', 'hidden');
+                button.textContent = 'View Details';
+            }
+            return;
+        }
+
+        if (button.matches('.admin-image-thumb')) {
+            const url = button.getAttribute('data-image-url');
+            const alt = button.getAttribute('data-image-alt') || 'Reference image';
+            if (url) openLightbox(url, alt);
+            return;
+        }
+
+        if (button.matches('.copy-template-btn')) {
+            const orderId = button.getAttribute('data-order-id');
+            const order = (Array.isArray(window.allOrders) ? window.allOrders : []).find((entry) => entry.id === orderId);
+            const statusSelect = orderId ? document.getElementById(`status-${orderId}`) : null;
+            if (!order || !statusSelect) return;
+
+            const currentStatus = statusSelect.value;
+            let msg = `Hi ${order.name}! Your order status has been updated to ${currentStatus}. We'll contact you if we need anything else.`;
+            if (currentStatus === 'Pending Review') msg = `Hi ${order.name}! Your preorder has been submitted successfully. We'll review it and contact you if we need anything else.`;
+            if (currentStatus === 'Reviewed' || currentStatus === 'Accepted') msg = `Hi ${order.name}! Your order has been reviewed. We'll reach out soon with the next steps or any questions.`;
+            if (currentStatus === 'Finished') msg = `Hi ${order.name}! Your order has been completed. Thank you so much for supporting Horizon Tide Gallery!`;
+
+            navigator.clipboard.writeText(msg)
+                .then(() => showAdminToast('Message template copied! ✨'))
+                .catch(() => showAdminToast('Could not copy message template.', true));
+            return;
+        }
+
+        if (button.matches('[data-copy-email]')) {
+            const email = button.getAttribute('data-copy-email') || '';
+            navigator.clipboard.writeText(email)
+                .then(() => showAdminToast('Email copied! ✨'))
+                .catch(() => showAdminToast('Could not copy email.', true));
+            return;
+        }
+
+        if (button.matches('.admin-order-delete-btn')) {
+            const orderId = button.getAttribute('data-order-id');
+            if (orderId) await deleteOrder(orderId);
+        }
+    });
+
+    appViewport.addEventListener('change', async (event) => {
+        const target = event.target instanceof Element ? event.target : null;
+        const dashboardRoot = target?.closest('#adminDashboardView');
+        const statusSelect = target?.closest('.admin-order-status-select');
+        if (!dashboardRoot || !(statusSelect instanceof HTMLSelectElement)) return;
+
+        const orderId = statusSelect.getAttribute('data-order-id');
+        const order = (Array.isArray(window.allOrders) ? window.allOrders : []).find((entry) => entry.id === orderId);
+        if (!order || !orderId) return;
+
+        if (!requireAdminSession('Please sign in with an authorized admin account before changing order statuses.')) {
+            statusSelect.value = order.status || 'Pending Review';
+            return;
+        }
+
+        try {
+            await updateDoc(doc(db, 'preorders', orderId), { status: statusSelect.value });
+            if (order.orderId) {
+                const publicStatusPayload = {
+                    orderId: order.orderId,
+                    itemType: order.itemType || order.orderType || 'Unknown',
+                    status: statusSelect.value,
+                    updatedAt: serverTimestamp()
+                };
+                if (order.createdAt) publicStatusPayload.createdAt = order.createdAt;
+                await setDoc(doc(db, 'preorderStatusPublic', order.orderId), publicStatusPayload, { merge: true });
+            }
+            showAdminToast('Status updated successfully ✨');
+        } catch (error) {
+            console.error(error);
+            showAdminToast('Failed to update status.', true);
+        }
+    });
+}
+
+function applyAdminOrderFilters() {
+    const allOrders = Array.isArray(window.allOrders) ? window.allOrders : [];
+    const state = window.adminOrderFilterState || { status: 'All', search: '' };
+    const search = String(state.search || '').trim().toLowerCase();
+
+    const filtered = allOrders.filter((order) => {
+        if (state.status !== 'All' && String(order.status || 'Pending Review') !== state.status) return false;
+        if (!search) return true;
+
+        const haystack = [
+            order.name,
+            order.orderId,
+            order.discord,
+            order.email,
+            order.itemType,
+            order.orderType,
+            order.artType,
+            order.partType,
+            order.keychainType,
+            order.stickerType,
+            order.status,
+            order.notes
+        ].map((value) => String(value || '').toLowerCase()).join(' ');
+
+        return haystack.includes(search);
+    });
+
+    renderAdminOrders(filtered);
 }
 
 function loadAdminDashboard() {
@@ -3805,29 +5023,124 @@ function loadAdminDashboard() {
         return;
     }
 
-    clearBubbles(); if(interactiveStarField) interactiveStarField.innerHTML = ""; bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'admin'); renderDynamicMoon(); renderDashboardStars();
+    clearBubbles(); if(interactiveStarField) interactiveStarField.innerHTML = ""; bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'admin'); setEnvironmentInteractivity('admin'); renderDynamicMoon(); renderDashboardStars();
     homeStarField.innerHTML = ""; dashboardStarField.innerHTML = "";
+    if (appViewport) appViewport.style.pointerEvents = 'auto';
     
     appViewport.innerHTML = `
-        <div class="admin-dashboard" id="adminDashboardView">
-            <h1 style="color: #ffffff; text-shadow: 0 0 20px #a855f7; font-size: 2.5rem; text-align: center;">Horizon Admin Dashboard</h1>
-            
-            <div class="admin-filters">
-                <button type="button" class="nav-btn" id="filterAll">All Orders</button>
-                <button type="button" class="nav-btn" id="filterNew">Pending Review</button>
-                <button type="button" class="nav-btn" id="filterInProgress">In Progress</button>
-                <button type="button" class="nav-btn" id="exportPreordersCsvBtn">Export Preorders CSV</button>
-                <button type="button" class="nav-btn" id="exportRefundsCsvBtn">Export Refunds CSV</button>
-                <button type="button" class="nav-btn" id="exportCommissionsCsvBtn">Export Commissions CSV</button>
-                <button type="button" id="homeAdminBtn" class="nav-btn" style="border-color: #00f2fe;">Back to Home (Stay Logged In)</button>
-                <button type="button" id="exitAdminBtn" class="nav-btn" style="border-color: #ef4444;">Lock & Exit</button>
-            </div>
+        <div class="admin-mission-shell" id="adminDashboardView">
+            <div class="admin-lockable">
+            <aside class="admin-sidebar">
+                <h2 class="admin-sidebar-title">Mission Control</h2>
+                <nav class="admin-sidebar-nav">
+                    <button type="button" id="adminNavDashboard" class="admin-side-link" data-admin-scroll="adminTopDashboard">Dashboard</button>
+                    <button type="button" id="adminNavOrders" class="admin-side-link" data-admin-scroll="adminSectionOrders">Orders</button>
+                    <button type="button" id="adminNavPreorders" class="admin-side-link" data-admin-scroll="adminSectionOrders">Preorders</button>
+                    <button type="button" id="adminNavCommissions" class="admin-side-link" data-admin-scroll="adminQueueManagerCard" data-queue-tab-focus="commissions">Commissions</button>
+                    <button type="button" id="adminNavRefunds" class="admin-side-link" data-admin-scroll="adminQueueManagerCard" data-queue-tab-focus="refunds">Refunds</button>
+                    <button type="button" id="adminNavReviews" class="admin-side-link" data-admin-scroll="adminSectionCustomer">Reviews</button>
+                    <button type="button" id="adminNavDiscounts" class="admin-side-link" data-admin-scroll="adminDiscountManagerSection">Discounts</button>
+                    <button type="button" id="adminNavAvailability" class="admin-side-link" data-admin-scroll="adminAvailabilitySection">Availability</button>
+                    <button type="button" id="adminNavAnnouncements" class="admin-side-link" data-admin-scroll="adminAnnouncementsSection">Announcements</button>
+                    <button type="button" id="adminNavTools" class="admin-side-link" data-admin-scroll="adminSectionTools">Admin Tools</button>
+                    <button type="button" class="admin-side-link" id="sidebarHomeBtn">Back to Home</button>
+                    <button type="button" class="admin-side-link" id="sidebarLockBtn">Lock Dashboard</button>
+                </nav>
+            </aside>
 
-            ${getTemplateHTML('adminDiscountManagerTemplate')}
-            ${getTemplateHTML('adminAvailabilityManagerTemplate')}
-            ${getTemplateHTML('adminAnnouncementsControlsTemplate')}
+            <section class="admin-main-area">
+                <header class="admin-top-header" id="adminTopDashboard">
+                    <div>
+                        <p class="admin-top-kicker">Horizon Mission Control</p>
+                        <h1>Horizon Admin Dashboard</h1>
+                        <p id="adminCurrentUserStatus" class="admin-top-meta">Signed in: ${escapeHTML(auth.currentUser?.email || 'Admin')}</p>
+                    </div>
+                    <div class="admin-header-actions">
+                        <input type="search" id="adminQuickSearch" class="admin-input admin-quick-search" placeholder="Quick search orders, IDs, names...">
+                        <button type="button" id="homeAdminBtn" class="nav-btn">Back to Home</button>
+                        <button type="button" id="lockAdminBtn" class="nav-btn">Lock Dashboard</button>
+                    </div>
+                </header>
 
-            <div class="admin-card queue-manager-card">
+                <section class="admin-overview-grid" id="adminOverviewCards"></section>
+
+                <section class="admin-revenue-grid" id="adminRevenuePanels"></section>
+
+                <section class="admin-activity-panel">
+                    <h2>Recent Activity</h2>
+                    <ul id="adminRecentActivityList"></ul>
+                </section>
+
+                <details class="admin-collapsible" id="adminSectionOrders">
+                    <summary>Orders & Preorders</summary>
+                    <div class="admin-collapsible-body">
+                        <div class="admin-filters">
+                            <button type="button" class="nav-btn" id="filterAll">All Orders</button>
+                            <button type="button" class="nav-btn" id="filterNew">Pending Review</button>
+                            <button type="button" class="nav-btn" id="filterInProgress">In Progress</button>
+                        </div>
+                        <div id="ordersGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); grid-auto-rows: 1fr; gap: 14px; width: 100%;">
+                            <p style="color: white; text-align: center; width: 100%;">Loading secure orders...</p>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="admin-collapsible" id="adminSectionStudio">
+                    <summary>Studio Management</summary>
+                    <div class="admin-collapsible-body">
+                        <div class="admin-management-strip">
+                            <button type="button" class="nav-btn" id="adminSetAllOpenBtn">Open Both Creators</button>
+                            <button type="button" class="nav-btn" id="adminSetAllClosedBtn">Close Both Creators</button>
+                            <button type="button" class="nav-btn" id="adminResetDiscountEditorBtn">New Discount</button>
+                            <button type="button" class="nav-btn" id="adminPreviewAnnouncementsBtn">Preview Announcements</button>
+                        </div>
+                        <section id="adminAvailabilitySection">
+                            ${getTemplateHTML('adminAvailabilityManagerTemplate')}
+                        </section>
+                        <section id="adminDiscountManagerSection">
+                            ${getTemplateHTML('adminDiscountManagerTemplate')}
+                        </section>
+                        <section id="adminAnnouncementsSection">
+                            ${getTemplateHTML('adminAnnouncementsControlsTemplate')}
+                        </section>
+                    </div>
+                </details>
+
+                <details class="admin-collapsible" id="adminSectionCustomer">
+                    <summary>Customer Management</summary>
+                    <div class="admin-collapsible-body">
+                        <div class="admin-management-strip">
+                            <button type="button" class="nav-btn" id="adminQueueFocusRefunds">Open Refund Queue</button>
+                            <button type="button" class="nav-btn" id="adminQueueFocusCommissions">Open Commission Queue</button>
+                            <button type="button" class="nav-btn" id="adminOpenContactPageBtn">Open Contact Inbox</button>
+                        </div>
+                        <div class="admin-card admin-reviews-card" id="adminReviewsManagerCard">
+                            <h3 class="admin-card-title">Review Management</h3>
+                            <p class="admin-card-subtitle">Moderate comments directly here: review text, copy contact context, and delete unsafe or spam content.</p>
+                            <div id="adminReviewsList" class="admin-reviews-list"></div>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="admin-collapsible" id="adminSectionTools">
+                    <summary>Admin Tools</summary>
+                    <div class="admin-collapsible-body">
+                        <div class="admin-filters">
+                            <button type="button" class="nav-btn" id="adminToolsRefreshBtn">Refresh Mission Data</button>
+                            <button type="button" class="nav-btn" id="adminToolsClearSearchBtn">Clear All Search Filters</button>
+                            <button type="button" class="nav-btn" id="adminToolsCollapsePanelsBtn">Collapse Detail Panels</button>
+                            <button type="button" class="nav-btn" id="adminToolsSessionCheckBtn">Verify Security Session</button>
+                            <button type="button" class="nav-btn" id="adminToolsOpenQueuePageBtn">Open Public Queue View</button>
+                            <button type="button" class="nav-btn" id="adminToolsOpenUpdatesPageBtn">Open Public Updates</button>
+                            <button type="button" class="nav-btn" id="exportPreordersCsvBtn">Export Preorders CSV</button>
+                            <button type="button" class="nav-btn" id="exportRefundsCsvBtn">Export Refunds CSV</button>
+                            <button type="button" class="nav-btn" id="exportCommissionsCsvBtn">Export Commissions CSV</button>
+                            <button type="button" class="nav-btn" id="adminToolsExportAllBtn">Export All CSVs</button>
+                        </div>
+                    </div>
+                </details>
+
+                <div class="admin-card queue-manager-card" id="adminQueueManagerCard">
                 <h3 class="admin-card-title">🌊 Horizon Queue Manager</h3>
                 <div class="admin-refund-banner">
                     <p>Horizon Queue Manager: Public-safe refund and commission info appears on the public Horizon Queue page. Private notes/contact/payment info stay admin-only.</p>
@@ -3865,7 +5178,7 @@ function loadAdminDashboard() {
                         <label class="admin-label">Transaction Info<textarea id="transactionInfoField" class="admin-input admin-textarea" rows="2" placeholder="Private transaction info..."></textarea></label>
                         <div class="admin-actions refund-manager-actions">
                             <button type="button" id="saveRefundBtn" class="admin-btn-save">Save Refund</button>
-                            <button type="button" id="clearRefundFormBtn" class="admin-btn-publish" style="background: rgba(255,255,255,0.08);">Clear</button>
+                            <button type="button" id="clearRefundFormBtn" class="admin-btn-publish" style="background: rgba(255,255,255,0.08);">Cancel</button>
                         </div>
                         </div>
                         <div class="refund-admin-list-column">
@@ -3894,7 +5207,7 @@ function loadAdminDashboard() {
                                     </label>
                                 </div>
                             </div>
-                            <div class="refund-admin-list-header"><strong>Existing Refund Entries</strong></div>
+                            <div class="refund-admin-list-header"><strong>Existing Refund Entries</strong><button type="button" class="admin-btn-edit" id="refundOpenCreateBtn">New Refund Entry</button></div>
                             <div id="adminRefundsList" class="admin-refunds-list"></div>
                         </div>
                     </div>
@@ -3920,7 +5233,7 @@ function loadAdminDashboard() {
                         <label class="admin-label">Transaction Info<textarea id="commissionTransactionInfoField" class="admin-input admin-textarea" rows="2" placeholder="Private transaction info..."></textarea></label>
                         <div class="admin-actions refund-manager-actions">
                             <button type="button" id="saveCommissionBtn" class="admin-btn-save">Save Commission</button>
-                            <button type="button" id="clearCommissionFormBtn" class="admin-btn-publish" style="background: rgba(255,255,255,0.08);">Clear</button>
+                            <button type="button" id="clearCommissionFormBtn" class="admin-btn-publish" style="background: rgba(255,255,255,0.08);">Cancel</button>
                         </div>
                         </div>
                         <div class="commission-admin-list-column">
@@ -3949,63 +5262,155 @@ function loadAdminDashboard() {
                                     </label>
                                 </div>
                             </div>
-                            <div class="commission-admin-list-header"><strong>Existing Commission Entries</strong></div>
+                            <div class="commission-admin-list-header"><strong>Existing Commission Entries</strong><button type="button" class="admin-btn-edit" id="commissionOpenCreateBtn">New Commission Entry</button></div>
                             <div id="adminCommissionsList" class="admin-commissions-list"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div id="ordersGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; width: 100%;">
-                <p style="color: white; text-align: center; width: 100%;">Loading secure orders...</p>
+            </section>
             </div>
+            <section class="admin-idle-lock-screen" id="adminIdleLockScreen" hidden aria-live="polite">
+                <div class="admin-idle-lock-screen__panel">
+                    <p class="admin-idle-lock-screen__kicker">Horizon Tide Studios</p>
+                    <h2 class="admin-idle-lock-screen__title">Mission Control Offline</h2>
+                    <p class="admin-idle-lock-screen__copy">Admins are away right now. Mission Control is resting until they return.</p>
+                    <div class="admin-idle-lock-screen__scene" aria-hidden="true">
+                        <div class="admin-idle-atmosphere">
+                            <div class="admin-idle-moon"></div>
+                            <div class="admin-idle-stars" id="adminIdleStarField"></div>
+                            <div class="admin-idle-drifts" id="adminIdleDriftField"></div>
+                            <div class="admin-idle-shooting-stars" id="adminIdleShootingStars"></div>
+                        </div>
+                        <div class="admin-idle-zzz" id="adminIdleZzzCloud"></div>
+                        <div class="admin-idle-ripple">
+                            <span class="admin-idle-ripple__ring admin-idle-ripple__ring--one"></span>
+                            <span class="admin-idle-ripple__ring admin-idle-ripple__ring--two"></span>
+                            <span class="admin-idle-ripple__ring admin-idle-ripple__ring--three"></span>
+                        </div>
+                        <div class="admin-idle-cat">
+                            <span class="admin-idle-cat__shadow"></span>
+                            <svg class="admin-idle-cat__svg" viewBox="0 0 340 220" role="img" aria-label="Sleeping cat mascot">
+                                <g class="admin-idle-cat__art">
+                                    <ellipse cx="166" cy="154" rx="96" ry="50" class="admin-idle-cat__body-fill"></ellipse>
+                                    <ellipse cx="166" cy="154" rx="96" ry="50" class="admin-idle-cat__rim"></ellipse>
+
+                                    <path d="M220 123 C245 121, 266 134, 268 154 C269 173, 253 186, 232 186 C218 186, 206 181, 199 171 C192 161, 193 148, 199 138 C204 130, 212 125, 220 123 Z" class="admin-idle-cat__head-fill"></path>
+                                    <path d="M220 123 C245 121, 266 134, 268 154 C269 173, 253 186, 232 186 C218 186, 206 181, 199 171 C192 161, 193 148, 199 138 C204 130, 212 125, 220 123 Z" class="admin-idle-cat__rim"></path>
+
+                                    <g class="admin-idle-cat__ear-group admin-idle-cat__ear-group--left">
+                                        <path d="M206 127 L220 102 L234 126 Z" class="admin-idle-cat__ear-fill"></path>
+                                        <path d="M206 127 L220 102 L234 126" class="admin-idle-cat__rim"></path>
+                                    </g>
+                                    <g class="admin-idle-cat__ear-group admin-idle-cat__ear-group--right">
+                                        <path d="M231 124 L246 101 L261 126 Z" class="admin-idle-cat__ear-fill"></path>
+                                        <path d="M231 124 L246 101 L261 126" class="admin-idle-cat__rim"></path>
+                                    </g>
+
+                                    <g class="admin-idle-cat__tail-group">
+                                        <path d="M232 170 C266 165, 292 173, 304 191 C310 201, 307 212, 298 216 C287 220, 277 213, 275 204 C273 195, 279 188, 289 187 C277 173, 257 166, 234 166 C223 166, 212 168, 202 172" class="admin-idle-cat__tail-stroke"></path>
+                                        <path d="M232 170 C266 165, 292 173, 304 191 C310 201, 307 212, 298 216 C287 220, 277 213, 275 204 C273 195, 279 188, 289 187 C277 173, 257 166, 234 166 C223 166, 212 168, 202 172" class="admin-idle-cat__tail-rim"></path>
+                                    </g>
+
+                                    <rect x="200" y="179" width="24" height="10" rx="5" class="admin-idle-cat__paw-fill"></rect>
+                                    <rect x="224" y="179" width="24" height="10" rx="5" class="admin-idle-cat__paw-fill"></rect>
+
+                                    <path d="M214 146 Q220 142 226 146" class="admin-idle-cat__eye-stroke"></path>
+                                    <path d="M236 146 Q242 142 248 146" class="admin-idle-cat__eye-stroke"></path>
+                                    <path d="M230 152 L235 152 L232.5 155.3 Z" class="admin-idle-cat__nose-fill"></path>
+                                    <path d="M232.5 156 Q238.3 158.8 232.5 161.6 Q238.3 164.4 232.5 167.2" class="admin-idle-cat__mouth-stroke"></path>
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="admin-idle-lock-screen__dots" aria-hidden="true">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <div class="admin-idle-lock-screen__actions">
+                        <button type="button" class="admin-login-modal__btn admin-login-modal__btn--secondary" id="adminIdleBackHomeBtn">Back to Home</button>
+                        <button type="button" class="admin-login-modal__btn admin-login-modal__btn--primary" id="adminIdleLoginBtn">Log In Again</button>
+                    </div>
+                </div>
+            </section>
         </div>
     `;
+
+    document.getElementById('adminDashboardView')?.style.setProperty('pointer-events', 'auto');
 
     // --- DISCOUNT MANAGER BINDINGS ---
     const dPercent = document.getElementById('adminDiscountPercent');
     if(dPercent) dPercent.addEventListener('input', updateAdminPreview);
     updateAdminPreview();
+
+    bindAdminDashboardNavigation();
+    setupAdminDashboardDelegation();
     
     renderActiveDiscountsList();
     renderAdminAvailabilitySettings();
     setupQueueManagerTabs();
     setupAdminRefundManager();
     setupAdminCommissionManager();
+    renderAdminReviewsManager();
+    updateAdminDashboardOverview();
+
+    window.adminOrderFilterState = { status: 'All', search: '' };
+
+    const quickSearchInput = document.getElementById('adminQuickSearch');
+    if (quickSearchInput) {
+        quickSearchInput.addEventListener('input', () => {
+            window.adminOrderFilterState.search = quickSearchInput.value || '';
+            applyAdminOrderFilters();
+        });
+    }
 
     document.getElementById('btnSaveDiscount')?.addEventListener('click', async (e) => {
         if (!requireAdminSession('Please sign in with an authorized admin account before editing discounts.')) return;
         const btn = e.target;
         const dTarget = document.getElementById('adminDiscountTarget');
         const dMessage = document.getElementById('adminDiscountMessage');
+        const currentEditId = window.currentEditingDiscountId;
 
         let pct = parseInt(dPercent.value) || 0;
         if (pct < 1 || pct > 100) { alert("Enter a valid percentage."); return; }
-        
+
         const newSale = {
-            id: 'sale_' + Date.now(),
+            id: currentEditId || ('sale_' + Date.now()),
             percentage: pct,
             target: dTarget.value,
-            message: dMessage.value.trim()
+            message: dMessage.value.trim(),
+            enabled: true
         };
 
-        btn.innerText = "Adding...";
+        btn.innerText = currentEditId ? "Saving..." : "Adding...";
         btn.disabled = true;
         try {
-            const updatedSales = [...window.activeSales, newSale];
+            const updatedSales = currentEditId
+                ? window.activeSales.map((sale) => sale.id === currentEditId ? { ...sale, ...newSale } : sale)
+                : [...window.activeSales, newSale];
             await setDoc(doc(db, "settings", "discount"), { activeSales: updatedSales }, { merge: true });
-            showAdminToast("Discount added! ✨");
+            showAdminToast(currentEditId ? "Discount updated! ✨" : "Discount added! ✨");
+            window.currentEditingDiscountId = null;
             if(dPercent) dPercent.value = '';
             if(dMessage) dMessage.value = '';
+            if(dTarget) dTarget.value = 'all';
             updateAdminPreview();
             renderActiveDiscountsList();
+            updateAdminDashboardOverview();
         } catch (error) {
             console.error(error);
-            showAdminToast("Failed to add discount.", true);
+            showAdminToast(currentEditId ? "Failed to update discount." : "Failed to add discount.", true);
         } finally {
             btn.innerText = "Add Discount";
             btn.disabled = false;
         }
+    });
+
+    document.getElementById('adminResetDiscountEditorBtn')?.addEventListener('click', () => {
+        setDiscountEditState(null);
+        dPercent?.focus();
     });
 
     document.getElementById('btnSaveAvailabilitySettings')?.addEventListener('click', async (e) => {
@@ -4036,6 +5441,7 @@ function loadAdminDashboard() {
             window.homeAvailability = payload;
             applyHomeAvailabilityToCurrentDOM();
             showAdminToast('Availability updated.');
+            updateAdminDashboardOverview();
         } catch (error) {
             console.error(error);
             showAdminToast('Failed to update availability.', true);
@@ -4051,6 +5457,22 @@ function loadAdminDashboard() {
         showAdminToast('Default availability loaded in form. Save to publish.');
     });
 
+    document.getElementById('adminSetAllOpenBtn')?.addEventListener('click', () => {
+        const huskyStatus = document.getElementById('adminAvailHuskyStatus');
+        const lopsideStatus = document.getElementById('adminAvailLopsideStatus');
+        if (huskyStatus) huskyStatus.value = 'Open';
+        if (lopsideStatus) lopsideStatus.value = 'Open';
+        showAdminToast('Both creator statuses set to Open. Save to publish.');
+    });
+
+    document.getElementById('adminSetAllClosedBtn')?.addEventListener('click', () => {
+        const huskyStatus = document.getElementById('adminAvailHuskyStatus');
+        const lopsideStatus = document.getElementById('adminAvailLopsideStatus');
+        if (huskyStatus) huskyStatus.value = 'Closed';
+        if (lopsideStatus) lopsideStatus.value = 'Closed';
+        showAdminToast('Both creator statuses set to Closed. Save to publish.');
+    });
+
     // --- ANNOUNCEMENTS BINDINGS ---
     window.currentEditingAnnounceId = null;
 
@@ -4063,6 +5485,7 @@ function loadAdminDashboard() {
         const category = document.getElementById('adminAnnounceBadge').value;
         const body = document.getElementById('adminAnnounceBody').value.trim();
         const visible = document.getElementById('adminAnnounceVisible').checked;
+        const pinned = document.getElementById('adminAnnouncePinned').checked;
 
         btn.innerText = window.currentEditingAnnounceId ? "Updating..." : "Publishing...";
         btn.disabled = true;
@@ -4070,14 +5493,14 @@ function loadAdminDashboard() {
         try {
             if (window.currentEditingAnnounceId) {
                 await updateDoc(doc(db, "announcements", window.currentEditingAnnounceId), {
-                    title, date, category, body, visible
+                    title, date, category, body, visible, pinned
                 });
                 showAdminToast("Announcement updated! ✨");
                 window.currentEditingAnnounceId = null;
                 btn.innerText = "Publish Announcement";
             } else {
                 await addDoc(collection(db, "announcements"), {
-                    title, date, category, body, visible, timestamp: serverTimestamp()
+                    title, date, category, body, visible, pinned, timestamp: serverTimestamp()
                 });
                 showAdminToast("Announcement published! 🚀");
             }
@@ -4096,15 +5519,18 @@ function loadAdminDashboard() {
     window.adminAnnounceUnsub = onSnapshot(qAnnounce, (snapshot) => {
         const listEl = document.getElementById('adminAnnouncementsList');
         if(!listEl) return;
+        window.adminAnnouncementsEntries = [];
         
         listEl.innerHTML = '';
         if(snapshot.empty) {
             listEl.innerHTML = '<p style="color: #a2b7cc; font-size: 0.9rem;">No announcements exist yet.</p>';
+            updateAdminDashboardOverview();
             return;
         }
         
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
+            window.adminAnnouncementsEntries.push({ id: docSnap.id, ...data });
             const div = document.createElement('div');
             div.className = "admin-announce-item";
             
@@ -4113,16 +5539,18 @@ function loadAdminDashboard() {
                 date: data.date || '',
                 category: data.category || 'Update',
                 body: data.body || '',
-                visible: data.visible !== false
+                visible: data.visible !== false,
+                pinned: data.pinned === true
             }));
 
             div.innerHTML = `
                 <div class="announce-item-info">
                     <strong class="announce-item-title" style="color: ${data.visible ? '#00f2fe' : '#a2b7cc'};">${escapeHTML(data.title)}</strong>
-                    <span class="announce-item-meta">${escapeHTML(data.date)} - [${data.visible ? 'Visible' : 'Hidden'}] - ${escapeHTML(data.category)}</span>
+                    <span class="announce-item-meta">${escapeHTML(data.date)} - [${data.visible ? 'Visible' : 'Hidden'}] - ${escapeHTML(data.category)}${data.pinned ? ' - [Pinned]' : ''}</span>
                 </div>
                 <div class="announce-item-actions">
                     <button type="button" class="admin-btn-edit btn-toggle-vis" data-id="${docSnap.id}" data-vis="${data.visible}">${data.visible ? 'Hide' : 'Show'}</button>
+                    <button type="button" class="admin-btn-edit btn-toggle-pin" data-id="${docSnap.id}" data-pin="${data.pinned === true ? 'true' : 'false'}">${data.pinned ? 'Unpin' : 'Pin'}</button>
                     <button type="button" class="admin-btn-edit btn-edit-ann" data-id="${docSnap.id}" data-raw="${rawData}">Edit</button>
                     <button type="button" class="admin-btn-delete btn-delete-ann" data-id="${docSnap.id}">Delete</button>
                 </div>
@@ -4130,71 +5558,144 @@ function loadAdminDashboard() {
             listEl.appendChild(div);
         });
 
-        document.querySelectorAll('.btn-toggle-vis').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                if (!requireAdminSession('Please sign in with an authorized admin account before updating announcement visibility.')) return;
-                const id = e.target.getAttribute('data-id');
-                const currentVis = e.target.getAttribute('data-vis') === 'true';
-                try {
-                    await updateDoc(doc(db, "announcements", id), { visible: !currentVis });
-                } catch(err) { showAdminToast("Failed to update visibility", true); }
-            });
-        });
-
-        document.querySelectorAll('.btn-edit-ann').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = e.target.getAttribute('data-id');
-                const dataStr = e.target.getAttribute('data-raw');
-                if(dataStr) {
-                    const data = JSON.parse(decodeURIComponent(dataStr));
-                    document.getElementById('adminAnnounceTitle').value = data.title;
-                    document.getElementById('adminAnnounceDate').value = data.date;
-                    document.getElementById('adminAnnounceBadge').value = data.category;
-                    document.getElementById('adminAnnounceBody').value = data.body;
-                    document.getElementById('adminAnnounceVisible').checked = data.visible;
-                    window.currentEditingAnnounceId = id;
-                    document.getElementById('btnSaveAnnouncement').innerText = "Update Announcement";
-                    document.querySelector('.announcements-manager-card').scrollIntoView({behavior: 'smooth'});
-                }
-            });
-        });
-
-        document.querySelectorAll('.btn-delete-ann').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                if (!requireAdminSession('Please sign in with an authorized admin account before deleting announcements.')) return;
-                if(confirm("Permanently delete this announcement?")) {
-                    const id = e.target.getAttribute('data-id');
-                    try {
-                        await deleteDoc(doc(db, "announcements", id));
-                        showAdminToast("Announcement deleted.");
-                    } catch(err) { showAdminToast("Failed to delete announcement", true); }
-                }
-            });
-        });
+        updateAdminDashboardOverview();
     });
+
+    if (window.adminCommentsUnsub) window.adminCommentsUnsub();
+    window.adminCommentsUnsub = onSnapshot(collection(db, 'comments'), (snapshot) => {
+        const comments = [];
+        snapshot.forEach((docSnap) => comments.push({ id: docSnap.id, ...docSnap.data() }));
+        window.adminCommentsEntries = comments;
+        updateAdminDashboardOverview();
+        renderAdminReviewsManager();
+    }, () => {
+        window.adminCommentsEntries = [];
+        updateAdminDashboardOverview();
+        renderAdminReviewsManager();
+    });
+
+    document.getElementById('btnPreviewAnnouncementsPublic')?.addEventListener('click', (e) => cinematicTransition(e, loadAnnouncementsPage, '#updates'));
+    document.getElementById('adminPreviewAnnouncementsBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadAnnouncementsPage, '#updates'));
+
+    document.getElementById('adminQueueFocusRefunds')?.addEventListener('click', () => {
+        openAdminQueueTab('refunds');
+    });
+
+    document.getElementById('adminQueueFocusCommissions')?.addEventListener('click', () => {
+        openAdminQueueTab('commissions');
+    });
+
+    document.getElementById('adminOpenContactPageBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadContactPage, '#contact'));
 
     // --- STANDARD ADMIN CONTROLS ---
-    document.getElementById('homeAdminBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
+    const handleLogout = async (e) => {
+        stopAdminIdleLock();
+        await clearAdminSession();
+        cinematicTransition(e || null, loadHomePage, '#home');
+    };
 
-    document.getElementById('exitAdminBtn').addEventListener('click', async (e) => {
-        try {
-            await signOut(auth);
-            if(window.adminUnsubscribe) window.adminUnsubscribe();
-            if(window.adminAnnounceUnsub) window.adminAnnounceUnsub();
-            if(window.adminRefundsUnsub) window.adminRefundsUnsub();
-            if(window.adminCommissionsUnsub) window.adminCommissionsUnsub();
-        } catch (error) {
-            console.error("Error signing out", error);
-        }
-        cinematicTransition(e, loadHomePage, '#home');
+    const lockDashboard = async (e) => handleLogout(e);
+    document.getElementById('homeAdminBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
+    document.getElementById('lockAdminBtn')?.addEventListener('click', lockDashboard);
+    document.getElementById('sidebarHomeBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
+    document.getElementById('sidebarLockBtn')?.addEventListener('click', lockDashboard);
+    document.getElementById('adminIdleBackHomeBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
+    document.getElementById('adminIdleLoginBtn')?.addEventListener('click', () => {
+        openAdminLoginModal({
+            onSuccess: () => cinematicTransition(null, loadHomePage, '#home')
+        });
     });
 
-    document.getElementById('filterAll').addEventListener('click', () => filterOrders('All'));
-    document.getElementById('filterNew').addEventListener('click', () => filterOrders('Pending Review'));
-    document.getElementById('filterInProgress').addEventListener('click', () => filterOrders('In Progress'));
+    bindAdminIdleLock();
+
+    document.getElementById('adminNavDashboard')?.addEventListener('click', () => {
+        const target = document.getElementById('adminTopDashboard');
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    document.getElementById('adminNavOrders')?.addEventListener('click', () => {
+        filterOrders('All');
+    });
+
+    document.getElementById('adminNavPreorders')?.addEventListener('click', () => {
+        filterOrders('Pending Review');
+    });
+
+    document.getElementById('adminNavReviews')?.addEventListener('click', () => {
+        const customerSection = document.getElementById('adminSectionCustomer');
+        if (customerSection instanceof HTMLDetailsElement) customerSection.open = true;
+    });
+
+    document.getElementById('filterAll')?.addEventListener('click', () => filterOrders('All'));
+    document.getElementById('filterNew')?.addEventListener('click', () => filterOrders('Pending Review'));
+    document.getElementById('filterInProgress')?.addEventListener('click', () => filterOrders('In Progress'));
+    document.getElementById('adminToolsRefreshBtn')?.addEventListener('click', () => {
+        applyAdminOrderFilters();
+        applyRefundAdminFilters();
+        applyCommissionAdminFilters();
+        renderAdminReviewsManager();
+        updateAdminDashboardOverview();
+        showAdminToast('Mission data refreshed.');
+    });
+    document.getElementById('adminToolsClearSearchBtn')?.addEventListener('click', () => {
+        const quickSearch = document.getElementById('adminQuickSearch');
+        const refundSearch = document.getElementById('refundSearchField');
+        const commissionSearch = document.getElementById('commissionSearchField');
+        const refundVisibility = document.getElementById('refundVisibilityFilter');
+        const commissionVisibility = document.getElementById('commissionVisibilityFilter');
+        const refundStatus = document.getElementById('refundStatusFilter');
+        const commissionStatus = document.getElementById('commissionStatusFilter');
+
+        if (quickSearch) quickSearch.value = '';
+        if (refundSearch) refundSearch.value = '';
+        if (commissionSearch) commissionSearch.value = '';
+        if (refundVisibility) refundVisibility.value = 'all';
+        if (commissionVisibility) commissionVisibility.value = 'all';
+        if (refundStatus) refundStatus.value = 'all';
+        if (commissionStatus) commissionStatus.value = 'all';
+
+        window.adminOrderFilterState.search = '';
+        applyAdminOrderFilters();
+        applyRefundAdminFilters();
+        applyCommissionAdminFilters();
+        showAdminToast('All admin search filters cleared.');
+    });
+    document.getElementById('adminToolsCollapsePanelsBtn')?.addEventListener('click', () => {
+        document.querySelectorAll('.admin-collapsible').forEach((panel) => {
+            if (panel instanceof HTMLDetailsElement) panel.open = false;
+        });
+        document.querySelectorAll('.admin-order-details-panel').forEach((panel) => {
+            panel.setAttribute('hidden', 'hidden');
+        });
+        document.querySelectorAll('.admin-view-details-btn').forEach((btn) => {
+            btn.textContent = 'View Details';
+        });
+        const refundPanel = document.getElementById('refundInlinePanel');
+        const commissionPanel = document.getElementById('commissionInlinePanel');
+        if (refundPanel instanceof HTMLDetailsElement) refundPanel.open = false;
+        if (commissionPanel instanceof HTMLDetailsElement) commissionPanel.open = false;
+        showAdminToast('All expanded panels collapsed.');
+    });
+    document.getElementById('adminToolsSessionCheckBtn')?.addEventListener('click', () => {
+        if (!isAdminSessionActive()) {
+            showAdminToast('Security check failed: admin session is not active.', true);
+            return;
+        }
+        const email = auth.currentUser?.email || 'Unknown account';
+        const lastSignIn = auth.currentUser?.metadata?.lastSignInTime || 'Unknown time';
+        showAdminToast(`Security check passed for ${email}. Last sign-in: ${lastSignIn}`);
+    });
+    document.getElementById('adminToolsOpenQueuePageBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadHuskysListPage, '#huskys-list'));
+    document.getElementById('adminToolsOpenUpdatesPageBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadAnnouncementsPage, '#updates'));
     document.getElementById('exportPreordersCsvBtn')?.addEventListener('click', () => exportPreordersCSV());
     document.getElementById('exportRefundsCsvBtn')?.addEventListener('click', () => exportRefundsCSV());
     document.getElementById('exportCommissionsCsvBtn')?.addEventListener('click', () => exportCommissionsCSV());
+    document.getElementById('adminToolsExportAllBtn')?.addEventListener('click', () => {
+        exportPreordersCSV();
+        exportRefundsCSV();
+        exportCommissionsCSV();
+        showAdminToast('Started all CSV exports.');
+    });
 
     if (window.adminUnsubscribe) window.adminUnsubscribe();
     const q = query(collection(db, "preorders"), orderBy("createdAt", "desc"));
@@ -4203,12 +5704,14 @@ function loadAdminDashboard() {
         if (!ordersGrid) return;
         window.allOrders = [];
         snapshot.forEach(docSnap => { window.allOrders.push({ id: docSnap.id, ...docSnap.data() }); });
-        renderAdminOrders(window.allOrders);
+        applyAdminOrderFilters();
+        updateAdminDashboardOverview();
     }, (error) => {
         const ordersGrid = document.getElementById('ordersGrid');
         if (ordersGrid) {
             ordersGrid.innerHTML = `<p style="color: #ef4444; text-align: center; width: 100%;">Access Denied: Please log in or check Firebase Security Rules.</p>`;
         }
+        updateAdminDashboardOverview();
     });
 }
 
@@ -4243,6 +5746,31 @@ function renderAdminAvailabilitySettings() {
 }
 
 function setupAdminRefundManager() {
+    const refundGrid = document.querySelector('.refund-admin-grid');
+    const refundFormColumn = document.querySelector('.refund-admin-form-column');
+    const refundListColumn = document.querySelector('.refund-admin-list-column');
+
+    if (refundGrid && refundListColumn && refundFormColumn && refundGrid.firstElementChild !== refundListColumn) {
+        refundGrid.prepend(refundListColumn);
+    }
+
+    if (refundFormColumn && !refundFormColumn.querySelector('.admin-inline-collapsible')) {
+        const wrapper = document.createElement('details');
+        wrapper.id = 'refundInlinePanel';
+        wrapper.className = 'admin-inline-collapsible';
+        wrapper.innerHTML = '<summary id="refundInlineSummary">Create Refund Entry</summary>';
+
+        const body = document.createElement('div');
+        body.className = 'admin-inline-collapsible-body';
+        while (refundFormColumn.firstChild) {
+            body.appendChild(refundFormColumn.firstChild);
+        }
+
+        wrapper.appendChild(body);
+        refundFormColumn.appendChild(wrapper);
+        wrapper.open = false;
+    }
+
     const saveBtn = document.getElementById('saveRefundBtn');
     const clearBtn = document.getElementById('clearRefundFormBtn');
     const refundsList = document.getElementById('adminRefundsList');
@@ -4333,6 +5861,9 @@ function setupAdminRefundManager() {
     if (clearBtn) {
         clearBtn.addEventListener('click', () => {
             clearRefundForm();
+            const collapse = document.getElementById('refundInlinePanel');
+            if (collapse instanceof HTMLDetailsElement) collapse.open = false;
+            showAdminToast('Refund edit cancelled.');
         });
     }
 
@@ -4355,11 +5886,13 @@ function setupAdminRefundManager() {
         });
         window.adminRefundEntries = refunds;
         applyRefundAdminFilters();
+        updateAdminDashboardOverview();
     }, (error) => {
         if (refundsList) {
             refundsList.innerHTML = `<p style="color:#ef4444;">Unable to load refunds.</p>`;
         }
         console.error('Refund manager load failed', error);
+        updateAdminDashboardOverview();
     });
 }
 
@@ -4368,29 +5901,41 @@ function setupQueueManagerTabs() {
     const panels = document.querySelectorAll('.queue-manager-panel');
     if (tabButtons.length === 0 || panels.length === 0) return;
 
-    const activateTab = (tabName) => {
-        tabButtons.forEach((button) => {
-            const isActive = button.getAttribute('data-queue-tab') === tabName;
-            button.classList.toggle('is-active', isActive);
-            button.setAttribute('aria-selected', isActive ? 'true' : 'false');
-        });
-
-        panels.forEach((panel) => {
-            const isActive = panel.getAttribute('data-queue-panel') === tabName;
-            panel.classList.toggle('is-hidden', !isActive);
-        });
-    };
-
     tabButtons.forEach((button) => {
         button.addEventListener('click', () => {
-            activateTab(button.getAttribute('data-queue-tab'));
+            openAdminQueueTab(button.getAttribute('data-queue-tab'), { scroll: false, openDetails: false });
         });
     });
 
-    activateTab('refunds');
+    openAdminQueueTab('refunds', { scroll: false, openDetails: false });
 }
 
 function setupAdminCommissionManager() {
+    const commissionGrid = document.querySelector('.commission-admin-grid');
+    const commissionFormColumn = document.querySelector('.commission-admin-form-column');
+    const commissionListColumn = document.querySelector('.commission-admin-list-column');
+
+    if (commissionGrid && commissionListColumn && commissionFormColumn && commissionGrid.firstElementChild !== commissionListColumn) {
+        commissionGrid.prepend(commissionListColumn);
+    }
+
+    if (commissionFormColumn && !commissionFormColumn.querySelector('.admin-inline-collapsible')) {
+        const wrapper = document.createElement('details');
+        wrapper.id = 'commissionInlinePanel';
+        wrapper.className = 'admin-inline-collapsible';
+        wrapper.innerHTML = '<summary id="commissionInlineSummary">Create Commission Entry</summary>';
+
+        const body = document.createElement('div');
+        body.className = 'admin-inline-collapsible-body';
+        while (commissionFormColumn.firstChild) {
+            body.appendChild(commissionFormColumn.firstChild);
+        }
+
+        wrapper.appendChild(body);
+        commissionFormColumn.appendChild(wrapper);
+        wrapper.open = false;
+    }
+
     const saveBtn = document.getElementById('saveCommissionBtn');
     const clearBtn = document.getElementById('clearCommissionFormBtn');
     const commissionsList = document.getElementById('adminCommissionsList');
@@ -4469,6 +6014,9 @@ function setupAdminCommissionManager() {
     if (clearBtn) {
         clearBtn.addEventListener('click', () => {
             clearCommissionForm();
+            const collapse = document.getElementById('commissionInlinePanel');
+            if (collapse instanceof HTMLDetailsElement) collapse.open = false;
+            showAdminToast('Commission edit cancelled.');
         });
     }
 
@@ -4491,11 +6039,13 @@ function setupAdminCommissionManager() {
         });
         window.adminCommissionEntries = commissions;
         applyCommissionAdminFilters();
+        updateAdminDashboardOverview();
     }, (error) => {
         if (commissionsList) {
             commissionsList.innerHTML = `<p style="color:#ef4444;">Unable to load commissions.</p>`;
         }
         console.error('Commission manager load failed', error);
+        updateAdminDashboardOverview();
     });
 }
 
@@ -4572,7 +6122,7 @@ function renderAdminRefundList(refunds, totalRefunds = refunds.length) {
         const countLabel = refunds.length === totalRefunds
             ? `${refunds.length} ${refunds.length === 1 ? 'entry' : 'entries'}`
             : `${refunds.length} of ${totalRefunds} shown`;
-        refundsHeader.innerHTML = `<strong>Existing Refund Entries</strong><span class="admin-list-count-badge">${countLabel}</span>`;
+        refundsHeader.innerHTML = `<strong>Existing Refund Entries</strong><div class="admin-list-header-actions"><span class="admin-list-count-badge">${countLabel}</span><button type="button" class="admin-btn-edit" id="refundOpenCreateBtn">New Refund Entry</button></div>`;
     }
 
     if (refunds.length === 0) {
@@ -4605,45 +6155,6 @@ function renderAdminRefundList(refunds, totalRefunds = refunds.length) {
         `;
         refundsList.appendChild(item);
     });
-
-    document.querySelectorAll('.edit-refund-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            if (!requireAdminSession('Please log into the Secret Corner with an authorized admin account before editing refunds.')) return;
-            const id = e.target.getAttribute('data-id');
-            if (!id) return;
-            try {
-                const publicSnap = await getDoc(doc(db, 'refunds', id));
-                if (!publicSnap.exists()) return;
-                const data = publicSnap.data();
-                const privateSnap = await getDoc(doc(db, 'refundPrivate', id));
-                const privateData = privateSnap.exists() ? privateSnap.data() : {};
-                populateRefundForm({ id, ...data, ...privateData });
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            } catch (err) {
-                console.error('Unable to load refund for editing', err);
-            }
-        });
-    });
-
-    document.querySelectorAll('.delete-refund-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            if (!requireAdminSession('Please log into the Secret Corner with an authorized admin account before deleting refunds.')) return;
-            const id = e.target.getAttribute('data-id');
-            if (!id) return;
-            if (!confirm('Delete this refund entry permanently?')) return;
-            try {
-                await deleteDoc(doc(db, 'refunds', id));
-                await deleteDoc(doc(db, 'refundPrivate', id));
-                showAdminToast('Refund deleted.');
-                if (window.currentEditingRefundId === id) {
-                    clearRefundForm();
-                }
-            } catch (err) {
-                console.error('Failed to delete refund', err);
-                showAdminToast('Failed to delete refund.', true);
-            }
-        });
-    });
 }
 
 function populateRefundForm(refund) {
@@ -4665,7 +6176,9 @@ function populateRefundForm(refund) {
     document.getElementById('privateEmailField').value = refund.email || '';
     document.getElementById('transactionInfoField').value = refund.transactionInfo || '';
     const saveBtn = document.getElementById('saveRefundBtn');
-    if (saveBtn) saveBtn.innerText = 'Save Refund';
+    if (saveBtn) saveBtn.innerText = 'Save Changes';
+    const summary = document.getElementById('refundInlineSummary');
+    if (summary) summary.textContent = 'Edit Refund Entry';
 }
 
 function renderAdminCommissionList(commissions, totalCommissions = commissions.length) {
@@ -4678,7 +6191,7 @@ function renderAdminCommissionList(commissions, totalCommissions = commissions.l
         const countLabel = commissions.length === totalCommissions
             ? `${commissions.length} ${commissions.length === 1 ? 'entry' : 'entries'}`
             : `${commissions.length} of ${totalCommissions} shown`;
-        commissionsHeader.innerHTML = `<strong>Existing Commission Entries</strong><span class="admin-list-count-badge">${countLabel}</span>`;
+        commissionsHeader.innerHTML = `<strong>Existing Commission Entries</strong><div class="admin-list-header-actions"><span class="admin-list-count-badge">${countLabel}</span><button type="button" class="admin-btn-edit" id="commissionOpenCreateBtn">New Commission Entry</button></div>`;
     }
 
     if (commissions.length === 0) {
@@ -4689,8 +6202,8 @@ function renderAdminCommissionList(commissions, totalCommissions = commissions.l
     }
 
     const groupedCommissions = {
-        lopside: commissions.filter((commission) => (commission.queueOwner || inferCommissionQueueOwner(commission)) === 'lopside'),
-        husky: commissions.filter((commission) => (commission.queueOwner || inferCommissionQueueOwner(commission)) === 'husky')
+        lopside: commissions.filter((commission) => normalizeCommissionQueueOwnerValue(commission.queueOwner, commission) === 'lopside'),
+        husky: commissions.filter((commission) => normalizeCommissionQueueOwnerValue(commission.queueOwner, commission) === 'husky')
     };
 
     const buildCommissionItemHtml = (commission) => `
@@ -4702,7 +6215,7 @@ function renderAdminCommissionList(commissions, totalCommissions = commissions.l
                 </div>
                 <div class="admin-queue-item-subline">${escapeHTML(commission.displayName || 'Anonymous')}</div>
                 <div class="admin-queue-meta-row">
-                    <span class="admin-queue-meta-pill">${escapeHTML((commission.queueOwner || inferCommissionQueueOwner(commission)).replace(/^./, c => c.toUpperCase()))}</span>
+                    <span class="admin-queue-meta-pill">${escapeHTML(normalizeCommissionQueueOwnerValue(commission.queueOwner, commission).replace(/^./, c => c.toUpperCase()))}</span>
                     <span class="admin-queue-meta-pill admin-queue-meta-pill-visibility">${commission.isPublic ? 'Public' : 'Hidden'}</span>
                 </div>
             </div>
@@ -4733,52 +6246,13 @@ function renderAdminCommissionList(commissions, totalCommissions = commissions.l
             </div>
         </section>
     `;
-
-    document.querySelectorAll('.edit-commission-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            if (!requireAdminSession('Please log into the Secret Corner with an authorized admin account before editing commissions.')) return;
-            const id = e.target.getAttribute('data-id');
-            if (!id) return;
-            try {
-                const publicSnap = await getDoc(doc(db, 'commissions', id));
-                if (!publicSnap.exists()) return;
-                const data = publicSnap.data();
-                const privateSnap = await getDoc(doc(db, 'commissionPrivate', id));
-                const privateData = privateSnap.exists() ? privateSnap.data() : {};
-                populateCommissionForm({ id, ...data, ...privateData });
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            } catch (err) {
-                console.error('Unable to load commission for editing', err);
-            }
-        });
-    });
-
-    document.querySelectorAll('.delete-commission-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            if (!requireAdminSession('Please log into the Secret Corner with an authorized admin account before deleting commissions.')) return;
-            const id = e.target.getAttribute('data-id');
-            if (!id) return;
-            if (!confirm('Delete this commission entry permanently?')) return;
-            try {
-                await deleteDoc(doc(db, 'commissions', id));
-                await deleteDoc(doc(db, 'commissionPrivate', id));
-                showAdminToast('Commission deleted.');
-                if (window.currentEditingCommissionId === id) {
-                    clearCommissionForm();
-                }
-            } catch (err) {
-                console.error('Failed to delete commission', err);
-                showAdminToast('Failed to delete commission.', true);
-            }
-        });
-    });
 }
 
 function populateCommissionForm(commission) {
     window.currentEditingCommissionId = commission.id;
     document.getElementById('commissionIdField').value = commission.commissionId || '';
     document.getElementById('commissionDisplayNameField').value = commission.displayName || '';
-    document.getElementById('commissionQueueOwnerField').value = commission.queueOwner || inferCommissionQueueOwner(commission);
+    document.getElementById('commissionQueueOwnerField').value = normalizeCommissionQueueOwnerValue(commission.queueOwner, commission);
     document.getElementById('commissionQueueStatusField').value = commission.queueStatus || 'Not Started';
     document.getElementById('commissionIsPublicField').checked = commission.isPublic === true;
     document.getElementById('commissionPrivateNotesField').value = commission.privateNotes || '';
@@ -4787,7 +6261,9 @@ function populateCommissionForm(commission) {
     document.getElementById('commissionPrivateEmailField').value = commission.email || '';
     document.getElementById('commissionTransactionInfoField').value = commission.transactionInfo || '';
     const saveBtn = document.getElementById('saveCommissionBtn');
-    if (saveBtn) saveBtn.innerText = 'Save Commission';
+    if (saveBtn) saveBtn.innerText = 'Save Changes';
+    const summary = document.getElementById('commissionInlineSummary');
+    if (summary) summary.textContent = 'Edit Commission Entry';
 }
 
 function clearRefundForm() {
@@ -4808,6 +6284,10 @@ function clearRefundForm() {
     document.getElementById('paymentHandleField').value = '';
     document.getElementById('privateEmailField').value = '';
     document.getElementById('transactionInfoField').value = '';
+    const saveBtn = document.getElementById('saveRefundBtn');
+    if (saveBtn) saveBtn.innerText = 'Save Refund';
+    const summary = document.getElementById('refundInlineSummary');
+    if (summary) summary.textContent = 'Create Refund Entry';
 }
 
 function clearCommissionForm() {
@@ -4822,6 +6302,47 @@ function clearCommissionForm() {
     document.getElementById('commissionPaymentHandleField').value = '';
     document.getElementById('commissionPrivateEmailField').value = '';
     document.getElementById('commissionTransactionInfoField').value = '';
+    const saveBtn = document.getElementById('saveCommissionBtn');
+    if (saveBtn) saveBtn.innerText = 'Save Commission';
+    const summary = document.getElementById('commissionInlineSummary');
+    if (summary) summary.textContent = 'Create Commission Entry';
+}
+
+function renderAdminReviewsManager() {
+    const listEl = document.getElementById('adminReviewsList');
+    if (!listEl) return;
+
+    const reviews = Array.isArray(window.adminCommentsEntries)
+        ? [...window.adminCommentsEntries].sort((a, b) => {
+            const aTime = a.timestamp && a.timestamp.toDate ? a.timestamp.toDate().getTime() : 0;
+            const bTime = b.timestamp && b.timestamp.toDate ? b.timestamp.toDate().getTime() : 0;
+            return bTime - aTime;
+        })
+        : [];
+
+    if (reviews.length === 0) {
+        listEl.innerHTML = '<p style="color:#a2b7cc;">No reviews/comments available yet.</p>';
+        return;
+    }
+
+    listEl.innerHTML = reviews.slice(0, 20).map((review) => {
+        const ts = review.timestamp && review.timestamp.toDate ? review.timestamp.toDate().getTime() : 0;
+        const excerpt = String(review.text || '').replace(/\s+/g, ' ').trim();
+        const shortText = excerpt.length > 170 ? `${excerpt.slice(0, 170)}...` : excerpt;
+        return `
+            <article class="admin-review-row">
+                <div class="admin-review-row-head">
+                    <strong>${escapeHTML(review.name || 'Guest')}</strong>
+                    <span>${escapeHTML(getRelativeTimeLabel(ts))}</span>
+                </div>
+                <p class="admin-review-row-text">${escapeHTML(shortText || 'No text provided')}</p>
+                <div class="admin-review-row-actions">
+                    <button type="button" class="admin-btn-edit admin-copy-review-btn" data-review="${encodeURIComponent(excerpt || '')}">Copy Text</button>
+                    <button type="button" class="admin-btn-delete admin-delete-review-btn" data-id="${review.id}">Delete</button>
+                </div>
+            </article>
+        `;
+    }).join('');
 }
 
 function renderAdminOrders(ordersArr) {
@@ -4833,38 +6354,107 @@ function renderAdminOrders(ordersArr) {
     }
 
     ordersArr.forEach(order => {
+        const getValue = (value) => {
+            if (value == null) return '';
+            return String(value).trim();
+        };
+
+        const getPreviewText = (value, limit = 180) => {
+            const raw = getValue(value).replace(/\s+/g, ' ');
+            if (!raw) return 'No notes provided.';
+            if (raw.length <= limit) return raw;
+            return `${raw.slice(0, limit)}...`;
+        };
+
+        const buildOrderDetailRows = () => {
+            const rows = [];
+            const pushRow = (label, value) => {
+                const text = getValue(value);
+                if (!text) return;
+                rows.push(`<div class="admin-order-detail-row"><strong>${escapeHTML(label)}:</strong> <span>${escapeHTML(text)}</span></div>`);
+            };
+
+            const statusHistory = Array.isArray(order.statusHistory) && order.statusHistory.length > 0
+                ? order.statusHistory.map((entry) => String(entry || '').trim()).filter(Boolean).join(' | ')
+                : (order.status || 'Pending Review');
+
+            pushRow('Order Type', order.orderType || order.itemType);
+            pushRow('Status', order.status || 'Pending Review');
+            pushRow('Customer Name', order.name);
+            pushRow('Order ID', order.orderId);
+            pushRow('Date', order.createdAt && order.createdAt.toDate ? order.createdAt.toDate().toLocaleString() : order.createdAt || 'Unknown');
+            pushRow('Email', order.email);
+            pushRow('Discord', order.discord);
+            pushRow('Item Type', order.itemType);
+            pushRow('Art Type', order.artType);
+            pushRow('Part Type', order.partType);
+            pushRow('Keychain Type', order.keychainType);
+            pushRow('Sticker Type', order.stickerType);
+            pushRow('Character Name', order.characterName);
+            pushRow('Character Count', order.characterCount);
+            pushRow('Species', order.species);
+            pushRow('Shading Style', order.shadingStyle);
+            pushRow('Quantity', order.quantity);
+            pushRow('Deadline', order.deadline);
+            pushRow('Mood', order.mood);
+            pushRow('Pose', order.pose);
+            pushRow('Background', order.background);
+            pushRow('Finish', order.finish);
+            pushRow('Style', order.style);
+            pushRow('Description', order.description);
+            pushRow('Materials', order.materials);
+            pushRow('Selected Add-ons', order.selectedAddons || (Array.isArray(order.addon) ? order.addon.join(', ') : ''));
+            pushRow('Notes', order.notes);
+            pushRow('Status History', statusHistory);
+            pushRow('Admin Notes', order.adminNotes);
+            pushRow('Uploaded Files', Array.isArray(order.referenceImageUrls) && order.referenceImageUrls.length > 0 ? `${order.referenceImageUrls.length} file(s)` : 'No uploaded files');
+            return rows.join('');
+        };
+
         const card = document.createElement('div');
-        card.className = "admin-card";
+        card.className = "admin-card admin-order-card";
         const orderDate = order.createdAt ? new Date(order.createdAt.toDate()).toLocaleDateString() : 'Unknown Date';
         const notes = order.notes || "None";
         const email = order.email || "No Email";
-        const addonsText = order.selectedAddons ? `<br><strong>Add-ons:</strong> ${escapeHTML(order.selectedAddons)}` : '';
+        const displayName = order.name || 'Unknown';
+        const serviceType = getOrderServiceType(order);
+        const creatorLabel = getOrderCreator(serviceType) === 'lopside' ? 'Lopside' : 'Husky';
+        const estimatedPrice = formatMoney(estimateOrderRevenue(order));
+        const notesPreview = getPreviewText(notes, 150);
+        const attentionBadge = getOrderAttentionBadge(order);
+        const currentStatus = order.status || 'Pending Review';
+        const badgeColorMap = {
+            'New': '#38bdf8',
+            'Pending Review': '#60a5fa',
+            'Needs Reply': '#f59e0b',
+            'Waiting Payment': '#a855f7',
+            'In Progress': '#f97316',
+            'Completed': '#22c55e'
+        };
+        const badgeColor = badgeColorMap[attentionBadge] || '#60a5fa';
         
         let imagesHtml = '';
         if (order.referenceImageUrls && order.referenceImageUrls.length > 0) {
-            imagesHtml = `<br><strong>Uploads:</strong> ` + order.referenceImageUrls.map((url, i) => `<a href="${escapeHTML(url)}" target="_blank" style="color:#00f2fe;">View Image ${i+1}</a>`).join(' | ');
+            imagesHtml = `<div class="admin-image-thumb-grid">` + order.referenceImageUrls.map((url, i) => `
+                <button type="button" class="admin-image-thumb" data-image-url="${escapeHTML(url)}" data-image-alt="Order image ${i + 1}">
+                    <img src="${escapeHTML(url)}" alt="Order image ${i + 1}" loading="lazy" onerror="handleImageError(this)">
+                </button>
+            `).join('') + `</div>`;
         }
 
         card.innerHTML = `
-            <h3>${escapeHTML(order.orderType || order.itemType || 'Order')}</h3>
-            <div class="admin-detail"><strong>Name:</strong> ${escapeHTML(order.name)}</div>
+            <h3>${escapeHTML(order.orderType || order.itemType || 'Order')} <span class="admin-order-badge" style="background:${badgeColor};">${escapeHTML(attentionBadge)}</span></h3>
+            <div class="admin-detail"><strong>Status:</strong> ${escapeHTML(currentStatus)}</div>
+            <div class="admin-detail"><strong>Name:</strong> ${escapeHTML(displayName)}</div>
             <div class="admin-detail"><strong>Order ID:</strong> ${escapeHTML(order.orderId || 'N/A')}</div>
-            <div class="admin-detail"><strong>Discord:</strong> ${escapeHTML(order.discord)}</div>
-            <div class="admin-detail"><strong>Email:</strong> ${escapeHTML(email)}</div>
             <div class="admin-detail"><strong>Date:</strong> ${orderDate}</div>
-            <div class="admin-detail" style="grid-column: span 2;">
-                <strong>Order Details:</strong>
-                <span style="color: #a2b7cc; font-size: 0.85rem;">
-                    (Type: ${escapeHTML(order.itemType || order.keychainType || order.stickerType || order.partType || order.artType || 'N/A')}, Qty: ${escapeHTML(order.quantity || '1')})
-                    ${addonsText}
-                    ${imagesHtml}
-                </span>
-            </div>
-            <div class="admin-detail" style="grid-column: span 2;"><strong>Notes:</strong> ${escapeHTML(notes)}</div>
-            ${order.refLink ? `<div class="admin-detail" style="grid-column: span 2;"><strong>Ref Link:</strong> <a href="${escapeHTML(order.refLink)}" target="_blank" style="color: #00f2fe;">View Link Reference</a></div>` : ''}
+            <div class="admin-detail"><strong>Creator:</strong> ${escapeHTML(creatorLabel)}</div>
+            <div class="admin-detail"><strong>Estimated:</strong> ${escapeHTML(estimatedPrice)}</div>
+            <div class="admin-detail admin-order-preview"><strong>Notes Preview:</strong> ${escapeHTML(notesPreview)}</div>
             
             <div class="admin-actions">
-                <select id="status-${order.id}" style="padding: 5px; background: #0a0514; color: white; border: 1px solid #a855f7; border-radius: 5px;">
+                <button type="button" id="view-${order.id}" class="admin-view-details-btn" data-order-id="${order.id}">View Details</button>
+                <select id="status-${order.id}" class="admin-order-status-select" data-order-id="${order.id}">
                     <option value="Pending Review" ${order.status === 'Pending Review' || order.status === 'New' ? 'selected' : ''}>Pending Review</option>
                     <option value="Reviewed" ${order.status === 'Reviewed' ? 'selected' : ''}>Reviewed</option>
                     <option value="Accepted" ${order.status === 'Accepted' ? 'selected' : ''}>Accepted</option>
@@ -4875,51 +6465,22 @@ function renderAdminOrders(ordersArr) {
                     <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
                     <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
                 </select>
-                <button type="button" id="msg-${order.id}" class="copy-template-btn" style="background: rgba(0,242,254,0.2); border: 1px solid #00f2fe; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Copy Msg</button>
-                <button type="button" id="copy-${order.id}" style="background: rgba(0,242,254,0.2); border: 1px solid #00f2fe; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Copy Email</button>
-                <button type="button" id="delete-${order.id}" style="background: rgba(239,68,68,0.2); border: 1px solid #ef4444; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Delete</button>
+                <button type="button" id="msg-${order.id}" class="copy-template-btn admin-order-action-btn" data-order-id="${order.id}">Copy Msg</button>
+                <button type="button" id="copy-${order.id}" class="admin-order-action-btn" data-copy-email="${escapeHTML(email)}">Copy Email</button>
+                <button type="button" id="delete-${order.id}" class="admin-order-action-btn admin-order-delete-btn" data-order-id="${order.id}">Delete</button>
+            </div>
+
+            <div id="details-${order.id}" class="admin-order-details-panel" hidden>
+                <div class="admin-order-details-grid">
+                    ${buildOrderDetailRows()}
+                </div>
+                ${order.refLink ? `<div class="admin-order-detail-row"><strong>Reference Link:</strong> <a href="${escapeHTML(order.refLink)}" target="_blank" rel="noopener noreferrer" class="admin-order-link">Open Link</a></div>` : ''}
+                ${imagesHtml ? `<div class="admin-order-detail-row"><strong>Uploads:</strong>${imagesHtml}</div>` : ''}
+                <div class="admin-order-detail-row"><strong>Email:</strong> <span>${escapeHTML(email)}</span></div>
+                <div class="admin-order-detail-row"><strong>Discord:</strong> <span>${escapeHTML(order.discord || 'N/A')}</span></div>
             </div>
         `;
         ordersGrid.appendChild(card);
-
-        document.getElementById(`status-${order.id}`).addEventListener('change', async (e) => {
-            if (!requireAdminSession('Please sign in with an authorized admin account before changing order statuses.')) {
-                e.target.value = order.status || 'Pending Review';
-                return;
-            }
-            try { 
-                await updateDoc(doc(db, "preorders", order.id), { status: e.target.value });
-                if (order.orderId) {
-                    const publicStatusPayload = {
-                        orderId: order.orderId,
-                        itemType: order.itemType || order.orderType || 'Unknown',
-                        status: e.target.value,
-                        updatedAt: serverTimestamp()
-                    };
-                    if (order.createdAt) {
-                        publicStatusPayload.createdAt = order.createdAt;
-                    }
-                    await setDoc(doc(db, "preorderStatusPublic", order.orderId), {
-                        ...publicStatusPayload
-                    }, { merge: true });
-                }
-                showAdminToast("Status updated successfully ✨");
-            } catch (err) { showAdminToast("Failed to update status.", true); }
-        });
-
-        document.getElementById(`msg-${order.id}`).addEventListener('click', () => {
-            const currentStatus = document.getElementById(`status-${order.id}`).value;
-            let msg = `Hi ${order.name}! Your order status has been updated to ${currentStatus}. We'll contact you if we need anything else.`;
-            if (currentStatus === 'Pending Review') msg = `Hi ${order.name}! Your preorder has been submitted successfully. We'll review it and contact you if we need anything else.`;
-            if (currentStatus === 'Reviewed' || currentStatus === 'Accepted') msg = `Hi ${order.name}! Your order has been reviewed. We'll reach out soon with the next steps or any questions.`;
-            if (currentStatus === 'Finished') msg = `Hi ${order.name}! Your order has been completed. Thank you so much for supporting Horizon Tide Gallery!`;
-            
-            navigator.clipboard.writeText(msg);
-            showAdminToast("Message template copied! ✨");
-        });
-
-        document.getElementById(`copy-${order.id}`).addEventListener('click', () => { navigator.clipboard.writeText(email); showAdminToast('Email copied! ✨'); });
-        document.getElementById(`delete-${order.id}`).addEventListener('click', () => deleteOrder(order.id));
     });
 }
 
@@ -4934,9 +6495,11 @@ function showAdminToast(msg, isError = false) {
 }
 
 function filterOrders(status) {
-    if (!window.allOrders) return;
-    if (status === 'All') renderAdminOrders(window.allOrders);
-    else renderAdminOrders(window.allOrders.filter(o => o.status === status));
+    if (!window.adminOrderFilterState) {
+        window.adminOrderFilterState = { status: 'All', search: '' };
+    }
+    window.adminOrderFilterState.status = status || 'All';
+    applyAdminOrderFilters();
 }
 
 async function deleteOrder(id) {
@@ -5036,7 +6599,7 @@ function exportCommissionsCSV() {
     const rows = (Array.isArray(window.adminCommissionEntries) ? window.adminCommissionEntries : []).map((commission) => ({
         commissionId: commission.commissionId || '',
         displayName: commission.displayName || '',
-        queueOwner: commission.queueOwner || inferCommissionQueueOwner(commission),
+        queueOwner: normalizeCommissionQueueOwnerValue(commission.queueOwner, commission),
         queueStatus: commission.queueStatus || '',
         isPublic: commission.isPublic === true ? 'true' : 'false',
         updatedAt: normalizeDateForCSV(commission.updatedAt)
@@ -5252,5 +6815,38 @@ function initRouter() {
     });
 }
 
+async function clearReloadedAdminSession() {
+    if (!IS_HARD_RELOAD) return;
+
+    await new Promise((resolve) => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            unsubscribe();
+
+            if (!user?.email) {
+                resolve();
+                return;
+            }
+
+            const email = String(user.email).toLowerCase();
+            if (!ADMIN_EMAIL_ALLOWLIST.has(email)) {
+                resolve();
+                return;
+            }
+
+            localStorage.removeItem(ADMIN_PERSISTENCE_PREF_KEY);
+
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error('Error clearing admin session after hard refresh', error);
+            }
+
+            resolve();
+        });
+    });
+}
+
 // Start Application
-initRouter();
+clearReloadedAdminSession().finally(() => {
+    initRouter();
+});
