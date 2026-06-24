@@ -507,6 +507,8 @@ function applyHomeAvailabilityToCurrentDOM() {
     const availability = normalizeHomeAvailability(window.homeAvailability);
     const husky = availability.artists.husky;
     const lopside = availability.artists.lopside;
+    const huskyStatusClass = getAvailabilityStatusClass(husky.status);
+    const lopsideStatusClass = getAvailabilityStatusClass(lopside.status);
 
     const huskyNameEl = document.getElementById('homeAvailHuskyName');
     const huskyServiceEl = document.getElementById('homeAvailHuskyService');
@@ -1482,28 +1484,46 @@ function loadHomePage() {
     const lopside = availability.artists.lopside;
 
     appViewport.innerHTML = `
-        <div class="gif-container"><img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/umbreon.gif" alt="Shiny Umbreon" class="active-pokemon-gif"></div>
-        <header><h1>Welcome to The Horizon,</h1><h2>where creativity happens</h2></header>
-        
-        <div class="button-container button-container-home">
-            <button type="button" class="nav-btn btn-pink-highlight" id="btnGalleryHome" style="width: 100%; max-width: 450px;">✨ Horizon Tide Gallery ✨</button>
-            <button type="button" class="btn-preorder-massive" id="btnPreorderMassive">🛒 Preorder Menu</button>
-            <button type="button" class="btn-discord-small" id="btnDiscordHome">🐾 Join Our SFW 18+ Discord Server 🐾</button>
-            ${getTemplateHTML('homeAnnouncementsBtnWrapper')}
-        </div>
+        <section class="home-hero-shell" aria-label="Welcome and primary navigation">
+            <div class="gif-container"><img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/umbreon.gif" alt="Shiny Umbreon" class="active-pokemon-gif"></div>
+            <header class="home-hero-header">
+                <h1>Welcome to The Horizon,</h1>
+                <h2>Custom Art • Fursuits • Animation • Handmade Creations</h2>
+                <p class="home-hero-note">Horizon Tide Gallery creates ocean-cosmic commissions and handmade pieces with clear ordering, updates, and artist guidance.</p>
+            </header>
 
-        <nav class="button-grid home-nav-grid">
-            <button type="button" class="nav-btn" id="tosBtn">Our TOS</button>
-            <button type="button" class="nav-btn" id="whatWeDoBtn">What we do</button>
-            <button type="button" class="nav-btn" id="socialsBtn">Meet the Artists + FAQ + How to Order</button>
-            <button type="button" class="nav-btn" id="reviewsBtn">Reviews</button>
-            <button type="button" class="nav-btn" id="contactBtn">Contact us 💬</button>
-        </nav>
+            <div class="button-container button-container-home">
+                <button type="button" class="btn-preorder-massive" id="btnPreorderMassive">🛒 Preorder Menu</button>
+
+                <div class="home-secondary-actions">
+                    <button type="button" class="nav-btn btn-pink-highlight home-secondary-btn" id="btnGalleryHome">✨ Horizon Tide Gallery ✨</button>
+                    ${getTemplateHTML('homeAnnouncementsBtnWrapper')}
+                </div>
+
+                <div class="home-utility-actions">
+                    <button type="button" class="btn-discord-small home-discord-btn" id="btnDiscordHome">🐾 Join Our SFW 18+ Discord Server 🐾</button>
+                </div>
+            </div>
+
+            <nav class="button-grid home-nav-grid" aria-label="Homepage quick links">
+                <button type="button" class="nav-btn" id="tosBtn">Our TOS</button>
+                <button type="button" class="nav-btn" id="whatWeDoBtn">What we do</button>
+                <button type="button" class="nav-btn" id="socialsBtn">Meet the Artists + FAQ + How to Order</button>
+                <button type="button" class="nav-btn" id="reviewsBtn">Reviews</button>
+                <button type="button" class="nav-btn" id="contactBtn">Contact us 💬</button>
+            </nav>
+        </section>
 
         <section class="home-pro-shell">
+        <div class="home-pro-intro">
+            <p class="home-pro-kicker">Start Here</p>
+            <h3>Check availability, prepare your details, and see what’s new before placing an order.</h3>
+        </div>
+
         <section class="home-pro-grid">
             <article class="home-pro-card home-availability-card">
                 <h3>Artist Availability & Slots</h3>
+                <p class="home-pro-card-subtitle">Quick-scan availability, open slots, and current reply timing for each artist.</p>
                 <div class="availability-list">
                     <div class="availability-item">
                         <div class="availability-service">
@@ -1534,6 +1554,7 @@ function loadHomePage() {
 
             <article class="home-pro-card">
                 <h3>Before You Order</h3>
+                <p class="home-pro-card-subtitle">Use this prep list so your request is easier to review and quote accurately.</p>
                 <ul class="pro-checklist">
                     <li>Character reference ready</li>
                     <li>Commission type selected</li>
@@ -1546,18 +1567,9 @@ function loadHomePage() {
         </section>
 
         <section class="home-pro-grid">
-            <article class="home-pro-card">
-                <h3>Care Guide</h3>
-                <div class="care-guide-grid">
-                    <article class="care-guide-item"><h4>Fursuit Parts</h4><p>Spot-clean gently, air dry, and store in breathable bags.</p></article>
-                    <article class="care-guide-item"><h4>Keychains</h4><p>Keep dry, avoid heavy drops, and wipe with soft cloth only.</p></article>
-                    <article class="care-guide-item"><h4>Stickers</h4><p>Apply to clean surfaces and avoid soaking or hard scrubbing.</p></article>
-                    <article class="care-guide-item"><h4>Handmade Items</h4><p>Keep away from high heat, direct sun, and moisture for long periods.</p></article>
-                </div>
-            </article>
-
             <article class="home-pro-card home-updates-card">
                 <h3>What's New?</h3>
+                <p class="home-pro-card-subtitle">Recent studio updates and site improvements you may want to check before ordering.</p>
                 <ul class="mini-updates-list">
                     <li><span class="update-dot"></span><span>Horizon Queue added</span></li>
                     <li><span class="update-dot"></span><span>Professional FAQ added</span></li>
@@ -1565,7 +1577,47 @@ function loadHomePage() {
                     <li><span class="update-dot"></span><span>Commission queue added</span></li>
                 </ul>
             </article>
+
+            <article class="home-pro-card home-care-card">
+                <h3>Care Guide</h3>
+                <p class="home-pro-card-subtitle">Helpful aftercare basics for physical items, kept lower priority than ordering info.</p>
+                <div class="care-guide-grid">
+                    <article class="care-guide-item"><h4>Fursuit Parts</h4><p>Spot-clean gently, air dry, and store in breathable bags.</p></article>
+                    <article class="care-guide-item"><h4>Keychains</h4><p>Keep dry, avoid heavy drops, and wipe with soft cloth only.</p></article>
+                    <article class="care-guide-item"><h4>Stickers</h4><p>Apply to clean surfaces and avoid soaking or hard scrubbing.</p></article>
+                    <article class="care-guide-item"><h4>Handmade Items</h4><p>Keep away from high heat, direct sun, and moisture for long periods.</p></article>
+                </div>
+            </article>
         </section>
+        </section>
+
+        <section class="home-trust-shell" aria-label="Why commission with Horizon Tide">
+            <div class="home-trust-head">
+                <h3>Why Commission With Horizon?</h3>
+                <p>Clear updates, careful work, and a smoother ordering experience.</p>
+            </div>
+
+            <div class="home-trust-grid">
+                <article class="home-trust-card">
+                    <h4>Clear Communication</h4>
+                    <p>Updates and order details stay easy to follow.</p>
+                </article>
+
+                <article class="home-trust-card">
+                    <h4>Artist-Guided Process</h4>
+                    <p>We help you prepare references, notes, and expectations before work begins.</p>
+                </article>
+
+                <article class="home-trust-card">
+                    <h4>Transparent Queue</h4>
+                    <p>Public-safe queue/status pages help clients track progress.</p>
+                </article>
+
+                <article class="home-trust-card">
+                    <h4>Handmade Care</h4>
+                    <p>Physical items include basic care guidance so they last longer.</p>
+                </article>
+            </div>
         </section>
     `;
     bindCoreMenuControls();
