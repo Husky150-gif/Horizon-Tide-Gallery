@@ -614,9 +614,15 @@ function updateDiscountUI() {
     const activeVisibleSales = Array.isArray(window.activeSales)
         ? window.activeSales.filter((sale) => sale.enabled !== false)
         : [];
+    const currentPage = bodyElement.getAttribute('data-page');
+    const currentHash = window.location.hash || '#home';
+    const isAdminView = currentPage === 'admin' || currentHash === '#admin';
     
     if(banner) {
-        if (activeVisibleSales.length > 0) {
+        if (isAdminView) {
+            banner.style.display = 'none';
+            document.body.style.paddingTop = '0px';
+        } else if (activeVisibleSales.length > 0) {
             // Display the highest value discount globally
             let displaySale = activeVisibleSales[0];
             activeVisibleSales.forEach(sale => {

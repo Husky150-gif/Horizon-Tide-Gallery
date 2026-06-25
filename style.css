@@ -6767,6 +6767,26 @@ body[data-page="reviews"] .reviews-submit-btn {
     padding: 10px 16px;
 }
 
+.refund-manager-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    align-items: stretch;
+}
+
+.refund-manager-actions > button {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+    line-height: 1.2;
+    white-space: normal;
+}
+
+.refund-manager-actions .admin-btn-save:hover,
+.refund-manager-actions .admin-btn-publish:hover {
+    transform: none;
+}
+
 .queue-manager-card .admin-btn-edit,
 .queue-manager-card .admin-btn-delete {
     padding: 8px 12px;
@@ -7443,6 +7463,10 @@ body[data-page="huskys-list"] #footerCredit {
     .star-bit {
         opacity: 0.58;
     }
+
+    .refund-manager-actions {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 720px) {
@@ -7690,6 +7714,10 @@ body[data-page="huskys-list"] #footerCredit {
     z-index: 9999999;
     box-shadow: 0 4px 15px rgba(236, 72, 153, 0.5);
     font-size: 1.1rem;
+}
+
+body[data-page="admin"] .global-sale-banner {
+    display: none !important;
 }
 
 .tos-constellation-wrapper {
