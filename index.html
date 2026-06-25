@@ -310,15 +310,49 @@
     <script type="module" src="script.js?v=32"></script>
 
     <script>
-        window.addEventListener('load', function() {
-            setTimeout(function() {
+        (function () {
+            var loaderRemoved = false;
+
+            function removeTidepoolLoader() {
+                if (loaderRemoved) return;
                 var loader = document.getElementById('tidepoolLoader');
-                if(loader) {
-                    loader.classList.add('fade-out');
-                    setTimeout(function() { loader.remove(); }, 800);
+                if (!loader) {
+                    loaderRemoved = true;
+                    return;
                 }
-            }, 600); 
-        });
+
+                loaderRemoved = true;
+                loader.classList.add('fade-out');
+                setTimeout(function () {
+                    if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+                }, 800);
+            }
+
+            function scheduleRemove(delay) {
+                setTimeout(removeTidepoolLoader, delay);
+            }
+
+            // Preferred path once all resources are ready.
+            window.addEventListener('load', function () {
+                scheduleRemove(450);
+            }, { once: true });
+
+            // Safety path if some resources stall.
+            document.addEventListener('DOMContentLoaded', function () {
+                scheduleRemove(1200);
+            }, { once: true });
+
+            // Hard failsafe so loader never gets stuck.
+            scheduleRemove(5000);
+
+            // If module/network errors occur, unblock UI.
+            window.addEventListener('error', function () {
+                scheduleRemove(150);
+            });
+            window.addEventListener('unhandledrejection', function () {
+                scheduleRemove(150);
+            });
+        })();
     </script>
 </body>
 </html>

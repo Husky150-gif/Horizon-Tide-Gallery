@@ -1765,10 +1765,10 @@ function loadPreorderPage() {
     createBubbles();
 
     appViewport.innerHTML = `
-        <div class="preorder-card" style="position: relative;">
+        <div class="preorder-card preorder-menu-card">
             <button type="button" id="btnHuskysList" class="preorder-btn huskys-list-btn">Horizon Queue</button>
-            <h1 style="color: #ffffff; text-shadow: 0 0 15px rgba(255,255,255,0.8); margin-bottom: 10px; font-size: 2.8rem;">Preorder Menu</h1>
-            <p style="color: #e0f7fa; font-size: 1.1rem;">Choose what you'd like to view or preorder from Horizon Tide Gallery.</p>
+            <h1 class="preorder-menu-title">Preorder Menu</h1>
+            <p class="preorder-menu-subtitle">Choose what you'd like to view or preorder from Horizon Tide Gallery.</p>
             <section class="preorder-prep-shell">
                 <h3>Customer Prep Checklist</h3>
                 <ul>
@@ -1783,17 +1783,17 @@ function loadPreorderPage() {
             <div class="preorder-section-grid">
                 <div class="menu-section">
                     <h3>Pricing & Info</h3>
-                    <button type="button" class="preorder-btn pricing-btn-glow" id="btnPricing">Pricing Sheet ✨</button>
-                    <button type="button" class="preorder-btn" id="btnStatusCheck" style="border-color: #a855f7;">Check Preorder Status</button>
+                    <button type="button" class="preorder-btn preorder-btn-violet" id="btnPricing">Pricing Sheet</button>
+                    <button type="button" class="preorder-btn preorder-btn-cyan" id="btnStatusCheck">Check Preorder Status</button>
                 </div>
                 <div class="menu-section">
                     <h3>Order Forms</h3>
                     <div class="button-grid-2col">
-                        <button type="button" class="preorder-btn" id="btnArt" style="border-color: #ec4899;">Husky's Art Commissions</button>
-                        <button type="button" class="preorder-btn" id="btnCustomStickers" style="border-color: #ec4899;">Custom Stickers</button>
-                        <button type="button" class="preorder-btn" id="btnPremadeKeychains" style="border-color: #00f2fe;">Premade Keychains</button>
-                        <button type="button" class="preorder-btn" id="btnCustomKeychains" style="border-color: #00f2fe;">Custom Keychains</button>
-                        <button type="button" class="preorder-btn" id="btnFursuits" style="border-color: #22c55e; grid-column: 1 / -1;">Lopside's Fursuit Creations</button>
+                        <button type="button" class="preorder-btn preorder-btn-magenta" id="btnArt">Husky's Art Commissions</button>
+                        <button type="button" class="preorder-btn preorder-btn-magenta" id="btnCustomStickers">Custom Stickers</button>
+                        <button type="button" class="preorder-btn preorder-btn-cyan" id="btnPremadeKeychains">Premade Keychains</button>
+                        <button type="button" class="preorder-btn preorder-btn-cyan" id="btnCustomKeychains">Custom Keychains</button>
+                        <button type="button" class="preorder-btn preorder-btn-green preorder-btn-wide" id="btnFursuits">Lopside's Fursuit Creations</button>
                     </div>
                 </div>
                 <div class="menu-section">
@@ -1802,7 +1802,7 @@ function loadPreorderPage() {
                     <button type="button" class="preorder-btn disabled" id="btnAnimations">Animations</button>
                 </div>
             </div>
-            <button type="button" id="backHomeBtn" class="preorder-btn" style="max-width: 400px; margin: 0 auto; border-color: transparent; background: rgba(255,255,255,0.15);">← Back to Horizon</button>
+            <button type="button" id="backHomeBtn" class="preorder-btn preorder-back-btn">← Back to Horizon</button>
         </div>
     `;
     
@@ -2778,10 +2778,15 @@ function loadHuskysListPage() {
     appViewport.innerHTML = `
         <div class="refunds-page-container">
             <div class="queue-starfield" aria-hidden="true">
+                <div class="queue-aurora queue-aurora-a"></div>
+                <div class="queue-aurora queue-aurora-b"></div>
                 <div class="queue-star-dust queue-star-dust-a"></div>
                 <div class="queue-star-dust queue-star-dust-b"></div>
                 <div class="queue-twinkle-layer queue-twinkle-layer-a"></div>
                 <div class="queue-twinkle-layer queue-twinkle-layer-b"></div>
+                <span class="queue-comet-streak queue-comet-streak-1"></span>
+                <span class="queue-comet-streak queue-comet-streak-2"></span>
+                <span class="queue-comet-streak queue-comet-streak-3"></span>
                 <span class="star-bit star-bit-purple depth-mid star-bit-1"></span>
                 <span class="star-bit star-bit-gold depth-near star-bit-2"></span>
                 <span class="star-bit star-bit-red depth-near star-bit-3"></span>
