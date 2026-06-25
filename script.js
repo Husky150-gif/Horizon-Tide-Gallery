@@ -1491,11 +1491,12 @@ function loadHomePage() {
             <header class="home-hero-header">
                 <h1>Welcome to The Horizon,</h1>
                 <h2>Custom Art • Fursuits • Animation • Handmade Creations</h2>
-                <p class="home-hero-note">Horizon Tide Gallery creates ocean-cosmic commissions and handmade pieces with clear ordering, updates, and artist guidance.</p>
+                <p class="home-hero-note">Custom pieces with clear timelines, status updates, and artist guidance from inquiry to delivery.</p>
             </header>
 
             <div class="button-container button-container-home">
                 <button type="button" class="btn-preorder-massive" id="btnPreorderMassive">🛒 Preorder Menu</button>
+                <p class="home-cta-badge" aria-label="Average reply time"><span>Avg reply</span><strong>${escapeHTML(availability.responseTime)}</strong></p>
 
                 <div class="home-secondary-actions">
                     <button type="button" class="nav-btn btn-pink-highlight home-secondary-btn" id="btnGalleryHome">✨ Horizon Tide Gallery ✨</button>
@@ -1518,13 +1519,13 @@ function loadHomePage() {
 
         <section class="home-pro-shell">
         <div class="home-pro-intro">
-            <p class="home-pro-kicker">Start Here</p>
-            <h3>Check availability, prepare your details, and see what’s new before placing an order.</h3>
+            <p class="home-pro-kicker">Start Here In 3 Steps</p>
+            <h3>Check availability, prep your details, and submit in one clean flow.</h3>
         </div>
 
         <section class="home-pro-grid">
             <article class="home-pro-card home-availability-card">
-                <h3>Artist Availability & Slots</h3>
+                <h3>Step 1: Check Availability</h3>
                 <p class="home-pro-card-subtitle">Quick-scan availability, open slots, and current reply timing for each artist.</p>
                 <div class="availability-list">
                     <div class="availability-item">
@@ -1555,7 +1556,7 @@ function loadHomePage() {
             </article>
 
             <article class="home-pro-card">
-                <h3>Before You Order</h3>
+                <h3>Step 2: Prep Your Request</h3>
                 <p class="home-pro-card-subtitle">Use this prep list so your request is easier to review and quote accurately.</p>
                 <ul class="pro-checklist">
                     <li>Character reference ready</li>
@@ -1570,24 +1571,24 @@ function loadHomePage() {
 
         <section class="home-pro-grid">
             <article class="home-pro-card home-updates-card">
-                <h3>What's New?</h3>
-                <p class="home-pro-card-subtitle">Recent studio updates and site improvements you may want to check before ordering.</p>
+                <h3>Step 3: Submit Your Inquiry</h3>
+                <p class="home-pro-card-subtitle">Once ready, open Preorder Menu and submit everything in one message.</p>
                 <ul class="mini-updates-list">
-                    <li><span class="update-dot"></span><span>Horizon Queue added</span></li>
-                    <li><span class="update-dot"></span><span>Professional FAQ added</span></li>
-                    <li><span class="update-dot"></span><span>Pricing calculator improved</span></li>
-                    <li><span class="update-dot"></span><span>Commission queue added</span></li>
+                    <li><span class="update-dot"></span><span>Choose your commission category</span></li>
+                    <li><span class="update-dot"></span><span>Add references + style notes</span></li>
+                    <li><span class="update-dot"></span><span>Include deadline + budget range</span></li>
+                    <li><span class="update-dot"></span><span>Submit and get a reply window</span></li>
                 </ul>
             </article>
 
             <article class="home-pro-card home-care-card">
-                <h3>Care Guide</h3>
-                <p class="home-pro-card-subtitle">Helpful aftercare basics for physical items, kept lower priority than ordering info.</p>
+                <h3>What Happens Next</h3>
+                <p class="home-pro-card-subtitle">A simple post-submit timeline so you always know what stage your order is in.</p>
                 <div class="care-guide-grid">
-                    <article class="care-guide-item"><h4>Fursuit Parts</h4><p>Spot-clean gently, air dry, and store in breathable bags.</p></article>
-                    <article class="care-guide-item"><h4>Keychains</h4><p>Keep dry, avoid heavy drops, and wipe with soft cloth only.</p></article>
-                    <article class="care-guide-item"><h4>Stickers</h4><p>Apply to clean surfaces and avoid soaking or hard scrubbing.</p></article>
-                    <article class="care-guide-item"><h4>Handmade Items</h4><p>Keep away from high heat, direct sun, and moisture for long periods.</p></article>
+                    <article class="care-guide-item"><h4>Review</h4><p>We check details and confirm scope.</p></article>
+                    <article class="care-guide-item"><h4>Quote</h4><p>You get pricing and timeline clarity.</p></article>
+                    <article class="care-guide-item"><h4>Queue</h4><p>Your order status is tracked publicly.</p></article>
+                    <article class="care-guide-item"><h4>Delivery</h4><p>Final files or products are delivered.</p></article>
                 </div>
             </article>
         </section>
@@ -1603,6 +1604,11 @@ function loadHomePage() {
                 <article class="home-trust-card">
                     <h4>Clear Communication</h4>
                     <p>Updates and order details stay easy to follow.</p>
+                    <div class="home-proof-chips" aria-label="Proof highlights">
+                        <span class="home-proof-chip">Fast first replies</span>
+                        <span class="home-proof-chip">Milestone updates</span>
+                        <span class="home-proof-chip">Queue transparency</span>
+                    </div>
                 </article>
 
                 <article class="home-trust-card">
@@ -1624,11 +1630,12 @@ function loadHomePage() {
 
         <section class="home-final-cta-shell" aria-label="Final homepage call to action">
             <h3>Ready to bring your idea to life?</h3>
-            <p>Start with the preorder menu or contact us if you need help choosing the right option.</p>
+            <p>Open Preorder Menu to start. Need help choosing? Contact us first and we will guide you.</p>
             <div class="home-final-cta-actions">
                 <button type="button" class="nav-btn home-final-cta-primary" id="homeFinalCtaPreorderBtn">Open Preorder Menu</button>
                 <button type="button" class="nav-btn home-final-cta-secondary" id="homeFinalCtaContactBtn">Contact Us</button>
             </div>
+            <p class="home-final-cta-reassure">No payment needed to submit an inquiry.</p>
         </section>
     `;
     bindCoreMenuControls();
