@@ -1249,6 +1249,8 @@ function bindCoreMenuControls() {
     document.getElementById('btnGalleryHome')?.addEventListener('click', (e) => cinematicTransition(e, loadGalleryPage, '#gallery'));
     document.getElementById('btnDiscordHome')?.addEventListener('click', (e) => cinematicTransition(e, loadDiscordPage, '#discord'));
     document.getElementById('btnPreorderMassive')?.addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
+    document.getElementById('homeFinalCtaPreorderBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
+    document.getElementById('homeFinalCtaContactBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadContactPage, '#contact'));
     
     const cosmicBtn = document.getElementById('btnCosmicUpdates');
     if (cosmicBtn) cosmicBtn.addEventListener('click', (e) => cinematicTransition(e, loadAnnouncementsPage, '#updates'));
@@ -1617,6 +1619,15 @@ function loadHomePage() {
                     <h4>Handmade Care</h4>
                     <p>Physical items include basic care guidance so they last longer.</p>
                 </article>
+            </div>
+        </section>
+
+        <section class="home-final-cta-shell" aria-label="Final homepage call to action">
+            <h3>Ready to bring your idea to life?</h3>
+            <p>Start with the preorder menu or contact us if you need help choosing the right option.</p>
+            <div class="home-final-cta-actions">
+                <button type="button" class="nav-btn home-final-cta-primary" id="homeFinalCtaPreorderBtn">Open Preorder Menu</button>
+                <button type="button" class="nav-btn home-final-cta-secondary" id="homeFinalCtaContactBtn">Contact Us</button>
             </div>
         </section>
     `;
