@@ -430,7 +430,7 @@ a, button, .nav-btn, .preorder-btn, .interactive, .dynamic-moon-phase, input[typ
     pointer-events: none;
 }
 
-header, nav, .split-workspace-layout, #backHomeBtn, #backToMenuBtn, .comment-section, .preorder-card, .socials-container, .socials-bio, .meet-faq-shell, .meet-ordering-shell, .tos-container, .form-card, .admin-dashboard, .pricing-container, .nav-btn, .preorder-btn, .btn-preorder-massive, .btn-discord-small, .announcements-container, .reviews-page-shell {
+header, nav, .split-workspace-layout, #backHomeBtn, #backToMenuBtn, .comment-section, .preorder-card, .socials-container, .socials-bio, .meet-faq-shell, .meet-ordering-shell, .tos-container, .form-card, .admin-dashboard, .pricing-container, .nav-btn, .preorder-btn, .btn-preorder-massive, .btn-discord-small, .announcements-container, .reviews-page-shell, .home-trust-shell, .home-trust-grid, .home-trust-card, .home-proof-chip, .care-guide-pill {
     pointer-events: auto;
 }
 
@@ -572,27 +572,61 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     text-align: left;
     width: auto;
     max-width: 208px;
-    padding: 6px 4px;
+    padding: 7px 12px;
     font-size: 0.83rem;
     line-height: 1.3;
-    border: 0;
-    background: transparent;
-    box-shadow: none;
-    border-radius: 0;
-    color: rgba(219, 231, 245, 0.92);
-    text-shadow: 0 0 10px rgba(10, 22, 43, 0.42);
+}
+
+.nav-pill {
+    position: relative;
+    border: 2px solid rgba(125, 211, 252, 0.34);
+    background: #0a0f1e;
+    color: #ffffff !important;
+    border-radius: 50px;
+    z-index: 1;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.nav-pill::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    background: #0a0f1e;
+    border-radius: 50px;
+    z-index: -1;
+}
+
+.nav-pill::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(#ff007f, #ffaa00, #00ffaa, #00aaff, #ff007f);
+    z-index: -2;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 #socialsBtn.home-top-link {
     max-width: 212px;
 }
 
-.home-top-link:hover {
-    background: transparent;
-    border-color: transparent;
-    color: #f0f7ff;
-    text-shadow: 0 0 12px rgba(63, 216, 255, 0.4);
-    transform: translateX(2px);
+.nav-pill:hover {
+    border-color: transparent !important;
+}
+
+.nav-pill:hover::before {
+    opacity: 1;
+    animation: spinLED 3s linear infinite;
+}
+
+@keyframes spinLED {
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .home-hero-shell .gif-container {
@@ -1374,6 +1408,18 @@ header h2 { font-size: 1.7rem; color: #a2b7cc; margin-bottom: 6vh; }
     color: #def3ff;
     border: 1px solid rgba(125, 211, 252, 0.42);
     background: linear-gradient(145deg, rgba(8, 24, 48, 0.74), rgba(7, 18, 36, 0.64));
+}
+
+.care-guide-pill {
+    cursor: pointer;
+}
+
+.home-care-click-hint {
+    margin-top: 8px;
+    padding-left: 36px;
+    font-size: 0.76rem;
+    color: #a9bfd8;
+    letter-spacing: 0.01em;
 }
 
 .home-trust-card:nth-child(1)::before {
@@ -10360,4 +10406,82 @@ body[data-page="preorder"] #footerCredit {
         opacity: 0;
         transform: rotate(32deg) translate3d(150px, 124px, 0);
     }
+}
+
+/* --- CARE GUIDE MODAL --- */
+#care-modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(10, 15, 30, 0.8);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.28s ease, visibility 0.28s ease;
+    z-index: 120000;
+}
+
+#care-modal.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.care-modal-card {
+    width: min(640px, calc(100vw - 28px));
+    background: #0a0f1e;
+    border: 1px solid rgba(125, 211, 252, 0.36);
+    box-shadow: 0 18px 42px rgba(2, 8, 23, 0.48), 0 0 26px rgba(125, 92, 255, 0.16);
+    border-radius: 18px;
+    padding: 20px 20px 18px;
+    transform: scale(0.96);
+    transition: transform 0.28s ease, opacity 0.28s ease;
+    opacity: 0;
+    position: relative;
+}
+
+#care-modal.active .care-modal-card {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.care-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    border: 0;
+    background: transparent;
+    color: #dbeafe;
+    font-size: 1.8rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.care-modal-close:hover {
+    color: #ffffff;
+}
+
+#careModalTitle {
+    margin: 0 28px 12px 0;
+    color: #f8fbff;
+    font-size: 1.35rem;
+    text-align: left;
+}
+
+.care-modal-list {
+    margin: 0;
+    padding-left: 20px;
+    text-align: left;
+    display: grid;
+    gap: 10px;
+    color: #d2dff0;
+}
+
+.care-modal-list li {
+    line-height: 1.55;
 }

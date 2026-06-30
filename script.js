@@ -1494,11 +1494,11 @@ function loadHomePage() {
     appViewport.innerHTML = `
         <div class="home-top-nav-strip" role="presentation">
             <nav class="home-top-nav" aria-label="Homepage utility links">
-                <button type="button" class="nav-btn home-top-link" id="tosBtn">Our TOS</button>
-                <button type="button" class="nav-btn home-top-link" id="whatWeDoBtn">What we do</button>
-                <button type="button" class="nav-btn home-top-link" id="socialsBtn">Meet the Artists + FAQ + How to Order</button>
-                <button type="button" class="nav-btn home-top-link" id="reviewsBtn">Reviews</button>
-                <button type="button" class="nav-btn home-top-link" id="contactBtn">Contact us 💬</button>
+                <button type="button" class="nav-btn home-top-link nav-pill" id="tosBtn">Our TOS</button>
+                <button type="button" class="nav-btn home-top-link nav-pill" id="whatWeDoBtn">What we do</button>
+                <button type="button" class="nav-btn home-top-link nav-pill" id="socialsBtn">Meet the Artists + FAQ + How to Order</button>
+                <button type="button" class="nav-btn home-top-link nav-pill" id="reviewsBtn">Reviews</button>
+                <button type="button" class="nav-btn home-top-link nav-pill" id="contactBtn">Contact us 💬</button>
             </nav>
         </div>
 
@@ -1623,16 +1623,32 @@ function loadHomePage() {
                 <article class="home-trust-card">
                     <h4>Artist-Guided Process</h4>
                     <p>We help you prepare references, notes, and expectations before work begins.</p>
+                    <div class="home-proof-chips" aria-label="Process highlights">
+                        <span class="home-proof-chip">Concept check-ins</span>
+                        <span class="home-proof-chip">Character sheet review</span>
+                        <span class="home-proof-chip">Pattern approval</span>
+                    </div>
                 </article>
 
                 <article class="home-trust-card">
                     <h4>Transparent Queue</h4>
                     <p>Public-safe queue/status pages help clients track progress.</p>
+                    <div class="home-proof-chips" aria-label="Queue highlights">
+                        <span class="home-proof-chip">Email order lookup</span>
+                        <span class="home-proof-chip">Real-time slot updates</span>
+                        <span class="home-proof-chip">Streamlined workflow</span>
+                    </div>
                 </article>
 
                 <article class="home-trust-card">
                     <h4>Handmade Care</h4>
                     <p>Physical items include basic care guidance so they last longer.</p>
+                    <div class="home-proof-chips" aria-label="Care highlights">
+                        <span class="home-proof-chip care-guide-pill" data-care-key="Fursuit washing guides">Fursuit washing guides</span>
+                        <span class="home-proof-chip care-guide-pill" data-care-key="Keychain scratch prevention">Keychain scratch prevention</span>
+                        <span class="home-proof-chip care-guide-pill" data-care-key="Sticker weatherproofing tips">Sticker weatherproofing tips</span>
+                    </div>
+                    <p class="home-care-click-hint">Click any care pill to open the full guide.</p>
                 </article>
             </div>
         </section>
@@ -1647,6 +1663,7 @@ function loadHomePage() {
             <p class="home-final-cta-reassure">No payment needed to submit an inquiry.</p>
         </section>
     `;
+    bindCareGuideGridModal();
     bindCoreMenuControls();
     bindSecretCornerTrigger();
     applyHomeAvailabilityToCurrentDOM();
@@ -7871,6 +7888,61 @@ document.addEventListener('click', (e) => {
     }
 });
 
+const careModal = document.getElementById('care-modal');
+const careModalTitle = document.getElementById('careModalTitle');
+const careModalList = document.getElementById('careModalList');
+const careModalClose = document.getElementById('careModalClose');
+
+function openCareGuideModal(guide) {
+    if (!(careModal instanceof HTMLElement) || !(careModalTitle instanceof HTMLElement) || !(careModalList instanceof HTMLElement)) return;
+    if (!guide || !Array.isArray(guide.bullets)) return;
+
+    careModalTitle.textContent = guide.title || 'Care Guide';
+    careModalList.innerHTML = guide.bullets.map((item) => `<li>${escapeHTML(item)}</li>`).join('');
+    careModal.classList.add('active');
+    careModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeCareGuideModal() {
+    if (!(careModal instanceof HTMLElement)) return;
+    careModal.classList.remove('active');
+    careModal.setAttribute('aria-hidden', 'true');
+}
+
+function bindCareGuideModalOverlay() {
+    if (!(careModal instanceof HTMLElement)) return;
+    if (careModal.dataset.bound === 'true') return;
+
+    careModal.dataset.bound = 'true';
+    careModalClose?.addEventListener('click', closeCareGuideModal);
+    careModal.addEventListener('click', (event) => {
+        if (event.target === careModal) {
+            closeCareGuideModal();
+        }
+    });
+}
+
+function bindCareGuideGridModal() {
+    const trustGrid = appViewport?.querySelector('.home-trust-grid');
+    if (!(trustGrid instanceof HTMLElement)) return;
+    if (trustGrid.dataset.careBound === 'true') return;
+
+    trustGrid.dataset.careBound = 'true';
+    trustGrid.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+
+        const chip = target.closest('.care-guide-pill');
+        if (!(chip instanceof HTMLElement)) return;
+
+        event.preventDefault();
+        const key = (chip.dataset.careKey || chip.textContent || '').trim();
+        const guide = CARE_GUIDE_MODAL_DATA[key];
+        if (!guide) return;
+        openCareGuideModal(guide);
+    });
+}
+
 // =====================================
 // ROUTER & BOOT SYSTEM
 // =====================================
@@ -7982,6 +8054,37 @@ async function clearReloadedAdminSession() {
         });
     });
 }
+
+const CARE_GUIDE_MODAL_DATA = {
+    'Fursuit washing guides': {
+        title: 'Fursuit Washing Guide',
+        bullets: [
+            'Hand wash or use a front-loading washer on a delicate, completely cold cycle.',
+            'Use a gentle, dye-free detergent (like Woolite). Never use bleach or fabric softeners.',
+            'ABSOLUTELY NO HEAT. Hang dry in front of a high-powered fan. Heat will permanently melt faux fur fibers.',
+            'Gently brush the fur with a slicker brush while damp, and again once completely dry to keep it fluffy.'
+        ]
+    },
+    'Keychain scratch prevention': {
+        title: 'Keychain Scratch Prevention',
+        bullets: [
+            'Remember to peel off the clear protective plastic film on the acrylic surface if it arrived with one!',
+            'Clean gently using a soft microfiber cloth and a tiny drop of water or clear water-based soap.',
+            'Avoid harsh chemical cleaners (like acetone or alcohol rubbing compounds), as they can fog or crack the acrylic.',
+            'Keep away from sharp metal edges (like jagged house keys) to prevent deep surface scratches.'
+        ]
+    },
+    'Sticker weatherproofing tips': {
+        title: 'Sticker Weatherproofing Tips',
+        bullets: [
+            'Apply only to clean, completely dry, and smooth non-porous surfaces for the best long-term stick.',
+            'Press down firmly from the center outward to push out any tiny trapped air bubbles during application.',
+            'While the vinyl and ink are highly water-resistant, avoid running stickered items through a heavy-duty dishwasher cycle; hand-washing keeps the colors vibrant for years.'
+        ]
+    }
+};
+
+bindCareGuideModalOverlay();
 
 // Start Application
 clearReloadedAdminSession().finally(() => {
