@@ -1492,10 +1492,21 @@ function loadHomePage() {
     const lopside = availability.artists.lopside;
 
     appViewport.innerHTML = `
-        <section class="home-hero-shell" aria-label="Welcome and primary navigation">
+        <div class="home-top-nav-strip" role="presentation">
+            <nav class="home-top-nav" aria-label="Homepage utility links">
+                <button type="button" class="nav-btn home-top-link" id="tosBtn">Our TOS</button>
+                <button type="button" class="nav-btn home-top-link" id="whatWeDoBtn">What we do</button>
+                <button type="button" class="nav-btn home-top-link" id="socialsBtn">Meet the Artists + FAQ + How to Order</button>
+                <button type="button" class="nav-btn home-top-link" id="reviewsBtn">Reviews</button>
+                <button type="button" class="nav-btn home-top-link" id="contactBtn">Contact us 💬</button>
+            </nav>
+        </div>
+
+        <section class="home-hero-shell" aria-label="Welcome and primary actions">
+
             <div class="gif-container"><img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/umbreon.gif" alt="Shiny Umbreon" class="active-pokemon-gif"></div>
             <header class="home-hero-header">
-                <h1>Welcome to The Horizon,</h1>
+                <h1>Welcome to The Horizon.</h1>
                 <h2>Custom Art • Fursuits • Animation • Handmade Creations</h2>
                 <p class="home-hero-note">Custom pieces with clear timelines, status updates, and artist guidance from inquiry to delivery.</p>
             </header>
@@ -1513,14 +1524,6 @@ function loadHomePage() {
                     <button type="button" class="btn-discord-small home-discord-btn" id="btnDiscordHome">🐾 Join Our SFW 18+ Discord Server 🐾</button>
                 </div>
             </div>
-
-            <nav class="button-grid home-nav-grid" aria-label="Homepage quick links">
-                <button type="button" class="nav-btn" id="tosBtn">Our TOS</button>
-                <button type="button" class="nav-btn" id="whatWeDoBtn">What we do</button>
-                <button type="button" class="nav-btn" id="socialsBtn">Meet the Artists + FAQ + How to Order</button>
-                <button type="button" class="nav-btn" id="reviewsBtn">Reviews</button>
-                <button type="button" class="nav-btn" id="contactBtn">Contact us 💬</button>
-            </nav>
         </section>
 
         <section class="home-pro-shell">
