@@ -1215,6 +1215,10 @@ document.addEventListener('mousemove', (e) => {
 function cinematicTransition(event, targetPageFunction, hashTarget = '') {
     stopAdminIdleLock();
 
+    if (event && typeof event.preventDefault === 'function') {
+        event.preventDefault();
+    }
+
     let btn = null;
     const isMobile = window.innerWidth <= 768;
     
@@ -1306,6 +1310,11 @@ function triggerConfetti() {
 }
 
 function bindCoreMenuControls() {
+    if (typeof window.homeSidebarOpacityCleanup === 'function') {
+        window.homeSidebarOpacityCleanup();
+        window.homeSidebarOpacityCleanup = null;
+    }
+
     document.getElementById('whatWeDoBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadWhatWeDoPage, '#whatwedo'));
     document.getElementById('contactBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadContactPage, '#contact'));
     document.getElementById('reviewsBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadReviewsPage, '#reviews'));
@@ -1320,6 +1329,106 @@ function bindCoreMenuControls() {
     
     const cosmicBtn = document.getElementById('btnCosmicUpdates');
     if (cosmicBtn) cosmicBtn.addEventListener('click', (e) => cinematicTransition(e, loadAnnouncementsPage, '#updates'));
+
+    const homeSidebarNav = document.querySelector('.home-top-nav-strip, .sidebar-nav');
+    if (homeSidebarNav) {
+        const textTargets = Array.from(document.querySelectorAll('.home-hero-header, .home-pro-intro, .home-pro-card, .home-trust-head, .home-trust-card, .home-final-cta-shell'));
+        let frameRequest = null;
+        let scrollFadeTimeout = null;
+        let isHoveringSidebar = false;
+
+        const rectsIntersect = (firstRect, secondRect) => (
+            firstRect.left < secondRect.right &&
+            firstRect.right > secondRect.left &&
+            firstRect.top < secondRect.bottom &&
+            firstRect.bottom > secondRect.top
+        );
+
+        const setSidebarDim = (isDimmed) => {
+            if (isHoveringSidebar || homeSidebarNav.contains(document.activeElement)) {
+                homeSidebarNav.classList.remove('sidebar-nav-dim');
+                return;
+            }
+            homeSidebarNav.classList.toggle('sidebar-nav-dim', isDimmed);
+        };
+
+        const updateSidebarCollisionState = () => {
+            frameRequest = null;
+
+            if (!textTargets.length) {
+                setSidebarDim(false);
+                return;
+            }
+
+            const sidebarRect = homeSidebarNav.getBoundingClientRect();
+            const isOverlappingText = textTargets.some((target) => {
+                const targetRect = target.getBoundingClientRect();
+                if (targetRect.width <= 0 || targetRect.height <= 0) return false;
+                return rectsIntersect(sidebarRect, targetRect);
+            });
+
+            setSidebarDim(isOverlappingText);
+        };
+
+        const scheduleCollisionCheck = () => {
+            if (frameRequest !== null) return;
+            frameRequest = window.requestAnimationFrame(updateSidebarCollisionState);
+        };
+
+        const handleSidebarMouseEnter = () => {
+            isHoveringSidebar = true;
+            homeSidebarNav.classList.remove('sidebar-nav-dim');
+        };
+
+        const handleSidebarMouseLeave = () => {
+            isHoveringSidebar = false;
+            scheduleCollisionCheck();
+        };
+
+        const handleSidebarFocusIn = () => {
+            homeSidebarNav.classList.remove('sidebar-nav-dim');
+        };
+
+        const handleSidebarFocusOut = () => {
+            scheduleCollisionCheck();
+        };
+
+        const handleWindowScroll = () => {
+            setSidebarDim(true);
+            if (scrollFadeTimeout) {
+                window.clearTimeout(scrollFadeTimeout);
+            }
+            scrollFadeTimeout = window.setTimeout(() => {
+                scheduleCollisionCheck();
+            }, 160);
+        };
+
+        homeSidebarNav.addEventListener('mouseenter', handleSidebarMouseEnter);
+        homeSidebarNav.addEventListener('mouseleave', handleSidebarMouseLeave);
+        homeSidebarNav.addEventListener('focusin', handleSidebarFocusIn);
+        homeSidebarNav.addEventListener('focusout', handleSidebarFocusOut);
+        window.addEventListener('scroll', handleWindowScroll, { passive: true });
+        window.addEventListener('resize', scheduleCollisionCheck);
+        window.addEventListener('load', scheduleCollisionCheck);
+
+        scheduleCollisionCheck();
+
+        window.homeSidebarOpacityCleanup = () => {
+            if (frameRequest !== null) {
+                window.cancelAnimationFrame(frameRequest);
+            }
+            if (scrollFadeTimeout) {
+                window.clearTimeout(scrollFadeTimeout);
+            }
+            homeSidebarNav.removeEventListener('mouseenter', handleSidebarMouseEnter);
+            homeSidebarNav.removeEventListener('mouseleave', handleSidebarMouseLeave);
+            homeSidebarNav.removeEventListener('focusin', handleSidebarFocusIn);
+            homeSidebarNav.removeEventListener('focusout', handleSidebarFocusOut);
+            window.removeEventListener('scroll', handleWindowScroll);
+            window.removeEventListener('resize', scheduleCollisionCheck);
+            window.removeEventListener('load', scheduleCollisionCheck);
+        };
+    }
 }
 
 function bindSecretCornerTrigger() {
@@ -1571,18 +1680,9 @@ function loadHomePage() {
                 <p class="home-hero-note">Custom pieces with clear timelines, status updates, and artist guidance from inquiry to delivery.</p>
             </header>
 
-            <div class="button-container button-container-home">
-                <button type="button" class="btn-preorder-massive" id="btnPreorderMassive">🛒 Preorder Menu</button>
+            <div class="button-container button-container-home home-card-deck-shell">
+                ${getTemplateHTML('homeCardDeckTemplate')}
                 <p class="home-cta-badge" aria-label="Average reply time"><span>Avg reply</span><strong>${escapeHTML(availability.responseTime)}</strong></p>
-
-                <div class="home-secondary-actions">
-                    <button type="button" class="nav-btn btn-pink-highlight home-secondary-btn" id="btnGalleryHome">✨ Horizon Tide Gallery ✨</button>
-                    ${getTemplateHTML('homeAnnouncementsBtnWrapper')}
-                </div>
-
-                <div class="home-utility-actions">
-                    <button type="button" class="btn-discord-small home-discord-btn" id="btnDiscordHome">🐾 Join Our SFW 18+ Discord Server 🐾</button>
-                </div>
             </div>
         </section>
 
