@@ -38,6 +38,7 @@ let globalHomeAvailabilityListener = null;
 let globalHomeReviewListener = null;
 let globalHomeRefundFreshnessListener = null;
 let globalHomeCommissionFreshnessListener = null;
+let globalPremadeKeychainCatalogListener = null;
 
 const DEFAULT_HOME_AVAILABILITY = {
     artists: {
@@ -57,7 +58,34 @@ const DEFAULT_HOME_AVAILABILITY = {
     responseTime: '1-3 days'
 };
 
+const DEFAULT_PREMADE_KEYCHAIN_CATALOG = {
+    designs: [
+        {
+            id: 'premade-absol',
+            name: 'Absol Premade',
+            image: 'Premade keychains/Absol_keycahin_watermark.png',
+            subtitle: '2.5 inch acrylic keychain',
+            stock: 20
+        },
+        {
+            id: 'premade-shiny-espeon',
+            name: 'Shiny Espeon',
+            image: 'Premade keychains/bleh1.png',
+            subtitle: '2.5 inch acrylic keychain',
+            stock: 20
+        },
+        {
+            id: 'premade-shiny-vaporeon',
+            name: 'Shiny Vaporeon',
+            image: 'Premade keychains/Illustration13_2.png',
+            subtitle: '2.5 inch acrylic keychain',
+            stock: 20
+        }
+    ]
+};
+
 window.homeAvailability = JSON.parse(JSON.stringify(DEFAULT_HOME_AVAILABILITY));
+window.premadeKeychainCatalog = JSON.parse(JSON.stringify(DEFAULT_PREMADE_KEYCHAIN_CATALOG));
 window.homeReviewSummary = {
     approvedCount: 0,
     featured: null
@@ -85,6 +113,7 @@ window.currentEditingAnnounceId = null;
 window.currentEditingDiscountId = null;
 window.currentEditingRefundId = null;
 window.currentEditingCommissionId = null;
+window.currentEditingPremadeDesignId = null;
 window.adminRefundEntries = [];
 window.adminCommissionEntries = [];
 
@@ -528,6 +557,342 @@ function getFormDraftBannerHTML() {
     `;
 }
 
+function createFormSectionCard(title, description = '') {
+    const section = document.createElement('section');
+    section.className = 'form-section-card';
+
+    const heading = document.createElement('div');
+    heading.className = 'form-section-card__head';
+    heading.innerHTML = `<h3>${escapeHTML(title)}</h3>${description ? `<p>${escapeHTML(description)}</p>` : ''}`;
+    section.appendChild(heading);
+
+    const body = document.createElement('div');
+    body.className = 'form-section-card__body';
+    section.appendChild(body);
+
+    return { section, body };
+}
+
+function findFormFieldBlock(form, target) {
+    if (!(form instanceof HTMLFormElement) || !target) return null;
+
+    let field = null;
+    if (target.startsWith('#') || target.startsWith('.')) {
+        field = form.querySelector(target);
+    } else {
+        field = form.querySelector(`[name="${target}"]`);
+    }
+
+    if (!(field instanceof HTMLElement)) return null;
+    return field.closest('.form-group, .checkbox-group') || field;
+}
+
+function annotateFormLabels(form) {
+    form.querySelectorAll('.form-group').forEach((group) => {
+        if (!(group instanceof HTMLElement)) return;
+        const label = group.querySelector('label');
+        if (!(label instanceof HTMLLabelElement)) return;
+        if (label.querySelector('.form-field-tag')) return;
+
+        const control = group.querySelector('input, select, textarea');
+        if (!(control instanceof HTMLElement)) return;
+
+        const tag = document.createElement('span');
+        tag.className = 'form-field-tag';
+        const isRequired = control.hasAttribute('required');
+        tag.classList.add(isRequired ? 'is-required' : 'is-optional');
+        tag.textContent = isRequired ? 'Required' : 'Optional';
+        label.appendChild(tag);
+    });
+}
+
+function insertFormHelperText(form, helperMap = {}) {
+    Object.entries(helperMap).forEach(([target, helperText]) => {
+        const block = findFormFieldBlock(form, target);
+        if (!(block instanceof HTMLElement) || !helperText) return;
+        if (block.querySelector('.form-helper-text')) return;
+
+        const helper = document.createElement('small');
+        helper.className = 'form-helper-text';
+        helper.textContent = helperText;
+        block.appendChild(helper);
+    });
+}
+
+function insertFormExampleBlocks(form, exampleMap = {}) {
+    Object.entries(exampleMap).forEach(([target, example]) => {
+        const block = findFormFieldBlock(form, target);
+        if (!(block instanceof HTMLElement) || !example) return;
+        if (block.querySelector('.form-example-card')) return;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'form-example-card';
+        wrap.innerHTML = `
+            <strong>${escapeHTML(example.title || 'Example')}</strong>
+            <p>${escapeHTML(example.text || '')}</p>
+        `;
+        block.appendChild(wrap);
+    });
+}
+
+function getFormControlValue(form, target) {
+    if (!(form instanceof HTMLFormElement) || !target) return '';
+    const field = target.startsWith('#') || target.startsWith('.')
+        ? form.querySelector(target)
+        : form.querySelector(`[name="${target}"]`);
+
+    if (!(field instanceof HTMLElement)) return '';
+
+    if (field instanceof HTMLInputElement) {
+        if (field.type === 'checkbox') return field.checked ? 'Yes' : 'No';
+        return field.value.trim();
+    }
+
+    if (field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement) {
+        return field.value.trim();
+    }
+
+    return '';
+}
+
+function createFormSummaryCard() {
+    const wrap = document.createElement('section');
+    wrap.className = 'form-summary-card';
+    wrap.innerHTML = `
+        <div class="form-summary-card__head">
+            <h3>Review before submit</h3>
+            <p>A quick recap so you can catch anything missing before sending.</p>
+        </div>
+        <div class="form-summary-grid"></div>
+    `;
+    return wrap;
+}
+
+function createFormWarningCard() {
+    const wrap = document.createElement('section');
+    wrap.className = 'form-warning-card';
+    wrap.hidden = true;
+    wrap.innerHTML = `
+        <div class="form-warning-card__head">
+            <h3>Before you send</h3>
+            <p>These are gentle suggestions, not blockers.</p>
+        </div>
+        <ul class="form-warning-list"></ul>
+    `;
+    return wrap;
+}
+
+function renderFormWarnings(form, warningCard, config) {
+    if (!(form instanceof HTMLFormElement) || !(warningCard instanceof HTMLElement)) return;
+    const list = warningCard.querySelector('.form-warning-list');
+    if (!(list instanceof HTMLElement)) return;
+
+    const messages = (config?.warningRules || [])
+        .filter((rule) => typeof rule?.when === 'function' && rule.when(form))
+        .map((rule) => String(rule.message || '').trim())
+        .filter(Boolean);
+
+    if (messages.length === 0) {
+        warningCard.hidden = true;
+        list.innerHTML = '';
+        return;
+    }
+
+    warningCard.hidden = false;
+    list.innerHTML = messages.map((message) => `<li>${escapeHTML(message)}</li>`).join('');
+}
+
+function setupFormWizard(form, steps, wizardConfig = {}) {
+    if (!(form instanceof HTMLFormElement) || !Array.isArray(steps) || steps.length === 0) return;
+
+    const progress = document.createElement('div');
+    progress.className = 'form-wizard-progress';
+    progress.innerHTML = `
+        <div class="form-wizard-progress__meta">
+            <span class="form-wizard-progress__step">Step 1 of ${steps.length}</span>
+            <strong class="form-wizard-progress__title"></strong>
+        </div>
+        <div class="form-wizard-progress__bar"><span></span></div>
+    `;
+    form.prepend(progress);
+
+    const nav = document.createElement('div');
+    nav.className = 'form-wizard-nav';
+    nav.innerHTML = `
+        <button type="button" class="nav-btn form-wizard-prev">Back</button>
+        <button type="button" class="nav-btn form-wizard-next">Next</button>
+    `;
+    form.appendChild(nav);
+
+    const stepLabelEl = progress.querySelector('.form-wizard-progress__step');
+    const stepTitleEl = progress.querySelector('.form-wizard-progress__title');
+    const barFillEl = progress.querySelector('.form-wizard-progress__bar span');
+    const prevBtn = nav.querySelector('.form-wizard-prev');
+    const nextBtn = nav.querySelector('.form-wizard-next');
+    const finalIndex = steps.length - 1;
+    let currentIndex = 0;
+
+    const update = () => {
+        steps.forEach((step, index) => {
+            step.hidden = index !== currentIndex;
+            step.classList.toggle('is-active-step', index === currentIndex);
+        });
+
+        const activeStep = steps[currentIndex];
+        const heading = activeStep.querySelector('h3');
+        const titleText = heading?.textContent?.trim() || wizardConfig.fallbackTitle || 'Step';
+
+        if (stepLabelEl) stepLabelEl.textContent = `Step ${currentIndex + 1} of ${steps.length}`;
+        if (stepTitleEl) stepTitleEl.textContent = titleText;
+        if (barFillEl instanceof HTMLElement) {
+            barFillEl.style.width = `${((currentIndex + 1) / steps.length) * 100}%`;
+        }
+
+        if (prevBtn instanceof HTMLButtonElement) {
+            prevBtn.disabled = currentIndex === 0;
+            prevBtn.hidden = currentIndex === 0;
+        }
+        if (nextBtn instanceof HTMLButtonElement) nextBtn.hidden = currentIndex === finalIndex;
+        nav.classList.toggle('is-first-step', currentIndex === 0);
+        nav.classList.toggle('is-final-step', currentIndex === finalIndex);
+    };
+
+    prevBtn?.addEventListener('click', () => {
+        if (currentIndex === 0) return;
+        currentIndex -= 1;
+        update();
+    });
+
+    nextBtn?.addEventListener('click', () => {
+        if (currentIndex >= finalIndex) return;
+        currentIndex += 1;
+        update();
+    });
+
+    update();
+}
+
+function renderFormSummary(form, summaryCard, config) {
+    if (!(form instanceof HTMLFormElement) || !(summaryCard instanceof HTMLElement)) return;
+    const grid = summaryCard.querySelector('.form-summary-grid');
+    if (!(grid instanceof HTMLElement)) return;
+
+    const rows = (config?.summaryFields || []).map((entry) => {
+        const rawValue = getFormControlValue(form, entry.target);
+        const value = rawValue || entry.fallback || 'Not set yet';
+        return `<div class="form-summary-item"><span>${escapeHTML(entry.label)}</span><strong>${escapeHTML(value)}</strong></div>`;
+    });
+
+    const estimateEl = form.querySelector('#liveEstimate');
+    const estimateValue = estimateEl instanceof HTMLElement ? estimateEl.textContent?.trim() || '$0.00 - $0.00' : '$0.00 - $0.00';
+    rows.push(`<div class="form-summary-item"><span>Estimate</span><strong>${escapeHTML(estimateValue)}</strong></div>`);
+
+    grid.innerHTML = rows.join('');
+}
+
+function enhancePreorderForm(formId, config) {
+    const form = document.getElementById(formId);
+    if (!(form instanceof HTMLFormElement)) return;
+    if (form.dataset.enhanced === 'true') return;
+    form.dataset.enhanced = 'true';
+
+    annotateFormLabels(form);
+    insertFormHelperText(form, config?.helperText || {});
+    insertFormExampleBlocks(form, config?.examples || {});
+
+    const originalChildren = Array.from(form.children);
+    const sourceRoot = document.createElement('div');
+    sourceRoot.style.display = 'contents';
+    originalChildren.forEach((child) => sourceRoot.appendChild(child));
+    form.innerHTML = '';
+
+    const findBlockInSource = (target) => {
+        if (!target) return null;
+
+        let field = null;
+        if (target.startsWith('#') || target.startsWith('.')) {
+            field = sourceRoot.querySelector(target);
+        } else {
+            field = sourceRoot.querySelector(`[name="${target}"]`);
+        }
+
+        if (!(field instanceof HTMLElement)) return null;
+        return field.closest('.form-group, .checkbox-group') || field;
+    };
+
+    const estimator = originalChildren.find((node) => node instanceof HTMLElement && node.classList.contains('price-estimator')) || null;
+    const checklist = originalChildren.find((node) => node instanceof HTMLElement && node.classList.contains('before-order-checklist')) || null;
+    const submitBtn = originalChildren.find((node) => node instanceof HTMLButtonElement && node.type === 'submit') || null;
+    const renderedSteps = [];
+
+    const sections = config?.sections || [];
+    sections.forEach((sectionConfig) => {
+        const card = createFormSectionCard(sectionConfig.title, sectionConfig.description || '');
+        sectionConfig.targets.forEach((target) => {
+            const block = findBlockInSource(target);
+            if (block && !card.body.contains(block)) {
+                card.body.appendChild(block);
+            }
+        });
+        if (card.body.children.length > 0) {
+            form.appendChild(card.section);
+            renderedSteps.push(card.section);
+        }
+    });
+
+    let optionalDetailsPanel = null;
+    if (Array.isArray(config?.optionalTargets) && config.optionalTargets.length > 0) {
+        const details = document.createElement('details');
+        details.className = 'form-optional-panel';
+        details.innerHTML = '<summary>Optional details</summary>';
+        const optionalBody = document.createElement('div');
+        optionalBody.className = 'form-optional-panel__body';
+
+        config.optionalTargets.forEach((target) => {
+            const block = findBlockInSource(target);
+            if (block) optionalBody.appendChild(block);
+        });
+
+        if (optionalBody.children.length > 0) {
+            details.appendChild(optionalBody);
+            optionalDetailsPanel = details;
+            if (!config?.wizard?.enabled) {
+                form.appendChild(details);
+            }
+        }
+    }
+
+    const warningCard = createFormWarningCard();
+    const summaryCard = createFormSummaryCard();
+
+    if (config?.wizard?.enabled) {
+        const finalStep = createFormSectionCard(config.wizard.finalTitle || 'Review and send', config.wizard.finalDescription || 'Look over the recap, review the estimate, and send when ready.');
+        if (optionalDetailsPanel) finalStep.body.appendChild(optionalDetailsPanel);
+        finalStep.body.appendChild(warningCard);
+        finalStep.body.appendChild(summaryCard);
+        if (estimator) finalStep.body.appendChild(estimator);
+        if (checklist) finalStep.body.appendChild(checklist);
+        if (submitBtn) finalStep.body.appendChild(submitBtn);
+        form.appendChild(finalStep.section);
+        renderedSteps.push(finalStep.section);
+        setupFormWizard(form, renderedSteps, config.wizard);
+    } else {
+        form.appendChild(warningCard);
+        form.appendChild(summaryCard);
+        if (estimator) form.appendChild(estimator);
+        if (checklist) form.appendChild(checklist);
+        if (submitBtn) form.appendChild(submitBtn);
+    }
+
+    const rerender = () => {
+        renderFormWarnings(form, warningCard, config);
+        renderFormSummary(form, summaryCard, config);
+    };
+    form.addEventListener('input', rerender);
+    form.addEventListener('change', rerender);
+    rerender();
+}
+
 function showErrorMsg(form, msg) {
     let errDiv = form.querySelector('.form-error-msg');
     if (!errDiv) {
@@ -802,6 +1167,390 @@ function applyHomeAvailabilityToCurrentDOM() {
     applyHomeTrustSignalsToCurrentDOM();
 }
 
+function sanitizePremadeKeychainStock(value, fallback = 20) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return Math.max(0, fallback);
+    return Math.max(0, Math.floor(parsed));
+}
+
+function normalizePremadeKeychainCatalog(raw) {
+    const fallback = JSON.parse(JSON.stringify(DEFAULT_PREMADE_KEYCHAIN_CATALOG));
+    const hasExplicitDesigns = Array.isArray(raw?.designs);
+    const sourceDesigns = hasExplicitDesigns ? raw.designs : fallback.designs;
+    const normalizedDesigns = sourceDesigns.map((entry, index) => {
+        const fallbackEntry = fallback.designs[index] || {};
+        const fallbackName = fallbackEntry.name || `Premade Design ${index + 1}`;
+        const normalizedName = String(entry?.name || fallbackName).trim() || fallbackName;
+        const normalizedId = String(entry?.id || normalizedName)
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || `premade-design-${index + 1}`;
+
+        return {
+            id: normalizedId,
+            name: normalizedName,
+            image: String(entry?.image || fallbackEntry.image || '').trim(),
+            subtitle: String(entry?.subtitle || fallbackEntry.subtitle || '2.5 inch acrylic keychain').trim() || '2.5 inch acrylic keychain',
+            stock: sanitizePremadeKeychainStock(entry?.stock, fallbackEntry.stock ?? 20)
+        };
+    });
+
+    normalizedDesigns.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
+    return {
+        designs: normalizedDesigns
+    };
+}
+
+function getPremadeKeychainDesignByValue(value, catalogInput = window.premadeKeychainCatalog) {
+    const needle = String(value || '').trim().toLowerCase();
+    if (!needle) return null;
+    const catalog = normalizePremadeKeychainCatalog(catalogInput);
+    return catalog.designs.find((design) => design.id === needle || design.name.toLowerCase() === needle) || null;
+}
+
+function buildPremadeKeychainGalleryMarkup(catalogInput = window.premadeKeychainCatalog) {
+    const catalog = normalizePremadeKeychainCatalog(catalogInput);
+    if (catalog.designs.length === 0) {
+        return '<p class="premade-empty-state">No premade keychain designs are listed yet.</p>';
+    }
+
+    return `
+        <div class="gallery-grid">
+            ${catalog.designs.map((design) => {
+                const stockLabel = design.stock === 1 ? '1 left' : `${design.stock} left`;
+                const stockClass = design.stock === 0 ? 'is-sold-out' : 'is-in-stock';
+                return `
+                    <div class="premade-card ${stockClass}">
+                        <img src="${escapeHTML(encodeURI(design.image))}" class="premade-img" alt="${escapeHTML(design.name)}" loading="lazy" onerror="handleImageError(this)">
+                        <div class="premade-card__body">
+                            <h3 class="premade-card__title">${escapeHTML(design.name)}</h3>
+                            <p class="premade-card__subtitle">${escapeHTML(design.subtitle)}</p>
+                            <p class="premade-card__stock ${stockClass}">${escapeHTML(stockLabel)}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+function buildPremadeKeychainSelectOptionsMarkup(catalogInput = window.premadeKeychainCatalog) {
+    const catalog = normalizePremadeKeychainCatalog(catalogInput);
+    const hasAvailableDesign = catalog.designs.some((design) => design.stock > 0);
+    const placeholderLabel = hasAvailableDesign
+        ? 'Select a premade design'
+        : 'No premade designs are currently in stock';
+
+    return `
+        <option value="" selected disabled>${escapeHTML(placeholderLabel)}</option>
+        ${catalog.designs.map((design) => {
+            const stockLabel = design.stock === 1 ? '1 left' : `${design.stock} left`;
+            return `<option value="${escapeHTML(design.name)}" data-design-id="${escapeHTML(design.id)}" data-stock="${design.stock}" ${design.stock === 0 ? 'disabled' : ''}>${escapeHTML(`${design.name} (${stockLabel})`)}</option>`;
+        }).join('')}
+    `;
+}
+
+function bindPremadeGalleryLightbox(root = document) {
+    if (!root || typeof root.querySelectorAll !== 'function') return;
+    root.querySelectorAll('.premade-img').forEach((img) => {
+        if (!(img instanceof HTMLImageElement) || img.dataset.lightboxBound === 'true') return;
+        img.dataset.lightboxBound = 'true';
+        img.addEventListener('click', () => openLightbox(img.src, img.alt));
+    });
+}
+
+function refreshPremadeKeychainFormState(form) {
+    if (!(form instanceof HTMLFormElement)) return;
+
+    const designSelect = form.querySelector('[name="designChoice"]');
+    const quantityInput = form.querySelector('[name="quantity"]');
+    const stockNote = document.getElementById('premadeDesignStockNote');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const catalog = normalizePremadeKeychainCatalog(window.premadeKeychainCatalog);
+    const selectedDesign = designSelect instanceof HTMLSelectElement
+        ? getPremadeKeychainDesignByValue(designSelect.value, catalog)
+        : null;
+    const hasAvailableDesign = catalog.designs.some((design) => design.stock > 0);
+
+    if (designSelect instanceof HTMLSelectElement) {
+        designSelect.disabled = !hasAvailableDesign;
+        designSelect.dataset.selectedDesign = designSelect.value;
+    }
+
+    if (quantityInput instanceof HTMLInputElement) {
+        quantityInput.disabled = !hasAvailableDesign;
+        if (selectedDesign) {
+            const maxQty = Math.max(1, Math.min(10, selectedDesign.stock));
+            quantityInput.max = String(maxQty);
+            if ((Number(quantityInput.value) || 1) > maxQty) {
+                quantityInput.value = String(maxQty);
+            }
+        } else {
+            quantityInput.max = '10';
+        }
+    }
+
+    if (stockNote) {
+        if (!hasAvailableDesign) {
+            stockNote.textContent = 'No premade keychain designs are currently in stock.';
+        } else if (selectedDesign) {
+            stockNote.textContent = selectedDesign.stock === 1
+                ? '1 keychain left for this design.'
+                : `${selectedDesign.stock} keychains left for this design.`;
+        } else {
+            stockNote.textContent = 'Choose a design to see how many are left.';
+        }
+    }
+
+    if (submitBtn instanceof HTMLButtonElement) {
+        submitBtn.disabled = !hasAvailableDesign;
+    }
+}
+
+function bindPremadeKeychainFormInventory(form = document.getElementById('premadeKeychainForm')) {
+    if (!(form instanceof HTMLFormElement)) return;
+    const designSelect = form.querySelector('[name="designChoice"]');
+
+    if (designSelect instanceof HTMLSelectElement && designSelect.dataset.inventoryBound !== 'true') {
+        designSelect.dataset.inventoryBound = 'true';
+        designSelect.addEventListener('change', () => {
+            designSelect.dataset.selectedDesign = designSelect.value;
+            refreshPremadeKeychainFormState(form);
+        });
+    }
+
+    refreshPremadeKeychainFormState(form);
+}
+
+function getPremadeImageStorageMode(imageValue) {
+    const value = String(imageValue || '').trim();
+    if (!value) return 'none';
+    if (value.startsWith('data:image/')) return 'embedded';
+    if (/^https?:\/\//i.test(value) || value.includes('firebasestorage') || value.includes('googleapis.com')) return 'hosted';
+    return 'path';
+}
+
+function getPremadeImageStorageLabel(imageValue) {
+    const mode = getPremadeImageStorageMode(imageValue);
+    if (mode === 'embedded') return 'Embedded fallback image';
+    if (mode === 'hosted') return 'Hosted upload';
+    if (mode === 'path') return 'Local file path';
+    return 'No image saved yet';
+}
+
+function updateAdminPremadeDesignPreview(imageSrc = '', helperText = '') {
+    const previewWrap = document.getElementById('adminPremadeDesignPreview');
+    const previewImg = document.getElementById('adminPremadeDesignPreviewImg');
+    const previewText = document.getElementById('adminPremadeDesignImageHint');
+    const previewStatus = document.getElementById('adminPremadeDesignImageStatus');
+
+    if (previewWrap instanceof HTMLElement) {
+        previewWrap.hidden = !imageSrc;
+    }
+    if (previewImg instanceof HTMLImageElement) {
+        previewImg.src = imageSrc || '';
+        previewImg.alt = imageSrc ? 'Premade design preview' : '';
+    }
+    if (previewText instanceof HTMLElement) {
+        previewText.textContent = helperText || (imageSrc ? 'Current image will be kept unless you upload a new one.' : 'Upload a picture for this design.');
+    }
+    if (previewStatus instanceof HTMLElement) {
+        const mode = getPremadeImageStorageMode(imageSrc);
+        previewStatus.textContent = getPremadeImageStorageLabel(imageSrc);
+        previewStatus.dataset.mode = mode;
+    }
+}
+
+function convertFileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        if (!(file instanceof File)) {
+            reject(new Error('A valid file is required.'));
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+        reader.onerror = () => reject(reader.error || new Error('Failed to read file.'));
+        reader.readAsDataURL(file);
+    });
+}
+
+function loadImageElement(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Failed to load selected image.'));
+        img.src = src;
+    });
+}
+
+async function buildPremadeCatalogImageSource(file) {
+    if (!(file instanceof File)) throw new Error('A valid image file is required.');
+    if (!/^image\//i.test(file.type || '')) throw new Error('Selected file must be an image.');
+    if (file.size > 8 * 1024 * 1024) throw new Error('Image must be 8MB or smaller.');
+
+    // Prefer a normal storage upload when allowed, but gracefully fall back
+    // to an inline compressed image if storage permissions/config fail.
+    try {
+        const safeName = (file.name || 'premade-image').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 90);
+        const storageRef = ref(storage, `premade-keychains/${Date.now()}_${safeName}`);
+        await uploadBytes(storageRef, file);
+        return await getDownloadURL(storageRef);
+    } catch (storageError) {
+        console.warn('Premade image storage upload failed, using inline fallback instead.', storageError);
+    }
+
+    const sourceDataUrl = await convertFileToDataUrl(file);
+    const image = await loadImageElement(sourceDataUrl);
+    const maxDimension = 900;
+    const scale = Math.min(1, maxDimension / Math.max(image.width || 1, image.height || 1));
+    const width = Math.max(1, Math.round((image.width || 1) * scale));
+    const height = Math.max(1, Math.round((image.height || 1) * scale));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Image processing is not available in this browser.');
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(image, 0, 0, width, height);
+
+    const compressed = canvas.toDataURL('image/webp', 0.86);
+    if (compressed.length > 850000) {
+        throw new Error('Image is still too large after compression. Try a smaller picture.');
+    }
+
+    return compressed;
+}
+
+function setAdminPremadeDesignEditState(design = null) {
+    const nameInput = document.getElementById('adminPremadeDesignName');
+    const imageInput = document.getElementById('adminPremadeDesignImage');
+    const subtitleInput = document.getElementById('adminPremadeDesignSubtitle');
+    const stockInput = document.getElementById('adminPremadeDesignStock');
+    const saveBtn = document.getElementById('btnSavePremadeDesign');
+
+    if (!nameInput || !imageInput || !subtitleInput || !stockInput || !saveBtn) return;
+
+    if (!design) {
+        window.currentEditingPremadeDesignId = null;
+        nameInput.value = '';
+        if (imageInput instanceof HTMLInputElement) imageInput.value = '';
+        subtitleInput.value = '2.5 inch acrylic keychain';
+        stockInput.value = '20';
+        saveBtn.dataset.currentImage = '';
+        saveBtn.textContent = 'Add Design';
+        updateAdminPremadeDesignPreview('', 'Upload a picture for this design.');
+        return;
+    }
+
+    window.currentEditingPremadeDesignId = design.id;
+    nameInput.value = design.name;
+    if (imageInput instanceof HTMLInputElement) imageInput.value = '';
+    subtitleInput.value = design.subtitle;
+    stockInput.value = String(design.stock);
+    saveBtn.dataset.currentImage = design.image;
+    saveBtn.textContent = 'Save Design';
+    updateAdminPremadeDesignPreview(design.image, 'Current image will be kept unless you upload a new one.');
+}
+
+function formatAdminPremadeImageLabel(imageValue) {
+    const value = String(imageValue || '').trim();
+    if (!value) return 'No image set';
+    return getPremadeImageStorageLabel(value);
+}
+
+function renderAdminPremadeKeychainManager() {
+    const listEl = document.getElementById('adminPremadeDesignList');
+    if (!listEl) return;
+
+    const catalog = normalizePremadeKeychainCatalog(window.premadeKeychainCatalog);
+    if (catalog.designs.length === 0) {
+        listEl.innerHTML = '<p class="admin-detail">No premade designs listed yet.</p>';
+        return;
+    }
+
+    listEl.innerHTML = catalog.designs.map((design) => `
+        <article class="admin-premade-item">
+            <img src="${escapeHTML(encodeURI(design.image))}" alt="${escapeHTML(design.name)}" class="admin-premade-item__thumb" loading="lazy" onerror="handleImageError(this)">
+            <div class="admin-premade-item__info">
+                <strong>${escapeHTML(design.name)}</strong>
+                <span>${escapeHTML(design.subtitle)}</span>
+                <span class="admin-premade-item__stock ${design.stock === 0 ? 'is-sold-out' : ''}">${escapeHTML(design.stock === 1 ? '1 left' : `${design.stock} left`)}</span>
+                <code>${escapeHTML(formatAdminPremadeImageLabel(design.image))}</code>
+            </div>
+            <div class="announce-item-actions admin-premade-item__actions">
+                <button type="button" class="admin-btn-edit admin-edit-premade-design" data-id="${escapeHTML(design.id)}">Edit</button>
+                <button type="button" class="admin-btn-delete admin-delete-premade-design" data-id="${escapeHTML(design.id)}">Delete</button>
+            </div>
+        </article>
+    `).join('');
+
+    listEl.querySelectorAll('.admin-edit-premade-design').forEach((button) => {
+        button.addEventListener('click', () => {
+            const design = getPremadeKeychainDesignByValue(button.getAttribute('data-id'));
+            if (design) setAdminPremadeDesignEditState(design);
+        });
+    });
+
+    listEl.querySelectorAll('.admin-delete-premade-design').forEach((button) => {
+        button.addEventListener('click', async () => {
+            if (!requireAdminSession('Please sign in with an authorized admin account before deleting premade keychain designs.')) return;
+            const designId = button.getAttribute('data-id');
+            if (!designId) return;
+            const catalogState = normalizePremadeKeychainCatalog(window.premadeKeychainCatalog);
+            const design = catalogState.designs.find((entry) => entry.id === designId);
+            if (!design || !confirm(`Delete ${design.name} from the premade keychain list?`)) return;
+
+            button.disabled = true;
+            try {
+                const nextCatalog = normalizePremadeKeychainCatalog({
+                    designs: catalogState.designs.filter((entry) => entry.id !== designId)
+                });
+                await setDoc(doc(db, 'settings', 'premadeKeychains'), nextCatalog, { merge: true });
+                window.premadeKeychainCatalog = nextCatalog;
+                renderAdminPremadeKeychainManager();
+                applyPremadeKeychainCatalogToCurrentDOM();
+                if (window.currentEditingPremadeDesignId === designId) {
+                    setAdminPremadeDesignEditState(null);
+                }
+                showAdminToast('Premade design deleted.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to delete premade design.', true);
+            } finally {
+                button.disabled = false;
+            }
+        });
+    });
+}
+
+function applyPremadeKeychainCatalogToCurrentDOM() {
+    const galleryWrap = document.getElementById('premadeKeychainGalleryWrap');
+    if (galleryWrap) {
+        galleryWrap.innerHTML = buildPremadeKeychainGalleryMarkup(window.premadeKeychainCatalog);
+        bindPremadeGalleryLightbox(galleryWrap);
+    }
+
+    const form = document.getElementById('premadeKeychainForm');
+    if (form instanceof HTMLFormElement) {
+        const designSelect = form.querySelector('[name="designChoice"]');
+        const previousValue = designSelect instanceof HTMLSelectElement ? designSelect.dataset.selectedDesign || designSelect.value : '';
+        if (designSelect instanceof HTMLSelectElement) {
+            designSelect.innerHTML = buildPremadeKeychainSelectOptionsMarkup(window.premadeKeychainCatalog);
+            if (previousValue && Array.from(designSelect.options).some((option) => option.value === previousValue && !option.disabled)) {
+                designSelect.value = previousValue;
+            }
+        }
+        bindPremadeKeychainFormInventory(form);
+    }
+
+    renderAdminPremadeKeychainManager();
+}
+
 function getComparableTimestampMs(value) {
     if (!value) return 0;
     if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -1004,6 +1753,18 @@ function attachHomeAvailabilityListener() {
     });
 }
 attachHomeAvailabilityListener();
+
+function attachPremadeKeychainCatalogListener() {
+    if (globalPremadeKeychainCatalogListener) globalPremadeKeychainCatalogListener();
+    globalPremadeKeychainCatalogListener = onSnapshot(doc(db, 'settings', 'premadeKeychains'), (docSnap) => {
+        window.premadeKeychainCatalog = normalizePremadeKeychainCatalog(docSnap.exists() ? docSnap.data() : null);
+        applyPremadeKeychainCatalogToCurrentDOM();
+    }, () => {
+        window.premadeKeychainCatalog = normalizePremadeKeychainCatalog(null);
+        applyPremadeKeychainCatalogToCurrentDOM();
+    });
+}
+attachPremadeKeychainCatalogListener();
 
 function getBestDiscount(type) {
     if (!window.activeSales || window.activeSales.length === 0) return 0;
@@ -3255,6 +4016,76 @@ function loadHuskyArtForm() {
     `;
     
     attachCharCounters();
+    enhancePreorderForm('artForm', {
+        sections: [
+            {
+                title: 'Contact details',
+                description: 'We use this only to reply about your request and next steps.',
+                targets: ['name', 'email', 'discord', 'characterName']
+            },
+            {
+                title: 'Project details',
+                description: 'Choose the core details that shape your quote and workflow.',
+                targets: ['artType', 'shadingStyle', 'characterCount', 'background']
+            },
+            {
+                title: 'References',
+                description: 'Uploads or one good link are enough to start the review process.',
+                targets: ['#refFilesInput', 'refLink']
+            }
+        ],
+        optionalTargets: ['addon', 'pose', 'mood', 'deadline', 'notes'],
+        wizard: {
+            enabled: true,
+            finalTitle: 'Review and send',
+            finalDescription: 'Check the recap, estimate, and checklist before you send the request.'
+        },
+        helperText: {
+            email: 'Used only for updates, quote follow-up, and your order confirmation.',
+            discord: 'Helpful if you prefer faster conversation there.',
+            refLink: 'One gallery, toyhou.se page, or drive link is completely fine.',
+            deadline: 'Optional, but it helps us confirm whether the timeline is realistic.'
+        },
+        examples: {
+            pose: {
+                title: 'Quick idea example',
+                text: 'Good: playful grin, standing pose, looking over shoulder, ocean sunset mood.'
+            },
+            notes: {
+                title: 'Helpful extra notes example',
+                text: 'Example: fullbody, flat color, no deadline, keep the expression soft and friendly.'
+            }
+        },
+        warningRules: [
+            {
+                message: 'No reference upload or link added yet. One clear visual helps us quote much faster.',
+                when: (form) => {
+                    const uploads = form.querySelector('#refFilesInput');
+                    return ((uploads instanceof HTMLInputElement ? uploads.files?.length || 0 : 0) === 0)
+                        && !getFormControlValue(form, 'refLink');
+                }
+            },
+            {
+                message: 'You added a deadline without extra context. A short note about why the date matters will help us review it.',
+                when: (form) => Boolean(getFormControlValue(form, 'deadline')) && !getFormControlValue(form, 'notes')
+            },
+            {
+                message: 'Rendered art with 3+ characters usually needs more planning time than simpler requests.',
+                when: (form) => {
+                    const shading = getFormControlValue(form, 'shadingStyle').toLowerCase();
+                    const count = Number(getFormControlValue(form, 'characterCount')) || 0;
+                    return shading === 'rendered' && count >= 3;
+                }
+            }
+        ],
+        summaryFields: [
+            { label: 'Contact', target: 'email' },
+            { label: 'Commission', target: 'artType' },
+            { label: 'Finish', target: 'shadingStyle' },
+            { label: 'Characters', target: 'characterCount' },
+            { label: 'Deadline', target: 'deadline', fallback: 'No deadline listed' }
+        ]
+    });
     attachFileInputListener();
     attachInnerScrollListener();
     attachDynamicEstimator('artForm', 'art');
@@ -3326,6 +4157,68 @@ function loadFursuitForm() {
     `;
     
     attachCharCounters();
+    enhancePreorderForm('fursuitForm', {
+        sections: [
+            {
+                title: 'Contact details',
+                description: 'Tell us who to reach and what character or species this is for.',
+                targets: ['name', 'email', 'discord', 'species']
+            },
+            {
+                title: 'Build details',
+                description: 'These choices help us understand scope, materials, and fit.',
+                targets: ['partType', 'materials', '#measurementsCheck']
+            },
+            {
+                title: 'References',
+                description: 'Visual references help handmade quotes become much more accurate.',
+                targets: ['#refFilesInput', 'refLink']
+            }
+        ],
+        optionalTargets: ['addon', 'deadline', 'notes'],
+        wizard: {
+            enabled: true,
+            finalTitle: 'Review and send',
+            finalDescription: 'Double-check the build summary, estimate, and checklist before you submit the request.'
+        },
+        helperText: {
+            email: 'Used only for quote follow-up and order communication.',
+            refLink: 'If you do not have uploads ready yet, one clear reference link works.',
+            materials: 'Include fur colors, textures, or any important construction notes.',
+            deadline: 'Optional, but strongly recommended for convention or event timing.'
+        },
+        examples: {
+            materials: {
+                title: 'Material note example',
+                text: 'Example: dark navy main fur, mint accents, long pile tail, indoor convention use.'
+            },
+            notes: {
+                title: 'Helpful extra notes example',
+                text: 'Example: hoping for a partial first, con target in October, okay with artistic problem-solving.'
+            }
+        },
+        warningRules: [
+            {
+                message: 'No reference upload or link added yet. Handmade quotes are much more accurate with visuals.',
+                when: (form) => {
+                    const uploads = form.querySelector('#refFilesInput');
+                    return ((uploads instanceof HTMLInputElement ? uploads.files?.length || 0 : 0) === 0)
+                        && !getFormControlValue(form, 'refLink');
+                }
+            },
+            {
+                message: 'You entered a deadline without build notes. Even one sentence about the event or timing helps us review feasibility.',
+                when: (form) => Boolean(getFormControlValue(form, 'deadline')) && !getFormControlValue(form, 'notes')
+            }
+        ],
+        summaryFields: [
+            { label: 'Contact', target: 'email' },
+            { label: 'Build type', target: 'partType' },
+            { label: 'Species', target: 'species' },
+            { label: 'Measurements', target: 'needsMeasurements' },
+            { label: 'Deadline', target: 'deadline', fallback: 'No deadline listed' }
+        ]
+    });
     attachFileInputListener();
     attachInnerScrollListener();
     attachDynamicEstimator('fursuitForm', 'fursuit');
@@ -3421,6 +4314,67 @@ function loadCustomKeychainsForm() {
     `;
     
     attachCharCounters();
+    enhancePreorderForm('customKeychainForm', {
+        sections: [
+            {
+                title: 'Contact details',
+                description: 'Basic contact first, then we can focus on the design.',
+                targets: ['name', 'email', 'discord', 'characterName']
+            },
+            {
+                title: 'Design details',
+                description: 'Describe what you want made and the production choices you prefer.',
+                targets: ['description', 'keychainType', 'complexity', 'size', 'doubleSided', 'clasp', 'quantity']
+            },
+            {
+                title: 'References',
+                description: 'Uploads or a link both work if the design already exists somewhere.',
+                targets: ['#refFilesInput', 'refLink']
+            }
+        ],
+        optionalTargets: ['deadline', 'notes'],
+        wizard: {
+            enabled: true,
+            finalTitle: 'Review and send',
+            finalDescription: 'Check the recap, estimate, and checklist before you send the keychain request.'
+        },
+        helperText: {
+            description: 'A simple sentence is enough: subject, pose, mood, or what should appear on the charm.',
+            refLink: 'Use this if your design is already posted somewhere public or shareable.',
+            deadline: 'Optional, but useful if this is meant for an event, gift, or launch.'
+        },
+        examples: {
+            description: {
+                title: 'Good request example',
+                text: 'Example: chibi blue cat face, wink expression, star clasp, same design both sides.'
+            },
+            notes: {
+                title: 'Helpful extra notes example',
+                text: 'Example: keep outlines bold, pastel palette, this is for a birthday gift in late August.'
+            }
+        },
+        warningRules: [
+            {
+                message: 'No reference upload or link added yet. Even one visual link usually speeds up merch quoting.',
+                when: (form) => {
+                    const uploads = form.querySelector('#refFilesInput');
+                    return ((uploads instanceof HTMLInputElement ? uploads.files?.length || 0 : 0) === 0)
+                        && !getFormControlValue(form, 'refLink');
+                }
+            },
+            {
+                message: 'Your description is still very short. One more sentence about pose, mood, or details would help.',
+                when: (form) => getFormControlValue(form, 'description').length > 0 && getFormControlValue(form, 'description').length < 18
+            }
+        ],
+        summaryFields: [
+            { label: 'Contact', target: 'email' },
+            { label: 'Keychain type', target: 'keychainType' },
+            { label: 'Complexity', target: 'complexity' },
+            { label: 'Quantity', target: 'quantity' },
+            { label: 'Deadline', target: 'deadline', fallback: 'No deadline listed' }
+        ]
+    });
     attachFileInputListener();
     attachInnerScrollListener();
     attachDynamicEstimator('customKeychainForm', 'keychain');
@@ -3510,6 +4464,67 @@ function loadCustomStickersForm() {
     `;
     
     attachCharCounters();
+    enhancePreorderForm('stickerForm', {
+        sections: [
+            {
+                title: 'Contact details',
+                description: 'A few basics first so we know where to reply.',
+                targets: ['name', 'email', 'discord', 'subject']
+            },
+            {
+                title: 'Sticker details',
+                description: 'These answers shape the look, complexity, and quantity of the order.',
+                targets: ['stickerType', 'complexity', 'style', 'finish', 'size', 'quantity']
+            },
+            {
+                title: 'References',
+                description: 'Visuals help us quote more confidently and reduce revisions later.',
+                targets: ['#refFilesInput', 'refLink']
+            }
+        ],
+        optionalTargets: ['deadline', 'notes'],
+        wizard: {
+            enabled: true,
+            finalTitle: 'Review and send',
+            finalDescription: 'Use the final step to review the estimate, summary, and checklist before submitting.'
+        },
+        helperText: {
+            subject: 'Example: your fursona, pet, logo, or a specific emote idea.',
+            refLink: 'One link is enough if you do not want to upload images right now.',
+            deadline: 'Optional, but it helps us decide if rush timing is realistic.'
+        },
+        examples: {
+            subject: {
+                title: 'Good subject example',
+                text: 'Example: my orange fox OC cheering with confetti, sticker sheet for Discord emotes.'
+            },
+            notes: {
+                title: 'Helpful extra notes example',
+                text: 'Example: prefer holographic finish, keep expressions exaggerated, no hard deadline.'
+            }
+        },
+        warningRules: [
+            {
+                message: 'No reference upload or link added yet. A visual example usually improves sticker quotes right away.',
+                when: (form) => {
+                    const uploads = form.querySelector('#refFilesInput');
+                    return ((uploads instanceof HTMLInputElement ? uploads.files?.length || 0 : 0) === 0)
+                        && !getFormControlValue(form, 'refLink');
+                }
+            },
+            {
+                message: 'You added a deadline, but no extra notes yet. If timing matters, one short note can help us prioritize.',
+                when: (form) => Boolean(getFormControlValue(form, 'deadline')) && !getFormControlValue(form, 'notes')
+            }
+        ],
+        summaryFields: [
+            { label: 'Contact', target: 'email' },
+            { label: 'Sticker type', target: 'stickerType' },
+            { label: 'Style', target: 'style' },
+            { label: 'Quantity', target: 'quantity' },
+            { label: 'Deadline', target: 'deadline', fallback: 'No deadline listed' }
+        ]
+    });
     attachFileInputListener();
     attachInnerScrollListener();
     attachDynamicEstimator('stickerForm', 'sticker');
@@ -3526,23 +4541,7 @@ function loadPremadeKeychainsForm() {
         <div class="preorder-card menu-large" style="margin-bottom: 25px;">
             <h1 style="color: #ffffff; text-shadow: 0 0 15px #00f2fe; font-size: 2.5rem;">Premade Keychains</h1>
             <p style="color: #e2e8f0; margin-bottom: 20px;">Select from available in-stock designs below.</p>
-            <div class="gallery-grid">
-                <div class="premade-card">
-                    <img src="Premade%20keychains/Absol_keycahin_watermark.png" class="premade-img" alt="Absol Premade" loading="lazy" onerror="handleImageError(this)">
-                    <h3 style="color: #00f2fe; font-weight: 500; margin-bottom: 5px;">Absol Premade</h3>
-                    <p style="color: #a2b7cc; font-size: 0.95rem;">2.5 inch acrylic keychain</p>
-                </div>
-                <div class="premade-card">
-                    <img src="Premade%20keychains/bleh1.png" class="premade-img" alt="Shiny Espeon" loading="lazy" onerror="handleImageError(this)">
-                    <h3 style="color: #ec4899; font-weight: 500; margin-bottom: 5px;">Shiny Espeon</h3>
-                    <p style="color: #a2b7cc; font-size: 0.95rem;">2.5 inch acrylic keychain</p>
-                </div>
-                <div class="premade-card">
-                    <img src="Premade%20keychains/Illustration13_2.png" class="premade-img" alt="Shiny Vaporeon" loading="lazy" onerror="handleImageError(this)">
-                    <h3 style="color: #22c55e; font-weight: 500; margin-bottom: 5px;">Shiny Vaporeon</h3>
-                    <p style="color: #a2b7cc; font-size: 0.95rem;">2.5 inch acrylic keychain</p>
-                </div>
-            </div>
+            <div id="premadeKeychainGalleryWrap">${buildPremadeKeychainGalleryMarkup()}</div>
         </div>
         <div class="form-card">
             <h1>Premade Keychain Order Form</h1>
@@ -3553,7 +4552,13 @@ function loadPremadeKeychainsForm() {
                 <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" maxlength="50" required></div>
                 <div class="form-group"><label>Email <span>*</span></label><input type="email" name="email" class="form-input" maxlength="100" required></div>
                 <div class="form-group"><label>Discord Username <span>*</span></label><input type="text" name="discord" class="form-input" maxlength="100" required></div>
-                <div class="form-group"><label>Which premade design do you want? <span>*</span></label><input type="text" name="designChoice" class="form-input" maxlength="100" required></div>
+                <div class="form-group">
+                    <label>Which premade design do you want? <span>*</span></label>
+                    <select name="designChoice" class="form-select" required>
+                        ${buildPremadeKeychainSelectOptionsMarkup()}
+                    </select>
+                    <p id="premadeDesignStockNote" class="form-helper-text premade-design-stock-note">Choose a design to see how many are left.</p>
+                </div>
                 <div class="form-group"><label>Quantity <span>*</span></label><input type="number" name="quantity" id="kQty" class="form-input" required min="1" max="10" value="1"></div>
                 <div class="form-group">
                     <label>Preferred Finish (if available)</label>
@@ -3584,18 +4589,65 @@ function loadPremadeKeychainsForm() {
         <button type="button" id="backToMenuBtn" class="nav-btn">← Back to Menu</button>
     `;
     
-    // Lightbox binding for premade images
-    const premadeImages = appViewport.querySelectorAll('.premade-img');
-    premadeImages.forEach(img => {
-        img.addEventListener('click', () => {
-            openLightbox(img.src, img.alt);
-        });
-    });
+    bindPremadeGalleryLightbox(appViewport);
 
     attachCharCounters();
+    enhancePreorderForm('premadeKeychainForm', {
+        sections: [
+            {
+                title: 'Contact details',
+                description: 'Tell us who you are and the best way to reach you.',
+                targets: ['name', 'email', 'discord']
+            },
+            {
+                title: 'Order details',
+                description: 'Choose the premade design and basic order preferences.',
+                targets: ['designChoice', 'quantity', 'finish']
+            },
+            {
+                title: 'Shipping details',
+                description: 'We only use this for sending the finished physical order.',
+                targets: ['shippingName', 'shippingAddress']
+            }
+        ],
+        optionalTargets: ['notes'],
+        wizard: {
+            enabled: true,
+            finalTitle: 'Review and send',
+            finalDescription: 'Check the chosen design, shipping info, estimate, and checklist before you place the order.'
+        },
+        helperText: {
+            email: 'Used for order follow-up, shipping updates, and confirmation.',
+            designChoice: 'Pick from the live stock list instead of typing the design name manually.',
+            shippingAddress: 'Double-check this carefully before sending to avoid delivery issues.'
+        },
+        examples: {
+            notes: {
+                title: 'Helpful note example',
+                text: 'Example: please match the clasp to the sample photo, no rush, gift packaging not needed.'
+            }
+        },
+        warningRules: [
+            {
+                message: 'Your shipping address looks very short. Double-check that it includes enough detail to deliver safely.',
+                when: (form) => {
+                    const address = getFormControlValue(form, 'shippingAddress');
+                    return address.length > 0 && address.length < 12;
+                }
+            }
+        ],
+        summaryFields: [
+            { label: 'Contact', target: 'email' },
+            { label: 'Design', target: 'designChoice' },
+            { label: 'Quantity', target: 'quantity' },
+            { label: 'Finish', target: 'finish' },
+            { label: 'Ship to', target: 'shippingName', fallback: 'Shipping details pending' }
+        ]
+    });
     attachInnerScrollListener();
     attachDynamicEstimator('premadeKeychainForm', 'keychain');
     bindPreorderDraftFlow('premadeKeychainForm');
+    bindPremadeKeychainFormInventory();
 
     document.querySelectorAll('.tos-redirect-btn').forEach(btn => btn.addEventListener('click', () => showTOSModal()));
     document.getElementById('premadeKeychainForm').addEventListener('submit', (e) => submitPreorder(e, 'Premade Keychain'));
@@ -7254,6 +8306,7 @@ function loadAdminDashboard() {
                         <p class="admin-sidebar-group-title">Business</p>
                         <button type="button" id="adminNavDiscounts" class="admin-side-link" data-admin-scroll="adminDiscountManagerSection">Discounts</button>
                         <button type="button" id="adminNavAvailability" class="admin-side-link" data-admin-scroll="adminAvailabilitySection">Availability</button>
+                        <button type="button" id="adminNavPremadeKeychains" class="admin-side-link" data-admin-scroll="adminPremadeKeychainsSection">Premade Keychains</button>
                         <button type="button" id="adminNavAnnouncements" class="admin-side-link" data-admin-scroll="adminAnnouncementsSection">Announcements</button>
                     </div>
 
@@ -7501,6 +8554,9 @@ function loadAdminDashboard() {
                             <section id="adminAvailabilitySection">
                                 ${getTemplateHTML('adminAvailabilityManagerTemplate')}
                             </section>
+                            <section id="adminPremadeKeychainsSection">
+                                ${getTemplateHTML('adminPremadeKeychainsManagerTemplate')}
+                            </section>
                             <section id="adminDiscountManagerSection">
                                 ${getTemplateHTML('adminDiscountManagerTemplate')}
                             </section>
@@ -7613,6 +8669,8 @@ function loadAdminDashboard() {
     
     renderActiveDiscountsList();
     renderAdminAvailabilitySettings();
+    renderAdminPremadeKeychainManager();
+    setAdminPremadeDesignEditState(null);
     setupQueueManagerTabs();
     setupAdminRefundManager();
     setupAdminCommissionManager();
@@ -7623,10 +8681,25 @@ function loadAdminDashboard() {
     window.adminOrderFilterState = { status: 'All', search: '' };
 
     const quickSearchInput = document.getElementById('adminQuickSearch');
+    const premadeImageInput = document.getElementById('adminPremadeDesignImage');
     if (quickSearchInput) {
         quickSearchInput.addEventListener('input', () => {
             window.adminOrderFilterState.search = quickSearchInput.value || '';
             applyAdminOrderFilters();
+        });
+    }
+
+    if (premadeImageInput instanceof HTMLInputElement) {
+        premadeImageInput.addEventListener('change', () => {
+            const file = premadeImageInput.files?.[0];
+            if (!file) {
+                const currentImage = document.getElementById('btnSavePremadeDesign')?.dataset.currentImage || '';
+                updateAdminPremadeDesignPreview(currentImage, currentImage ? 'Current image will be kept unless you upload a new one.' : 'Upload a picture for this design.');
+                return;
+            }
+
+            const objectUrl = URL.createObjectURL(file);
+            updateAdminPremadeDesignPreview(objectUrl, `Selected file: ${file.name}`);
         });
     }
 
@@ -7731,6 +8804,84 @@ function loadAdminDashboard() {
         window.homeAvailability = normalizeHomeAvailability(null);
         renderAdminAvailabilitySettings();
         showAdminToast('Default availability loaded in form. Save to publish.');
+    });
+
+    document.getElementById('btnSavePremadeDesign')?.addEventListener('click', async (e) => {
+        if (!requireAdminSession('Please sign in with an authorized admin account before saving premade keychain designs.')) return;
+
+        const btn = e.target;
+        const nameInput = document.getElementById('adminPremadeDesignName');
+        const imageInput = document.getElementById('adminPremadeDesignImage');
+        const subtitleInput = document.getElementById('adminPremadeDesignSubtitle');
+        const stockInput = document.getElementById('adminPremadeDesignStock');
+        if (!(nameInput instanceof HTMLInputElement) || !(imageInput instanceof HTMLInputElement) || !(subtitleInput instanceof HTMLInputElement) || !(stockInput instanceof HTMLInputElement) || !(btn instanceof HTMLButtonElement)) return;
+
+        const name = nameInput.value.trim();
+        const subtitle = subtitleInput.value.trim() || '2.5 inch acrylic keychain';
+        const stock = sanitizePremadeKeychainStock(stockInput.value, 20);
+        const selectedFile = imageInput.files?.[0] || null;
+        const currentImage = btn.dataset.currentImage || '';
+        if (!name || (!selectedFile && !currentImage)) {
+            showAdminToast('Add a design name and choose a picture.', true);
+            return;
+        }
+
+        const catalog = normalizePremadeKeychainCatalog(window.premadeKeychainCatalog);
+        const isEditing = Boolean(window.currentEditingPremadeDesignId);
+        const normalizedName = name.toLowerCase();
+        const duplicateDesign = catalog.designs.find((design) => {
+            if (isEditing && design.id === window.currentEditingPremadeDesignId) return false;
+            return String(design.name || '').trim().toLowerCase() === normalizedName;
+        });
+        if (duplicateDesign) {
+            showAdminToast('A premade design with that name already exists.', true);
+            return;
+        }
+
+        const designId = window.currentEditingPremadeDesignId || `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'premade-design'}-${Date.now()}`;
+        let image = currentImage;
+        const nextDesign = {
+            id: designId,
+            name,
+            image: '',
+            subtitle,
+            stock
+        };
+
+        btn.disabled = true;
+        btn.textContent = isEditing ? 'Saving...' : 'Adding...';
+        try {
+            if (selectedFile) {
+                image = await buildPremadeCatalogImageSource(selectedFile);
+            }
+
+            nextDesign.image = image;
+            const nextCatalog = normalizePremadeKeychainCatalog({
+                designs: window.currentEditingPremadeDesignId
+                    ? catalog.designs.map((design) => design.id === window.currentEditingPremadeDesignId ? nextDesign : design)
+                    : [...catalog.designs, nextDesign]
+            });
+            await setDoc(doc(db, 'settings', 'premadeKeychains'), nextCatalog, { merge: true });
+            window.premadeKeychainCatalog = nextCatalog;
+            renderAdminPremadeKeychainManager();
+            applyPremadeKeychainCatalogToCurrentDOM();
+            setAdminPremadeDesignEditState(null);
+            const sourceLabel = getPremadeImageStorageLabel(nextDesign.image);
+            showAdminToast(`${isEditing ? 'Premade design updated.' : 'Premade design added.'} Source: ${sourceLabel}.`);
+        } catch (error) {
+            console.error(error);
+            const detail = error instanceof Error && error.message
+                ? error.message
+                : 'Unknown error while saving premade design.';
+            showAdminToast(`Failed to save premade design. ${detail}`, true);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = isEditing ? 'Save Design' : 'Add Design';
+        }
+    });
+
+    document.getElementById('btnResetPremadeDesignForm')?.addEventListener('click', () => {
+        setAdminPremadeDesignEditState(null);
     });
 
     document.getElementById('adminSetAllOpenBtn')?.addEventListener('click', () => {

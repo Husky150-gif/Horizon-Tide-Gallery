@@ -20,7 +20,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=34">
+    <link rel="stylesheet" href="style.css?v=41">
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
@@ -387,6 +387,54 @@
         </div>
     </template>
 
+    <template id="adminPremadeKeychainsManagerTemplate">
+        <div class="admin-card premade-manager-card">
+            <h3 class="admin-card-title premade-manager-title">Premade Keychain Designs</h3>
+            <p class="admin-card-subtitle">Manage the premade dropdown, gallery cards, and stock-left labels. New designs default to 20 left.</p>
+
+            <div class="admin-form-row">
+                <label class="admin-label admin-label-medium">
+                    Design Name
+                    <input type="text" id="adminPremadeDesignName" class="admin-input" placeholder="Shiny Umbreon">
+                </label>
+                <label class="admin-label admin-label-wide">
+                    Design Image
+                    <input type="file" id="adminPremadeDesignImage" class="admin-input" accept="image/*">
+                </label>
+                <label class="admin-label admin-label-medium">
+                    Stock Left
+                    <input type="number" id="adminPremadeDesignStock" class="admin-input admin-input-narrow" min="0" step="1" value="20">
+                </label>
+            </div>
+
+            <div class="admin-form-row">
+                <label class="admin-label admin-label-wide">
+                    Card Subtitle
+                    <input type="text" id="adminPremadeDesignSubtitle" class="admin-input" value="2.5 inch acrylic keychain" placeholder="2.5 inch acrylic keychain">
+                </label>
+            </div>
+
+            <div class="admin-form-row">
+                <div class="admin-premade-preview" id="adminPremadeDesignPreview" hidden>
+                    <img id="adminPremadeDesignPreviewImg" class="admin-premade-preview__img" alt="">
+                </div>
+                <div class="admin-premade-image-meta">
+                    <p id="adminPremadeDesignImageHint" class="admin-detail admin-premade-image-hint">Upload a picture for this design.</p>
+                    <p id="adminPremadeDesignImageStatus" class="admin-premade-image-status" data-mode="none">No image saved yet</p>
+                </div>
+            </div>
+
+            <div class="admin-actions discount-actions">
+                <button type="button" id="btnSavePremadeDesign" class="admin-btn-save">Add Design</button>
+                <button type="button" id="btnResetPremadeDesignForm" class="admin-btn-publish">Reset Design Form</button>
+            </div>
+
+            <div id="adminPremadeDesignList" class="admin-premade-list">
+                <p class="admin-detail">Premade designs will appear here after loading.</p>
+            </div>
+        </div>
+    </template>
+
     <div id="care-modal" aria-hidden="true">
         <div class="care-modal-card" role="dialog" aria-modal="true" aria-labelledby="careModalTitle">
             <button type="button" id="careModalClose" class="care-modal-close" aria-label="Close care guide">&times;</button>
@@ -395,7 +443,7 @@
         </div>
     </div>
 
-    <script type="module" src="script.js?v=33"></script>
+    <script type="module" src="script.js?v=44"></script>
 
     <script>
         (function () {
