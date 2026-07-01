@@ -10649,10 +10649,10 @@ body[data-page="preorder"] #footerCredit {
 /* --- HOME CELESTIAL NAV CONSOLE OVERRIDES --- */
 
 body[data-page="home"] .home-hero-shell {
-    min-height: 0;
-    gap: 18px;
+    min-height: clamp(350px, 56vh, 500px);
+    gap: clamp(10px, 1.6vh, 18px);
     max-width: 1220px;
-    padding-top: 26px;
+    padding-top: clamp(8px, 2.2vh, 20px);
     display: grid;
     justify-items: center;
 }
@@ -10669,12 +10669,16 @@ body[data-page="home"] .home-hero-note {
 body[data-page="home"] .button-container-home.home-card-deck-shell {
     gap: 18px;
     max-width: 1120px;
+    margin-top: clamp(-8px, 0.2vh, 4px);
+    margin-bottom: clamp(0px, 0.6vh, 6px);
+}
+
+body[data-page="home"] .home-pro-shell {
     margin-top: 0;
-    margin-bottom: 34px;
 }
 
 body[data-page="home"] .home-hero-header {
-    margin-bottom: 0;
+    margin-bottom: clamp(2px, 0.9vh, 10px);
 }
 
 body[data-page="home"] .home-top-nav-strip {
@@ -10696,17 +10700,18 @@ body[data-page="home"] .home-top-nav {
 
 .celestial-nav-console {
     position: relative;
-    width: min(100%, 900px);
+    width: min(96vw, 1020px);
     max-width: none;
-    margin: 0 auto;
+    margin-left: auto;
+    margin-right: auto;
     bottom: auto;
     left: auto;
     transform: none;
-    padding: 10px;
+    padding: 16px;
     display: flex;
     justify-content: space-evenly;
     align-items: center;
-    gap: 10px;
+    gap: 14px;
     border-radius: 50px;
     border: 1px solid rgba(0, 243, 255, 0.2);
     background: linear-gradient(135deg, rgba(20, 30, 50, 0.7), rgba(10, 15, 30, 0.8));
@@ -10754,17 +10759,17 @@ body[data-page="home"] .home-top-nav {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    min-height: 56px;
-    padding: 12px 18px;
+    gap: 12px;
+    min-height: 80px;
+    padding: 18px 24px;
     border-radius: 999px;
     position: relative;
     z-index: 1;
     background: rgba(255, 255, 255, 0.02);
     color: rgba(234, 245, 255, 0.84);
     font-family: 'Fredoka', sans-serif;
-    font-size: 1rem;
-    font-weight: 500;
+    font-size: 1.15rem;
+    font-weight: 600;
     line-height: 1.25;
     text-decoration: none;
     text-align: center;
@@ -10793,7 +10798,7 @@ body[data-page="home"] .home-top-nav {
 }
 
 .nav-item__icon {
-    font-size: 1.1rem;
+    font-size: 1.35rem;
     line-height: 1;
 }
 
@@ -10821,16 +10826,32 @@ body[data-page="home"] .home-top-nav {
         gap: 14px;
         display: grid;
         justify-content: start;
+        justify-items: center;
     }
 
     body[data-page="home"] .button-container-home.home-card-deck-shell {
         gap: 14px;
         margin-top: 0;
-        margin-bottom: 22px;
+        margin-bottom: 16px;
     }
 
     body[data-page="home"] .home-hero-header {
-        margin-bottom: 28px;
+        margin-bottom: 12px;
+    }
+
+    body[data-page="home"] .home-hero-header h1 {
+        font-size: clamp(2.1rem, 10vw, 3.2rem);
+        line-height: 1.1;
+    }
+
+    body[data-page="home"] .home-hero-header h2 {
+        font-size: clamp(1.1rem, 4.6vw, 1.5rem);
+        margin-bottom: 10px;
+    }
+
+    body[data-page="home"] .home-hero-note {
+        font-size: 0.95rem;
+        margin-bottom: 8px;
     }
 
     body[data-page="home"] .home-top-nav-strip {
@@ -10883,18 +10904,26 @@ body[data-page="home"] .home-top-nav {
         bottom: auto;
         left: auto;
         transform: none;
-        width: auto;
+        width: min(94vw, 640px);
         flex-direction: column;
         align-items: stretch;
         border-radius: 26px;
-        padding: 12px;
+        padding: 10px;
+        gap: 8px;
     }
 
     .celestial-nav-console .nav-item {
         width: 100%;
         justify-content: center;
-        min-height: 52px;
-        font-size: 0.98rem;
+        min-height: 56px;
+        padding: 10px 14px;
+        gap: 8px;
+        font-size: 1rem;
+        line-height: 1.2;
+    }
+
+    .celestial-nav-console .nav-item .nav-item__icon {
+        font-size: 1.15rem;
     }
 }
 
