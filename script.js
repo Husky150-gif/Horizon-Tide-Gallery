@@ -185,6 +185,18 @@ function applyHeadMetadataForRoute(isAdminView) {
 }
 let lastCursorSparkleTime = 0;
 let activeCursorSparkles = 0;
+let stickyPreorderCtaBound = false;
+let stickyPreorderScrollBound = false;
+let stickyPreorderRafPending = false;
+let stickyPreorderResizeBound = false;
+let stickyPreorderFocusBound = false;
+let stickyPreorderControlOverlapBound = false;
+let stickyPreorderViewportBound = false;
+let stickyPreorderTempHiddenUntil = 0;
+const STICKY_PREORDER_BOTTOM_HIDE_PX = 360;
+const STICKY_PREORDER_INPUT_HIDE_GUTTER_PX = 260;
+const STICKY_PREORDER_MOBILE_KEYBOARD_VIEWPORT_RATIO = 0.84;
+const STICKY_PREORDER_FLOATING_CONTROL_HIDE_MS = 1600;
 
 const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const saveDataEnabled = Boolean(navigator.connection && navigator.connection.saveData);
@@ -1329,7 +1341,6 @@ function bindCoreMenuControls() {
     
     const cosmicBtn = document.getElementById('btnCosmicUpdates');
     if (cosmicBtn) cosmicBtn.addEventListener('click', (e) => cinematicTransition(e, loadAnnouncementsPage, '#updates'));
-
     const homeSidebarNav = document.querySelector('.home-top-nav-strip, .sidebar-nav');
     if (homeSidebarNav) {
         const textTargets = Array.from(document.querySelectorAll('.home-hero-header, .home-pro-intro, .home-pro-card, .home-trust-head, .home-trust-card, .home-final-cta-shell'));
@@ -1428,6 +1439,101 @@ function bindCoreMenuControls() {
             window.removeEventListener('resize', scheduleCollisionCheck);
             window.removeEventListener('load', scheduleCollisionCheck);
         };
+    }
+}
+
+function shouldShowStickyPreorderCta(pageName) {
+    if (!pageName) return false;
+    if (pageName === 'admin' || pageName === 'preorder') return false;
+    if (pageName.endsWith('-form')) return false;
+
+    const now = Date.now();
+    if (now < stickyPreorderTempHiddenUntil) return false;
+
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement) {
+        const isFormField = activeElement.matches('input, textarea, select, [contenteditable="true"]');
+        if (isFormField) {
+            const activeRect = activeElement.getBoundingClientRect();
+            if (activeRect.bottom > (window.innerHeight - STICKY_PREORDER_INPUT_HIDE_GUTTER_PX)) return false;
+        }
+    }
+
+    const docHeight = Math.max(
+        document.body?.scrollHeight || 0,
+        document.documentElement?.scrollHeight || 0
+    );
+    const viewportBottom = (window.scrollY || window.pageYOffset || 0) + window.innerHeight;
+    if ((docHeight - viewportBottom) < STICKY_PREORDER_BOTTOM_HIDE_PX) return false;
+
+    if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches && window.visualViewport) {
+        if (window.visualViewport.height < (window.innerHeight * STICKY_PREORDER_MOBILE_KEYBOARD_VIEWPORT_RATIO)) return false;
+    }
+
+    if (pageName === 'home') {
+        return (window.scrollY || window.pageYOffset || 0) > 300;
+    }
+
+    return true;
+}
+
+function updateStickyPreorderCtaVisibility() {
+    const stickyBtn = document.getElementById('stickyPreorderCtaBtn');
+    if (!(stickyBtn instanceof HTMLButtonElement)) return;
+
+    const pageName = bodyElement.getAttribute('data-page') || '';
+    stickyBtn.classList.toggle('visible', shouldShowStickyPreorderCta(pageName));
+}
+
+function bindStickyPreorderCta() {
+    const stickyBtn = document.getElementById('stickyPreorderCtaBtn');
+    if (!(stickyBtn instanceof HTMLButtonElement)) return;
+
+    if (!stickyPreorderCtaBound) {
+        stickyPreorderCtaBound = true;
+        stickyBtn.addEventListener('click', (event) => {
+            cinematicTransition(event, loadPreorderPage, '#preorder');
+        });
+    }
+
+    if (!stickyPreorderScrollBound) {
+        stickyPreorderScrollBound = true;
+        window.addEventListener('scroll', () => {
+            if (stickyPreorderRafPending) return;
+            stickyPreorderRafPending = true;
+            window.requestAnimationFrame(() => {
+                stickyPreorderRafPending = false;
+                updateStickyPreorderCtaVisibility();
+            });
+        }, { passive: true });
+    }
+
+    if (!stickyPreorderResizeBound) {
+        stickyPreorderResizeBound = true;
+        window.addEventListener('resize', updateStickyPreorderCtaVisibility, { passive: true });
+    }
+
+    if (!stickyPreorderFocusBound) {
+        stickyPreorderFocusBound = true;
+        document.addEventListener('focusin', updateStickyPreorderCtaVisibility);
+        document.addEventListener('focusout', updateStickyPreorderCtaVisibility);
+    }
+
+    if (!stickyPreorderControlOverlapBound) {
+        stickyPreorderControlOverlapBound = true;
+        document.addEventListener('pointerdown', (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+            if (!target.closest('#backToTopBtn, #globalMusicBtn')) return;
+            stickyPreorderTempHiddenUntil = Date.now() + STICKY_PREORDER_FLOATING_CONTROL_HIDE_MS;
+            updateStickyPreorderCtaVisibility();
+        }, true);
+    }
+
+    if (!stickyPreorderViewportBound && window.visualViewport) {
+        stickyPreorderViewportBound = true;
+        window.visualViewport.addEventListener('resize', updateStickyPreorderCtaVisibility);
+        window.visualViewport.addEventListener('scroll', updateStickyPreorderCtaVisibility);
     }
 }
 
@@ -8456,7 +8562,10 @@ function initRouter() {
 
     requestAnimationFrame(() => {
         resetViewportToTop();
+        updateStickyPreorderCtaVisibility();
     });
+
+    setTimeout(updateStickyPreorderCtaVisibility, 120);
 
     window.addEventListener('hashchange', () => {
         if (suppressNextHashRoute) {
@@ -8474,6 +8583,8 @@ function initRouter() {
         } else {
             cinematicTransition(null, loadHomePage, '');
         }
+
+        setTimeout(updateStickyPreorderCtaVisibility, 1300);
     });
 }
 
@@ -8541,5 +8652,6 @@ bindCareGuideModalOverlay();
 
 // Start Application
 clearReloadedAdminSession().finally(() => {
+    bindStickyPreorderCta();
     initRouter();
 });
