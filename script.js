@@ -41,6 +41,16 @@ const DEFAULT_HOME_AVAILABILITY = {
         husky: { name: 'Husky', service: 'Digital Art', status: 'Open', slots: 3 },
         lopside: { name: 'Lopside', service: 'Fursuit Creations', status: 'Limited', slots: 2 }
     },
+    weeklySnapshot: {
+        sun: 'open',
+        mon: 'open',
+        tue: 'open',
+        wed: 'open',
+        thu: 'limited',
+        fri: 'open',
+        sat: 'open'
+    },
+    lastSavedAt: null,
     responseTime: '1-3 days'
 };
 
@@ -98,6 +108,7 @@ let adminIdleTimerId = null;
 let adminIdleActivityController = null;
 let adminIdleLocked = false;
 let adminIdleZzzTimerId = null;
+let adminAvailabilityLastSavedTickerId = null;
 
 function isAdminSessionActive() {
     const user = auth.currentUser;
@@ -481,6 +492,16 @@ function getPriceEstimatorHTML() {
             <p class="price-estimator-title">Estimated Price Range:</p>
             <h2 id="liveEstimate" class="price-estimator-range">$0.00 - $0.00</h2>
             <div id="discountSavingsLine" style="color: #ef4444; font-weight: bold; font-size: 0.95rem; text-align: center; display: none; margin-top: 5px;"></div>
+            <div class="best-fit-recommendation" aria-live="polite">
+                <p class="best-fit-kicker">Best fit for your request</p>
+                <h3 class="best-fit-title">Building recommendation...</h3>
+                <p class="best-fit-note">Adjust form options to refine your best-fit path.</p>
+            </div>
+            <div class="form-draft-controls">
+                <button type="button" class="nav-btn draft-save-btn">Save and finish later</button>
+                <button type="button" class="nav-btn draft-clear-btn">Clear saved draft</button>
+                <small class="draft-status-text" aria-live="polite"></small>
+            </div>
             <span>This is an estimate. Final pricing may change depending on complexity, character details, edits, deadline, and add-ons.</span>
         </div>
     `;
@@ -520,6 +541,56 @@ function getAvailabilityStatusClass(status) {
     return `status-${normalized}`;
 }
 
+const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
+function sanitizeWeeklyDayStatus(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized === 'closed') return 'closed';
+    if (normalized === 'limited') return 'limited';
+    return 'open';
+}
+
+function getDefaultWeeklySnapshotForTide(tide = 'calm') {
+    const byTide = {
+        calm: ['open', 'open', 'open', 'open', 'limited', 'open', 'open'],
+        busy: ['limited', 'open', 'limited', 'limited', 'open', 'limited', 'limited'],
+        stormy: ['closed', 'limited', 'closed', 'closed', 'limited', 'closed', 'closed']
+    };
+    const pattern = byTide[String(tide || 'calm').toLowerCase()] || byTide.calm;
+    return {
+        sun: pattern[0],
+        mon: pattern[1],
+        tue: pattern[2],
+        wed: pattern[3],
+        thu: pattern[4],
+        fri: pattern[5],
+        sat: pattern[6]
+    };
+}
+
+function inferTideFromAvailability(availability) {
+    const husky = availability?.artists?.husky || DEFAULT_HOME_AVAILABILITY.artists.husky;
+    const lopside = availability?.artists?.lopside || DEFAULT_HOME_AVAILABILITY.artists.lopside;
+    const statuses = [sanitizeAvailabilityStatus(husky.status), sanitizeAvailabilityStatus(lopside.status)];
+    const totalSlots = Math.max(0, Number(husky.slots) || 0) + Math.max(0, Number(lopside.slots) || 0);
+
+    if (statuses.includes('Closed') || totalSlots <= 1) return 'stormy';
+    if (statuses.includes('Limited') || totalSlots <= 4) return 'busy';
+    return 'calm';
+}
+
+function normalizeWeeklySnapshot(raw, availabilityForFallback = null) {
+    const fallbackTide = inferTideFromAvailability(availabilityForFallback || window.homeAvailability || DEFAULT_HOME_AVAILABILITY);
+    const fallback = getDefaultWeeklySnapshotForTide(fallbackTide);
+    if (!raw || typeof raw !== 'object') return fallback;
+
+    const normalized = { ...fallback };
+    WEEKDAY_KEYS.forEach((dayKey) => {
+        normalized[dayKey] = sanitizeWeeklyDayStatus(raw[dayKey]);
+    });
+    return normalized;
+}
+
 function getTideStatusSnapshot(availabilityInput = window.homeAvailability) {
     const availability = normalizeHomeAvailability(availabilityInput);
     const husky = availability.artists.husky;
@@ -541,6 +612,109 @@ function getTideStatusSnapshot(availabilityInput = window.homeAvailability) {
     return { tide, note, availability, husky, lopside, totalSlots };
 }
 
+function getAvailabilityCalendarSnapshotMarkup(tideSnapshot) {
+    const availability = tideSnapshot?.availability || window.homeAvailability || DEFAULT_HOME_AVAILABILITY;
+    const husky = availability?.artists?.husky || DEFAULT_HOME_AVAILABILITY.artists.husky;
+    const lopside = availability?.artists?.lopside || DEFAULT_HOME_AVAILABILITY.artists.lopside;
+
+    const huskyStatus = sanitizeAvailabilityStatus(husky.status).toLowerCase();
+    const lopsideStatus = sanitizeAvailabilityStatus(lopside.status).toLowerCase();
+    const huskySlots = Math.max(0, Number(husky.slots) || 0);
+    const lopsideSlots = Math.max(0, Number(lopside.slots) || 0);
+    const totalSlots = huskySlots + lopsideSlots;
+
+    const weeklySnapshot = normalizeWeeklySnapshot(availability?.weeklySnapshot, availability);
+    const today = new Date();
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayKeyByIndex = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
+    const daysMarkup = Array.from({ length: 7 }, (_, index) => {
+        const date = new Date(today);
+        date.setDate(today.getDate() + index);
+        const dayOfWeekIndex = date.getDay();
+        const day = dayNames[dayOfWeekIndex];
+        const status = sanitizeWeeklyDayStatus(weeklySnapshot[dayKeyByIndex[dayOfWeekIndex]]);
+        const label = status.charAt(0).toUpperCase() + status.slice(1);
+        return `
+            <li class="availability-snapshot-day is-${status}">
+                <span class="availability-snapshot-name">${day}</span>
+                <span class="availability-snapshot-state">${label}</span>
+            </li>
+        `;
+    }).join('');
+
+    return `
+        <div class="home-availability-snapshot-slot-note" aria-label="Current slots by artist">
+            <span class="slot-chip is-${huskyStatus}">${escapeHTML(String(husky.name || 'Husky'))}: ${escapeHTML(formatAvailabilitySlotLabel(huskySlots))}</span>
+            <span class="slot-chip is-${lopsideStatus}">${escapeHTML(String(lopside.name || 'Lopside'))}: ${escapeHTML(formatAvailabilitySlotLabel(lopsideSlots))}</span>
+            <span class="slot-chip is-${totalSlots <= 1 ? 'closed' : (totalSlots <= 4 ? 'limited' : 'open')}">Total: ${totalSlots} ${totalSlots === 1 ? 'slot' : 'slots'}</span>
+        </div>
+        <ul class="availability-snapshot-grid" aria-label="Weekly availability snapshot">
+            ${daysMarkup}
+        </ul>
+    `;
+}
+
+function formatRelativeTimeFromDate(date) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+    const diffMs = Date.now() - date.getTime();
+    if (diffMs < 0) return 'just now';
+
+    const seconds = Math.floor(diffMs / 1000);
+    if (seconds < 45) return 'just now';
+
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days} day${days === 1 ? '' : 's'} ago`;
+
+    const months = Math.floor(days / 30);
+    if (months < 12) return `${months} month${months === 1 ? '' : 's'} ago`;
+
+    const years = Math.floor(months / 12);
+    return `${years} year${years === 1 ? '' : 's'} ago`;
+}
+
+function refreshAdminAvailabilityLastSavedLabel() {
+    const lastSavedEl = document.getElementById('adminAvailLastSaved');
+    if (!lastSavedEl) return;
+
+    const availability = normalizeHomeAvailability(window.homeAvailability);
+    const lastSaved = typeof availability.lastSavedAt === 'string' ? availability.lastSavedAt : '';
+    const parsed = lastSaved ? new Date(lastSaved) : null;
+    const isValid = parsed instanceof Date && !Number.isNaN(parsed.getTime());
+
+    if (!isValid) {
+        lastSavedEl.textContent = 'Last saved: Never';
+        return;
+    }
+
+    const absolute = parsed.toLocaleString();
+    const relative = formatRelativeTimeFromDate(parsed);
+    lastSavedEl.textContent = relative
+        ? `Last saved: ${absolute} (${relative})`
+        : `Last saved: ${absolute}`;
+}
+
+function startAdminAvailabilityLastSavedTicker() {
+    if (adminAvailabilityLastSavedTickerId) {
+        window.clearInterval(adminAvailabilityLastSavedTickerId);
+    }
+    adminAvailabilityLastSavedTickerId = window.setInterval(() => {
+        refreshAdminAvailabilityLastSavedLabel();
+    }, 30000);
+}
+
+function stopAdminAvailabilityLastSavedTicker() {
+    if (!adminAvailabilityLastSavedTickerId) return;
+    window.clearInterval(adminAvailabilityLastSavedTickerId);
+    adminAvailabilityLastSavedTickerId = null;
+}
+
 function normalizeHomeAvailability(raw) {
     const fallback = JSON.parse(JSON.stringify(DEFAULT_HOME_AVAILABILITY));
     if (!raw || typeof raw !== 'object') return fallback;
@@ -558,6 +732,9 @@ function normalizeHomeAvailability(raw) {
     fallback.artists.lopside.status = sanitizeAvailabilityStatus(lopsideRaw.status);
     fallback.artists.lopside.slots = Math.max(0, Number(lopsideRaw.slots) || fallback.artists.lopside.slots);
 
+    fallback.weeklySnapshot = normalizeWeeklySnapshot(raw.weeklySnapshot, fallback);
+    fallback.lastSavedAt = typeof raw.lastSavedAt === 'string' ? raw.lastSavedAt : fallback.lastSavedAt;
+
     fallback.responseTime = String(raw.responseTime || fallback.responseTime).trim() || fallback.responseTime;
     return fallback;
 }
@@ -566,8 +743,11 @@ function applyHomeAvailabilityToCurrentDOM() {
     const availability = normalizeHomeAvailability(window.homeAvailability);
     const husky = availability.artists.husky;
     const lopside = availability.artists.lopside;
-    const huskyStatusClass = getAvailabilityStatusClass(husky.status);
-    const lopsideStatusClass = getAvailabilityStatusClass(lopside.status);
+    const tideSnapshot = getTideStatusSnapshot(availability);
+    const openSlotsNow = Math.max(0, Number(tideSnapshot.totalSlots) || 0);
+    const urgencyText = openSlotsNow <= 2
+        ? `Only ${openSlotsNow} open ${openSlotsNow === 1 ? 'slot' : 'slots'} right now`
+        : `${openSlotsNow} open slots available right now`;
 
     const huskyNameEl = document.getElementById('homeAvailHuskyName');
     const huskyServiceEl = document.getElementById('homeAvailHuskyService');
@@ -580,6 +760,9 @@ function applyHomeAvailabilityToCurrentDOM() {
     const lopsideSlotsEl = document.getElementById('homeAvailLopsideSlots');
 
     const responseEl = document.getElementById('homeAvailResponseTime');
+    const heroAvgReplyEl = document.getElementById('homeHeroAvgReply');
+    const heroOpenSlotsEl = document.getElementById('homeHeroOpenSlots');
+    const snapshotBody = document.getElementById('homeAvailabilitySnapshotBody');
 
     if (huskyNameEl) huskyNameEl.textContent = husky.name;
     if (huskyServiceEl) huskyServiceEl.textContent = husky.service;
@@ -598,6 +781,9 @@ function applyHomeAvailabilityToCurrentDOM() {
     if (lopsideSlotsEl) lopsideSlotsEl.textContent = formatAvailabilitySlotLabel(lopside.slots);
 
     if (responseEl) responseEl.textContent = availability.responseTime;
+    if (heroAvgReplyEl) heroAvgReplyEl.textContent = availability.responseTime;
+    if (heroOpenSlotsEl) heroOpenSlotsEl.textContent = urgencyText;
+    if (snapshotBody) snapshotBody.innerHTML = getAvailabilityCalendarSnapshotMarkup(tideSnapshot);
 }
 
 window.handleImageError = function(img) {
@@ -1336,6 +1522,8 @@ function bindCoreMenuControls() {
     document.getElementById('btnGalleryHome')?.addEventListener('click', (e) => cinematicTransition(e, loadGalleryPage, '#gallery'));
     document.getElementById('btnDiscordHome')?.addEventListener('click', (e) => cinematicTransition(e, loadDiscordPage, '#discord'));
     document.getElementById('btnPreorderMassive')?.addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
+    document.getElementById('homeHeroPrimaryPreorderBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
+    document.getElementById('homeHeroPricingBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadPricingPage, '#pricing'));
     document.getElementById('homeFinalCtaPreorderBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
     document.getElementById('homeFinalCtaContactBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadContactPage, '#contact'));
     
@@ -1688,6 +1876,7 @@ function attachDynamicEstimator(formId, baseType) {
             let newText = `$${min.toFixed(0)} - $${max.toFixed(0)}`;
 
             estDisplay.innerText = newText;
+            applyBestFitRecommendation(form, baseType, min, max);
             if (saveLine) {
                 saveLine.innerText += ` (regularly ${origText})`;
             }
@@ -1698,11 +1887,208 @@ function attachDynamicEstimator(formId, baseType) {
         }
 
         estDisplay.innerText = `$${min.toFixed(0)} - $${max.toFixed(0)}`;
+        applyBestFitRecommendation(form, baseType, min, max);
     }
 
     form.addEventListener('input', updateEstimate);
     form.addEventListener('change', updateEstimate);
     updateEstimate(); 
+}
+
+function applyBestFitRecommendation(form, baseType, min, max) {
+    if (!(form instanceof HTMLFormElement)) return;
+    const titleEl = form.querySelector('.best-fit-title');
+    const noteEl = form.querySelector('.best-fit-note');
+    if (!(titleEl instanceof HTMLElement) || !(noteEl instanceof HTMLElement)) return;
+
+    const deadline = String(form.querySelector('[name="deadline"]')?.value || '').trim();
+    const priceText = Number.isFinite(min) && Number.isFinite(max)
+        ? (min === max ? `$${Math.round(min)}` : `$${Math.round(min)} - $${Math.round(max)}`)
+        : 'your selected range';
+
+    let title = 'Balanced standard request';
+    let note = `Current fit: a standard ${baseType} request around ${priceText}.`;
+
+    if (baseType === 'art') {
+        const shading = String(form.querySelector('[name="shadingStyle"]')?.value || '').toLowerCase();
+        const characterCount = Math.max(1, Number(form.querySelector('[name="characterCount"]')?.value || 1));
+        if (characterCount >= 3 || shading === 'rendered') {
+            title = 'High-detail art package';
+            note = `Best for polished or multi-character art. Expect deeper planning and a range near ${priceText}.`;
+        } else if (deadline) {
+            title = 'Deadline-priority art request';
+            note = `You entered a deadline. Keep references and notes concise to speed review around ${priceText}.`;
+        }
+    } else if (baseType === 'fursuit') {
+        const partType = String(form.querySelector('[name="partType"]')?.value || '').toLowerCase();
+        if (partType.includes('full partial') || partType.includes('head') || partType.includes('trio')) {
+            title = 'Complex build request';
+            note = `Great fit for a larger handmade build. Include material notes and references for accurate quoting near ${priceText}.`;
+        } else {
+            title = 'Core wearable request';
+            note = `Best for focused suit parts with a faster intake path around ${priceText}.`;
+        }
+    } else if (baseType === 'keychain' || baseType === 'sticker') {
+        const qty = Math.max(1, Number(form.querySelector('[name="quantity"]')?.value || 1));
+        const complexity = String(form.querySelector('[name="complexity"]')?.value || '').toLowerCase();
+        if (qty >= 5 || complexity === 'complex') {
+            title = 'Batch merch request';
+            note = `Best for larger or detail-heavy merch runs. Keep your design notes clear for smooth quoting around ${priceText}.`;
+        } else {
+            title = 'Quick merch request';
+            note = `Best for smaller merch orders with a straightforward review flow near ${priceText}.`;
+        }
+    }
+
+    titleEl.textContent = title;
+    noteEl.textContent = note;
+}
+
+function getPreorderDraftKey(formId) {
+    return `hz_preorder_draft_${formId}`;
+}
+
+function readPreorderDraft(formId) {
+    try {
+        const raw = localStorage.getItem(getPreorderDraftKey(formId));
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+        return null;
+    }
+}
+
+function writePreorderDraft(formId, payload) {
+    localStorage.setItem(getPreorderDraftKey(formId), JSON.stringify(payload));
+}
+
+function clearPreorderDraft(formId) {
+    localStorage.removeItem(getPreorderDraftKey(formId));
+}
+
+function collectFormDraftData(form) {
+    const draft = {};
+    const checkboxBuckets = new Map();
+
+    form.querySelectorAll('input, select, textarea').forEach((field) => {
+        if (!(field instanceof HTMLElement)) return;
+        const name = field.getAttribute('name');
+        if (!name) return;
+        if (field.classList.contains('req-check')) return;
+
+        if (field instanceof HTMLInputElement) {
+            if (field.type === 'file' || field.type === 'submit' || field.type === 'button') return;
+            if (field.type === 'checkbox') {
+                if (!checkboxBuckets.has(name)) checkboxBuckets.set(name, []);
+                if (field.checked) checkboxBuckets.get(name).push(field.value || 'on');
+                return;
+            }
+            if (field.type === 'radio') {
+                if (field.checked) draft[name] = field.value;
+                return;
+            }
+            draft[name] = field.value;
+            return;
+        }
+
+        if (field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement) {
+            draft[name] = field.value;
+        }
+    });
+
+    checkboxBuckets.forEach((values, name) => {
+        draft[name] = values;
+    });
+
+    return draft;
+}
+
+function restoreFormDraftData(form, draftData) {
+    form.querySelectorAll('input, select, textarea').forEach((field) => {
+        if (!(field instanceof HTMLElement)) return;
+        const name = field.getAttribute('name');
+        if (!name) return;
+        if (!(name in draftData)) return;
+
+        const incoming = draftData[name];
+
+        if (field instanceof HTMLInputElement) {
+            if (field.type === 'file' || field.type === 'submit' || field.type === 'button') return;
+            if (field.type === 'checkbox') {
+                const values = Array.isArray(incoming) ? incoming.map(String) : [String(incoming)];
+                field.checked = values.includes(String(field.value || 'on'));
+                return;
+            }
+            if (field.type === 'radio') {
+                field.checked = String(incoming) === String(field.value);
+                return;
+            }
+            field.value = String(incoming);
+            return;
+        }
+
+        if (field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement) {
+            field.value = String(incoming);
+        }
+    });
+}
+
+function setDraftStatusText(form, message, tone = 'neutral') {
+    const statusEl = form.querySelector('.draft-status-text');
+    if (!(statusEl instanceof HTMLElement)) return;
+    statusEl.textContent = message;
+    statusEl.setAttribute('data-tone', tone);
+}
+
+function bindPreorderDraftFlow(formId) {
+    const form = document.getElementById(formId);
+    if (!(form instanceof HTMLFormElement)) return;
+    if (form.dataset.draftBound === 'true') return;
+    form.dataset.draftBound = 'true';
+
+    const saveBtn = form.querySelector('.draft-save-btn');
+    const clearBtn = form.querySelector('.draft-clear-btn');
+
+    const saveNow = () => {
+        const payload = {
+            savedAt: Date.now(),
+            data: collectFormDraftData(form)
+        };
+        writePreorderDraft(formId, payload);
+        setDraftStatusText(form, 'Draft saved on this device.', 'success');
+    };
+
+    const existingDraft = readPreorderDraft(formId);
+    if (existingDraft?.data) {
+        restoreFormDraftData(form, existingDraft.data);
+        const stamp = existingDraft.savedAt ? new Date(existingDraft.savedAt).toLocaleString() : 'earlier';
+        setDraftStatusText(form, `Draft restored from ${stamp}.`, 'neutral');
+    }
+
+    let draftTimer = null;
+    form.addEventListener('input', () => {
+        if (draftTimer) window.clearTimeout(draftTimer);
+        draftTimer = window.setTimeout(() => {
+            const payload = {
+                savedAt: Date.now(),
+                data: collectFormDraftData(form)
+            };
+            writePreorderDraft(formId, payload);
+            setDraftStatusText(form, 'Auto-saved.', 'neutral');
+        }, 900);
+    });
+
+    if (saveBtn instanceof HTMLButtonElement) {
+        saveBtn.addEventListener('click', saveNow);
+    }
+
+    if (clearBtn instanceof HTMLButtonElement) {
+        clearBtn.addEventListener('click', () => {
+            clearPreorderDraft(formId);
+            setDraftStatusText(form, 'Saved draft cleared.', 'neutral');
+        });
+    }
 }
 
 function attachFileInputListener() {
@@ -1752,6 +2138,7 @@ function setEnvironmentInteractivity(pageName) {
 }
 
 function loadHomePage() {
+    stopAdminAvailabilityLastSavedTicker();
     clearBubbles();
     bodyElement.setAttribute('data-theme', 'horizon');
     bodyElement.setAttribute('data-page', 'home');
@@ -1763,8 +2150,13 @@ function loadHomePage() {
     attachInnerScrollListener(); 
 
     const availability = normalizeHomeAvailability(window.homeAvailability);
+    const tideSnapshot = getTideStatusSnapshot(availability);
     const husky = availability.artists.husky;
     const lopside = availability.artists.lopside;
+    const openSlotsNow = Math.max(0, Number(tideSnapshot.totalSlots) || 0);
+    const urgencyText = openSlotsNow <= 2
+        ? `Only ${openSlotsNow} open ${openSlotsNow === 1 ? 'slot' : 'slots'} right now`
+        : `${openSlotsNow} open slots available right now`;
 
     appViewport.innerHTML = `
         <div class="home-top-nav-strip" role="presentation">
@@ -1787,8 +2179,22 @@ function loadHomePage() {
             </header>
 
             <div class="button-container button-container-home home-card-deck-shell">
+                <button type="button" class="nav-btn home-hero-primary-cta" id="homeHeroPrimaryPreorderBtn">Start Preorder</button>
+                <div class="home-pricing-anchors" aria-label="Starting price anchors">
+                    <span class="home-price-pill">Art from $22</span>
+                    <span class="home-price-pill">Fursuits from $100</span>
+                    <span class="home-price-pill">Keychains from $8</span>
+                    <button type="button" class="nav-btn home-price-link" id="homeHeroPricingBtn">View Full Pricing</button>
+                </div>
                 ${getTemplateHTML('homeCardDeckTemplate')}
-                <p class="home-cta-badge" aria-label="Average reply time"><span>Avg reply</span><strong>${escapeHTML(availability.responseTime)}</strong></p>
+                <div class="home-cta-proof-row" aria-label="Conversion trust row">
+                    <p class="home-cta-badge" aria-label="Average reply time"><span>Avg reply</span><strong id="homeHeroAvgReply">${escapeHTML(availability.responseTime)}</strong></p>
+                    <p class="home-urgency-badge" aria-label="Current open slots"><span>Queue</span><strong id="homeHeroOpenSlots">${escapeHTML(urgencyText)}</strong></p>
+                </div>
+                <section class="home-availability-snapshot" aria-label="Weekly availability snapshot">
+                    <p class="home-availability-snapshot-kicker">Weekly availability snapshot</p>
+                    <div id="homeAvailabilitySnapshotBody">${getAvailabilityCalendarSnapshotMarkup(tideSnapshot)}</div>
+                </section>
             </div>
         </section>
 
@@ -2457,6 +2863,7 @@ function loadHuskyArtForm() {
     attachFileInputListener();
     attachInnerScrollListener();
     attachDynamicEstimator('artForm', 'art');
+    bindPreorderDraftFlow('artForm');
 
     document.querySelectorAll('.tos-redirect-btn').forEach(btn => btn.addEventListener('click', () => showTOSModal()));
     document.getElementById('artForm').addEventListener('submit', (e) => submitPreorder(e, 'Art Commission'));
@@ -2526,6 +2933,7 @@ function loadFursuitForm() {
     attachFileInputListener();
     attachInnerScrollListener();
     attachDynamicEstimator('fursuitForm', 'fursuit');
+    bindPreorderDraftFlow('fursuitForm');
 
     document.querySelectorAll('.tos-redirect-btn').forEach(btn => btn.addEventListener('click', () => showTOSModal()));
     document.getElementById('fursuitForm').addEventListener('submit', (e) => submitPreorder(e, 'Fursuit Request'));
@@ -2619,6 +3027,7 @@ function loadCustomKeychainsForm() {
     attachFileInputListener();
     attachInnerScrollListener();
     attachDynamicEstimator('customKeychainForm', 'keychain');
+    bindPreorderDraftFlow('customKeychainForm');
     
     document.querySelectorAll('.tos-redirect-btn').forEach(btn => btn.addEventListener('click', () => showTOSModal()));
     document.getElementById('customKeychainForm').addEventListener('submit', (e) => submitPreorder(e, 'Custom Keychain'));
@@ -2706,6 +3115,7 @@ function loadCustomStickersForm() {
     attachFileInputListener();
     attachInnerScrollListener();
     attachDynamicEstimator('stickerForm', 'sticker');
+    bindPreorderDraftFlow('stickerForm');
     
     document.querySelectorAll('.tos-redirect-btn').forEach(btn => btn.addEventListener('click', () => showTOSModal()));
     document.getElementById('stickerForm').addEventListener('submit', (e) => submitPreorder(e, 'Custom Stickers'));
@@ -2786,6 +3196,7 @@ function loadPremadeKeychainsForm() {
     attachCharCounters();
     attachInnerScrollListener();
     attachDynamicEstimator('premadeKeychainForm', 'keychain');
+    bindPreorderDraftFlow('premadeKeychainForm');
 
     document.querySelectorAll('.tos-redirect-btn').forEach(btn => btn.addEventListener('click', () => showTOSModal()));
     document.getElementById('premadeKeychainForm').addEventListener('submit', (e) => submitPreorder(e, 'Premade Keychain'));
@@ -6801,6 +7212,7 @@ function loadAdminDashboard() {
     bindAdminDashboardNavigation();
     initializeAdminCollapsibleState();
     setupAdminDashboardDelegation();
+    startAdminAvailabilityLastSavedTicker();
     
     renderActiveDiscountsList();
     renderAdminAvailabilitySettings();
@@ -6871,6 +7283,15 @@ function loadAdminDashboard() {
     document.getElementById('btnSaveAvailabilitySettings')?.addEventListener('click', async (e) => {
         if (!requireAdminSession('Please sign in with an authorized admin account before saving availability.')) return;
         const btn = e.target;
+        const weeklySnapshot = {
+            sun: document.getElementById('adminAvailWeekSun')?.value,
+            mon: document.getElementById('adminAvailWeekMon')?.value,
+            tue: document.getElementById('adminAvailWeekTue')?.value,
+            wed: document.getElementById('adminAvailWeekWed')?.value,
+            thu: document.getElementById('adminAvailWeekThu')?.value,
+            fri: document.getElementById('adminAvailWeekFri')?.value,
+            sat: document.getElementById('adminAvailWeekSat')?.value
+        };
         const payload = normalizeHomeAvailability({
             artists: {
                 husky: {
@@ -6886,15 +7307,18 @@ function loadAdminDashboard() {
                     slots: document.getElementById('adminAvailLopsideSlots')?.value
                 }
             },
+            weeklySnapshot,
             responseTime: document.getElementById('adminAvailResponseTime')?.value
         });
+        payload.lastSavedAt = new Date().toISOString();
 
         btn.disabled = true;
         btn.innerText = 'Saving...';
         try {
             await setDoc(doc(db, 'settings', 'availability'), payload, { merge: true });
-            window.homeAvailability = payload;
+            window.homeAvailability = normalizeHomeAvailability(payload);
             applyHomeAvailabilityToCurrentDOM();
+            renderAdminAvailabilitySettings();
             showAdminToast('Availability updated.');
             updateAdminDashboardOverview();
         } catch (error) {
@@ -7197,6 +7621,7 @@ function renderAdminAvailabilitySettings() {
     const availability = normalizeHomeAvailability(window.homeAvailability);
     const husky = availability.artists.husky;
     const lopside = availability.artists.lopside;
+    const weekly = normalizeWeeklySnapshot(availability.weeklySnapshot, availability);
 
     const huskyName = document.getElementById('adminAvailHuskyName');
     const huskyService = document.getElementById('adminAvailHuskyService');
@@ -7209,6 +7634,13 @@ function renderAdminAvailabilitySettings() {
     const lopsideSlots = document.getElementById('adminAvailLopsideSlots');
 
     const responseTime = document.getElementById('adminAvailResponseTime');
+    const weekSun = document.getElementById('adminAvailWeekSun');
+    const weekMon = document.getElementById('adminAvailWeekMon');
+    const weekTue = document.getElementById('adminAvailWeekTue');
+    const weekWed = document.getElementById('adminAvailWeekWed');
+    const weekThu = document.getElementById('adminAvailWeekThu');
+    const weekFri = document.getElementById('adminAvailWeekFri');
+    const weekSat = document.getElementById('adminAvailWeekSat');
 
     if (huskyName) huskyName.value = husky.name;
     if (huskyService) huskyService.value = husky.service;
@@ -7221,6 +7653,15 @@ function renderAdminAvailabilitySettings() {
     if (lopsideSlots) lopsideSlots.value = lopside.slots;
 
     if (responseTime) responseTime.value = availability.responseTime;
+    if (weekSun) weekSun.value = weekly.sun;
+    if (weekMon) weekMon.value = weekly.mon;
+    if (weekTue) weekTue.value = weekly.tue;
+    if (weekWed) weekWed.value = weekly.wed;
+    if (weekThu) weekThu.value = weekly.thu;
+    if (weekFri) weekFri.value = weekly.fri;
+    if (weekSat) weekSat.value = weekly.sat;
+
+    refreshAdminAvailabilityLastSavedLabel();
 }
 
 function setupAdminRefundManager() {

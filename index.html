@@ -20,7 +20,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=33">
+    <link rel="stylesheet" href="style.css?v=34">
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
@@ -116,19 +116,19 @@
 
     <template id="homeCardDeckTemplate">
         <nav class="celestial-nav-console" aria-label="Primary homepage destinations">
-            <a href="#preorder" id="btnPreorderMassive" class="nav-item">
+            <a href="#preorder" id="btnPreorderMassive" class="nav-item primary-action">
                 <span class="nav-item__icon" aria-hidden="true">🛒</span>
                 <span class="nav-item__label">Preorder Menu</span>
             </a>
-            <a href="#gallery" id="btnGalleryHome" class="nav-item">
+            <a href="#gallery" id="btnGalleryHome" class="nav-item secondary-action">
                 <span class="nav-item__icon" aria-hidden="true">✨</span>
                 <span class="nav-item__label">Horizon Tide Gallery</span>
             </a>
-            <a href="#updates" id="btnCosmicUpdates" class="nav-item">
+            <a href="#updates" id="btnCosmicUpdates" class="nav-item secondary-action">
                 <span class="nav-item__icon" aria-hidden="true">✨</span>
                 <span class="nav-item__label">Cosmic Updates</span>
             </a>
-            <a href="#discord" id="btnDiscordHome" class="nav-item">
+            <a href="#discord" id="btnDiscordHome" class="nav-item secondary-action">
                 <span class="nav-item__icon" aria-hidden="true">🐾</span>
                 <span class="nav-item__label">Join Our SFW 18+ Discord</span>
             </a>
@@ -323,10 +323,67 @@
                 </label>
             </div>
 
+            <div class="admin-form-row">
+                <label class="admin-label">Sun Snapshot
+                    <select id="adminAvailWeekSun" class="admin-input">
+                        <option value="open">Open</option>
+                        <option value="limited">Limited</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </label>
+                <label class="admin-label">Mon Snapshot
+                    <select id="adminAvailWeekMon" class="admin-input">
+                        <option value="open">Open</option>
+                        <option value="limited">Limited</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </label>
+                <label class="admin-label">Tue Snapshot
+                    <select id="adminAvailWeekTue" class="admin-input">
+                        <option value="open">Open</option>
+                        <option value="limited">Limited</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </label>
+                <label class="admin-label">Wed Snapshot
+                    <select id="adminAvailWeekWed" class="admin-input">
+                        <option value="open">Open</option>
+                        <option value="limited">Limited</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="admin-form-row">
+                <label class="admin-label">Thu Snapshot
+                    <select id="adminAvailWeekThu" class="admin-input">
+                        <option value="open">Open</option>
+                        <option value="limited">Limited</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </label>
+                <label class="admin-label">Fri Snapshot
+                    <select id="adminAvailWeekFri" class="admin-input">
+                        <option value="open">Open</option>
+                        <option value="limited">Limited</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </label>
+                <label class="admin-label">Sat Snapshot
+                    <select id="adminAvailWeekSat" class="admin-input">
+                        <option value="open">Open</option>
+                        <option value="limited">Limited</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </label>
+            </div>
+
             <div class="admin-actions discount-actions">
                 <button type="button" id="btnSaveAvailabilitySettings" class="admin-btn-save">Save Availability</button>
                 <button type="button" id="btnResetAvailabilityDefaults" class="admin-btn-publish">Reset Form to Defaults</button>
             </div>
+
+            <p id="adminAvailLastSaved" class="admin-detail">Last saved: Never</p>
         </div>
     </template>
 
@@ -338,7 +395,7 @@
         </div>
     </div>
 
-    <script type="module" src="script.js?v=32"></script>
+    <script type="module" src="script.js?v=33"></script>
 
     <script>
         (function () {
