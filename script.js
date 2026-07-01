@@ -939,14 +939,110 @@ const moonQuoteRotation = [
     'The universe is full of magical things, patiently waiting for our wits to grow sharper.'
 ];
 
-function getDynamicMoonPhase() {
-    const date = new Date();
-    const newMoon = new Date(Date.UTC(2024, 0, 11, 11, 57)).getTime();
-    const cycle = 29.53058867 * 24 * 60 * 60 * 1000;
-    const diff = date.getTime() - newMoon;
-    let phase = (diff % cycle) / cycle;
+let moonClockOffsetMs = 0;
+let moonClockLastSyncMs = 0;
+let moonClockSource = 'device';
+let moonClockSyncTimerId = null;
+
+const SYNODIC_MONTH_MS = 29.53058867 * 24 * 60 * 60 * 1000;
+const MOON_REFERENCE_NEW_MOON_UTC_MS = Date.UTC(2000, 0, 6, 18, 14, 0, 0);
+
+function getMoonClockNowMs() {
+    return Date.now() + moonClockOffsetMs;
+}
+
+function getMoonClockNowDate() {
+    return new Date(getMoonClockNowMs());
+}
+
+function getMoonPhaseFractionRealtime(nowMs = getMoonClockNowMs()) {
+    let phase = ((nowMs - MOON_REFERENCE_NEW_MOON_UTC_MS) % SYNODIC_MONTH_MS) / SYNODIC_MONTH_MS;
     if (phase < 0) phase += 1;
-    return moonPhases[Math.floor(phase * 8 + 0.5) % 8];
+    return phase;
+}
+
+function extractRemoteEpochMs(payload) {
+    if (!payload || typeof payload !== 'object') return null;
+
+    const candidates = [payload.utc_datetime, payload.datetime, payload.currentDateTime, payload.dateTime];
+    for (const value of candidates) {
+        if (typeof value !== 'string' || !value.trim()) continue;
+        const ms = Date.parse(value);
+        if (!Number.isNaN(ms)) return ms;
+    }
+
+    if (typeof payload.unixtime === 'number') {
+        return Math.trunc(payload.unixtime * 1000);
+    }
+
+    return null;
+}
+
+async function fetchNetworkEpochMs(url, timeoutMs = 3200) {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            cache: 'no-store',
+            signal: controller.signal
+        });
+        if (!response.ok) return null;
+        const payload = await response.json();
+        return extractRemoteEpochMs(payload);
+    } catch {
+        return null;
+    } finally {
+        window.clearTimeout(timer);
+    }
+}
+
+async function syncMoonClockOffset() {
+    const endpoints = [
+        'https://worldtimeapi.org/api/timezone/America/New_York',
+        'https://worldtimeapi.org/api/ip',
+        'https://timeapi.io/api/Time/current/zone?timeZone=UTC'
+    ];
+
+    for (const endpoint of endpoints) {
+        const remoteMs = await fetchNetworkEpochMs(endpoint);
+        if (!Number.isFinite(remoteMs)) continue;
+
+        moonClockOffsetMs = remoteMs - Date.now();
+        moonClockLastSyncMs = Date.now();
+        moonClockSource = 'network';
+
+        if (document.getElementById('dynamicMoonContainer')) {
+            renderDynamicMoon();
+        }
+        return true;
+    }
+
+    moonClockSource = 'device';
+    return false;
+}
+
+function initializeMoonClockSync() {
+    if (moonClockSyncTimerId) {
+        window.clearInterval(moonClockSyncTimerId);
+    }
+
+    syncMoonClockOffset();
+    moonClockSyncTimerId = window.setInterval(() => {
+        syncMoonClockOffset();
+    }, 6 * 60 * 60 * 1000);
+}
+
+function getDynamicMoonPhase() {
+    const phaseFraction = getMoonPhaseFractionRealtime(getMoonClockNowMs());
+    const phaseIndex = Math.round(phaseFraction * 8) % 8;
+    const illumination = Math.round((1 - Math.cos(2 * Math.PI * phaseFraction)) * 50);
+
+    return {
+        ...moonPhases[phaseIndex],
+        phaseIndex,
+        illumination
+    };
 }
 
 function getHemisphereDirection() {
@@ -992,10 +1088,21 @@ function renderDynamicMoon() {
     const tooltip = document.createElement('div');
     tooltip.className = "moon-tooltip";
     
-    globalQuoteIndex = moonPhases.findIndex(p => p.name === moonData.name);
+    globalQuoteIndex = Number.isInteger(moonData.phaseIndex)
+        ? moonData.phaseIndex
+        : moonPhases.findIndex((p) => p.name === moonData.name);
     if (globalQuoteIndex < 0) globalQuoteIndex = 0;
+
+    const nowDate = getMoonClockNowDate();
+    const localDateLabel = nowDate.toLocaleDateString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+    });
+    const localTimeLabel = nowDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    const sourceLabel = moonClockSource === 'network' ? 'web-synced' : 'device clock';
     
-    tooltip.innerHTML = `<strong>${moonData.name}</strong><br><em id="rotatingMoonQuote" class="moon-quote-text">"${moonQuoteRotation[globalQuoteIndex]}"</em>`;
+    tooltip.innerHTML = `<strong>${moonData.name}</strong><br><small>${escapeHTML(localDateLabel)} ${escapeHTML(localTimeLabel)} • ${moonData.illumination}% lit • ${escapeHTML(sourceLabel)}</small><br><em id="rotatingMoonQuote" class="moon-quote-text">"${moonQuoteRotation[globalQuoteIndex]}"</em>`;
     
     moonWrap.appendChild(moon);
     moonWrap.appendChild(tooltip);
@@ -9086,6 +9193,7 @@ bindCareGuideModalOverlay();
 
 // Start Application
 clearReloadedAdminSession().finally(() => {
+    initializeMoonClockSync();
     bindStickyPreorderCta();
     initRouter();
 });
