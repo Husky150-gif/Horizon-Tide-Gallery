@@ -35,6 +35,9 @@ const dashboardStarField = document.getElementById('dashboardStarField');
 window.activeSales = [];
 let globalDiscountListener = null;
 let globalHomeAvailabilityListener = null;
+let globalHomeReviewListener = null;
+let globalHomeRefundFreshnessListener = null;
+let globalHomeCommissionFreshnessListener = null;
 
 const DEFAULT_HOME_AVAILABILITY = {
     artists: {
@@ -55,6 +58,15 @@ const DEFAULT_HOME_AVAILABILITY = {
 };
 
 window.homeAvailability = JSON.parse(JSON.stringify(DEFAULT_HOME_AVAILABILITY));
+window.homeReviewSummary = {
+    approvedCount: 0,
+    featured: null
+};
+window.homeQueueFreshness = {
+    latestUpdatedAtMs: 0,
+    refundsLatestMs: 0,
+    commissionsLatestMs: 0
+};
 
 // Comments & Admin State
 let globalCommentsArray = [];
@@ -507,6 +519,15 @@ function getPriceEstimatorHTML() {
     `;
 }
 
+function getFormDraftBannerHTML() {
+    return `
+        <div class="form-draft-banner" role="status" aria-live="polite" data-tone="neutral">
+            <strong>Draft saver</strong>
+            <span class="form-draft-banner__status">Drafts auto-save on this device.</span>
+        </div>
+    `;
+}
+
 function showErrorMsg(form, msg) {
     let errDiv = form.querySelector('.form-error-msg');
     if (!errDiv) {
@@ -744,10 +765,6 @@ function applyHomeAvailabilityToCurrentDOM() {
     const husky = availability.artists.husky;
     const lopside = availability.artists.lopside;
     const tideSnapshot = getTideStatusSnapshot(availability);
-    const openSlotsNow = Math.max(0, Number(tideSnapshot.totalSlots) || 0);
-    const urgencyText = openSlotsNow <= 2
-        ? `Only ${openSlotsNow} open ${openSlotsNow === 1 ? 'slot' : 'slots'} right now`
-        : `${openSlotsNow} open slots available right now`;
 
     const huskyNameEl = document.getElementById('homeAvailHuskyName');
     const huskyServiceEl = document.getElementById('homeAvailHuskyService');
@@ -761,7 +778,6 @@ function applyHomeAvailabilityToCurrentDOM() {
 
     const responseEl = document.getElementById('homeAvailResponseTime');
     const heroAvgReplyEl = document.getElementById('homeHeroAvgReply');
-    const heroOpenSlotsEl = document.getElementById('homeHeroOpenSlots');
     const snapshotBody = document.getElementById('homeAvailabilitySnapshotBody');
 
     if (huskyNameEl) huskyNameEl.textContent = husky.name;
@@ -782,9 +798,157 @@ function applyHomeAvailabilityToCurrentDOM() {
 
     if (responseEl) responseEl.textContent = availability.responseTime;
     if (heroAvgReplyEl) heroAvgReplyEl.textContent = availability.responseTime;
-    if (heroOpenSlotsEl) heroOpenSlotsEl.textContent = urgencyText;
     if (snapshotBody) snapshotBody.innerHTML = getAvailabilityCalendarSnapshotMarkup(tideSnapshot);
+    applyHomeTrustSignalsToCurrentDOM();
 }
+
+function getComparableTimestampMs(value) {
+    if (!value) return 0;
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (value?.toDate && typeof value.toDate === 'function') {
+        const date = value.toDate();
+        return date instanceof Date && !Number.isNaN(date.getTime()) ? date.getTime() : 0;
+    }
+    const parsed = new Date(value).getTime();
+    return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function formatQueueFreshnessLabel(timestampMs) {
+    if (!timestampMs) return 'Awaiting update';
+    return formatRelativeTimeFromDate(new Date(timestampMs));
+}
+
+function applyHomeTrustSignalsToCurrentDOM() {
+    const reviewsCountEl = document.getElementById('homeApprovedReviewsCount');
+    const queueUpdatedEl = document.getElementById('homeQueueUpdatedLabel');
+    const featuredStarsEl = document.getElementById('homeFeaturedReviewStars');
+    const featuredTextEl = document.getElementById('homeFeaturedReviewText');
+    const featuredMetaEl = document.getElementById('homeFeaturedReviewMeta');
+
+    if (reviewsCountEl) {
+        reviewsCountEl.textContent = `${window.homeReviewSummary.approvedCount}`;
+    }
+
+    if (queueUpdatedEl) {
+        queueUpdatedEl.textContent = formatQueueFreshnessLabel(window.homeQueueFreshness.latestUpdatedAtMs);
+    }
+
+    const featuredReview = window.homeReviewSummary.featured;
+    if (!featuredReview || !(featuredTextEl instanceof HTMLElement) || !(featuredMetaEl instanceof HTMLElement) || !(featuredStarsEl instanceof HTMLElement)) {
+        if (featuredTextEl) featuredTextEl.textContent = 'Approved client feedback will appear here once reviews are available.';
+        if (featuredMetaEl) featuredMetaEl.textContent = 'Recent client reviews';
+        if (featuredStarsEl) featuredStarsEl.textContent = '★★★★★';
+        return;
+    }
+
+    const rating = Math.max(1, Math.min(5, Number(featuredReview.rating) || Number(featuredReview.reviewRating) || 5));
+    const reviewText = String(featuredReview.reviewText || featuredReview.text || 'Loved working with Horizon Tide.').trim();
+    const displayName = String(featuredReview.displayName || featuredReview.name || 'Client').trim() || 'Client';
+    const commissionType = String(featuredReview.commissionType || featuredReview.itemType || '').trim();
+    const metaBits = [displayName];
+    if (commissionType) metaBits.push(commissionType);
+
+    featuredStarsEl.textContent = getReviewStarsHtml(rating);
+    featuredTextEl.textContent = `“${reviewText}”`;
+    featuredMetaEl.textContent = metaBits.join(' • ');
+}
+
+function attachHomeReviewSummaryListener() {
+    if (globalHomeReviewListener) globalHomeReviewListener();
+    const reviewsQuery = query(collection(db, 'comments'), orderBy('timestamp', 'desc'), limit(120));
+    globalHomeReviewListener = onSnapshot(reviewsQuery, (snapshot) => {
+        const approvedReviews = [];
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (!isReviewEntry(data) || !isReviewApproved(data) || !isReviewSafeForPublic(data)) return;
+            approvedReviews.push({ id: docSnap.id, ...data });
+        });
+
+        const featured = approvedReviews.find((review) => String(review.reviewText || review.text || '').trim().length >= 40)
+            || approvedReviews[0]
+            || null;
+
+        window.homeReviewSummary = {
+            approvedCount: approvedReviews.length,
+            featured
+        };
+        applyHomeTrustSignalsToCurrentDOM();
+    }, () => {
+        window.homeReviewSummary = { approvedCount: 0, featured: null };
+        applyHomeTrustSignalsToCurrentDOM();
+    });
+
+    function getLatestQueueUpdatedAtMs(refunds = [], commissions = []) {
+        const refundLatest = (Array.isArray(refunds) ? refunds : []).reduce((latest, entry) => Math.max(
+            latest,
+            getComparableTimestampMs(entry?.updatedAt),
+            getComparableTimestampMs(entry?.lastUpdated),
+            getComparableTimestampMs(entry?.createdAt)
+        ), 0);
+
+        const commissionLatest = (Array.isArray(commissions) ? commissions : []).reduce((latest, entry) => Math.max(
+            latest,
+            getComparableTimestampMs(entry?.updatedAt),
+            getComparableTimestampMs(entry?.createdAt)
+        ), 0);
+
+        return Math.max(refundLatest, commissionLatest);
+    }
+
+    function updatePublicQueueLastUpdatedLabel(refunds = [], commissions = []) {
+        const lastUpdated = document.getElementById('refundsLastUpdated');
+        if (!lastUpdated) return;
+        const latestMs = getLatestQueueUpdatedAtMs(refunds, commissions);
+        lastUpdated.innerText = latestMs ? formatDisplayDate(new Date(latestMs)) : 'Awaiting first update';
+    }
+}
+attachHomeReviewSummaryListener();
+
+function updateHomeQueueFreshnessState(kind, entries) {
+    const latestMs = (Array.isArray(entries) ? entries : []).reduce((latest, entry) => {
+        const candidate = Math.max(
+            getComparableTimestampMs(entry?.updatedAt),
+            getComparableTimestampMs(entry?.lastUpdated),
+            getComparableTimestampMs(entry?.createdAt)
+        );
+        return Math.max(latest, candidate);
+    }, 0);
+
+    if (kind === 'refunds') window.homeQueueFreshness.refundsLatestMs = latestMs;
+    if (kind === 'commissions') window.homeQueueFreshness.commissionsLatestMs = latestMs;
+
+    window.homeQueueFreshness.latestUpdatedAtMs = Math.max(
+        window.homeQueueFreshness.refundsLatestMs || 0,
+        window.homeQueueFreshness.commissionsLatestMs || 0
+    );
+
+    applyHomeTrustSignalsToCurrentDOM();
+}
+
+function attachHomeQueueFreshnessListeners() {
+    if (globalHomeRefundFreshnessListener) globalHomeRefundFreshnessListener();
+    if (globalHomeCommissionFreshnessListener) globalHomeCommissionFreshnessListener();
+
+    const publicRefundsQuery = query(collection(db, 'refunds'), where('isPublic', '==', true));
+    const publicCommissionsQuery = query(collection(db, 'commissions'), where('isPublic', '==', true));
+
+    globalHomeRefundFreshnessListener = onSnapshot(publicRefundsQuery, (snapshot) => {
+        const entries = [];
+        snapshot.forEach((docSnap) => entries.push({ id: docSnap.id, ...docSnap.data() }));
+        updateHomeQueueFreshnessState('refunds', entries);
+    }, () => {
+        updateHomeQueueFreshnessState('refunds', []);
+    });
+
+    globalHomeCommissionFreshnessListener = onSnapshot(publicCommissionsQuery, (snapshot) => {
+        const entries = [];
+        snapshot.forEach((docSnap) => entries.push({ id: docSnap.id, ...docSnap.data() }));
+        updateHomeQueueFreshnessState('commissions', entries);
+    }, () => {
+        updateHomeQueueFreshnessState('commissions', []);
+    });
+}
+attachHomeQueueFreshnessListeners();
 
 window.handleImageError = function(img) {
     img.onerror = null;
@@ -1629,6 +1793,7 @@ function bindCoreMenuControls() {
     document.getElementById('btnGalleryHome')?.addEventListener('click', (e) => cinematicTransition(e, loadGalleryPage, '#gallery'));
     document.getElementById('btnDiscordHome')?.addEventListener('click', (e) => cinematicTransition(e, loadDiscordPage, '#discord'));
     document.getElementById('btnPreorderMassive')?.addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
+    document.getElementById('homeFeaturedReviewBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadReviewsPage, '#reviews'));
     document.getElementById('homeFinalCtaPreorderBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
     document.getElementById('homeFinalCtaContactBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadContactPage, '#contact'));
     document.getElementById('homeFinalCtaPricingBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadPricingPage, '#pricing'));
@@ -2145,6 +2310,16 @@ function setDraftStatusText(form, message, tone = 'neutral') {
     if (!(statusEl instanceof HTMLElement)) return;
     statusEl.textContent = message;
     statusEl.setAttribute('data-tone', tone);
+
+    const banner = form.parentElement?.querySelector('.form-draft-banner');
+    const bannerStatusEl = form.parentElement?.querySelector('.form-draft-banner__status');
+    if (banner instanceof HTMLElement) {
+        banner.setAttribute('data-tone', tone);
+    }
+    if (bannerStatusEl instanceof HTMLElement) {
+        bannerStatusEl.textContent = message;
+        bannerStatusEl.setAttribute('data-tone', tone);
+    }
 }
 
 function bindPreorderDraftFlow(formId) {
@@ -2170,6 +2345,8 @@ function bindPreorderDraftFlow(formId) {
         restoreFormDraftData(form, existingDraft.data);
         const stamp = existingDraft.savedAt ? new Date(existingDraft.savedAt).toLocaleString() : 'earlier';
         setDraftStatusText(form, `Draft restored from ${stamp}.`, 'neutral');
+    } else {
+        setDraftStatusText(form, 'Drafts auto-save on this device.', 'neutral');
     }
 
     let draftTimer = null;
@@ -2259,10 +2436,6 @@ function loadHomePage() {
     const tideSnapshot = getTideStatusSnapshot(availability);
     const husky = availability.artists.husky;
     const lopside = availability.artists.lopside;
-    const openSlotsNow = Math.max(0, Number(tideSnapshot.totalSlots) || 0);
-    const urgencyText = openSlotsNow <= 2
-        ? `Only ${openSlotsNow} open ${openSlotsNow === 1 ? 'slot' : 'slots'} right now`
-        : `${openSlotsNow} open slots available right now`;
 
     appViewport.innerHTML = `
         <div class="home-top-nav-strip" role="presentation">
@@ -2287,8 +2460,9 @@ function loadHomePage() {
             <div class="button-container button-container-home home-card-deck-shell">
                 ${getTemplateHTML('homeCardDeckTemplate')}
                 <div class="home-cta-proof-row" aria-label="Conversion trust row">
-                    <p class="home-cta-badge" aria-label="Average reply time"><span>Avg reply</span><strong id="homeHeroAvgReply">${escapeHTML(availability.responseTime)}</strong></p>
-                    <p class="home-urgency-badge" aria-label="Current open slots"><span>Queue</span><strong id="homeHeroOpenSlots">${escapeHTML(urgencyText)}</strong></p>
+                    <p class="home-proof-badge" aria-label="Average reply time"><span>Avg reply</span><strong id="homeHeroAvgReply">${escapeHTML(availability.responseTime)}</strong></p>
+                    <p class="home-proof-badge" aria-label="Approved reviews"><span>Approved reviews</span><strong id="homeApprovedReviewsCount">${window.homeReviewSummary.approvedCount}</strong></p>
+                    <p class="home-proof-badge" aria-label="Queue freshness"><span>Queue updated</span><strong id="homeQueueUpdatedLabel">${escapeHTML(formatQueueFreshnessLabel(window.homeQueueFreshness.latestUpdatedAtMs))}</strong></p>
                 </div>
                 <section class="home-availability-snapshot" aria-label="Weekly availability snapshot">
                     <p class="home-availability-snapshot-kicker">Weekly availability snapshot</p>
@@ -2424,6 +2598,16 @@ function loadHomePage() {
             </div>
         </section>
 
+        <section class="home-featured-review-shell" aria-label="Featured client review">
+            <div class="home-featured-review-card">
+                <p class="home-featured-review-kicker">Recent client words</p>
+                <div class="home-featured-review-stars" id="homeFeaturedReviewStars">★★★★★</div>
+                <blockquote class="home-featured-review-text" id="homeFeaturedReviewText">Approved client feedback will appear here once reviews are available.</blockquote>
+                <p class="home-featured-review-meta" id="homeFeaturedReviewMeta">Recent client reviews</p>
+                <button type="button" class="nav-btn home-featured-review-btn" id="homeFeaturedReviewBtn">Read All Reviews</button>
+            </div>
+        </section>
+
         <section class="home-final-cta-shell" aria-label="Final homepage call to action">
             <h3>Ready to bring your idea to life?</h3>
             <p>Open Preorder Menu to start. Need help choosing? Contact us first and we will guide you.</p>
@@ -2439,6 +2623,7 @@ function loadHomePage() {
     bindCoreMenuControls();
     bindSecretCornerTrigger();
     applyHomeAvailabilityToCurrentDOM();
+    applyHomeTrustSignalsToCurrentDOM();
 }
 
 function loadGalleryPage() {
@@ -2567,6 +2752,24 @@ function loadPreorderPage() {
             <button type="button" id="btnHuskysList" class="preorder-btn huskys-list-btn">Horizon Queue</button>
             <h1 class="preorder-menu-title">Preorder Menu</h1>
             <p class="preorder-menu-subtitle">Choose what you'd like to view or preorder from Horizon Tide Gallery.</p>
+            <section class="preorder-guide-shell" aria-label="Best fit launcher">
+                <h3>Pick your best fit</h3>
+                <p class="preorder-guide-copy">Use this quick launcher if you already know the kind of project you want.</p>
+                <div class="preorder-guide-grid">
+                    <button type="button" class="preorder-guide-card" data-guide-target="btnArt">
+                        <strong>Digital Art</strong>
+                        <span>Icons, scenes, ref sheets, and character art.</span>
+                    </button>
+                    <button type="button" class="preorder-guide-card" data-guide-target="btnFursuits">
+                        <strong>Wearables & Builds</strong>
+                        <span>Suit parts, heads, partials, and handmade pieces.</span>
+                    </button>
+                    <button type="button" class="preorder-guide-card" data-guide-target="btnCustomKeychains">
+                        <strong>Merch & Small Goods</strong>
+                        <span>Keychains, stickers, premades, and smaller custom items.</span>
+                    </button>
+                </div>
+            </section>
             <section class="preorder-prep-shell">
                 <h3>Customer Prep Checklist</h3>
                 <ul>
@@ -2581,11 +2784,13 @@ function loadPreorderPage() {
             <div class="preorder-section-grid">
                 <div class="menu-section">
                     <h3>Pricing & Info</h3>
+                    <p class="menu-section-subtitle">Check price ranges or track an order before starting a new request.</p>
                     <button type="button" class="preorder-btn preorder-btn-violet" id="btnPricing">Pricing Sheet</button>
                     <button type="button" class="preorder-btn preorder-btn-cyan" id="btnStatusCheck">Check Preorder Status</button>
                 </div>
                 <div class="menu-section">
                     <h3>Order Forms</h3>
+                    <p class="menu-section-subtitle">Choose the form closest to what you want. We will guide the rest from there.</p>
                     <div class="button-grid-2col">
                         <button type="button" class="preorder-btn preorder-btn-magenta" id="btnArt">Husky's Art Commissions</button>
                         <button type="button" class="preorder-btn preorder-btn-magenta" id="btnCustomStickers">Custom Stickers</button>
@@ -2596,6 +2801,7 @@ function loadPreorderPage() {
                 </div>
                 <div class="menu-section">
                     <h3>Coming Soon / Closed</h3>
+                    <p class="menu-section-subtitle">These are not accepting requests yet, but they can reopen later.</p>
                     <button type="button" class="preorder-btn disabled" id="btnCustomPlushies">Custom Plushies</button>
                     <button type="button" class="preorder-btn disabled" id="btnAnimations">Animations</button>
                 </div>
@@ -2615,6 +2821,25 @@ function loadPreorderPage() {
     document.getElementById('btnArt').addEventListener('click', (e) => cinematicTransition(e, loadHuskyArtForm, '#art'));
     document.getElementById('btnFursuits').addEventListener('click', (e) => cinematicTransition(e, loadFursuitForm, '#fursuits'));
     document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
+
+    const highlightLauncherTarget = (targetId) => {
+        const target = document.getElementById(targetId);
+        if (!(target instanceof HTMLElement)) return;
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        target.classList.remove('preorder-btn-highlight');
+        void target.offsetWidth;
+        target.classList.add('preorder-btn-highlight');
+        window.setTimeout(() => target.classList.remove('preorder-btn-highlight'), 1800);
+        target.focus();
+    };
+
+    document.querySelectorAll('.preorder-guide-card').forEach((card) => {
+        if (!(card instanceof HTMLButtonElement)) return;
+        card.addEventListener('click', () => {
+            const targetId = card.getAttribute('data-guide-target');
+            if (targetId) highlightLauncherTarget(targetId);
+        });
+    });
     
     attachInnerScrollListener();
 }
@@ -2630,17 +2855,50 @@ function loadPricingPage() {
     const huskyAvailability = tideSnapshot.husky;
     const lopsideAvailability = tideSnapshot.lopside;
     const tideClass = `tide-${tideSnapshot.tide.toLowerCase()}`;
+    const pricingMetaPills = (items = []) => `
+        <div class="pricing-meta-pills">${items.map((item) => `<span class="pricing-meta-pill">${item}</span>`).join('')}</div>
+    `;
+    const pricingSectionCta = (buttonId, label) => `<button type="button" class="nav-btn pricing-inline-cta" id="${buttonId}">${label}</button>`;
 
     appViewport.innerHTML = `
         <div class="pricing-container">
             <h1>Horizon Tide Gallery Pricing Sheet</h1>
-            <p class="subtitle">Starting prices are listed below. Final prices may vary based on complexity, materials, size, add-ons, and queue.</p>
+            <p class="subtitle">Starting prices are listed below so clients can budget fast, compare services easily, and decide where to start.</p>
 
-            <section class="pricing-policy-shell">
+            <div class="pricing-jump-nav" role="navigation" aria-label="Pricing section jump links">
+                <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-art">Art</button>
+                <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-animation">Animation</button>
+                <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-stickers">Stickers</button>
+                <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-fursuits">Fursuits</button>
+                <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-keychains">Keychains</button>
+                <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-calculator">Calculator</button>
+            </div>
+
+            <section class="pricing-start-shell" id="pricing-calculator" aria-label="Pricing quick guide">
+                <article class="pricing-start-card pricing-start-card--compact">
+                    <div class="pricing-start-card-copy">
+                        <h3>Need a starting point?</h3>
+                        <p>Choose the lane that matches your project, then compare the starting prices below. Everything here is a planning estimate until we review your exact request.</p>
+                    </div>
+                    <div class="pricing-start-actions">
+                        <button type="button" class="pricing-start-btn" data-pricing-target="pricing-art">I want digital art</button>
+                        <button type="button" class="pricing-start-btn" data-pricing-target="pricing-fursuits">I want handmade / wearable</button>
+                        <button type="button" class="pricing-start-btn" data-pricing-target="pricing-keychains">I want merch</button>
+                    </div>
+                    <ul class="pricing-start-mini-list">
+                        <li>Starting prices only, not locked quotes</li>
+                        <li>Final quotes depend on complexity, materials, add-ons, and deadlines</li>
+                        <li>No payment required just to ask or inquire</li>
+                    </ul>
+                </article>
+            </section>
+
+            <details class="pricing-policy-shell">
+                <summary class="pricing-policy-summary">Before you compare prices</summary>
                 <div class="pricing-policy-grid">
                     <article class="pricing-policy-card">
                         <h3>Complexity Guide</h3>
-                        <p>Our calculator and pricing sheet are designed to give a helpful estimate. Final pricing can shift based on project complexity and requested details.</p>
+                        <p>Use this sheet as a planning guide. Final pricing moves up or down based on the actual request.</p>
                         <ul>
                             <li>Character complexity and detailed design elements</li>
                             <li>Markings, alternate outfits, and layered accessories</li>
@@ -2654,7 +2912,7 @@ function loadPricingPage() {
 
                     <article class="pricing-policy-card">
                         <h3>Revision Policy</h3>
-                        <p>We want your order to feel right, and clear communication helps us get there smoothly.</p>
+                        <p>Clear notes early make revisions smaller, faster, and easier to approve.</p>
                         <ul>
                             <li>Small changes may be possible before final approval</li>
                             <li>Major revisions after work begins may affect price or timeline</li>
@@ -2664,7 +2922,7 @@ function loadPricingPage() {
 
                     <article class="pricing-policy-card">
                         <h3>Due Date & Rush Policy</h3>
-                        <p>We prefer due dates because they help us plan responsibly and confirm what is realistic.</p>
+                        <p>Deadlines help us confirm whether a project is realistic before it is accepted.</p>
                         <ul>
                             <li>Rush requests may be possible depending on current schedule</li>
                             <li>Rush fees may apply when timelines are compressed</li>
@@ -2702,21 +2960,24 @@ function loadPricingPage() {
                         </div>
                     </article>
                 </div>
-            </section>
+            </details>
 
-            <div class="pricing-section">
-                <h2>Husky's Art Commissions</h2>
-                <p>Payment upfront. Turnaround: 1–6 months depending on queue.</p>
+            <div class="pricing-section" id="pricing-art">
+                <div class="pricing-section-head">
+                    <h2>Husky's Art Commissions</h2>
+                    ${pricingMetaPills(['Best for icons, refs, and character scenes', 'Turnaround: 1-6 months', 'Payment: upfront'])}
+                </div>
+                <p class="pricing-section-intro">Best for character art, references, scenes, and polished illustration work.</p>
                 <p style="color: #ef4444; font-size: 0.9rem; margin-top: -5px;">*Animation memes are currently closed due to workload.</p>
                 <h3>Icons</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Flat Color</span> <span>${renderPrice(22, 'art')}</span></div>
+                    <div class="price-item price-item-popular"><span>Flat Color <em class="price-item-flag">Popular start</em></span> <span>${renderPrice(22, 'art')}</span></div>
                     <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(32, 'art')}</span></div>
                     <div class="price-item"><span>Rendered</span> <span>${renderPrice(50, 'art')}</span></div>
                 </div>
                 <h3>Headshots</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Flat Color</span> <span>${renderPrice(28, 'art')}</span></div>
+                    <div class="price-item price-item-popular"><span>Flat Color <em class="price-item-flag">Most common</em></span> <span>${renderPrice(28, 'art')}</span></div>
                     <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(40, 'art')}</span></div>
                     <div class="price-item"><span>Rendered</span> <span>${renderPrice(55, 'art')}</span></div>
                 </div>
@@ -2755,21 +3016,25 @@ function loadPricingPage() {
                     <div class="price-item"><span>6 Pack</span> <span>${renderPrice(75, 'stickers')}</span></div>
                 </div>
                 <h3>Add-ons</h3>
-                <div class="price-grid">
-                    <div class="price-item"><span>Extra Character</span> <span>+60%</span></div>
-                    <div class="price-item"><span>Background</span> <span>+${renderPriceRange(30, 60, 'art')}</span></div>
-                    <div class="price-item"><span>Extra Outfit</span> <span>+${renderPrice(25, 'art')}</span></div>
-                    <div class="price-item"><span>Complex Props</span> <span>+${renderPriceRange(10, 20, 'art')}</span></div>
-                    <div class="price-item"><span>Rush Order</span> <span>+${renderPrice(60, 'art')}</span></div>
+                <div class="pricing-chip-grid">
+                    <div class="pricing-chip"><strong>Extra Character</strong><span>+60%</span></div>
+                    <div class="pricing-chip"><strong>Background</strong><span>+${renderPriceRange(30, 60, 'art')}</span></div>
+                    <div class="pricing-chip"><strong>Extra Outfit</strong><span>+${renderPrice(25, 'art')}</span></div>
+                    <div class="pricing-chip"><strong>Complex Props</strong><span>+${renderPriceRange(10, 20, 'art')}</span></div>
+                    <div class="pricing-chip"><strong>Rush Order</strong><span>+${renderPrice(60, 'art')}</span></div>
                 </div>
+                <div class="pricing-section-actions">${pricingSectionCta('pricingArtCtaBtn', 'Start Art Request')}</div>
             </div>
             
-            <div class="pricing-section" style="border-left-color: #f59e0b;">
-                <h2 style="color: #f59e0b; border-left-color: #f59e0b;">Husky's Animation Commissions</h2>
-                <p>Turnaround: 2 weeks to 6+ months (Depends on complexity, queue, and school schedule. Faster completion may be possible but not guaranteed).</p>
+            <div class="pricing-section" id="pricing-animation" style="border-left-color: #f59e0b;">
+                <div class="pricing-section-head">
+                    <h2 style="color: #f59e0b; border-left-color: #f59e0b;">Husky's Animation Commissions</h2>
+                    ${pricingMetaPills(['Best for loops, acting shots, and custom motion', 'Turnaround: 2 weeks to 6+ months', 'Payment: quote-based'])}
+                </div>
+                <p class="pricing-section-intro">Best for looping motion, short scenes, and more custom animated ideas.</p>
                 <h3>Loop Animations</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>1–5 seconds</span> <span>${renderPriceRange(20, 60, 'animations')}</span></div>
+                    <div class="price-item price-item-popular"><span>1–5 seconds <em class="price-item-flag">Best starting point</em></span> <span>${renderPriceRange(20, 60, 'animations')}</span></div>
                 </div>
                 <ul style="margin-top: 5px;">
                     <li>Simple looping motion like breathing, blinking, slight movement</li>
@@ -2799,34 +3064,41 @@ function loadPricingPage() {
                     <li>Multiple actions or higher polish</li>
                 </ul>
                 <h3>Animation Add-ons</h3>
-                <div class="price-grid">
-                    <div class="price-item"><span>Extra character</span> <span>+${renderPriceRange(40, 120, 'animations')}</span></div>
-                    <div class="price-item"><span>Simple background</span> <span>+${renderPriceRange(20, 60, 'animations')}</span></div>
-                    <div class="price-item"><span>Detailed background</span> <span>+${renderPriceRange(60, 120, 'animations')}</span></div>
-                    <div class="price-item"><span>Complex motion/effects</span> <span>+${renderPriceRange(20, 80, 'animations')}</span></div>
-                    <div class="price-item"><span>Lip sync/dialogue</span> <span>+${renderPrice(30, 'animations', true)}</span></div>
-                    <div class="price-item"><span>Commercial use</span> <span>+50%–100% of total</span></div>
+                <div class="pricing-chip-grid">
+                    <div class="pricing-chip"><strong>Extra character</strong><span>+${renderPriceRange(40, 120, 'animations')}</span></div>
+                    <div class="pricing-chip"><strong>Simple background</strong><span>+${renderPriceRange(20, 60, 'animations')}</span></div>
+                    <div class="pricing-chip"><strong>Detailed background</strong><span>+${renderPriceRange(60, 120, 'animations')}</span></div>
+                    <div class="pricing-chip"><strong>Complex motion/effects</strong><span>+${renderPriceRange(20, 80, 'animations')}</span></div>
+                    <div class="pricing-chip"><strong>Lip sync / dialogue</strong><span>+${renderPrice(30, 'animations', true)}</span></div>
+                    <div class="pricing-chip"><strong>Commercial use</strong><span>+50%-100%</span></div>
                 </div>
             </div>
 
-            <div class="pricing-section" style="border-left-color: #ec4899;">
-                <h2 style="color: #ec4899; border-left-color: #ec4899;">Custom Stickers</h2>
-                <p>Custom stickers of your OC, fursona, pet, or logo. Pricing below covers the base design.</p>
+            <div class="pricing-section" id="pricing-stickers" style="border-left-color: #ec4899;">
+                <div class="pricing-section-head">
+                    <h2 style="color: #ec4899; border-left-color: #ec4899;">Custom Stickers</h2>
+                    ${pricingMetaPills(['Best for emotes, logos, and small merch art', 'Turnaround: varies by queue', 'Payment: quote-based'])}
+                </div>
+                <p class="pricing-section-intro">Best for small merch art, emotes, logos, and simple printable designs.</p>
                 <div class="price-grid">
-                    <div class="price-item"><span>Single Sticker</span> <span>${renderPrice(5, 'stickers')}</span></div>
+                    <div class="price-item price-item-popular"><span>Single Sticker <em class="price-item-flag">Most common</em></span> <span>${renderPrice(5, 'stickers')}</span></div>
                     <div class="price-item"><span>Matching Couple</span> <span>${renderPrice(10, 'stickers')}</span></div>
                     <div class="price-item"><span>Sticker Sheet</span> <span>${renderPrice(25, 'stickers')}</span></div>
                     <div class="price-item"><span>Small Batch</span> <span>${renderPrice(35, 'stickers')}</span></div>
                 </div>
                 <p style="color: #eab308; font-size: 0.95rem; margin-top: 10px;">*Note: Moderate complexity (+20%) and Complex designs (+50%) will increase the base cost.</p>
+                <div class="pricing-section-actions">${pricingSectionCta('pricingStickerCtaBtn', 'Start Sticker Request')}</div>
             </div>
 
-            <div class="pricing-section" style="border-left-color: #a855f7;">
-                <h2 style="color: #a855f7; border-left-color: #a855f7;">Lopside's Fursuit Creations</h2>
-                <p>Prices are starting prices and vary by complexity.</p>
+            <div class="pricing-section" id="pricing-fursuits" style="border-left-color: #a855f7;">
+                <div class="pricing-section-head">
+                    <h2 style="color: #a855f7; border-left-color: #a855f7;">Lopside's Fursuit Creations</h2>
+                    ${pricingMetaPills(['Best for wearable builds and suit parts', 'Turnaround: varies by build size', 'Payment: quote after review'])}
+                </div>
+                <p class="pricing-section-intro">Best for tails, paws, heads, partials, and other handmade wearable work.</p>
                 <div class="price-grid">
-                    <div class="price-item"><span>Tails</span> <span>${renderPrice(100, 'fursuits')}</span></div>
-                    <div class="price-item"><span>Paws</span> <span>${renderPrice(170, 'fursuits')}</span></div>
+                    <div class="price-item price-item-popular"><span>Tails <em class="price-item-flag">Entry option</em></span> <span>${renderPrice(100, 'fursuits')}</span></div>
+                    <div class="price-item price-item-popular"><span>Paws <em class="price-item-flag">Popular build</em></span> <span>${renderPrice(170, 'fursuits')}</span></div>
                     <div class="price-item"><span>Paws and Tail Set</span> <span>${renderPrice(260, 'fursuits')}</span></div>
                     <div class="price-item"><span>Feet Paws</span> <span>${renderPrice(270, 'fursuits')}</span></div>
                     <div class="price-item"><span>Trio Set (Feet, Paws, Tail)</span> <span>${renderPrice(530, 'fursuits')}</span></div>
@@ -2835,14 +3107,18 @@ function loadPricingPage() {
                     <div class="price-item"><span>Full Partial</span> <span>${renderPrice(1620, 'fursuits')}</span></div>
                 </div>
                 <p style="color: #eab308; font-size: 0.95rem; margin-top: 10px;">*Important note: Heads are artistic liberty only.</p>
+                <div class="pricing-section-actions">${pricingSectionCta('pricingFursuitCtaBtn', 'Start Fursuit Request')}</div>
             </div>
             
-            <div class="pricing-section" style="border-left-color: #00f2fe; margin-bottom: 0;">
-                <h2 style="color: #00f2fe; border-left-color: #00f2fe;">Keychain Pricing</h2>
-                <p>Shipping from the manufacturer is $5.99. Prices below are <strong>estimates only</strong> and include design work, ordering costs, and handling. Final prices may go up or down after contact.</p>
+            <div class="pricing-section" id="pricing-keychains" style="border-left-color: #00f2fe; margin-bottom: 0;">
+                <div class="pricing-section-head">
+                    <h2 style="color: #00f2fe; border-left-color: #00f2fe;">Keychain Pricing</h2>
+                    ${pricingMetaPills(['Best for acrylic merch and premade charms', 'Manufacturer shipping: $5.99', 'Payment: quote-based'])}
+                </div>
+                <p class="pricing-section-intro">Best for acrylic merch, premade charms, and custom small goods with finish options.</p>
                 <h3>Premade Keychains (2.5 inches)</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Starting Price Estimate</span> <span>${renderPriceRange(8, 15, 'keychains')} each</span></div>
+                    <div class="price-item price-item-popular"><span>Starting Price Estimate <em class="price-item-flag">Best starting point</em></span> <span>${renderPriceRange(8, 15, 'keychains')} each</span></div>
                 </div>
                 <p style="font-size: 0.9rem; margin-top: 5px;">*Final price may change depending on finish, quantity, and shipping.</p>
                 <h3>Custom Keychains (2–4 inches)</h3>
@@ -2860,6 +3136,7 @@ function loadPricingPage() {
                     <div class="price-item"><span>Holographic</span> <span>starting at ${renderPrice(16, 'keychains')}</span></div>
                     <div class="price-item"><span>Glow in the Dark</span> <span>starting at ${renderPrice(16, 'keychains')}</span></div>
                 </div>
+                <div class="pricing-section-actions">${pricingSectionCta('pricingKeychainCtaBtn', 'Start Keychain Request')}</div>
             </div>
             <div class="pricing-ending">
                 <div class="pricing-ending-divider"></div>
@@ -2873,6 +3150,23 @@ function loadPricingPage() {
             <button type="button" id="backToMenuBtnBottom" class="nav-btn pricing-btn-glow">← Back to Menu</button>
         </div>
     `;
+
+    const bindPricingJumpButtons = () => {
+        document.querySelectorAll('[data-pricing-target]').forEach((button) => {
+            if (!(button instanceof HTMLButtonElement)) return;
+            button.addEventListener('click', () => {
+                const targetId = button.getAttribute('data-pricing-target');
+                if (!targetId) return;
+                document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+    };
+
+    bindPricingJumpButtons();
+    document.getElementById('pricingArtCtaBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadHuskyArtForm, '#art'));
+    document.getElementById('pricingStickerCtaBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadCustomStickersForm, '#stickers'));
+    document.getElementById('pricingFursuitCtaBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadFursuitForm, '#fursuits'));
+    document.getElementById('pricingKeychainCtaBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadCustomKeychainsForm, '#custom-keychain'));
     
     document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
     document.getElementById('backToMenuBtnBottom').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
@@ -2889,6 +3183,7 @@ function loadHuskyArtForm() {
             <h1>Husky's Art Commissions</h1>
             <p class="form-desc" style="color: #22c55e; font-weight: bold;">Status: Open</p>
             <p class="form-desc">Commission Husky for digital artwork, character art, Pokémon-inspired art, icons, scenes, and illustrations.</p>
+            ${getFormDraftBannerHTML()}
 
             <form id="artForm">
                 <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" maxlength="50" required></div>
@@ -2977,6 +3272,7 @@ function loadFursuitForm() {
             <h1>Lopside's Fursuit Creations</h1>
             <p class="form-desc">Request fursuit parts, handmade costume pieces, or 3D physical creations from Lopside.</p>
             <p style="color: #a855f7; font-size: 0.9rem; text-align: center; margin-bottom: 20px;">* Note: This is a request form. Lopside will review the project before accepting.</p>
+            ${getFormDraftBannerHTML()}
 
             <form id="fursuitForm">
                 <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" maxlength="50" required></div>
@@ -3046,6 +3342,7 @@ function loadCustomKeychainsForm() {
         <div class="form-card" id="customKFormWrap">
             <h1>Custom Keychain Preorder</h1>
             <p class="form-desc">Order a custom acrylic keychain featuring your character, OC, Pokémon, pet, or design idea.</p>
+            ${getFormDraftBannerHTML()}
             
             <form id="customKeychainForm">
                 <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" maxlength="50" required></div>
@@ -3140,6 +3437,7 @@ function loadCustomStickersForm() {
         <div class="form-card">
             <h1>Custom Sticker Preorder</h1>
             <p class="form-desc">Order custom stickers of your OC, fursona, pet, Pokémon, logo, or design idea.</p>
+            ${getFormDraftBannerHTML()}
             <form id="stickerForm">
                 <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" maxlength="50" required></div>
                 <div class="form-group"><label>Email <span>*</span></label><input type="email" name="email" class="form-input" maxlength="100" required></div>
@@ -3249,6 +3547,7 @@ function loadPremadeKeychainsForm() {
         <div class="form-card">
             <h1>Premade Keychain Order Form</h1>
             <p class="form-desc">Order premade Horizon Tide Gallery keychains. (Size: 2.5 inches)</p>
+            ${getFormDraftBannerHTML()}
 
             <form id="premadeKeychainForm">
                 <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" maxlength="50" required></div>
@@ -3684,11 +3983,10 @@ function loadHuskysListPage() {
             return bTime - aTime;
         });
 
+        window.__publicQueueRefundsCache = refunds;
         const container = document.getElementById('refundsGroupsContainer');
-        const lastUpdated = document.getElementById('refundsLastUpdated');
-        if (lastUpdated) {
-            lastUpdated.innerText = formatDisplayDate(new Date());
-        }
+        const commissionRows = Array.isArray(window.__publicQueueCommissionsCache) ? window.__publicQueueCommissionsCache : [];
+        updatePublicQueueLastUpdatedLabel(refunds, commissionRows);
 
         if (!container) return;
 
@@ -3722,10 +4020,9 @@ function loadHuskysListPage() {
 
         const lopsideContainer = document.getElementById('lopsideCommissionQueueContainer');
         const huskyContainer = document.getElementById('huskyCommissionQueueContainer');
-        const lastUpdated = document.getElementById('refundsLastUpdated');
-        if (lastUpdated) {
-            lastUpdated.innerText = formatDisplayDate(new Date());
-        }
+        window.__publicQueueCommissionsCache = commissions;
+        const refundRows = Array.isArray(window.__publicQueueRefundsCache) ? window.__publicQueueRefundsCache : [];
+        updatePublicQueueLastUpdatedLabel(refundRows, commissions);
 
         if (!lopsideContainer || !huskyContainer) return;
 
