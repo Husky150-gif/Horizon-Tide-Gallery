@@ -136,6 +136,53 @@ function bindAdminReturnButtons(root = document) {
 let isGlobalScrollAttached = false;
 let globalQuoteIndex = 0;
 let globalQuoteInterval = null;
+
+const PUBLIC_HEAD_METADATA = {
+    title: 'The Horizon',
+    description: 'Horizon Tide Gallery - Custom 2D animation, illustration, and premium handmade fursuits.',
+    ogTitle: 'Horizon Tide Gallery',
+    ogDescription: 'Explore custom artwork, animation portfolios, and high-end creative commissions.',
+    ogType: 'website',
+    robots: 'index, follow'
+};
+
+function upsertMetaTag(selector, attributes) {
+    let tag = document.head.querySelector(selector);
+    if (!(tag instanceof HTMLMetaElement)) {
+        tag = document.createElement('meta');
+        Object.entries(attributes).forEach(([key, value]) => {
+            if (key !== 'content') tag.setAttribute(key, value);
+        });
+        document.head.appendChild(tag);
+    }
+    if (attributes.content != null) {
+        tag.setAttribute('content', attributes.content);
+    }
+    return tag;
+}
+
+function removeMetaTag(selector) {
+    document.head.querySelector(selector)?.remove();
+}
+
+function applyHeadMetadataForRoute(isAdminView) {
+    const robotsSelector = 'meta[name="robots"]';
+    document.title = PUBLIC_HEAD_METADATA.title;
+
+    if (isAdminView) {
+        removeMetaTag('meta[name="description"]');
+        removeMetaTag('meta[property="og:title"]');
+        removeMetaTag('meta[property="og:description"]');
+        upsertMetaTag(robotsSelector, { name: 'robots', content: 'noindex, nofollow' });
+        return;
+    }
+
+    upsertMetaTag('meta[name="description"]', { name: 'description', content: PUBLIC_HEAD_METADATA.description });
+    upsertMetaTag('meta[property="og:title"]', { property: 'og:title', content: PUBLIC_HEAD_METADATA.ogTitle });
+    upsertMetaTag('meta[property="og:description"]', { property: 'og:description', content: PUBLIC_HEAD_METADATA.ogDescription });
+    upsertMetaTag('meta[property="og:type"]', { property: 'og:type', content: PUBLIC_HEAD_METADATA.ogType });
+    upsertMetaTag(robotsSelector, { name: 'robots', content: PUBLIC_HEAD_METADATA.robots });
+}
 let lastCursorSparkleTime = 0;
 let activeCursorSparkles = 0;
 
@@ -682,6 +729,18 @@ const moonPhases = [
     { name: "Waning Crescent", quote: "Rest is part of the magic too.", shadow: "16px 12px 0 0 #f1c40f", bg: "transparent" }
 ];
 
+const moonQuoteRotation = [
+    "The stars don't compete with one another, they just shine.",
+    'Keep your eyes on the stars, and your feet on the ground.',
+    'Even the darkest night will pass and the sun will rise.',
+    "We are all broken, that's how the light gets in.",
+    'Be a voice, not an echo.',
+    'Grow at your own pace; even the moon takes time to become full.',
+    "There is a crack in everything, that's where the light gets in.",
+    'Mistakes are just proof that you are trying.',
+    'The universe is full of magical things, patiently waiting for our wits to grow sharper.'
+];
+
 function getDynamicMoonPhase() {
     const date = new Date();
     const newMoon = new Date(Date.UTC(2024, 0, 11, 11, 57)).getTime();
@@ -704,12 +763,12 @@ function getHemisphereDirection() {
 function startQuoteRotation() {
     if (globalQuoteInterval) clearInterval(globalQuoteInterval);
     globalQuoteInterval = setInterval(() => {
-        globalQuoteIndex = (globalQuoteIndex + 1) % moonPhases.length;
+        globalQuoteIndex = (globalQuoteIndex + 1) % moonQuoteRotation.length;
         const quoteEl = document.getElementById('rotatingMoonQuote');
         if (quoteEl) {
             quoteEl.style.opacity = 0;
             setTimeout(() => {
-                quoteEl.innerText = `"${moonPhases[globalQuoteIndex].quote}"`;
+                quoteEl.innerText = `"${moonQuoteRotation[globalQuoteIndex]}"`;
                 quoteEl.style.opacity = 1;
             }, 500);
         }
@@ -736,8 +795,9 @@ function renderDynamicMoon() {
     tooltip.className = "moon-tooltip";
     
     globalQuoteIndex = moonPhases.findIndex(p => p.name === moonData.name);
+    if (globalQuoteIndex < 0) globalQuoteIndex = 0;
     
-    tooltip.innerHTML = `<strong>${moonData.name}</strong><br><em id="rotatingMoonQuote" class="moon-quote-text">"${moonPhases[globalQuoteIndex].quote}"</em>`;
+    tooltip.innerHTML = `<strong>${moonData.name}</strong><br><em id="rotatingMoonQuote" class="moon-quote-text">"${moonQuoteRotation[globalQuoteIndex]}"</em>`;
     
     moonWrap.appendChild(moon);
     moonWrap.appendChild(tooltip);
@@ -4737,11 +4797,11 @@ function getOrderAttentionBadge(order) {
     return 'New';
 }
 
-function getMonthBuckets(monthCount = 6) {
+function getMonthBuckets(referenceDate = new Date()) {
     const buckets = [];
-    const now = new Date();
-    for (let i = monthCount - 1; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const currentYear = referenceDate.getFullYear();
+    for (let monthIndex = 0; monthIndex <= referenceDate.getMonth(); monthIndex++) {
+        const d = new Date(currentYear, monthIndex, 1);
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         const label = d.toLocaleDateString(undefined, { month: 'short' });
         buckets.push({ key, label, value: 0 });
@@ -4802,9 +4862,13 @@ function computeAdminDashboardMetrics() {
         if (revenueByService[serviceType] != null) revenueByService[serviceType] += value;
     });
 
-    const monthlyBuckets = getMonthBuckets(6);
+    const monthlyBuckets = getMonthBuckets();
     acceptedOrders.forEach((order) => {
-        const key = getMonthKeyFromMs(getOrderTimestampMs(order));
+        const orderTime = getOrderTimestampMs(order);
+        const orderDate = orderTime ? new Date(orderTime) : null;
+        if (!orderDate || orderDate.getFullYear() !== new Date().getFullYear()) return;
+
+        const key = getMonthKeyFromMs(orderTime);
         const bucket = monthlyBuckets.find((item) => item.key === key);
         if (bucket) bucket.value += estimateOrderRevenue(order);
     });
@@ -4895,27 +4959,289 @@ function renderActivityRows(rows) {
 
 function renderMiniLineChart(rows) {
     if (!Array.isArray(rows) || rows.length === 0) return '<p class="admin-chart-empty">No monthly data yet.</p>';
-    const values = rows.map((row) => row.value);
-    const max = Math.max(...values, 1);
-    const stepX = rows.length > 1 ? 100 / (rows.length - 1) : 100;
-
-    const points = rows.map((row, index) => {
-        const x = Math.round(index * stepX * 100) / 100;
-        const y = Math.round((100 - ((row.value / max) * 100)) * 100) / 100;
-        return `${x},${y}`;
-    }).join(' ');
-
-    const areaPoints = `${points} 100,100 0,100`;
-
     const labels = rows.map((row) => `<span>${escapeHTML(row.label)}</span>`).join('');
 
     return `
         <div class="admin-line-chart-wrap">
-            <svg viewBox="0 0 100 100" class="admin-line-chart" preserveAspectRatio="none" aria-hidden="true">
-                <polygon points="${areaPoints}" class="admin-line-chart-area"></polygon>
-                <polyline points="${points}" class="admin-line-chart-path"></polyline>
-            </svg>
-            <div class="admin-line-chart-labels">${labels}</div>
+            <canvas class="admin-line-chart" aria-label="Revenue by month chart"></canvas>
+            <div class="admin-line-chart-tooltip" aria-hidden="true"></div>
+            <div class="admin-line-chart-labels" style="--admin-line-label-count:${rows.length};">${labels}</div>
+        </div>
+    `;
+}
+
+let adminMonthlyChartRowsCache = [];
+let adminMonthlyChartResizeBound = false;
+let adminMonthlyChartTooltipBound = false;
+
+function getAdminMonthlyCanvasPoints(rows, width, height) {
+    const values = rows.map((row) => Number(row.value) || 0);
+    const max = Math.max(...values, 1);
+    const padding = { top: 16, right: 14, bottom: 20, left: 14 };
+    const chartWidth = Math.max(1, width - padding.left - padding.right);
+    const chartHeight = Math.max(1, height - padding.top - padding.bottom);
+    const baselineY = padding.top + chartHeight;
+    const stepX = rows.length > 1 ? chartWidth / (rows.length - 1) : 0;
+
+    const points = rows.map((row, index) => {
+        const value = Number(row.value) || 0;
+        const x = padding.left + (index * stepX);
+        const y = baselineY - ((value / max) * chartHeight);
+        return { x, y, value, label: row.label };
+    });
+
+    return { points, padding, baselineY };
+}
+
+function traceAdminMonthlyBezierPath(ctx, points) {
+    if (!Array.isArray(points) || points.length === 0) return;
+    ctx.moveTo(points[0].x, points[0].y);
+
+    if (points.length === 1) return;
+
+    for (let index = 0; index < points.length - 1; index++) {
+        const previous = points[index - 1] || points[index];
+        const current = points[index];
+        const next = points[index + 1];
+        const nextNext = points[index + 2] || next;
+
+        const cp1x = current.x + ((next.x - previous.x) / 6);
+        const cp1y = current.y + ((next.y - previous.y) / 6);
+        const cp2x = next.x - ((nextNext.x - current.x) / 6);
+        const cp2y = next.y - ((nextNext.y - current.y) / 6);
+
+        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, next.x, next.y);
+    }
+}
+
+function drawAdminMonthlyChart(canvas, rows) {
+    if (!(canvas instanceof HTMLCanvasElement)) return;
+    if (!Array.isArray(rows) || rows.length === 0) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.max(320, Math.round(rect.width || canvas.clientWidth || 640));
+    const height = Math.max(140, Math.round(rect.height || canvas.clientHeight || 160));
+    const dpr = window.devicePixelRatio || 1;
+
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, width, height);
+
+    const { points, padding, baselineY } = getAdminMonthlyCanvasPoints(rows, width, height);
+    canvas.__monthlyChartPoints = points;
+    const chartTop = padding.top;
+    const chartRight = width - padding.right;
+    const chartLeft = padding.left;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.lineWidth = 1;
+    for (let line = 0; line < 5; line++) {
+        const y = chartTop + (((baselineY - chartTop) / 4) * line);
+        ctx.beginPath();
+        ctx.moveTo(chartLeft, y);
+        ctx.lineTo(chartRight, y);
+        ctx.stroke();
+    }
+    ctx.restore();
+
+    const areaGradient = ctx.createLinearGradient(0, chartTop, 0, baselineY);
+    areaGradient.addColorStop(0, 'rgba(34, 211, 238, 0.25)');
+    areaGradient.addColorStop(0.42, 'rgba(129, 140, 248, 0.18)');
+    areaGradient.addColorStop(1, 'rgba(34, 211, 238, 0)');
+
+    ctx.save();
+    ctx.beginPath();
+    traceAdminMonthlyBezierPath(ctx, points);
+    ctx.lineTo(points[points.length - 1].x, baselineY);
+    ctx.lineTo(points[0].x, baselineY);
+    ctx.closePath();
+    ctx.fillStyle = areaGradient;
+    ctx.fill();
+    ctx.restore();
+
+    const lineGradient = ctx.createLinearGradient(chartLeft, chartTop, chartRight, baselineY);
+    lineGradient.addColorStop(0, '#22d3ee');
+    lineGradient.addColorStop(0.5, '#818cf8');
+    lineGradient.addColorStop(1, '#22d3ee');
+
+    ctx.save();
+    ctx.beginPath();
+    traceAdminMonthlyBezierPath(ctx, points);
+    ctx.lineWidth = 2.8;
+    ctx.strokeStyle = lineGradient;
+    ctx.shadowColor = 'rgba(34, 211, 238, 0.75)';
+    ctx.shadowBlur = 10;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+    ctx.restore();
+
+    points.forEach((point) => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#a5f3fc';
+        ctx.shadowColor = 'rgba(34, 211, 238, 0.9)';
+        ctx.shadowBlur = 10;
+        ctx.fill();
+        ctx.lineWidth = 1.4;
+        ctx.strokeStyle = '#67e8f9';
+        ctx.stroke();
+        ctx.restore();
+    });
+}
+
+function redrawAdminMonthlyChart() {
+    if (!Array.isArray(adminMonthlyChartRowsCache) || adminMonthlyChartRowsCache.length === 0) return;
+    const canvas = document.querySelector('.admin-line-chart');
+    if (!(canvas instanceof HTMLCanvasElement)) return;
+    drawAdminMonthlyChart(canvas, adminMonthlyChartRowsCache);
+}
+
+function bindAdminMonthlyChartTooltip() {
+    const wrap = document.querySelector('.admin-line-chart-wrap');
+    const canvas = document.querySelector('.admin-line-chart');
+    const tooltip = document.querySelector('.admin-line-chart-tooltip');
+    if (!(wrap instanceof HTMLElement) || !(canvas instanceof HTMLCanvasElement) || !(tooltip instanceof HTMLElement)) return;
+    if (canvas.dataset.tooltipBound === 'true') return;
+
+    canvas.dataset.tooltipBound = 'true';
+
+    const hideTooltip = () => {
+        tooltip.classList.remove('active');
+    };
+
+    canvas.addEventListener('mousemove', (event) => {
+        const points = Array.isArray(canvas.__monthlyChartPoints) ? canvas.__monthlyChartPoints : [];
+        if (points.length === 0) {
+            hideTooltip();
+            return;
+        }
+
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        let match = null;
+        let closestDistance = Infinity;
+        points.forEach((point) => {
+            const distance = Math.hypot(point.x - x, point.y - y);
+            if (distance < 12 && distance < closestDistance) {
+                closestDistance = distance;
+                match = point;
+            }
+        });
+
+        if (!match) {
+            hideTooltip();
+            return;
+        }
+
+        tooltip.textContent = `${match.label}: ${formatMoney(match.value)}`;
+        tooltip.style.left = `${match.x}px`;
+        tooltip.style.top = `${match.y}px`;
+        tooltip.classList.add('active');
+    });
+
+    canvas.addEventListener('mouseleave', hideTooltip);
+}
+
+function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+    const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+    return {
+        x: centerX + (radius * Math.cos(angleInRadians)),
+        y: centerY + (radius * Math.sin(angleInRadians))
+    };
+}
+
+function describeArcPath(x, y, radius, startAngle, endAngle) {
+    const start = polarToCartesian(x, y, radius, endAngle);
+    const end = polarToCartesian(x, y, radius, startAngle);
+    const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+    return [`M`, start.x, start.y, `A`, radius, radius, 0, largeArcFlag, 0, end.x, end.y].join(' ');
+}
+
+function renderServiceDonutChart(rows) {
+    if (!Array.isArray(rows) || rows.length === 0) return '<p class="admin-chart-empty">No data yet.</p>';
+
+    const sliceStyles = {
+        art: { gradientId: 'adminServiceSliceArt', toneClass: 'is-art' },
+        animation: { gradientId: 'adminServiceSliceAnimation', toneClass: 'is-animation' },
+        fursuits: { gradientId: 'adminServiceSliceFursuits', toneClass: 'is-fursuits' },
+        keychains: { gradientId: 'adminServiceSliceKeychains', toneClass: 'is-keychains' },
+        stickers: { gradientId: 'adminServiceSliceStickers', toneClass: 'is-stickers' }
+    };
+
+    const normalizedRows = rows.map((row) => ({
+        ...row,
+        key: String(row.label || '').toLowerCase()
+    }));
+    const activeRows = normalizedRows.filter((row) => row.value > 0);
+    const total = Math.max(1, activeRows.reduce((sum, row) => sum + row.value, 0));
+    let currentAngle = 0;
+
+    const sliceMarkup = activeRows.map((row) => {
+        const pct = row.value / total;
+        const angle = pct * 360;
+        const path = describeArcPath(60, 60, 36, currentAngle, currentAngle + angle);
+        const style = sliceStyles[row.key] || sliceStyles.art;
+        currentAngle += angle;
+        return `<path d="${path}" class="admin-donut-slice ${style.toneClass}" stroke="url(#${style.gradientId})"></path>`;
+    }).join('');
+
+    const legend = normalizedRows.map((row) => {
+        const style = sliceStyles[row.key] || sliceStyles.art;
+        const isEmpty = row.value <= 0;
+        return `
+            <li class="admin-donut-legend-item${isEmpty ? ' is-empty' : ''}">
+                <span class="admin-donut-legend-swatch ${style.toneClass}"></span>
+                <span class="admin-donut-legend-name">${escapeHTML(row.label)}</span>
+                <strong class="admin-donut-legend-value">${formatMoney(row.value)}</strong>
+            </li>
+        `;
+    }).join('');
+
+    return `
+        <div class="admin-donut-layout">
+            <div class="admin-donut-wrap" aria-hidden="true">
+                <svg viewBox="0 0 120 120" class="admin-donut-chart" preserveAspectRatio="xMidYMid meet">
+                    <defs>
+                        <linearGradient id="adminServiceSliceArt" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#22d3ee"></stop>
+                            <stop offset="100%" stop-color="#60a5fa"></stop>
+                        </linearGradient>
+                        <linearGradient id="adminServiceSliceAnimation" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#a78bfa"></stop>
+                            <stop offset="100%" stop-color="#f472b6"></stop>
+                        </linearGradient>
+                        <linearGradient id="adminServiceSliceFursuits" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#ec4899"></stop>
+                            <stop offset="100%" stop-color="#8b5cf6"></stop>
+                        </linearGradient>
+                        <linearGradient id="adminServiceSliceKeychains" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#38bdf8"></stop>
+                            <stop offset="100%" stop-color="#2dd4bf"></stop>
+                        </linearGradient>
+                        <linearGradient id="adminServiceSliceStickers" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#f59e0b"></stop>
+                            <stop offset="100%" stop-color="#f97316"></stop>
+                        </linearGradient>
+                    </defs>
+                    <circle cx="60" cy="60" r="36" class="admin-donut-track"></circle>
+                    ${sliceMarkup}
+                    <circle cx="60" cy="60" r="22" class="admin-donut-core"></circle>
+                    <text x="60" y="55" text-anchor="middle" class="admin-donut-total-label">Total</text>
+                    <text x="60" y="71" text-anchor="middle" class="admin-donut-total-value">${escapeHTML(formatMoney(total))}</text>
+                </svg>
+            </div>
+            <ul class="admin-donut-legend">${legend}</ul>
         </div>
     `;
 }
@@ -5069,7 +5395,7 @@ function updateAdminDashboardOverview() {
         <article class="admin-chart-card">
             <h3>Revenue Observatory | By Service</h3>
             <p>Service mix for art, animation, fursuits, keychains, and stickers.</p>
-            ${renderMiniColumnChart(serviceRows)}
+            ${renderServiceDonutChart(serviceRows)}
         </article>
         <article class="admin-chart-card">
             <h3>Commission Pipeline</h3>
@@ -5077,6 +5403,17 @@ function updateAdminDashboardOverview() {
             ${renderPipelineChart(statusRows)}
         </article>
     `;
+
+    adminMonthlyChartRowsCache = metrics.monthlyBuckets.map((item) => ({ label: item.label, value: item.value }));
+    requestAnimationFrame(() => {
+        redrawAdminMonthlyChart();
+        bindAdminMonthlyChartTooltip();
+    });
+
+    if (!adminMonthlyChartResizeBound) {
+        adminMonthlyChartResizeBound = true;
+        window.addEventListener('resize', redrawAdminMonthlyChart);
+    }
 
     const activities = [];
     if (metrics.newestOrder) {
@@ -5184,10 +5521,18 @@ function initializeAdminCollapsibleState() {
 }
 
 function bindAdminDashboardNavigation() {
+    const setActiveAdminSidebarLink = (activeButton) => {
+        document.querySelectorAll('.admin-sidebar .admin-side-link').forEach((button) => {
+            if (!(button instanceof HTMLElement)) return;
+            button.classList.toggle('active-link', button === activeButton);
+        });
+    };
+
     document.querySelectorAll('[data-admin-scroll]').forEach((button) => {
         if (!(button instanceof HTMLElement) || button.dataset.scrollBound === 'true') return;
         button.dataset.scrollBound = 'true';
         button.addEventListener('click', () => {
+            setActiveAdminSidebarLink(button);
             const targetId = button.getAttribute('data-admin-scroll');
             const target = targetId ? document.getElementById(targetId) : null;
             if (!target) return;
@@ -5206,6 +5551,11 @@ function bindAdminDashboardNavigation() {
             target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
     });
+
+    const dashboardButton = document.getElementById('adminNavDashboard');
+    if (dashboardButton instanceof HTMLElement) {
+        setActiveAdminSidebarLink(dashboardButton);
+    }
 }
 
 function setupAdminDashboardDelegation() {
@@ -5856,6 +6206,7 @@ function loadAdminDashboard() {
         return;
     }
 
+    applyHeadMetadataForRoute(true);
     clearBubbles(); if(interactiveStarField) interactiveStarField.innerHTML = ""; bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'admin'); setEnvironmentInteractivity('admin'); renderDynamicMoon(); renderDashboardStars();
     homeStarField.innerHTML = ""; dashboardStarField.innerHTML = "";
     if (appViewport) appViewport.style.pointerEvents = 'auto';
@@ -7993,6 +8344,7 @@ function routeProtectedAdminHash() {
 function initRouter() {
     let initialHash = window.location.hash || '#home';
     resetViewportToTop();
+    applyHeadMetadataForRoute(initialHash === '#admin');
 
     if (initialHash === '#admin') {
         routeProtectedAdminHash();
@@ -8013,6 +8365,7 @@ function initRouter() {
         }
 
         const currentHash = window.location.hash || '#home';
+        applyHeadMetadataForRoute(currentHash === '#admin');
 
         if (currentHash === '#admin') {
             routeProtectedAdminHash();
