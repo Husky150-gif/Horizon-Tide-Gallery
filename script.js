@@ -1522,10 +1522,9 @@ function bindCoreMenuControls() {
     document.getElementById('btnGalleryHome')?.addEventListener('click', (e) => cinematicTransition(e, loadGalleryPage, '#gallery'));
     document.getElementById('btnDiscordHome')?.addEventListener('click', (e) => cinematicTransition(e, loadDiscordPage, '#discord'));
     document.getElementById('btnPreorderMassive')?.addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
-    document.getElementById('homeHeroPrimaryPreorderBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
-    document.getElementById('homeHeroPricingBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadPricingPage, '#pricing'));
     document.getElementById('homeFinalCtaPreorderBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
     document.getElementById('homeFinalCtaContactBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadContactPage, '#contact'));
+    document.getElementById('homeFinalCtaPricingBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadPricingPage, '#pricing'));
     
     const cosmicBtn = document.getElementById('btnCosmicUpdates');
     if (cosmicBtn) cosmicBtn.addEventListener('click', (e) => cinematicTransition(e, loadAnnouncementsPage, '#updates'));
@@ -2179,13 +2178,6 @@ function loadHomePage() {
             </header>
 
             <div class="button-container button-container-home home-card-deck-shell">
-                <button type="button" class="nav-btn home-hero-primary-cta" id="homeHeroPrimaryPreorderBtn">Start Preorder</button>
-                <div class="home-pricing-anchors" aria-label="Starting price anchors">
-                    <span class="home-price-pill">Art from $22</span>
-                    <span class="home-price-pill">Fursuits from $100</span>
-                    <span class="home-price-pill">Keychains from $8</span>
-                    <button type="button" class="nav-btn home-price-link" id="homeHeroPricingBtn">View Full Pricing</button>
-                </div>
                 ${getTemplateHTML('homeCardDeckTemplate')}
                 <div class="home-cta-proof-row" aria-label="Conversion trust row">
                     <p class="home-cta-badge" aria-label="Average reply time"><span>Avg reply</span><strong id="homeHeroAvgReply">${escapeHTML(availability.responseTime)}</strong></p>
@@ -2332,6 +2324,7 @@ function loadHomePage() {
                 <button type="button" class="nav-btn home-final-cta-primary" id="homeFinalCtaPreorderBtn">Open Preorder Menu</button>
                 <button type="button" class="nav-btn home-final-cta-secondary" id="homeFinalCtaContactBtn">Contact Us</button>
             </div>
+            <button type="button" class="home-final-cta-pricing-link" id="homeFinalCtaPricingBtn">Need pricing first? View Pricing Sheet</button>
             <p class="home-final-cta-reassure">No payment needed to submit an inquiry.</p>
         </section>
     `;
