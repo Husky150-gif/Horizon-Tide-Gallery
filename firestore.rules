@@ -87,6 +87,12 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    match /inventoryEvents/{eventId} {
+      allow get, list: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+
     match /refunds/{refundId} {
       allow get, list: if isAdmin() || resource.data.isPublic == true;
       allow create, update, delete: if isAdmin();

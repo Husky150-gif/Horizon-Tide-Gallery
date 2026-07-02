@@ -20,7 +20,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=41">
+    <link rel="stylesheet" href="style.css?v=44">
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
@@ -427,7 +427,10 @@
             <div class="admin-actions discount-actions">
                 <button type="button" id="btnSavePremadeDesign" class="admin-btn-save">Add Design</button>
                 <button type="button" id="btnResetPremadeDesignForm" class="admin-btn-publish">Reset Design Form</button>
+                <button type="button" id="btnResetPremadeOrderAlpha" class="admin-btn-publish">Reset Order A-Z</button>
             </div>
+
+            <div id="adminPremadeStockSummary" class="admin-premade-stock-summary" aria-live="polite"></div>
 
             <div id="adminPremadeDesignList" class="admin-premade-list">
                 <p class="admin-detail">Premade designs will appear here after loading.</p>
@@ -443,7 +446,7 @@
         </div>
     </div>
 
-    <script type="module" src="script.js?v=44"></script>
+    <script type="module" src="script.js?v=47"></script>
 
     <script>
         (function () {

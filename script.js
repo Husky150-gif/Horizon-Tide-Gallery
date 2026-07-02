@@ -3,7 +3,7 @@
 // ==========================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp, doc, updateDoc, deleteDoc, where, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp, doc, updateDoc, deleteDoc, where, getDoc, setDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
 import { getAuth, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence, inMemoryPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
@@ -83,6 +83,9 @@ const DEFAULT_PREMADE_KEYCHAIN_CATALOG = {
         }
     ]
 };
+
+const PREMADE_LOW_STOCK_THRESHOLD = 5;
+const PREMADE_CRITICAL_STOCK_THRESHOLD = 2;
 
 window.homeAvailability = JSON.parse(JSON.stringify(DEFAULT_HOME_AVAILABILITY));
 window.premadeKeychainCatalog = JSON.parse(JSON.stringify(DEFAULT_PREMADE_KEYCHAIN_CATALOG));
@@ -1173,6 +1176,20 @@ function sanitizePremadeKeychainStock(value, fallback = 20) {
     return Math.max(0, Math.floor(parsed));
 }
 
+function getPremadeStockAlertLevel(stockValue) {
+    const stock = sanitizePremadeKeychainStock(stockValue, 0);
+    if (stock <= 0) return 'sold-out';
+    if (stock <= PREMADE_CRITICAL_STOCK_THRESHOLD) return 'critical';
+    if (stock <= PREMADE_LOW_STOCK_THRESHOLD) return 'low';
+    return 'normal';
+}
+
+function getPremadeSortOrderValue(value, fallback) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return fallback;
+    return Math.max(0, Math.floor(parsed));
+}
+
 function normalizePremadeKeychainCatalog(raw) {
     const fallback = JSON.parse(JSON.stringify(DEFAULT_PREMADE_KEYCHAIN_CATALOG));
     const hasExplicitDesigns = Array.isArray(raw?.designs);
@@ -1192,15 +1209,45 @@ function normalizePremadeKeychainCatalog(raw) {
             name: normalizedName,
             image: String(entry?.image || fallbackEntry.image || '').trim(),
             subtitle: String(entry?.subtitle || fallbackEntry.subtitle || '2.5 inch acrylic keychain').trim() || '2.5 inch acrylic keychain',
-            stock: sanitizePremadeKeychainStock(entry?.stock, fallbackEntry.stock ?? 20)
+            stock: sanitizePremadeKeychainStock(entry?.stock, fallbackEntry.stock ?? 20),
+            pinned: entry?.pinned === true,
+            sortOrder: getPremadeSortOrderValue(entry?.sortOrder, index + 1)
         };
     });
 
-    normalizedDesigns.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    normalizedDesigns.sort((a, b) => {
+        const pinDelta = Number(b.pinned === true) - Number(a.pinned === true);
+        if (pinDelta !== 0) return pinDelta;
+        const orderDelta = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+        if (orderDelta !== 0) return orderDelta;
+        return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+    });
+
+    normalizedDesigns.forEach((design, index) => {
+        design.sortOrder = index + 1;
+    });
 
     return {
         designs: normalizedDesigns
     };
+}
+
+function buildAlphabeticalPremadeCatalog(catalogInput = window.premadeKeychainCatalog) {
+    const catalog = normalizePremadeKeychainCatalog(catalogInput);
+    const byPinned = {
+        pinned: catalog.designs.filter((design) => design.pinned === true),
+        regular: catalog.designs.filter((design) => design.pinned !== true)
+    };
+
+    byPinned.pinned.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    byPinned.regular.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
+    const flattened = [...byPinned.pinned, ...byPinned.regular].map((design, index) => ({
+        ...design,
+        sortOrder: index + 1
+    }));
+
+    return normalizePremadeKeychainCatalog({ designs: flattened });
 }
 
 function getPremadeKeychainDesignByValue(value, catalogInput = window.premadeKeychainCatalog) {
@@ -1208,6 +1255,216 @@ function getPremadeKeychainDesignByValue(value, catalogInput = window.premadeKey
     if (!needle) return null;
     const catalog = normalizePremadeKeychainCatalog(catalogInput);
     return catalog.designs.find((design) => design.id === needle || design.name.toLowerCase() === needle) || null;
+}
+
+function getPremadeDesignFromOrder(order, catalogInput = window.premadeKeychainCatalog) {
+    if (!order || typeof order !== 'object') return null;
+
+    const directValue = String(order.designChoice || order.design || '').trim();
+    if (directValue) {
+        const directMatch = getPremadeKeychainDesignByValue(directValue, catalogInput);
+        if (directMatch) return directMatch;
+    }
+
+    const notes = String(order.notes || '');
+    const match = notes.match(/(?:^|\n)Design\s*Choice:\s*(.+?)(?:\n|$)/i) || notes.match(/(?:^|\n)Design:\s*(.+?)(?:\n|$)/i);
+    if (!match || !match[1]) return null;
+    return getPremadeKeychainDesignByValue(match[1].trim(), catalogInput);
+}
+
+function getPremadeQuantityFromOrder(order) {
+    if (!order || typeof order !== 'object') return 1;
+    const direct = Number(order.quantity);
+    if (Number.isFinite(direct) && direct > 0) return Math.max(1, Math.floor(direct));
+
+    const notes = String(order.notes || '');
+    const match = notes.match(/(?:^|\n)Quantity:\s*(\d+)(?:\n|$)/i);
+    const parsed = match ? Number(match[1]) : NaN;
+    if (!Number.isFinite(parsed) || parsed <= 0) return 1;
+    return Math.max(1, Math.floor(parsed));
+}
+
+function isPremadeKeychainOrder(order) {
+    const type = String(order?.itemType || order?.orderType || '').trim().toLowerCase();
+    return type === 'premade keychain';
+}
+
+async function applyPremadeInventoryForAcceptedOrder(order) {
+    if (!isPremadeKeychainOrder(order)) {
+        return { applied: false, reason: 'not-premade' };
+    }
+    if (order?.inventoryAppliedAcceptedAt) {
+        return { applied: false, reason: 'already-applied' };
+    }
+
+    const catalog = normalizePremadeKeychainCatalog(window.premadeKeychainCatalog);
+    const design = getPremadeDesignFromOrder(order, catalog);
+    if (!design) {
+        throw new Error('Unable to match this premade design in catalog. Check order details before accepting.');
+    }
+
+    const quantity = getPremadeQuantityFromOrder(order);
+    if (quantity < 1) {
+        throw new Error('Order quantity is invalid for inventory deduction.');
+    }
+
+    if (design.stock < quantity) {
+        throw new Error(`Not enough stock for ${design.name}. Requested ${quantity}, only ${design.stock} left.`);
+    }
+
+    const updatedDesign = { ...design, stock: Math.max(0, design.stock - quantity) };
+    const nextCatalog = normalizePremadeKeychainCatalog({
+        designs: catalog.designs.map((entry) => entry.id === design.id ? updatedDesign : entry)
+    });
+
+    await setDoc(doc(db, 'settings', 'premadeKeychains'), nextCatalog, { merge: true });
+    window.premadeKeychainCatalog = nextCatalog;
+    applyPremadeKeychainCatalogToCurrentDOM();
+
+    const eventDoc = await addDoc(collection(db, 'inventoryEvents'), {
+        type: 'premade-stock-deduction',
+        statusTrigger: 'Accepted',
+        preorderDocId: order.id || null,
+        preorderOrderId: order.orderId || null,
+        designId: design.id,
+        designName: design.name,
+        quantity,
+        beforeStock: design.stock,
+        afterStock: updatedDesign.stock,
+        changedBy: auth.currentUser?.email || 'admin',
+        createdAt: serverTimestamp()
+    });
+
+    return {
+        applied: true,
+        designId: design.id,
+        designName: design.name,
+        quantity,
+        beforeStock: design.stock,
+        afterStock: updatedDesign.stock,
+        alertLevel: getPremadeStockAlertLevel(updatedDesign.stock),
+        eventId: eventDoc.id
+    };
+}
+
+async function updateOrderStatusWithInventoryAtomic(orderId, nextStatus) {
+    if (!orderId) {
+        throw new Error('Missing order id for status update.');
+    }
+
+    return runTransaction(db, async (transaction) => {
+        const preorderRef = doc(db, 'preorders', orderId);
+        const preorderSnap = await transaction.get(preorderRef);
+
+        if (!preorderSnap.exists()) {
+            throw new Error('This order no longer exists.');
+        }
+
+        const liveOrder = { id: preorderSnap.id, ...preorderSnap.data() };
+        const previousStatus = String(liveOrder.status || 'Pending Review');
+        const resolvedNextStatus = String(nextStatus || previousStatus);
+
+        if (resolvedNextStatus === previousStatus) {
+            return {
+                changed: false,
+                previousStatus,
+                nextStatus: resolvedNextStatus,
+                inventoryResult: null,
+                catalogAfter: null
+            };
+        }
+
+        const updatePayload = { status: resolvedNextStatus };
+        let inventoryResult = null;
+        let catalogAfter = null;
+
+        if (resolvedNextStatus === 'Accepted' && isPremadeKeychainOrder(liveOrder) && !liveOrder.inventoryAppliedAcceptedAt) {
+            const catalogRef = doc(db, 'settings', 'premadeKeychains');
+            const catalogSnap = await transaction.get(catalogRef);
+            const catalogSeed = catalogSnap.exists() ? catalogSnap.data() : window.premadeKeychainCatalog;
+            const catalog = normalizePremadeKeychainCatalog(catalogSeed);
+            const design = getPremadeDesignFromOrder(liveOrder, catalog);
+
+            if (!design) {
+                throw new Error('Unable to match this premade design in catalog. Check order details before accepting.');
+            }
+
+            const quantity = getPremadeQuantityFromOrder(liveOrder);
+            if (quantity < 1) {
+                throw new Error('Order quantity is invalid for inventory deduction.');
+            }
+
+            if (design.stock < quantity) {
+                throw new Error(`Not enough stock for ${design.name}. Requested ${quantity}, only ${design.stock} left.`);
+            }
+
+            const updatedDesign = { ...design, stock: Math.max(0, design.stock - quantity) };
+            catalogAfter = normalizePremadeKeychainCatalog({
+                designs: catalog.designs.map((entry) => entry.id === design.id ? updatedDesign : entry)
+            });
+
+            transaction.set(catalogRef, catalogAfter, { merge: true });
+
+            const eventRef = doc(collection(db, 'inventoryEvents'));
+            transaction.set(eventRef, {
+                type: 'premade-stock-deduction',
+                statusTrigger: 'Accepted',
+                preorderDocId: liveOrder.id || null,
+                preorderOrderId: liveOrder.orderId || null,
+                designId: design.id,
+                designName: design.name,
+                quantity,
+                beforeStock: design.stock,
+                afterStock: updatedDesign.stock,
+                changedBy: auth.currentUser?.email || 'admin',
+                createdAt: serverTimestamp()
+            });
+
+            updatePayload.inventoryAppliedAcceptedAt = serverTimestamp();
+            updatePayload.inventoryAppliedAcceptedBy = auth.currentUser?.email || 'admin';
+            updatePayload.inventoryAppliedDesignId = design.id;
+            updatePayload.inventoryAppliedDesignName = design.name;
+            updatePayload.inventoryAppliedQuantity = quantity;
+            updatePayload.inventoryEventId = eventRef.id;
+
+            inventoryResult = {
+                applied: true,
+                designId: design.id,
+                designName: design.name,
+                quantity,
+                beforeStock: design.stock,
+                afterStock: updatedDesign.stock,
+                alertLevel: getPremadeStockAlertLevel(updatedDesign.stock),
+                eventId: eventRef.id
+            };
+        }
+
+        transaction.update(preorderRef, updatePayload);
+
+        if (liveOrder.orderId) {
+            const publishedFinalPrice = getOrderPublishedFinalPrice(liveOrder);
+            const publicStatusPayload = {
+                orderId: liveOrder.orderId,
+                itemType: liveOrder.itemType || liveOrder.orderType || 'Unknown',
+                status: resolvedNextStatus,
+                estimatedPrice: estimateOrderRevenue(liveOrder),
+                finalPricePublished: liveOrder.finalPricePublished === true,
+                finalPrice: publishedFinalPrice != null ? publishedFinalPrice : null,
+                updatedAt: serverTimestamp()
+            };
+
+            if (liveOrder.createdAt) publicStatusPayload.createdAt = liveOrder.createdAt;
+            transaction.set(doc(db, 'preorderStatusPublic', liveOrder.orderId), publicStatusPayload, { merge: true });
+        }
+
+        return {
+            changed: true,
+            previousStatus,
+            nextStatus: resolvedNextStatus,
+            inventoryResult,
+            catalogAfter
+        };
+    });
 }
 
 function buildPremadeKeychainGalleryMarkup(catalogInput = window.premadeKeychainCatalog) {
@@ -1220,7 +1477,8 @@ function buildPremadeKeychainGalleryMarkup(catalogInput = window.premadeKeychain
         <div class="gallery-grid">
             ${catalog.designs.map((design) => {
                 const stockLabel = design.stock === 1 ? '1 left' : `${design.stock} left`;
-                const stockClass = design.stock === 0 ? 'is-sold-out' : 'is-in-stock';
+                const alertLevel = getPremadeStockAlertLevel(design.stock);
+                const stockClass = alertLevel === 'sold-out' ? 'is-sold-out' : (alertLevel === 'critical' ? 'is-critical' : (alertLevel === 'low' ? 'is-low' : 'is-in-stock'));
                 return `
                     <div class="premade-card ${stockClass}">
                         <img src="${escapeHTML(encodeURI(design.image))}" class="premade-img" alt="${escapeHTML(design.name)}" loading="lazy" onerror="handleImageError(this)">
@@ -1247,7 +1505,9 @@ function buildPremadeKeychainSelectOptionsMarkup(catalogInput = window.premadeKe
         <option value="" selected disabled>${escapeHTML(placeholderLabel)}</option>
         ${catalog.designs.map((design) => {
             const stockLabel = design.stock === 1 ? '1 left' : `${design.stock} left`;
-            return `<option value="${escapeHTML(design.name)}" data-design-id="${escapeHTML(design.id)}" data-stock="${design.stock}" ${design.stock === 0 ? 'disabled' : ''}>${escapeHTML(`${design.name} (${stockLabel})`)}</option>`;
+            const level = getPremadeStockAlertLevel(design.stock);
+            const alertTag = level === 'critical' ? ' | Critical' : (level === 'low' ? ' | Low stock' : (level === 'sold-out' ? ' | Sold out' : ''));
+            return `<option value="${escapeHTML(design.name)}" data-design-id="${escapeHTML(design.id)}" data-stock="${design.stock}" ${design.stock === 0 ? 'disabled' : ''}>${escapeHTML(`${design.name} (${stockLabel}${alertTag})`)}</option>`;
         }).join('')}
     `;
 }
@@ -1327,6 +1587,7 @@ function bindPremadeKeychainFormInventory(form = document.getElementById('premad
 function getPremadeImageStorageMode(imageValue) {
     const value = String(imageValue || '').trim();
     if (!value) return 'none';
+    if (value.startsWith('blob:')) return 'selected';
     if (value.startsWith('data:image/')) return 'embedded';
     if (/^https?:\/\//i.test(value) || value.includes('firebasestorage') || value.includes('googleapis.com')) return 'hosted';
     return 'path';
@@ -1334,6 +1595,7 @@ function getPremadeImageStorageMode(imageValue) {
 
 function getPremadeImageStorageLabel(imageValue) {
     const mode = getPremadeImageStorageMode(imageValue);
+    if (mode === 'selected') return 'Selected local file (not saved yet)';
     if (mode === 'embedded') return 'Embedded fallback image';
     if (mode === 'hosted') return 'Hosted upload';
     if (mode === 'path') return 'Local file path';
@@ -1350,8 +1612,16 @@ function updateAdminPremadeDesignPreview(imageSrc = '', helperText = '') {
         previewWrap.hidden = !imageSrc;
     }
     if (previewImg instanceof HTMLImageElement) {
+        const previousObjectUrl = previewImg.dataset.objectUrl || '';
+        if (previousObjectUrl && previousObjectUrl !== imageSrc) {
+            URL.revokeObjectURL(previousObjectUrl);
+            delete previewImg.dataset.objectUrl;
+        }
         previewImg.src = imageSrc || '';
         previewImg.alt = imageSrc ? 'Premade design preview' : '';
+        if (imageSrc.startsWith('blob:')) {
+            previewImg.dataset.objectUrl = imageSrc;
+        }
     }
     if (previewText instanceof HTMLElement) {
         previewText.textContent = helperText || (imageSrc ? 'Current image will be kept unless you upload a new one.' : 'Upload a picture for this design.');
@@ -1463,31 +1733,256 @@ function formatAdminPremadeImageLabel(imageValue) {
     return getPremadeImageStorageLabel(value);
 }
 
+function renderAdminPremadeStockSummary(catalogInput = window.premadeKeychainCatalog) {
+    const summaryEl = document.getElementById('adminPremadeStockSummary');
+    if (!summaryEl) return;
+
+    const catalog = normalizePremadeKeychainCatalog(catalogInput);
+    const counts = {
+        total: catalog.designs.length,
+        low: 0,
+        critical: 0,
+        soldOut: 0
+    };
+
+    catalog.designs.forEach((design) => {
+        const level = getPremadeStockAlertLevel(design.stock);
+        if (level === 'low') counts.low += 1;
+        if (level === 'critical') counts.critical += 1;
+        if (level === 'sold-out') counts.soldOut += 1;
+    });
+
+    summaryEl.innerHTML = `
+        <span class="admin-premade-summary-pill">Designs: <strong>${counts.total}</strong></span>
+        <span class="admin-premade-summary-pill is-low">Low: <strong>${counts.low}</strong></span>
+        <span class="admin-premade-summary-pill is-critical">Critical: <strong>${counts.critical}</strong></span>
+        <span class="admin-premade-summary-pill is-sold-out">Sold Out: <strong>${counts.soldOut}</strong></span>
+    `;
+}
+
+function buildAdminPremadeSections(designs) {
+    const pinned = designs.filter((design) => design.pinned === true);
+    const regular = designs.filter((design) => design.pinned !== true);
+
+    return [
+        { key: 'pinned', title: 'Pinned Designs', designs: pinned },
+        { key: 'regular', title: 'All Designs', designs: regular }
+    ].filter((section) => section.designs.length > 0);
+}
+
+function canMovePremadeDesignByStep(catalog, designId, direction) {
+    const sourceIndex = catalog.designs.findIndex((design) => design.id === designId);
+    if (sourceIndex < 0) return false;
+
+    const source = catalog.designs[sourceIndex];
+    const step = direction === 'up' ? -1 : 1;
+    const targetIndex = sourceIndex + step;
+
+    if (targetIndex < 0 || targetIndex >= catalog.designs.length) return false;
+    return catalog.designs[targetIndex].pinned === source.pinned;
+}
+
 function renderAdminPremadeKeychainManager() {
     const listEl = document.getElementById('adminPremadeDesignList');
     if (!listEl) return;
+    const dragSupported = typeof document !== 'undefined' && 'draggable' in document.createElement('div');
 
     const catalog = normalizePremadeKeychainCatalog(window.premadeKeychainCatalog);
+    renderAdminPremadeStockSummary(catalog);
     if (catalog.designs.length === 0) {
         listEl.innerHTML = '<p class="admin-detail">No premade designs listed yet.</p>';
         return;
     }
 
-    listEl.innerHTML = catalog.designs.map((design) => `
-        <article class="admin-premade-item">
-            <img src="${escapeHTML(encodeURI(design.image))}" alt="${escapeHTML(design.name)}" class="admin-premade-item__thumb" loading="lazy" onerror="handleImageError(this)">
-            <div class="admin-premade-item__info">
-                <strong>${escapeHTML(design.name)}</strong>
-                <span>${escapeHTML(design.subtitle)}</span>
-                <span class="admin-premade-item__stock ${design.stock === 0 ? 'is-sold-out' : ''}">${escapeHTML(design.stock === 1 ? '1 left' : `${design.stock} left`)}</span>
-                <code>${escapeHTML(formatAdminPremadeImageLabel(design.image))}</code>
-            </div>
-            <div class="announce-item-actions admin-premade-item__actions">
-                <button type="button" class="admin-btn-edit admin-edit-premade-design" data-id="${escapeHTML(design.id)}">Edit</button>
-                <button type="button" class="admin-btn-delete admin-delete-premade-design" data-id="${escapeHTML(design.id)}">Delete</button>
-            </div>
-        </article>
+    const sectionMarkup = buildAdminPremadeSections(catalog.designs).map((section) => `
+        <section class="admin-premade-section" data-section="${section.key}">
+            <header class="admin-premade-section__header">
+                <h4>${escapeHTML(section.title)}</h4>
+                <span>${section.designs.length}</span>
+            </header>
+            ${section.designs.map((design) => `
+                <article class="admin-premade-item" data-id="${escapeHTML(design.id)}" data-pinned="${design.pinned ? 'true' : 'false'}" draggable="${dragSupported ? 'true' : 'false'}">
+                    <img src="${escapeHTML(encodeURI(design.image))}" alt="${escapeHTML(design.name)}" class="admin-premade-item__thumb" loading="lazy" onerror="handleImageError(this)">
+                    <div class="admin-premade-item__info">
+                        <strong>${escapeHTML(design.name)}${design.pinned ? ' <span class="admin-premade-pin-indicator">Pinned</span>' : ''}</strong>
+                        <span>${escapeHTML(design.subtitle)}</span>
+                        <span class="admin-premade-item__stock is-${getPremadeStockAlertLevel(design.stock)}">${escapeHTML(design.stock === 1 ? '1 left' : `${design.stock} left`)}</span>
+                        <code>${escapeHTML(formatAdminPremadeImageLabel(design.image))}</code>
+                    </div>
+                    <div class="announce-item-actions admin-premade-item__actions">
+                        ${dragSupported ? `<button type="button" class="admin-btn-edit admin-premade-drag-handle" data-id="${escapeHTML(design.id)}" title="Drag to reorder">Drag</button>` : ''}
+                        <button type="button" class="admin-btn-edit admin-premade-pin-btn" data-id="${escapeHTML(design.id)}" data-pinned="${design.pinned ? 'true' : 'false'}">${design.pinned ? 'Unpin' : 'Pin'}</button>
+                        ${dragSupported ? '' : `<button type="button" class="admin-btn-edit admin-premade-move-btn" data-id="${escapeHTML(design.id)}" data-direction="up" ${canMovePremadeDesignByStep(catalog, design.id, 'up') ? '' : 'disabled'}>Up</button>`}
+                        ${dragSupported ? '' : `<button type="button" class="admin-btn-edit admin-premade-move-btn" data-id="${escapeHTML(design.id)}" data-direction="down" ${canMovePremadeDesignByStep(catalog, design.id, 'down') ? '' : 'disabled'}>Down</button>`}
+                        <button type="button" class="admin-btn-edit admin-edit-premade-design" data-id="${escapeHTML(design.id)}">Edit</button>
+                        <button type="button" class="admin-btn-delete admin-delete-premade-design" data-id="${escapeHTML(design.id)}">Delete</button>
+                    </div>
+                </article>
+            `).join('')}
+        </section>
     `).join('');
+
+    listEl.innerHTML = `${dragSupported ? '<p class="admin-premade-reorder-hint">Drag cards within each section to reorder designs.</p>' : '<p class="admin-premade-reorder-hint">Use Up/Down buttons to reorder designs.</p>'}${sectionMarkup}`;
+
+    let dragSourceId = null;
+    let dragSourcePinned = null;
+
+    if (dragSupported) {
+        listEl.querySelectorAll('.admin-premade-item').forEach((item) => {
+            item.addEventListener('dragstart', (event) => {
+                if (!requireAdminSession('Please sign in with an authorized admin account before reordering premade designs.')) {
+                    event.preventDefault();
+                    return;
+                }
+
+                const id = item.getAttribute('data-id');
+                if (!id) {
+                    event.preventDefault();
+                    return;
+                }
+
+                dragSourceId = id;
+                dragSourcePinned = item.getAttribute('data-pinned') === 'true';
+                item.classList.add('is-dragging');
+
+                if (event.dataTransfer) {
+                    event.dataTransfer.effectAllowed = 'move';
+                    event.dataTransfer.setData('text/plain', id);
+                }
+            });
+
+            item.addEventListener('dragend', () => {
+                dragSourceId = null;
+                dragSourcePinned = null;
+                listEl.querySelectorAll('.admin-premade-item').forEach((entry) => {
+                    entry.classList.remove('is-dragging', 'is-drop-target', 'is-drop-blocked');
+                });
+            });
+
+            item.addEventListener('dragover', (event) => {
+                if (!dragSourceId) return;
+                event.preventDefault();
+
+                const targetId = item.getAttribute('data-id');
+                if (!targetId || targetId === dragSourceId) return;
+
+                const targetPinned = item.getAttribute('data-pinned') === 'true';
+                item.classList.toggle('is-drop-target', dragSourcePinned === targetPinned);
+                item.classList.toggle('is-drop-blocked', dragSourcePinned !== targetPinned);
+            });
+
+            item.addEventListener('dragleave', () => {
+                item.classList.remove('is-drop-target', 'is-drop-blocked');
+            });
+
+            item.addEventListener('drop', async (event) => {
+                if (!dragSourceId) return;
+                event.preventDefault();
+
+                const targetId = item.getAttribute('data-id');
+                item.classList.remove('is-drop-target', 'is-drop-blocked');
+                if (!targetId || targetId === dragSourceId) return;
+
+                const catalogState = normalizePremadeKeychainCatalog(window.premadeKeychainCatalog);
+                const sourceIndex = catalogState.designs.findIndex((design) => design.id === dragSourceId);
+                const targetIndex = catalogState.designs.findIndex((design) => design.id === targetId);
+                if (sourceIndex < 0 || targetIndex < 0) return;
+
+                const sourceDesign = catalogState.designs[sourceIndex];
+                const targetDesign = catalogState.designs[targetIndex];
+                if (sourceDesign.pinned !== targetDesign.pinned) {
+                    showAdminToast('Pin or unpin designs to move them across sections.', true);
+                    return;
+                }
+
+                const ordered = [...catalogState.designs];
+                const [moved] = ordered.splice(sourceIndex, 1);
+                ordered.splice(targetIndex, 0, moved);
+
+                const reorderedCatalog = normalizePremadeKeychainCatalog({
+                    designs: ordered.map((design, index) => ({ ...design, sortOrder: index + 1 }))
+                });
+
+                try {
+                    await setDoc(doc(db, 'settings', 'premadeKeychains'), reorderedCatalog, { merge: true });
+                    window.premadeKeychainCatalog = reorderedCatalog;
+                    applyPremadeKeychainCatalogToCurrentDOM();
+                    showAdminToast('Premade design order updated.');
+                } catch (error) {
+                    console.error(error);
+                    showAdminToast('Failed to reorder premade designs.', true);
+                }
+            });
+        });
+    }
+
+    listEl.querySelectorAll('.admin-premade-pin-btn').forEach((button) => {
+        button.addEventListener('click', async () => {
+            if (!requireAdminSession('Please sign in with an authorized admin account before pinning premade designs.')) return;
+            const id = button.getAttribute('data-id');
+            if (!id) return;
+            const catalogState = normalizePremadeKeychainCatalog(window.premadeKeychainCatalog);
+            const targetDesign = catalogState.designs.find((design) => design.id === id);
+            if (!targetDesign) return;
+
+            button.disabled = true;
+            try {
+                const nextCatalog = normalizePremadeKeychainCatalog({
+                    designs: catalogState.designs.map((design) => design.id === id ? { ...design, pinned: !targetDesign.pinned } : design)
+                });
+                await setDoc(doc(db, 'settings', 'premadeKeychains'), nextCatalog, { merge: true });
+                window.premadeKeychainCatalog = nextCatalog;
+                applyPremadeKeychainCatalogToCurrentDOM();
+                showAdminToast(targetDesign.pinned ? 'Premade design unpinned.' : 'Premade design pinned.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to update pin state.', true);
+            } finally {
+                button.disabled = false;
+            }
+        });
+    });
+
+    listEl.querySelectorAll('.admin-premade-move-btn').forEach((button) => {
+        button.addEventListener('click', async () => {
+            if (!requireAdminSession('Please sign in with an authorized admin account before reordering premade designs.')) return;
+            const id = button.getAttribute('data-id');
+            const direction = button.getAttribute('data-direction');
+            if (!id || !direction) return;
+
+            const catalogState = normalizePremadeKeychainCatalog(window.premadeKeychainCatalog);
+            const sourceIndex = catalogState.designs.findIndex((design) => design.id === id);
+            if (sourceIndex < 0) return;
+
+            const targetIndex = direction === 'up' ? sourceIndex - 1 : sourceIndex + 1;
+            if (targetIndex < 0 || targetIndex >= catalogState.designs.length) return;
+            if (catalogState.designs[targetIndex].pinned !== catalogState.designs[sourceIndex].pinned) {
+                showAdminToast('Pin or unpin designs to move them across sections.', true);
+                return;
+            }
+
+            const ordered = [...catalogState.designs];
+            const [moved] = ordered.splice(sourceIndex, 1);
+            ordered.splice(targetIndex, 0, moved);
+
+            const reorderedCatalog = normalizePremadeKeychainCatalog({
+                designs: ordered.map((design, index) => ({ ...design, sortOrder: index + 1 }))
+            });
+
+            button.disabled = true;
+            try {
+                await setDoc(doc(db, 'settings', 'premadeKeychains'), reorderedCatalog, { merge: true });
+                window.premadeKeychainCatalog = reorderedCatalog;
+                applyPremadeKeychainCatalogToCurrentDOM();
+                showAdminToast('Premade design order updated.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to reorder premade designs.', true);
+            } finally {
+                button.disabled = false;
+            }
+        });
+    });
 
     listEl.querySelectorAll('.admin-edit-premade-design').forEach((button) => {
         button.addEventListener('click', () => {
@@ -6302,16 +6797,21 @@ function openAdminLoginModal(options = {}) {
             <button type="button" class="admin-login-modal__close" id="adminLoginCloseBtn" aria-label="Close Secret Corner login">×</button>
             <div class="admin-login-modal__eyebrow">Secret Corner Access</div>
             <h2 id="adminLoginTitle" class="admin-login-modal__title">Admin Login</h2>
-            <p class="admin-login-modal__copy">Sign in to open the Horizon Admin Dashboard. This only changes the UI entry point and keeps the existing Firebase auth flow.</p>
+            <p class="admin-login-modal__copy">Sign in with an approved admin account to open Mission Control.</p>
             <form id="adminLoginForm" class="admin-login-modal__form">
                 <label class="admin-login-modal__label" for="adminLoginEmail">Email</label>
                 <input type="email" id="adminLoginEmail" class="admin-login-modal__input" autocomplete="username" placeholder="you@example.com" required>
                 <label class="admin-login-modal__label" for="adminLoginPassword">Password</label>
-                <input type="password" id="adminLoginPassword" class="admin-login-modal__input" autocomplete="current-password" placeholder="Password" required>
+                <div class="admin-login-modal__password-row">
+                    <input type="password" id="adminLoginPassword" class="admin-login-modal__input admin-login-modal__input--password" autocomplete="current-password" placeholder="Password" required>
+                    <button type="button" id="adminLoginTogglePasswordBtn" class="admin-login-modal__password-toggle" aria-label="Show password" aria-pressed="false">Show</button>
+                </div>
+                <p id="adminLoginCapsHint" class="admin-login-modal__caps-hint" aria-live="polite" hidden>Caps Lock is on</p>
                 <label class="admin-login-modal__remember">
                     <input type="checkbox" id="adminLoginRemember" class="admin-login-modal__remember-input">
-                    <span>Stay Signed In</span>
+                    <span>Stay signed in on this device</span>
                 </label>
+                <p class="admin-login-modal__hint">Uncheck on shared or public computers.</p>
                 <p id="adminLoginError" class="admin-login-modal__error" aria-live="polite"></p>
                 <div class="admin-login-modal__actions">
                     <button type="button" id="adminLoginCancelBtn" class="admin-login-modal__btn admin-login-modal__btn--secondary">Cancel</button>
@@ -6330,8 +6830,28 @@ function openAdminLoginModal(options = {}) {
     const rememberInput = document.getElementById('adminLoginRemember');
     const errorEl = document.getElementById('adminLoginError');
     const submitBtn = document.getElementById('adminLoginSubmitBtn');
+    const togglePasswordBtn = document.getElementById('adminLoginTogglePasswordBtn');
+    const capsHintEl = document.getElementById('adminLoginCapsHint');
+    const dialogEl = modal.querySelector('.admin-login-modal__dialog');
     const cancelBtn = document.getElementById('adminLoginCancelBtn');
     const closeBtn = document.getElementById('adminLoginCloseBtn');
+
+    const triggerLoginErrorShake = () => {
+        if (!(dialogEl instanceof HTMLElement)) return;
+        dialogEl.classList.remove('is-error-shake');
+        void dialogEl.offsetWidth;
+        dialogEl.classList.add('is-error-shake');
+    };
+
+    const setLoginFieldErrorState = (input, hasError) => {
+        if (!(input instanceof HTMLInputElement)) return;
+        input.classList.toggle('is-invalid', hasError);
+    };
+
+    const clearLoginFieldErrorState = () => {
+        setLoginFieldErrorState(emailInput, false);
+        setLoginFieldErrorState(passwordInput, false);
+    };
 
     const handleClose = () => closeAdminLoginModal();
 
@@ -6353,8 +6873,37 @@ function openAdminLoginModal(options = {}) {
     document.addEventListener('keydown', handleEscape);
 
     if (rememberInput) {
-        rememberInput.checked = localStorage.getItem(ADMIN_PERSISTENCE_PREF_KEY) === '1';
+        const savedPref = localStorage.getItem(ADMIN_PERSISTENCE_PREF_KEY);
+        rememberInput.checked = savedPref == null ? true : savedPref === '1';
     }
+
+    emailInput?.addEventListener('input', () => setLoginFieldErrorState(emailInput, false));
+    passwordInput?.addEventListener('input', () => setLoginFieldErrorState(passwordInput, false));
+
+    togglePasswordBtn?.addEventListener('click', () => {
+        if (!(passwordInput instanceof HTMLInputElement)) return;
+        const showPassword = passwordInput.type === 'password';
+        passwordInput.type = showPassword ? 'text' : 'password';
+        togglePasswordBtn.textContent = showPassword ? 'Hide' : 'Show';
+        togglePasswordBtn.setAttribute('aria-label', showPassword ? 'Hide password' : 'Show password');
+        togglePasswordBtn.setAttribute('aria-pressed', showPassword ? 'true' : 'false');
+        passwordInput.focus();
+        const valueLength = passwordInput.value.length;
+        passwordInput.setSelectionRange(valueLength, valueLength);
+    });
+
+    const updateCapsHint = (event) => {
+        if (!(capsHintEl instanceof HTMLElement)) return;
+        const capsOn = Boolean(event && typeof event.getModifierState === 'function' && event.getModifierState('CapsLock'));
+        capsHintEl.hidden = !capsOn;
+    };
+
+    passwordInput?.addEventListener('keydown', updateCapsHint);
+    passwordInput?.addEventListener('keyup', updateCapsHint);
+    passwordInput?.addEventListener('focus', updateCapsHint);
+    passwordInput?.addEventListener('blur', () => {
+        if (capsHintEl instanceof HTMLElement) capsHintEl.hidden = true;
+    });
 
     form?.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -6366,8 +6915,13 @@ function openAdminLoginModal(options = {}) {
 
         if (!email || !password) {
             errorEl.textContent = 'Please enter both your email and password.';
+            setLoginFieldErrorState(emailInput, !email);
+            setLoginFieldErrorState(passwordInput, !password);
+            triggerLoginErrorShake();
             return;
         }
+
+        clearLoginFieldErrorState();
 
         submitBtn.disabled = true;
         submitBtn.textContent = 'Logging In...';
@@ -6379,6 +6933,7 @@ function openAdminLoginModal(options = {}) {
             if (!isAdminSessionActive()) {
                 await signOut(auth);
                 errorEl.textContent = 'This account is not authorized for admin access.';
+                triggerLoginErrorShake();
                 return;
             }
             localStorage.setItem(ADMIN_PERSISTENCE_PREF_KEY, shouldStaySignedIn ? '1' : '0');
@@ -6391,6 +6946,8 @@ function openAdminLoginModal(options = {}) {
             }
         } catch (error) {
             errorEl.textContent = 'Authentication failed. Please check your email and password.';
+            setLoginFieldErrorState(passwordInput, true);
+            triggerLoginErrorShake();
             console.error(error);
         } finally {
             submitBtn.disabled = false;
@@ -8157,6 +8714,10 @@ function setupAdminDashboardDelegation() {
         const orderId = statusSelect.getAttribute('data-order-id');
         const order = (Array.isArray(window.allOrders) ? window.allOrders : []).find((entry) => entry.id === orderId);
         if (!order || !orderId) return;
+        const previousStatus = String(order.status || 'Pending Review');
+        const nextStatus = String(statusSelect.value || previousStatus);
+
+        if (nextStatus === previousStatus) return;
 
         if (!requireAdminSession('Please sign in with an authorized admin account before changing order statuses.')) {
             statusSelect.value = order.status || 'Pending Review';
@@ -8164,25 +8725,39 @@ function setupAdminDashboardDelegation() {
         }
 
         try {
-            await updateDoc(doc(db, 'preorders', orderId), { status: statusSelect.value });
-            if (order.orderId) {
-                const publishedFinalPrice = getOrderPublishedFinalPrice(order);
-                const publicStatusPayload = {
-                    orderId: order.orderId,
-                    itemType: order.itemType || order.orderType || 'Unknown',
-                    status: statusSelect.value,
-                    estimatedPrice: estimateOrderRevenue(order),
-                    finalPricePublished: order.finalPricePublished === true,
-                    finalPrice: publishedFinalPrice != null ? publishedFinalPrice : null,
-                    updatedAt: serverTimestamp()
-                };
-                if (order.createdAt) publicStatusPayload.createdAt = order.createdAt;
-                await setDoc(doc(db, 'preorderStatusPublic', order.orderId), publicStatusPayload, { merge: true });
+            const statusUpdate = await updateOrderStatusWithInventoryAtomic(orderId, nextStatus);
+            const inventoryResult = statusUpdate?.inventoryResult || null;
+
+            order.status = nextStatus;
+            if (inventoryResult?.applied) {
+                order.inventoryAppliedAcceptedAt = new Date().toISOString();
+                order.inventoryAppliedDesignId = inventoryResult.designId;
+                order.inventoryAppliedQuantity = inventoryResult.quantity;
             }
-            showAdminToast('Status updated successfully ✨');
+
+            if (statusUpdate?.catalogAfter) {
+                window.premadeKeychainCatalog = statusUpdate.catalogAfter;
+                applyPremadeKeychainCatalogToCurrentDOM();
+            }
+
+            if (inventoryResult?.applied) {
+                let stockMsg = `Stock updated: -${inventoryResult.quantity} ${inventoryResult.designName}. ${inventoryResult.afterStock} left.`;
+                if (inventoryResult.alertLevel === 'critical') {
+                    stockMsg += ' Critical stock level.';
+                } else if (inventoryResult.alertLevel === 'low') {
+                    stockMsg += ' Low stock warning.';
+                } else if (inventoryResult.alertLevel === 'sold-out') {
+                    stockMsg += ' This design is now sold out.';
+                }
+                showAdminToast(`Status updated successfully ✨ ${stockMsg}`);
+            } else {
+                showAdminToast('Status updated successfully ✨');
+            }
         } catch (error) {
             console.error(error);
-            showAdminToast('Failed to update status.', true);
+            statusSelect.value = previousStatus;
+            const detail = error instanceof Error && error.message ? ` ${error.message}` : '';
+            showAdminToast(`Failed to update status.${detail}`, true);
         }
     });
 
@@ -8551,18 +9126,30 @@ function loadAdminDashboard() {
                                 <button type="button" class="nav-btn" id="adminSetAllClosedBtn">Close Both Creators</button>
                                 <button type="button" class="nav-btn" id="adminResetDiscountEditorBtn">New Discount</button>
                             </div>
-                            <section id="adminAvailabilitySection">
-                                ${getTemplateHTML('adminAvailabilityManagerTemplate')}
-                            </section>
-                            <section id="adminPremadeKeychainsSection">
-                                ${getTemplateHTML('adminPremadeKeychainsManagerTemplate')}
-                            </section>
-                            <section id="adminDiscountManagerSection">
-                                ${getTemplateHTML('adminDiscountManagerTemplate')}
-                            </section>
-                            <section id="adminAnnouncementsSection">
-                                ${getTemplateHTML('adminAnnouncementsControlsTemplate')}
-                            </section>
+                            <details class="admin-collapsible admin-collapsible--sub" id="adminAvailabilitySection">
+                                <summary><span class="admin-summary-label">Availability</span></summary>
+                                <div class="admin-collapsible-body">
+                                    ${getTemplateHTML('adminAvailabilityManagerTemplate')}
+                                </div>
+                            </details>
+                            <details class="admin-collapsible admin-collapsible--sub" id="adminPremadeKeychainsSection">
+                                <summary><span class="admin-summary-label">Premade Keychains</span></summary>
+                                <div class="admin-collapsible-body">
+                                    ${getTemplateHTML('adminPremadeKeychainsManagerTemplate')}
+                                </div>
+                            </details>
+                            <details class="admin-collapsible admin-collapsible--sub" id="adminDiscountManagerSection">
+                                <summary><span class="admin-summary-label">Discounts</span></summary>
+                                <div class="admin-collapsible-body">
+                                    ${getTemplateHTML('adminDiscountManagerTemplate')}
+                                </div>
+                            </details>
+                            <details class="admin-collapsible admin-collapsible--sub" id="adminAnnouncementsSection">
+                                <summary><span class="admin-summary-label">Announcements</span></summary>
+                                <div class="admin-collapsible-body">
+                                    ${getTemplateHTML('adminAnnouncementsControlsTemplate')}
+                                </div>
+                            </details>
                         </div>
 
                         <div class="admin-filters">
@@ -8693,6 +9280,14 @@ function loadAdminDashboard() {
         premadeImageInput.addEventListener('change', () => {
             const file = premadeImageInput.files?.[0];
             if (!file) {
+                const currentImage = document.getElementById('btnSavePremadeDesign')?.dataset.currentImage || '';
+                updateAdminPremadeDesignPreview(currentImage, currentImage ? 'Current image will be kept unless you upload a new one.' : 'Upload a picture for this design.');
+                return;
+            }
+
+            if (!/^image\//i.test(file.type || '')) {
+                showAdminToast('Selected file must be an image.', true);
+                premadeImageInput.value = '';
                 const currentImage = document.getElementById('btnSavePremadeDesign')?.dataset.currentImage || '';
                 updateAdminPremadeDesignPreview(currentImage, currentImage ? 'Current image will be kept unless you upload a new one.' : 'Upload a picture for this design.');
                 return;
@@ -8839,17 +9434,21 @@ function loadAdminDashboard() {
         }
 
         const designId = window.currentEditingPremadeDesignId || `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'premade-design'}-${Date.now()}`;
+        const existingDesign = catalog.designs.find((design) => design.id === window.currentEditingPremadeDesignId) || null;
         let image = currentImage;
         const nextDesign = {
             id: designId,
             name,
             image: '',
             subtitle,
-            stock
+            stock,
+            pinned: existingDesign?.pinned === true,
+            sortOrder: existingDesign?.sortOrder ?? (catalog.designs.length + 1)
         };
 
         btn.disabled = true;
         btn.textContent = isEditing ? 'Saving...' : 'Adding...';
+        let saveCompleted = false;
         try {
             if (selectedFile) {
                 image = await buildPremadeCatalogImageSource(selectedFile);
@@ -8868,6 +9467,7 @@ function loadAdminDashboard() {
             setAdminPremadeDesignEditState(null);
             const sourceLabel = getPremadeImageStorageLabel(nextDesign.image);
             showAdminToast(`${isEditing ? 'Premade design updated.' : 'Premade design added.'} Source: ${sourceLabel}.`);
+            saveCompleted = true;
         } catch (error) {
             console.error(error);
             const detail = error instanceof Error && error.message
@@ -8876,12 +9476,29 @@ function loadAdminDashboard() {
             showAdminToast(`Failed to save premade design. ${detail}`, true);
         } finally {
             btn.disabled = false;
-            btn.textContent = isEditing ? 'Save Design' : 'Add Design';
+            if (!saveCompleted) {
+                btn.textContent = isEditing ? 'Save Design' : 'Add Design';
+            }
         }
     });
 
     document.getElementById('btnResetPremadeDesignForm')?.addEventListener('click', () => {
         setAdminPremadeDesignEditState(null);
+    });
+
+    document.getElementById('btnResetPremadeOrderAlpha')?.addEventListener('click', async () => {
+        if (!requireAdminSession('Please sign in with an authorized admin account before resetting premade order.')) return;
+        const catalog = normalizePremadeKeychainCatalog(window.premadeKeychainCatalog);
+        const alphabeticalCatalog = buildAlphabeticalPremadeCatalog(catalog);
+        try {
+            await setDoc(doc(db, 'settings', 'premadeKeychains'), alphabeticalCatalog, { merge: true });
+            window.premadeKeychainCatalog = alphabeticalCatalog;
+            applyPremadeKeychainCatalogToCurrentDOM();
+            showAdminToast('Premade order reset to alphabetical.');
+        } catch (error) {
+            console.error(error);
+            showAdminToast('Failed to reset premade order.', true);
+        }
     });
 
     document.getElementById('adminSetAllOpenBtn')?.addEventListener('click', () => {

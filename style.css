@@ -1901,6 +1901,19 @@ body.admin-login-modal-open {
     overflow: hidden;
 }
 
+.admin-login-modal__dialog.is-error-shake {
+    animation: adminLoginErrorShake 360ms ease;
+}
+
+@keyframes adminLoginErrorShake {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+    100% { transform: translateX(0); }
+}
+
 .admin-login-modal__dialog::before {
     content: '';
     position: absolute;
@@ -1920,10 +1933,17 @@ body.admin-login-modal-open {
     font-size: 2rem;
     line-height: 1;
     padding: 4px 8px;
+    cursor: pointer;
 }
 
 .admin-login-modal__close:hover {
     color: #ffffff;
+}
+
+.admin-login-modal__close:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+    border-radius: 10px;
 }
 
 .admin-login-modal__eyebrow {
@@ -1955,6 +1975,10 @@ body.admin-login-modal-open {
     gap: 12px;
 }
 
+.admin-login-modal__form > * {
+    min-width: 0;
+}
+
 .admin-login-modal__label {
     color: #eef7ff;
     font-size: 0.92rem;
@@ -1963,6 +1987,8 @@ body.admin-login-modal-open {
 }
 
 .admin-login-modal__input {
+    box-sizing: border-box;
+    display: block;
     width: 100%;
     border-radius: 14px;
     border: 1px solid rgba(125, 211, 252, 0.24);
@@ -1980,6 +2006,55 @@ body.admin-login-modal-open {
     box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.16), inset 0 0 10px rgba(255,255,255,0.02);
 }
 
+.admin-login-modal__input.is-invalid {
+    border-color: rgba(244, 63, 94, 0.95);
+    box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.18), inset 0 0 10px rgba(255,255,255,0.02);
+    animation: adminLoginFieldPulse 420ms ease;
+}
+
+@keyframes adminLoginFieldPulse {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.01); }
+    100% { transform: scale(1); }
+}
+
+.admin-login-modal__password-row {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+}
+
+.admin-login-modal__input--password {
+    padding-right: 78px;
+}
+
+.admin-login-modal__password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    min-width: 58px;
+    border-radius: 999px;
+    border: 1px solid rgba(125, 211, 252, 0.35);
+    background: rgba(12, 28, 51, 0.86);
+    color: #dbeafe;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 7px 10px;
+    cursor: pointer;
+}
+
+.admin-login-modal__password-toggle:hover {
+    background: rgba(20, 42, 75, 0.96);
+}
+
+.admin-login-modal__password-toggle:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+}
+
 .admin-login-modal__error {
     min-height: 1.25rem;
     margin: 2px 0 0;
@@ -1995,11 +2070,28 @@ body.admin-login-modal-open {
     color: #cfe8ff;
     font-size: 0.9rem;
     font-weight: 600;
+    cursor: pointer;
 }
 
 .admin-login-modal__remember-input {
-    width: 16px;
-    height: 16px;
+    width: 17px;
+    height: 17px;
+    border-radius: 4px;
+    accent-color: #38bdf8;
+    cursor: pointer;
+}
+
+.admin-login-modal__hint {
+    margin: -2px 0 2px;
+    color: #9fb9cf;
+    font-size: 0.82rem;
+}
+
+.admin-login-modal__caps-hint {
+    margin: -4px 0 2px;
+    color: #fbbf24;
+    font-size: 0.82rem;
+    font-weight: 600;
 }
 
 .admin-login-modal__actions {
@@ -3857,6 +3949,16 @@ body[data-page="reviews"] .reviews-submit-btn {
     box-shadow: 0 6px 20px rgba(248, 113, 113, 0.12);
 }
 
+.premade-card.is-critical {
+    border-color: rgba(248, 113, 113, 0.48);
+    box-shadow: 0 6px 20px rgba(248, 113, 113, 0.1);
+}
+
+.premade-card.is-low {
+    border-color: rgba(250, 204, 21, 0.45);
+    box-shadow: 0 6px 20px rgba(250, 204, 21, 0.12);
+}
+
 .premade-card:hover {
     transform: translateY(-8px) scale(1.03);
     box-shadow: 0 15px 35px rgba(0, 242, 254, 0.5), inset 0 0 20px rgba(255,255,255,0.15);
@@ -3900,6 +4002,18 @@ body[data-page="reviews"] .reviews-submit-btn {
     border-color: rgba(248, 113, 113, 0.28);
     background: rgba(69, 10, 10, 0.28);
     color: #fecaca;
+}
+
+.premade-card__stock.is-critical {
+    border-color: rgba(248, 113, 113, 0.28);
+    background: rgba(127, 29, 29, 0.25);
+    color: #fecaca;
+}
+
+.premade-card__stock.is-low {
+    border-color: rgba(250, 204, 21, 0.32);
+    background: rgba(113, 63, 18, 0.26);
+    color: #fde68a;
 }
 
 .premade-empty-state {
@@ -6310,6 +6424,21 @@ body[data-page="reviews"] .reviews-submit-btn {
     gap: 12px;
     padding-bottom: 4px;
     border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.admin-collapsible--sub {
+    border-color: rgba(125, 211, 252, 0.24);
+    background: linear-gradient(180deg, rgba(6, 15, 31, 0.88), rgba(6, 13, 28, 0.82));
+}
+
+.admin-collapsible--sub > summary {
+    padding: 9px 11px;
+    font-size: 0.86rem;
+    letter-spacing: 0.03em;
+}
+
+.admin-collapsible--sub > .admin-collapsible-body {
+    padding: 8px 8px 10px;
 }
 
 .admin-management-strip {
@@ -9559,6 +9688,79 @@ body[data-page="admin"] .global-sale-banner {
     gap: 12px;
 }
 
+.admin-premade-reorder-hint {
+    margin: 0;
+    color: #bfdbfe;
+    font-size: 0.84rem;
+    letter-spacing: 0.01em;
+}
+
+.admin-premade-section {
+    display: grid;
+    gap: 10px;
+}
+
+.admin-premade-section__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.admin-premade-section__header h4 {
+    margin: 0;
+    color: #e0f2fe;
+    font-size: 0.92rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.admin-premade-section__header span {
+    min-width: 28px;
+    text-align: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #cfe9ff;
+    border: 1px solid rgba(125, 211, 252, 0.28);
+    background: rgba(10, 30, 52, 0.46);
+}
+
+.admin-premade-stock-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-premade-summary-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(125, 211, 252, 0.24);
+    background: rgba(8, 20, 41, 0.5);
+    color: #dbeafe;
+    font-size: 0.8rem;
+}
+
+.admin-premade-summary-pill strong {
+    color: #f8fbff;
+}
+
+.admin-premade-summary-pill.is-low {
+    border-color: rgba(250, 204, 21, 0.36);
+    background: rgba(120, 53, 15, 0.24);
+    color: #fde68a;
+}
+
+.admin-premade-summary-pill.is-critical,
+.admin-premade-summary-pill.is-sold-out {
+    border-color: rgba(248, 113, 113, 0.36);
+    background: rgba(127, 29, 29, 0.24);
+    color: #fecaca;
+}
+
 .admin-premade-preview {
     width: 110px;
     height: 110px;
@@ -9614,6 +9816,12 @@ body[data-page="admin"] .global-sale-banner {
     color: #fde68a;
 }
 
+.admin-premade-image-status[data-mode="selected"] {
+    border-color: rgba(167, 139, 250, 0.34);
+    background: rgba(67, 56, 202, 0.2);
+    color: #ddd6fe;
+}
+
 .admin-premade-image-status[data-mode="path"] {
     border-color: rgba(125, 211, 252, 0.34);
     background: rgba(8, 47, 73, 0.28);
@@ -9631,9 +9839,38 @@ body[data-page="admin"] .global-sale-banner {
     background: rgba(4, 13, 28, 0.56);
 }
 
+.admin-premade-item[draggable="true"] {
+    cursor: grab;
+}
+
+.admin-premade-item.is-dragging {
+    opacity: 0.55;
+    border-style: dashed;
+}
+
+.admin-premade-item.is-drop-target {
+    border-color: rgba(34, 211, 238, 0.8);
+    box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.22);
+}
+
+.admin-premade-item.is-drop-blocked {
+    border-color: rgba(248, 113, 113, 0.78);
+    box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.2);
+}
+
 .admin-premade-item__actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
+}
+
+.admin-premade-drag-handle {
+    cursor: grab;
+}
+
+.admin-premade-item.is-dragging .admin-premade-drag-handle,
+.admin-premade-drag-handle:active {
+    cursor: grabbing;
 }
 
 .admin-premade-item__thumb {
@@ -9656,6 +9893,21 @@ body[data-page="admin"] .global-sale-banner {
     font-size: 1rem;
 }
 
+.admin-premade-pin-indicator {
+    margin-left: 8px;
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #fef3c7;
+    background: rgba(146, 64, 14, 0.24);
+    border: 1px solid rgba(250, 204, 21, 0.36);
+    vertical-align: middle;
+}
+
 .admin-premade-item__info span {
     color: #cbd5e1;
     font-size: 0.9rem;
@@ -9670,6 +9922,19 @@ body[data-page="admin"] .global-sale-banner {
 
 .admin-premade-item__stock.is-sold-out {
     color: #fecaca;
+}
+
+.admin-premade-item__stock.is-critical {
+    color: #fca5a5;
+}
+
+.admin-premade-item__stock.is-low {
+    color: #fde68a;
+}
+
+.admin-premade-move-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .pricing-policy-shell {
