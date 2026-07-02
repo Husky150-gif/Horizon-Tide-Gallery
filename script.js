@@ -109,6 +109,8 @@ window.adminUnsubscribe = null;
 window.adminAnnounceUnsub = null;
 window.adminRefundsUnsub = null;
 window.adminCommissionsUnsub = null;
+window.adminInventoryEventsUnsub = null;
+window.adminPublicStatusUnsub = null;
 window.publicRefundsUnsub = null;
 window.publicCommissionsUnsub = null;
 window.announcementsUnsubscribe = null;
@@ -119,6 +121,12 @@ window.currentEditingCommissionId = null;
 window.currentEditingPremadeDesignId = null;
 window.adminRefundEntries = [];
 window.adminCommissionEntries = [];
+window.adminDiagnosticsState = {
+    lastInventoryEvent: null,
+    lastPublicStatusSyncAtMs: 0,
+    lastPublicStatusOrderId: '',
+    lastRenderedAtMs: 0
+};
 
 const ADMIN_EMAIL_ALLOWLIST = new Set([
     'musicisbae6547@gmail.com',
@@ -6981,6 +6989,14 @@ function clearAdminRealtimeListeners() {
         window.adminCommentsUnsub();
         window.adminCommentsUnsub = null;
     }
+    if (window.adminInventoryEventsUnsub) {
+        window.adminInventoryEventsUnsub();
+        window.adminInventoryEventsUnsub = null;
+    }
+    if (window.adminPublicStatusUnsub) {
+        window.adminPublicStatusUnsub();
+        window.adminPublicStatusUnsub = null;
+    }
 }
 
 function hideAdminIdleLockScreen() {
@@ -8122,6 +8138,116 @@ function updateAdminDashboardOverview() {
     setPanelBadge('adminCommentsCountBadge', commentEntries.length);
     setPanelBadge('adminQueueCountBadge', queueOpenCount);
     setPanelBadge('adminToolsCountBadge', metrics.urgentActionsCount);
+    renderAdminDiagnosticsPanel();
+}
+
+function getAdminInventoryEventSummary(eventEntry) {
+    if (!eventEntry || typeof eventEntry !== 'object') {
+        return {
+            detail: 'No inventory event captured yet.',
+            at: 'Awaiting first Accepted deduction.'
+        };
+    }
+
+    const designName = String(eventEntry.designName || eventEntry.designId || 'Unknown design');
+    const quantity = Math.max(0, Number(eventEntry.quantity) || 0);
+    const beforeStock = Number(eventEntry.beforeStock);
+    const afterStock = Number(eventEntry.afterStock);
+    const stockPart = Number.isFinite(beforeStock) && Number.isFinite(afterStock)
+        ? `${beforeStock} -> ${afterStock}`
+        : 'stock updated';
+
+    const createdAtMs = getComparableTimestampMs(eventEntry.createdAt);
+    const timeLabel = createdAtMs
+        ? `${new Date(createdAtMs).toLocaleString()} (${getRelativeTimeLabel(createdAtMs)})`
+        : 'Time unavailable';
+
+    return {
+        detail: `${designName} (-${quantity}) | ${stockPart} | Event ${String(eventEntry.id || 'n/a')}`,
+        at: timeLabel
+    };
+}
+
+function getAdminPremadeStockSnapshotText(catalogInput = window.premadeKeychainCatalog) {
+    const catalog = normalizePremadeKeychainCatalog(catalogInput);
+    if (!Array.isArray(catalog.designs) || catalog.designs.length === 0) {
+        return 'No premade designs loaded.';
+    }
+
+    return catalog.designs
+        .map((design) => `${design.name}: ${design.stock}`)
+        .join(' | ');
+}
+
+function renderAdminDiagnosticsPanel() {
+    const inventoryDetailEl = document.getElementById('adminDiagInventoryEvent');
+    const inventoryAtEl = document.getElementById('adminDiagInventoryEventTime');
+    const statusSyncEl = document.getElementById('adminDiagStatusSync');
+    const stockSnapshotEl = document.getElementById('adminDiagStockSnapshot');
+    const panelUpdatedEl = document.getElementById('adminDiagPanelUpdated');
+    if (!inventoryDetailEl || !inventoryAtEl || !statusSyncEl || !stockSnapshotEl || !panelUpdatedEl) return;
+
+    const state = window.adminDiagnosticsState || {};
+    const inventorySummary = getAdminInventoryEventSummary(state.lastInventoryEvent);
+    inventoryDetailEl.textContent = inventorySummary.detail;
+    inventoryAtEl.textContent = inventorySummary.at;
+
+    if (state.lastPublicStatusSyncAtMs) {
+        const relative = getRelativeTimeLabel(state.lastPublicStatusSyncAtMs);
+        const absolute = new Date(state.lastPublicStatusSyncAtMs).toLocaleString();
+        const orderLabel = state.lastPublicStatusOrderId ? ` | Order ${state.lastPublicStatusOrderId}` : '';
+        statusSyncEl.textContent = `${absolute} (${relative})${orderLabel}`;
+    } else if (state.lastPublicStatusOrderId) {
+        statusSyncEl.textContent = `Timestamp unavailable | Order ${state.lastPublicStatusOrderId}`;
+    } else {
+        statusSyncEl.textContent = 'No public status sync detected yet.';
+    }
+
+    stockSnapshotEl.textContent = getAdminPremadeStockSnapshotText(window.premadeKeychainCatalog);
+
+    const nowMs = Date.now();
+    window.adminDiagnosticsState = {
+        ...state,
+        lastRenderedAtMs: nowMs
+    };
+    panelUpdatedEl.textContent = `Panel updated ${getRelativeTimeLabel(nowMs)}`;
+}
+
+function attachAdminDiagnosticsListeners() {
+    if (window.adminInventoryEventsUnsub) {
+        window.adminInventoryEventsUnsub();
+        window.adminInventoryEventsUnsub = null;
+    }
+    if (window.adminPublicStatusUnsub) {
+        window.adminPublicStatusUnsub();
+        window.adminPublicStatusUnsub = null;
+    }
+
+    const inventoryQuery = query(collection(db, 'inventoryEvents'), orderBy('createdAt', 'desc'), limit(1));
+    window.adminInventoryEventsUnsub = onSnapshot(inventoryQuery, (snapshot) => {
+        const latest = snapshot.docs[0];
+        window.adminDiagnosticsState = {
+            ...(window.adminDiagnosticsState || {}),
+            lastInventoryEvent: latest ? { id: latest.id, ...latest.data() } : null
+        };
+        renderAdminDiagnosticsPanel();
+    }, (error) => {
+        console.warn('Inventory diagnostics listener failed:', error);
+    });
+
+    const publicStatusQuery = query(collection(db, 'preorderStatusPublic'), orderBy('updatedAt', 'desc'), limit(1));
+    window.adminPublicStatusUnsub = onSnapshot(publicStatusQuery, (snapshot) => {
+        const latest = snapshot.docs[0];
+        const data = latest ? latest.data() : null;
+        window.adminDiagnosticsState = {
+            ...(window.adminDiagnosticsState || {}),
+            lastPublicStatusSyncAtMs: getComparableTimestampMs(data?.updatedAt),
+            lastPublicStatusOrderId: String(data?.orderId || latest?.id || '')
+        };
+        renderAdminDiagnosticsPanel();
+    }, (error) => {
+        console.warn('Public status diagnostics listener failed:', error);
+    });
 }
 
 function initializeAdminCollapsibleState() {
@@ -8134,7 +8260,8 @@ function initializeAdminCollapsibleState() {
         adminSectionReviews: false,
         adminSectionComments: false,
         adminSectionQueue: false,
-        adminSectionTools: false
+        adminSectionTools: false,
+        adminDiagnosticsPanel: false
     };
 
     panels.forEach((panel) => {
@@ -9150,6 +9277,30 @@ function loadAdminDashboard() {
                                     ${getTemplateHTML('adminAnnouncementsControlsTemplate')}
                                 </div>
                             </details>
+                            <details class="admin-collapsible admin-collapsible--sub" id="adminDiagnosticsPanel">
+                                <summary><span class="admin-summary-label">Diagnostics Snapshot</span></summary>
+                                <div class="admin-collapsible-body">
+                                    <div class="admin-diagnostics-grid" aria-live="polite">
+                                        <div class="admin-diagnostics-item">
+                                            <h4>Last Inventory Event</h4>
+                                            <p id="adminDiagInventoryEvent">No inventory event captured yet.</p>
+                                            <small id="adminDiagInventoryEventTime">Awaiting first Accepted deduction.</small>
+                                        </div>
+                                        <div class="admin-diagnostics-item">
+                                            <h4>Last Public Status Sync</h4>
+                                            <p id="adminDiagStatusSync">No public status sync detected yet.</p>
+                                        </div>
+                                        <div class="admin-diagnostics-item admin-diagnostics-item--full">
+                                            <h4>Premade Stock Snapshot</h4>
+                                            <p id="adminDiagStockSnapshot">Loading stock snapshot...</p>
+                                        </div>
+                                        <div class="admin-diagnostics-item admin-diagnostics-item--meta">
+                                            <small id="adminDiagPanelUpdated">Panel updated just now</small>
+                                            <button type="button" class="admin-btn-edit" id="adminDiagRefreshBtn">Refresh Snapshot</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </details>
                         </div>
 
                         <div class="admin-filters">
@@ -9264,6 +9415,8 @@ function loadAdminDashboard() {
     renderAdminReviewsManager();
     renderAdminCommentsManager();
     updateAdminDashboardOverview();
+    renderAdminDiagnosticsPanel();
+    attachAdminDiagnosticsListeners();
 
     window.adminOrderFilterState = { status: 'All', search: '' };
 
@@ -9702,7 +9855,12 @@ function loadAdminDashboard() {
         renderAdminReviewsManager();
         renderAdminCommentsManager();
         updateAdminDashboardOverview();
+        renderAdminDiagnosticsPanel();
         showAdminToast('Mission data refreshed.');
+    });
+    document.getElementById('adminDiagRefreshBtn')?.addEventListener('click', () => {
+        renderAdminDiagnosticsPanel();
+        showAdminToast('Diagnostics snapshot refreshed.');
     });
     document.getElementById('adminToolsClearSearchBtn')?.addEventListener('click', () => {
         const quickSearch = document.getElementById('adminQuickSearch');
