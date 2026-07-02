@@ -3,7 +3,7 @@
 // ==========================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp, doc, updateDoc, deleteDoc, where, getDoc, setDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import { initializeFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp, doc, updateDoc, deleteDoc, where, getDoc, setDoc, runTransaction, deleteField } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
 import { getAuth, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence, inMemoryPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
@@ -20,7 +20,11 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db = initializeFirestore(app, {
+    // Reduces noisy stream abort/reconnect behavior in local/proxied networks.
+    experimentalAutoDetectLongPolling: true,
+    useFetchStreams: false
+});
 const storage = getStorage(app); 
 const auth = getAuth(app); 
 
@@ -136,6 +140,9 @@ const ADMIN_EMAIL_ALLOWLIST = new Set([
 
 const ADMIN_PERSISTENCE_PREF_KEY = 'hz_admin_stay_signed_in';
 const ADMIN_REVENUE_STATUSES = new Set(['accepted', 'approved', 'paid', 'in progress', 'finished', 'shipped']);
+const ADMIN_REVENUE_CALCULATOR_PREF_KEY = 'hz_admin_revenue_calc';
+const ADMIN_REVENUE_BASIS_OPTIONS = new Set(['estimate', 'final-first', 'published-final-first']);
+const ADMIN_REVENUE_SCOPE_OPTIONS = new Set(['pipeline', 'paid-plus', 'completed-only']);
 const ADMIN_IDLE_TIMEOUT_MS = 10 * 60 * 1000;
 const NAVIGATION_ENTRY = typeof performance !== 'undefined' && typeof performance.getEntriesByType === 'function'
     ? performance.getEntriesByType('navigation')[0]
@@ -155,6 +162,19 @@ window.adminCommentFilterState = {
 window.adminAnnouncementsEntries = [];
 window.adminCommentsEntries = [];
 window.adminCommentsUnsub = null;
+window.adminRevenueCalculatorOptions = (() => {
+    try {
+        const raw = localStorage.getItem(ADMIN_REVENUE_CALCULATOR_PREF_KEY);
+        if (!raw) return { basis: 'estimate', scope: 'pipeline' };
+        const parsed = JSON.parse(raw);
+        return {
+            basis: ADMIN_REVENUE_BASIS_OPTIONS.has(parsed?.basis) ? parsed.basis : 'estimate',
+            scope: ADMIN_REVENUE_SCOPE_OPTIONS.has(parsed?.scope) ? parsed.scope : 'pipeline'
+        };
+    } catch {
+        return { basis: 'estimate', scope: 'pipeline' };
+    }
+})();
 
 let adminIdleTimerId = null;
 let adminIdleActivityController = null;
@@ -1625,7 +1645,7 @@ function updateAdminPremadeDesignPreview(imageSrc = '', helperText = '') {
             URL.revokeObjectURL(previousObjectUrl);
             delete previewImg.dataset.objectUrl;
         }
-        previewImg.src = imageSrc || '';
+        previewImg.src = imageSrc || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
         previewImg.alt = imageSrc ? 'Premade design preview' : '';
         if (imageSrc.startsWith('blob:')) {
             previewImg.dataset.objectUrl = imageSrc;
@@ -2738,6 +2758,8 @@ function showTOSModal() {
 }
 
 // === LIGHTBOX LOGIC ===
+const LIGHTBOX_PLACEHOLDER_SRC = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
 function openLightbox(imgSrc, altText) {
     const overlay = document.getElementById('galleryLightboxOverlay');
     const imgElement = document.getElementById('galleryLightboxImage');
@@ -2780,7 +2802,7 @@ function closeLightbox() {
     overlay.classList.remove('active');
     setTimeout(() => {
         overlay.style.display = 'none';
-        document.getElementById('galleryLightboxImage').src = '';
+        document.getElementById('galleryLightboxImage').src = LIGHTBOX_PLACEHOLDER_SRC;
     }, 300);
 
     if (window._lightboxCleanup) {
@@ -7355,6 +7377,63 @@ function renderActiveDiscountsList() {
     });
 }
 
+function normalizeAdminRevenueBasis(value) {
+    return ADMIN_REVENUE_BASIS_OPTIONS.has(value) ? value : 'estimate';
+}
+
+function normalizeAdminRevenueScope(value) {
+    return ADMIN_REVENUE_SCOPE_OPTIONS.has(value) ? value : 'pipeline';
+}
+
+function getAdminRevenueCalculatorOptions() {
+    const state = window.adminRevenueCalculatorOptions || {};
+    return {
+        basis: normalizeAdminRevenueBasis(state.basis),
+        scope: normalizeAdminRevenueScope(state.scope)
+    };
+}
+
+function setAdminRevenueCalculatorOptions(nextOptions = {}) {
+    const current = getAdminRevenueCalculatorOptions();
+    const updated = {
+        basis: normalizeAdminRevenueBasis(nextOptions.basis ?? current.basis),
+        scope: normalizeAdminRevenueScope(nextOptions.scope ?? current.scope)
+    };
+
+    window.adminRevenueCalculatorOptions = updated;
+    try {
+        localStorage.setItem(ADMIN_REVENUE_CALCULATOR_PREF_KEY, JSON.stringify(updated));
+    } catch {
+        // Ignore storage failures so analytics controls still work this session.
+    }
+    return updated;
+}
+
+function getRevenueStatusScopeSet(scope) {
+    const normalizedScope = normalizeAdminRevenueScope(scope);
+    if (normalizedScope === 'paid-plus') {
+        return new Set(['paid', 'in progress', 'finished', 'shipped']);
+    }
+    if (normalizedScope === 'completed-only') {
+        return new Set(['finished', 'shipped']);
+    }
+    return new Set(ADMIN_REVENUE_STATUSES);
+}
+
+function getRevenueScopeLabel(scope) {
+    const normalizedScope = normalizeAdminRevenueScope(scope);
+    if (normalizedScope === 'paid-plus') return 'Paid+ Total';
+    if (normalizedScope === 'completed-only') return 'Completed Total';
+    return 'Pipeline Total';
+}
+
+function getRevenueBasisLabel(basis) {
+    const normalizedBasis = normalizeAdminRevenueBasis(basis);
+    if (normalizedBasis === 'final-first') return 'Final Price Preferred';
+    if (normalizedBasis === 'published-final-first') return 'Published Final Preferred';
+    return 'Estimated Pricing';
+}
+
 function normalizeOrderStatus(status) {
     return String(status || 'Pending Review').trim().toLowerCase();
 }
@@ -7405,6 +7484,68 @@ function getOrderPublishedFinalPrice(order) {
     if (!order || order.finalPricePublished !== true) return null;
     const parsed = parseAdminPriceInput(order.finalPrice);
     return parsed == null ? null : parsed;
+}
+
+function roundMoney(value) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return 0;
+    return Math.round(numeric * 100) / 100;
+}
+
+function getOrderQuoteAmount(order) {
+    const explicitQuote = parseAdminPriceInput(order?.quoteAmount);
+    return explicitQuote;
+}
+
+function getOrderPaidAmount(order) {
+    const parsed = parseAdminPriceInput(order?.amountPaid);
+    return parsed == null ? 0 : parsed;
+}
+
+function isLopsideFursuitOrder(order) {
+    return getOrderServiceType(order) === 'fursuits';
+}
+
+function getOrderLopsideDepositTarget(order) {
+    if (!isLopsideFursuitOrder(order)) return 0;
+    const quote = getOrderQuoteAmount(order);
+    if (quote == null) return 0;
+    return roundMoney(quote * 0.3);
+}
+
+function getOrderLopsideDepositCollected(order) {
+    const explicitAmount = parseAdminPriceInput(order?.lopsideDepositPaidAmount);
+    if (explicitAmount != null) return explicitAmount;
+
+    const target = getOrderLopsideDepositTarget(order);
+    if (target <= 0) return 0;
+
+    if (order?.lopsideDepositPaid === true) return target;
+    return Math.min(getOrderPaidAmount(order), target);
+}
+
+function getOrderRemainingBalance(order) {
+    const quoteAmount = getOrderQuoteAmount(order);
+    if (quoteAmount == null) return null;
+
+    const paidAmount = getOrderPaidAmount(order);
+    const depositCredit = isLopsideFursuitOrder(order) ? getOrderLopsideDepositCollected(order) : 0;
+    return Math.max(0, roundMoney(quoteAmount - paidAmount - depositCredit));
+}
+
+function getOrderRevenueValue(order, basis = 'estimate') {
+    const normalizedBasis = normalizeAdminRevenueBasis(basis);
+    if (normalizedBasis === 'estimate') return estimateOrderRevenue(order);
+
+    if (normalizedBasis === 'published-final-first') {
+        const publishedFinal = getOrderPublishedFinalPrice(order);
+        if (publishedFinal != null) return publishedFinal;
+        return estimateOrderRevenue(order);
+    }
+
+    const anyFinal = parseAdminPriceInput(order?.finalPrice);
+    if (anyFinal != null) return anyFinal;
+    return estimateOrderRevenue(order);
 }
 
 function getCommissionEstimatedPriceValue(commission) {
@@ -7476,6 +7617,12 @@ function computeAdminDashboardMetrics() {
     const urgentActions = pendingOrders.length + openRefunds.length + waitingPayments.length;
     const activeSale = Array.isArray(window.activeSales) && window.activeSales.length > 0 ? window.activeSales[0] : null;
     const availability = normalizeHomeAvailability(window.homeAvailability);
+    const revenueOptions = getAdminRevenueCalculatorOptions();
+    const revenueStatusScope = getRevenueStatusScopeSet(revenueOptions.scope);
+
+    const scopedRevenueOrders = orders.filter((order) => {
+        return revenueStatusScope.has(normalizeOrderStatus(order.status));
+    });
 
     const acceptedOrders = orders.filter(isRevenueEligible);
     const completedOrders = orders.filter((o) => {
@@ -7487,29 +7634,32 @@ function computeAdminDashboardMetrics() {
         return status === 'pending review' || status === 'new' || status === 'reviewed' || status === 'accepted';
     });
 
-    const estimatedAcceptedRevenue = acceptedOrders.reduce((sum, order) => sum + estimateOrderRevenue(order), 0);
-    const estimatedPendingRevenue = pendingRevenueOrders.reduce((sum, order) => sum + estimateOrderRevenue(order), 0);
-    const estimatedCompletedRevenue = completedOrders.reduce((sum, order) => sum + estimateOrderRevenue(order), 0);
+    const revenueTotal = scopedRevenueOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0);
+    const estimatedAcceptedRevenue = acceptedOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0);
+    const estimatedPendingRevenue = pendingRevenueOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0);
+    const estimatedCompletedRevenue = completedOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0);
+    const totalAmountPaid = orders.reduce((sum, order) => sum + getOrderPaidAmount(order), 0);
+    const lopsideDepositCollected = orders.reduce((sum, order) => sum + getOrderLopsideDepositCollected(order), 0);
 
     const revenueByCreator = { husky: 0, lopside: 0 };
     const revenueByService = { art: 0, animation: 0, fursuits: 0, keychains: 0, stickers: 0 };
-    acceptedOrders.forEach((order) => {
+    scopedRevenueOrders.forEach((order) => {
         const serviceType = getOrderServiceType(order);
         const creator = getOrderCreator(serviceType);
-        const value = estimateOrderRevenue(order);
+        const value = getOrderRevenueValue(order, revenueOptions.basis);
         revenueByCreator[creator] += value;
         if (revenueByService[serviceType] != null) revenueByService[serviceType] += value;
     });
 
     const monthlyBuckets = getMonthBuckets();
-    acceptedOrders.forEach((order) => {
+    scopedRevenueOrders.forEach((order) => {
         const orderTime = getOrderTimestampMs(order);
         const orderDate = orderTime ? new Date(orderTime) : null;
         if (!orderDate || orderDate.getFullYear() !== new Date().getFullYear()) return;
 
         const key = getMonthKeyFromMs(orderTime);
         const bucket = monthlyBuckets.find((item) => item.key === key);
-        if (bucket) bucket.value += estimateOrderRevenue(order);
+        if (bucket) bucket.value += getOrderRevenueValue(order, revenueOptions.basis);
     });
 
     const newestOrder = [...orders].sort((a, b) => getOrderTimestampMs(b) - getOrderTimestampMs(a))[0] || null;
@@ -7546,6 +7696,13 @@ function computeAdminDashboardMetrics() {
         huskyOpenSlots: Math.max(0, Number(availability.artists.husky.slots) || 0),
         lopsideOpenSlots: Math.max(0, Number(availability.artists.lopside.slots) || 0),
         responseTimeLabel: availability.responseTime || 'Not set',
+        revenueTotal,
+        revenueScopeLabel: getRevenueScopeLabel(revenueOptions.scope),
+        revenueBasisLabel: getRevenueBasisLabel(revenueOptions.basis),
+        revenueScope: revenueOptions.scope,
+        revenueBasis: revenueOptions.basis,
+        totalAmountPaid,
+        lopsideDepositCollected,
         estimatedAcceptedRevenue,
         estimatedPendingRevenue,
         estimatedCompletedRevenue,
@@ -7963,7 +8120,9 @@ function updateAdminDashboardOverview() {
             rowClass: 'admin-overview-row--business',
             title: 'Business Health',
             cards: [
-                { group: 'Business Health', label: 'Revenue', value: formatMoney(metrics.estimatedAcceptedRevenue) },
+                { group: 'Business Health', label: 'Revenue', value: formatMoney(metrics.revenueTotal) },
+                { group: 'Business Health', label: 'Paid So Far', value: formatMoney(metrics.totalAmountPaid) },
+                { group: 'Business Health', label: 'Lopside Deposits', value: formatMoney(metrics.lopsideDepositCollected) },
                 { group: 'Business Health', label: 'Active Work', value: metrics.activeCommissionsCount },
                 { group: 'Business Health', label: 'Open Slots', value: metrics.huskyOpenSlots + metrics.lopsideOpenSlots }
             ]
@@ -8015,16 +8174,17 @@ function updateAdminDashboardOverview() {
     chartContainer.innerHTML = `
         <article class="admin-chart-card">
             <h3>Revenue Observatory | By Month</h3>
-            <p>Glowing monthly trend from accepted and active work.</p>
+            <p>Mode: ${escapeHTML(metrics.revenueBasisLabel)} | Scope: ${escapeHTML(metrics.revenueScopeLabel)}</p>
             ${renderWidgetStatChips([
                 { label: 'This Month', value: formatMoney(metrics.monthlyBuckets[metrics.monthlyBuckets.length - 1]?.value || 0) },
-                { label: 'Accepted Total', value: formatMoney(metrics.estimatedAcceptedRevenue) }
+                { label: metrics.revenueScopeLabel, value: formatMoney(metrics.revenueTotal) },
+                { label: 'Paid So Far', value: formatMoney(metrics.totalAmountPaid) }
             ])}
             ${renderMiniLineChart(metrics.monthlyBuckets.map((item) => ({ label: item.label, value: item.value })))}
         </article>
         <article class="admin-chart-card">
             <h3>Revenue Observatory | By Creator</h3>
-            <p>Compact creator split across Husky and Lopside.</p>
+            <p>Compact creator split using the selected revenue mode.</p>
             ${renderWidgetStatChips([
                 { label: 'Husky', value: formatMoney(metrics.revenueByCreator.husky) },
                 { label: 'Lopside', value: formatMoney(metrics.revenueByCreator.lopside) }
@@ -8038,7 +8198,7 @@ function updateAdminDashboardOverview() {
         </article>
         <article class="admin-chart-card">
             <h3>Commission Pipeline</h3>
-            <p>Pending vs accepted vs completed estimated value flow.</p>
+            <p>Pending vs accepted vs completed value flow for the selected basis.</p>
             ${renderPipelineChart(statusRows)}
         </article>
     `;
@@ -8268,6 +8428,49 @@ function initializeAdminCollapsibleState() {
         if (!(panel instanceof HTMLDetailsElement)) return;
         panel.open = Boolean(defaultOpenMap[panel.id]);
     });
+}
+
+function renderAdminRevenueCalculatorControls() {
+    const basisSelect = document.getElementById('adminRevenueBasisSelect');
+    const scopeSelect = document.getElementById('adminRevenueScopeSelect');
+    const hintEl = document.getElementById('adminRevenueControlHint');
+    if (!(basisSelect instanceof HTMLSelectElement) || !(scopeSelect instanceof HTMLSelectElement)) return;
+
+    const options = getAdminRevenueCalculatorOptions();
+    basisSelect.value = options.basis;
+    scopeSelect.value = options.scope;
+
+    if (hintEl instanceof HTMLElement) {
+        const basisLabel = getRevenueBasisLabel(options.basis);
+        const scopeLabel = getRevenueScopeLabel(options.scope);
+        hintEl.textContent = `Current mode: ${basisLabel} | ${scopeLabel}`;
+    }
+}
+
+function bindAdminRevenueCalculatorControls() {
+    const basisSelect = document.getElementById('adminRevenueBasisSelect');
+    const scopeSelect = document.getElementById('adminRevenueScopeSelect');
+    if (!(basisSelect instanceof HTMLSelectElement) || !(scopeSelect instanceof HTMLSelectElement)) return;
+
+    if (basisSelect.dataset.bound !== 'true') {
+        basisSelect.dataset.bound = 'true';
+        basisSelect.addEventListener('change', () => {
+            setAdminRevenueCalculatorOptions({ basis: basisSelect.value });
+            renderAdminRevenueCalculatorControls();
+            updateAdminDashboardOverview();
+            showAdminToast('Revenue basis updated.');
+        });
+    }
+
+    if (scopeSelect.dataset.bound !== 'true') {
+        scopeSelect.dataset.bound = 'true';
+        scopeSelect.addEventListener('change', () => {
+            setAdminRevenueCalculatorOptions({ scope: scopeSelect.value });
+            renderAdminRevenueCalculatorControls();
+            updateAdminDashboardOverview();
+            showAdminToast('Revenue scope updated.');
+        });
+    }
 }
 
 function bindAdminDashboardNavigation() {
@@ -8765,6 +8968,114 @@ function setupAdminDashboardDelegation() {
             return;
         }
 
+        if (button.matches('.admin-save-payment-tracker-btn')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before saving payment tracking.')) return;
+
+            const orderId = button.getAttribute('data-order-id');
+            const order = (Array.isArray(window.allOrders) ? window.allOrders : []).find((entry) => entry.id === orderId);
+            if (!orderId || !order) return;
+
+            const quoteInput = document.getElementById(`quote-amount-${orderId}`);
+            const paidInput = document.getElementById(`amount-paid-${orderId}`);
+            const depositPaidInput = document.getElementById(`lopside-deposit-paid-${orderId}`);
+            const depositAmountInput = document.getElementById(`lopside-deposit-amount-${orderId}`);
+            if (!(quoteInput instanceof HTMLInputElement) || !(paidInput instanceof HTMLInputElement)) return;
+
+            const quoteAmount = parseAdminPriceInput(quoteInput.value);
+            const amountPaid = parseAdminPriceInput(paidInput.value);
+            if (amountPaid == null) {
+                showAdminToast('Paid amount must be a valid non-negative value.', true);
+                return;
+            }
+
+            const hasLopsideFursuitDeposit = isLopsideFursuitOrder(order);
+            const depositPaid = hasLopsideFursuitDeposit && depositPaidInput instanceof HTMLInputElement
+                ? depositPaidInput.checked
+                : false;
+            const depositAmount = hasLopsideFursuitDeposit && depositAmountInput instanceof HTMLInputElement
+                ? parseAdminPriceInput(depositAmountInput.value)
+                : null;
+
+            const updatePayload = {
+                amountPaid,
+                paymentTrackingUpdatedAt: serverTimestamp(),
+                paymentTrackingUpdatedBy: auth.currentUser?.email || 'admin'
+            };
+
+            if (quoteAmount != null) {
+                updatePayload.quoteAmount = quoteAmount;
+            } else {
+                updatePayload.quoteAmount = deleteField();
+            }
+
+            if (hasLopsideFursuitDeposit) {
+                if (quoteAmount == null) {
+                    updatePayload.lopsideDepositPaid = false;
+                    updatePayload.lopsideDepositPaidAmount = 0;
+                } else {
+                    updatePayload.lopsideDepositPaid = depositPaid;
+                    updatePayload.lopsideDepositPaidAmount = depositAmount ?? 0;
+                }
+            }
+
+            if (quoteAmount == null) {
+                updatePayload.remainingBalance = deleteField();
+            } else {
+                const nextOrderState = {
+                    ...order,
+                    quoteAmount,
+                    amountPaid
+                };
+
+                if (hasLopsideFursuitDeposit) {
+                    nextOrderState.lopsideDepositPaid = updatePayload.lopsideDepositPaid;
+                    nextOrderState.lopsideDepositPaidAmount = updatePayload.lopsideDepositPaidAmount;
+                }
+
+                updatePayload.remainingBalance = getOrderRemainingBalance(nextOrderState);
+            }
+
+            button.disabled = true;
+            try {
+                await updateDoc(doc(db, 'preorders', orderId), updatePayload);
+                showAdminToast('Payment tracker saved.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to save payment tracker.', true);
+            } finally {
+                button.disabled = false;
+            }
+            return;
+        }
+
+        if (button.matches('.admin-clear-payment-tracker-btn')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before clearing quote tracking.')) return;
+
+            const orderId = button.getAttribute('data-order-id');
+            const order = (Array.isArray(window.allOrders) ? window.allOrders : []).find((entry) => entry.id === orderId);
+            if (!orderId || !order) return;
+
+            button.disabled = true;
+            try {
+                const clearPayload = {
+                    quoteAmount: deleteField(),
+                    remainingBalance: deleteField(),
+                    lopsideDepositPaid: deleteField(),
+                    lopsideDepositPaidAmount: deleteField(),
+                    paymentTrackingUpdatedAt: serverTimestamp(),
+                    paymentTrackingUpdatedBy: auth.currentUser?.email || 'admin'
+                };
+                await updateDoc(doc(db, 'preorders', orderId), clearPayload);
+                showAdminToast('Quote and deposit tracking cleared for this order.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to clear quote tracking.', true);
+            } finally {
+                button.disabled = false;
+            }
+            return;
+        }
+
         if (button.matches('.admin-save-commission-final-price-btn')) {
             if (!requireAdminSession('Please sign in with an authorized admin account before saving commission final prices.')) return;
             const id = button.getAttribute('data-id');
@@ -9054,6 +9365,25 @@ function loadAdminDashboard() {
 
                 <section class="admin-dashboard-band" aria-labelledby="adminAnalyticsHeading">
                     <h2 id="adminAnalyticsHeading" class="admin-zone-heading">Analytics</h2>
+                    <div class="admin-revenue-controls" aria-label="Revenue calculator settings">
+                        <label class="admin-label" for="adminRevenueBasisSelect">
+                            Revenue Basis
+                            <select id="adminRevenueBasisSelect" class="admin-input">
+                                <option value="estimate">Estimated Pricing</option>
+                                <option value="final-first">Final Price Preferred</option>
+                                <option value="published-final-first">Published Final Preferred</option>
+                            </select>
+                        </label>
+                        <label class="admin-label" for="adminRevenueScopeSelect">
+                            Revenue Scope
+                            <select id="adminRevenueScopeSelect" class="admin-input">
+                                <option value="pipeline">Pipeline (Accepted+)</option>
+                                <option value="paid-plus">Paid and Beyond</option>
+                                <option value="completed-only">Completed Only</option>
+                            </select>
+                        </label>
+                        <p id="adminRevenueControlHint" class="admin-revenue-controls__hint"></p>
+                    </div>
                     <section class="admin-revenue-grid" id="adminRevenuePanels"></section>
                 </section>
 
@@ -9404,6 +9734,8 @@ function loadAdminDashboard() {
     initializeAdminCollapsibleState();
     setupAdminDashboardDelegation();
     startAdminAvailabilityLastSavedTicker();
+    renderAdminRevenueCalculatorControls();
+    bindAdminRevenueCalculatorControls();
     
     renderActiveDiscountsList();
     renderAdminAvailabilitySettings();
@@ -9854,6 +10186,7 @@ function loadAdminDashboard() {
         applyCommissionAdminFilters();
         renderAdminReviewsManager();
         renderAdminCommentsManager();
+        renderAdminRevenueCalculatorControls();
         updateAdminDashboardOverview();
         renderAdminDiagnosticsPanel();
         showAdminToast('Mission data refreshed.');
@@ -10757,10 +11090,19 @@ function renderAdminOrders(ordersArr) {
         };
 
         const getPreviewText = (value, limit = 180) => {
-            const raw = getValue(value).replace(/\s+/g, ' ');
-            if (!raw) return 'No notes provided.';
-            if (raw.length <= limit) return raw;
-            return `${raw.slice(0, limit)}...`;
+            const rawValue = getValue(value);
+            if (!rawValue) return 'No notes provided.';
+
+            // Keep preview focused on the user's message and avoid flattening the auto-appended Details block.
+            const [primaryNotes] = rawValue.split(/\n\s*details\s*:\s*\n/i);
+            const normalized = (primaryNotes || rawValue).replace(/\s+/g, ' ').trim();
+            if (!normalized) return 'No notes provided.';
+            if (normalized.length <= limit) return normalized;
+            const safeLimit = Math.max(20, limit);
+            const cut = normalized.slice(0, safeLimit);
+            const lastSpace = cut.lastIndexOf(' ');
+            const cleanCut = lastSpace > 24 ? cut.slice(0, lastSpace) : cut;
+            return `${cleanCut.trim()}...`;
         };
 
         const buildOrderDetailRows = () => {
@@ -10816,13 +11158,45 @@ function renderAdminOrders(ordersArr) {
         const displayName = order.name || 'Unknown';
         const serviceType = getOrderServiceType(order);
         const creatorLabel = getOrderCreator(serviceType) === 'lopside' ? 'Lopside' : 'Husky';
-        const estimatedPrice = formatMoney(estimateOrderRevenue(order));
         const rawFinalPrice = parseAdminPriceInput(order.finalPrice);
         const finalPriceInputValue = rawFinalPrice != null ? String(rawFinalPrice) : '';
         const isFinalPublished = order.finalPricePublished === true;
+        const finalMetaValue = rawFinalPrice != null
+            ? formatMoney(rawFinalPrice)
+            : (isFinalPublished ? 'Published (no value)' : 'Not set');
+        const quoteAmount = getOrderQuoteAmount(order);
+        const paidAmount = getOrderPaidAmount(order);
+        const remainingBalance = getOrderRemainingBalance(order);
+        const showLopsideDepositControls = isLopsideFursuitOrder(order);
+        const lopsideDepositTarget = getOrderLopsideDepositTarget(order);
+        const lopsideDepositCollected = getOrderLopsideDepositCollected(order);
+        const lopsideDepositMarkedPaid = order.lopsideDepositPaid === true || lopsideDepositCollected > 0;
+        const quoteInputValue = quoteAmount == null ? '' : String(quoteAmount);
         const finalPriceStateLabel = isFinalPublished
             ? `Published to Client: ${rawFinalPrice != null ? formatMoney(rawFinalPrice) : 'No value set'}`
             : 'Draft / Admin Only';
+        const paymentBaseLabel = quoteAmount == null
+            ? `Paid ${formatMoney(paidAmount)} | Quote unset`
+            : `Paid ${formatMoney(paidAmount)} | Rem ${formatMoney(remainingBalance)}`;
+        const paymentStateLabel = showLopsideDepositControls
+            ? `${paymentBaseLabel} | Dep ${formatMoney(lopsideDepositCollected)}/${formatMoney(lopsideDepositTarget)}`
+            : paymentBaseLabel;
+        const depositControlsHtml = showLopsideDepositControls
+            ? `
+                <label class="admin-order-finance-field admin-payment-deposit-toggle" for="lopside-deposit-paid-${order.id}">
+                    <span class="admin-final-price-label">Lopside Deposit</span>
+                    <span class="admin-checkbox-label-wrap">
+                        <input type="checkbox" id="lopside-deposit-paid-${order.id}" ${lopsideDepositMarkedPaid ? 'checked' : ''}>
+                        30% Deposit Paid
+                    </span>
+                    <span class="admin-order-finance-hint">Target uses 30% of Quote.</span>
+                </label>
+                <label class="admin-order-finance-field" for="lopside-deposit-amount-${order.id}">
+                    <span class="admin-final-price-label">Deposit Amount</span>
+                    <input type="number" step="0.01" min="0" id="lopside-deposit-amount-${order.id}" class="admin-input admin-final-price-input" value="${escapeHTML(String(lopsideDepositCollected))}" placeholder="${escapeHTML(String(lopsideDepositTarget || 0))}">
+                </label>
+            `
+            : '';
         const notesPreview = getPreviewText(notes, 150);
         const attentionBadge = getOrderAttentionBadge(order);
         const currentStatus = order.status || 'Pending Review';
@@ -10856,20 +11230,56 @@ function renderAdminOrders(ordersArr) {
                 <span class="admin-order-meta-pill"><strong>Customer:</strong> ${escapeHTML(displayName)}</span>
                 <span class="admin-order-meta-pill"><strong>Creator:</strong> ${escapeHTML(creatorLabel)}</span>
                 <span class="admin-order-meta-pill"><strong>Date:</strong> ${escapeHTML(orderDate)}</span>
-                <span class="admin-order-meta-pill"><strong>Estimate:</strong> ${escapeHTML(estimatedPrice)}</span>
+                <span class="admin-order-meta-pill"><strong>Final:</strong> ${escapeHTML(finalMetaValue)}</span>
                 <span class="admin-order-meta-pill"><strong>Status:</strong> ${escapeHTML(currentStatus)}</span>
             </div>
 
-            <div class="admin-final-price-control-row">
-                <label class="admin-final-price-label" for="final-price-${order.id}">Final Price</label>
-                <input type="number" step="0.01" min="0" id="final-price-${order.id}" class="admin-input admin-final-price-input" value="${escapeHTML(finalPriceInputValue)}" placeholder="e.g. 125.00">
-                <button type="button" class="admin-btn-edit admin-save-final-price-btn" data-order-id="${order.id}">Save Final</button>
-                <button type="button" class="admin-btn-edit admin-toggle-final-price-btn" data-order-id="${order.id}" data-final-published="${isFinalPublished ? 'true' : 'false'}">${isFinalPublished ? 'Unpublish Final' : 'Publish Final'}</button>
-                <span class="admin-final-price-state ${isFinalPublished ? 'is-published' : 'is-draft'}">${escapeHTML(finalPriceStateLabel)}</span>
+            <div class="admin-order-finance-shell">
+                <div class="admin-order-finance-block">
+                    <div class="admin-order-finance-head">
+                        <h4>Final Price Control</h4>
+                        <span class="admin-final-price-state ${isFinalPublished ? 'is-published' : 'is-draft'}">${escapeHTML(finalPriceStateLabel)}</span>
+                    </div>
+                    <div class="admin-order-finance-grid">
+                        <label class="admin-order-finance-field" for="final-price-${order.id}">
+                            <span class="admin-final-price-label">Final Price</span>
+                            <input type="number" step="0.01" min="0" id="final-price-${order.id}" class="admin-input admin-final-price-input" value="${escapeHTML(finalPriceInputValue)}" placeholder="e.g. 125.00">
+                        </label>
+                        <div class="admin-order-finance-actions">
+                            <button type="button" class="admin-btn-edit admin-save-final-price-btn" data-order-id="${order.id}">Save Final</button>
+                            <button type="button" class="admin-btn-edit admin-toggle-final-price-btn" data-order-id="${order.id}" data-final-published="${isFinalPublished ? 'true' : 'false'}">${isFinalPublished ? 'Unpublish Final' : 'Publish Final'}</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-order-finance-block admin-payment-tracker-row">
+                    <div class="admin-order-finance-head admin-order-finance-head--stack">
+                        <h4>Payment Tracker</h4>
+                        <span class="admin-final-price-state ${quoteAmount != null && remainingBalance <= 0 ? 'is-published' : 'is-draft'}">${escapeHTML(paymentStateLabel)}</span>
+                    </div>
+                    <div class="admin-order-finance-grid">
+                        <label class="admin-order-finance-field" for="quote-amount-${order.id}">
+                            <span class="admin-final-price-label">Quote</span>
+                            <input type="number" step="0.01" min="0" id="quote-amount-${order.id}" class="admin-input admin-final-price-input" value="${escapeHTML(quoteInputValue)}" placeholder="Enter agreed quote">
+                        </label>
+                        <label class="admin-order-finance-field" for="amount-paid-${order.id}">
+                            <span class="admin-final-price-label">Paid</span>
+                            <input type="number" step="0.01" min="0" id="amount-paid-${order.id}" class="admin-input admin-final-price-input" value="${escapeHTML(String(paidAmount))}" placeholder="e.g. 159.00">
+                        </label>
+                        ${depositControlsHtml}
+                        <div class="admin-order-finance-actions admin-order-finance-actions--payment">
+                            <button type="button" class="admin-btn-edit admin-save-payment-tracker-btn" data-order-id="${order.id}">Save Payment</button>
+                            <button type="button" class="admin-btn-edit admin-clear-payment-tracker-btn" data-order-id="${order.id}">Clear Quote</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="admin-order-preview-wrap">
-                <div class="admin-detail admin-order-preview"><strong>Notes Preview:</strong> ${escapeHTML(notesPreview)}</div>
+                <div class="admin-detail admin-order-preview">
+                    <span class="admin-order-preview-label">Notes Preview:</span>
+                    <span class="admin-order-preview-text">${escapeHTML(notesPreview)}</span>
+                </div>
             </div>
 
             <div class="admin-order-view-row">
@@ -11343,9 +11753,11 @@ function initRouter() {
         if (currentHash === '#admin') {
             routeProtectedAdminHash();
         } else if (routes[currentHash]) {
-            cinematicTransition(null, routes[currentHash], '');
+            // Hash navigation (manual, back/forward, or typed URL) should be deterministic.
+            // Button-driven transitions already run cinematicTransition and suppress this hash route.
+            routes[currentHash]();
         } else {
-            cinematicTransition(null, loadHomePage, '');
+            loadHomePage();
         }
 
         setTimeout(updateStickyPreorderCtaVisibility, 1300);
