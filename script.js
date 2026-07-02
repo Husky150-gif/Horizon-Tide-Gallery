@@ -7533,6 +7533,81 @@ function getOrderRemainingBalance(order) {
     return Math.max(0, roundMoney(quoteAmount - paidAmount - depositCredit));
 }
 
+async function normalizeLegacyFinanceEntries() {
+    const orders = Array.isArray(window.allOrders) ? window.allOrders : [];
+    if (!orders.length) return { updated: 0, scanned: 0 };
+
+    let updated = 0;
+    for (const order of orders) {
+        const hasFinanceFields =
+            order?.quoteAmount != null ||
+            order?.amountPaid != null ||
+            order?.remainingBalance != null ||
+            order?.lopsideDepositPaidAmount != null ||
+            order?.lopsideDepositPaid === true;
+        if (!hasFinanceFields) continue;
+
+        const updatePayload = {};
+        const quoteAmount = parseAdminPriceInput(order?.quoteAmount);
+        const amountPaidRaw = parseAdminPriceInput(order?.amountPaid);
+        const amountPaid = quoteAmount == null
+            ? (amountPaidRaw == null ? 0 : amountPaidRaw)
+            : Math.min(amountPaidRaw == null ? 0 : amountPaidRaw, quoteAmount);
+
+        if (amountPaidRaw !== amountPaid || order?.amountPaid == null) {
+            updatePayload.amountPaid = amountPaid;
+        }
+
+        if (quoteAmount == null) {
+            if (order?.quoteAmount != null) updatePayload.quoteAmount = deleteField();
+            if (order?.remainingBalance != null) updatePayload.remainingBalance = deleteField();
+            if (isLopsideFursuitOrder(order)) {
+                if (order?.lopsideDepositPaid != null) updatePayload.lopsideDepositPaid = false;
+                if (order?.lopsideDepositPaidAmount != null) updatePayload.lopsideDepositPaidAmount = 0;
+            }
+        } else {
+            const nextOrderState = {
+                ...order,
+                quoteAmount,
+                amountPaid
+            };
+
+            if (isLopsideFursuitOrder(order)) {
+                const target = roundMoney(quoteAmount * 0.3);
+                const rawDeposit = parseAdminPriceInput(order?.lopsideDepositPaidAmount);
+                let normalizedDeposit = rawDeposit;
+                if (normalizedDeposit == null && order?.lopsideDepositPaid === true) normalizedDeposit = target;
+                if (normalizedDeposit == null) normalizedDeposit = 0;
+                normalizedDeposit = Math.min(normalizedDeposit, target, quoteAmount);
+
+                const normalizedDepositPaid = normalizedDeposit >= target && target > 0;
+                if (parseAdminPriceInput(order?.lopsideDepositPaidAmount) !== normalizedDeposit) {
+                    updatePayload.lopsideDepositPaidAmount = normalizedDeposit;
+                }
+                if (order?.lopsideDepositPaid !== normalizedDepositPaid) {
+                    updatePayload.lopsideDepositPaid = normalizedDepositPaid;
+                }
+
+                nextOrderState.lopsideDepositPaidAmount = normalizedDeposit;
+                nextOrderState.lopsideDepositPaid = normalizedDepositPaid;
+            }
+
+            const normalizedRemaining = getOrderRemainingBalance(nextOrderState);
+            if (parseAdminPriceInput(order?.remainingBalance) !== normalizedRemaining) {
+                updatePayload.remainingBalance = normalizedRemaining;
+            }
+        }
+
+        if (Object.keys(updatePayload).length === 0) continue;
+        updatePayload.paymentTrackingUpdatedAt = serverTimestamp();
+        updatePayload.paymentTrackingUpdatedBy = auth.currentUser?.email || 'admin';
+        await updateDoc(doc(db, 'preorders', order.id), updatePayload);
+        updated += 1;
+    }
+
+    return { updated, scanned: orders.length };
+}
+
 function getOrderRevenueValue(order, basis = 'estimate') {
     const normalizedBasis = normalizeAdminRevenueBasis(basis);
     if (normalizedBasis === 'estimate') return estimateOrderRevenue(order);
@@ -8988,6 +9063,11 @@ function setupAdminDashboardDelegation() {
                 return;
             }
 
+            if (quoteAmount != null && amountPaid > quoteAmount) {
+                showAdminToast('Paid amount cannot exceed total quote.', true);
+                return;
+            }
+
             const hasLopsideFursuitDeposit = isLopsideFursuitOrder(order);
             const depositPaid = hasLopsideFursuitDeposit && depositPaidInput instanceof HTMLInputElement
                 ? depositPaidInput.checked
@@ -8995,6 +9075,24 @@ function setupAdminDashboardDelegation() {
             const depositAmount = hasLopsideFursuitDeposit && depositAmountInput instanceof HTMLInputElement
                 ? parseAdminPriceInput(depositAmountInput.value)
                 : null;
+
+            let normalizedDepositAmount = depositAmount;
+            if (hasLopsideFursuitDeposit && quoteAmount != null) {
+                const depositTarget = roundMoney(quoteAmount * 0.3);
+                if (depositPaid && normalizedDepositAmount == null) {
+                    normalizedDepositAmount = depositTarget;
+                }
+                if (normalizedDepositAmount != null) {
+                    if (normalizedDepositAmount > depositTarget) {
+                        showAdminToast('Lopside deposit cannot exceed 30% of the quote.', true);
+                        return;
+                    }
+                    if (normalizedDepositAmount > quoteAmount) {
+                        showAdminToast('Lopside deposit cannot exceed the quote total.', true);
+                        return;
+                    }
+                }
+            }
 
             const updatePayload = {
                 amountPaid,
@@ -9013,8 +9111,10 @@ function setupAdminDashboardDelegation() {
                     updatePayload.lopsideDepositPaid = false;
                     updatePayload.lopsideDepositPaidAmount = 0;
                 } else {
-                    updatePayload.lopsideDepositPaid = depositPaid;
-                    updatePayload.lopsideDepositPaidAmount = depositAmount ?? 0;
+                    const effectiveDeposit = normalizedDepositAmount ?? 0;
+                    const depositTarget = roundMoney(quoteAmount * 0.3);
+                    updatePayload.lopsideDepositPaid = effectiveDeposit >= depositTarget && depositTarget > 0;
+                    updatePayload.lopsideDepositPaidAmount = effectiveDeposit;
                 }
             }
 
@@ -9582,6 +9682,7 @@ function loadAdminDashboard() {
                                 <button type="button" class="nav-btn" id="adminSetAllOpenBtn">Open Both Creators</button>
                                 <button type="button" class="nav-btn" id="adminSetAllClosedBtn">Close Both Creators</button>
                                 <button type="button" class="nav-btn" id="adminResetDiscountEditorBtn">New Discount</button>
+                                <button type="button" class="nav-btn" id="adminNormalizeLegacyFinanceBtn">Normalize Legacy Finance</button>
                             </div>
                             <details class="admin-collapsible admin-collapsible--sub" id="adminAvailabilitySection">
                                 <summary><span class="admin-summary-label">Availability</span></summary>
@@ -9828,6 +9929,32 @@ function loadAdminDashboard() {
     document.getElementById('adminResetDiscountEditorBtn')?.addEventListener('click', () => {
         setDiscountEditState(null);
         dPercent?.focus();
+    });
+
+    document.getElementById('adminNormalizeLegacyFinanceBtn')?.addEventListener('click', async () => {
+        if (!requireAdminSession('Please sign in with an authorized admin account before running legacy finance cleanup.')) return;
+        const confirmed = confirm('Normalize legacy finance data now? This recalculates remaining balances, clamps invalid deposit values, and clears orphan quote/deposit fields.');
+        if (!confirmed) return;
+
+        const button = document.getElementById('adminNormalizeLegacyFinanceBtn');
+        if (button instanceof HTMLButtonElement) {
+            button.disabled = true;
+            button.textContent = 'Normalizing...';
+        }
+
+        try {
+            const result = await normalizeLegacyFinanceEntries();
+            showAdminToast(`Legacy finance normalized. Updated ${result.updated} of ${result.scanned} orders.`);
+            updateAdminDashboardOverview();
+        } catch (error) {
+            console.error(error);
+            showAdminToast('Legacy finance normalization failed.', true);
+        } finally {
+            if (button instanceof HTMLButtonElement) {
+                button.disabled = false;
+                button.textContent = 'Normalize Legacy Finance';
+            }
+        }
     });
 
     document.getElementById('btnSaveAvailabilitySettings')?.addEventListener('click', async (e) => {
@@ -11257,6 +11384,14 @@ function renderAdminOrders(ordersArr) {
                         <h4>Payment Tracker</h4>
                         <span class="admin-final-price-state ${quoteAmount != null && remainingBalance <= 0 ? 'is-published' : 'is-draft'}">${escapeHTML(paymentStateLabel)}</span>
                     </div>
+                    ${quoteAmount != null ? `
+                    <div class="admin-order-finance-summary" aria-label="Payment summary">
+                        <span><strong>Total:</strong> ${escapeHTML(formatMoney(quoteAmount))}</span>
+                        <span><strong>Deposit:</strong> ${escapeHTML(formatMoney(showLopsideDepositControls ? lopsideDepositCollected : 0))}</span>
+                        <span><strong>Paid:</strong> ${escapeHTML(formatMoney(paidAmount))}</span>
+                        <span><strong>Remaining:</strong> ${escapeHTML(formatMoney(remainingBalance))}</span>
+                    </div>
+                    ` : ''}
                     <div class="admin-order-finance-grid">
                         <label class="admin-order-finance-field" for="quote-amount-${order.id}">
                             <span class="admin-final-price-label">Quote</span>
