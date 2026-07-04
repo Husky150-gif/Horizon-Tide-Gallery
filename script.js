@@ -7631,6 +7631,68 @@ function getCommissionEstimatedPriceValue(commission) {
     return parsed == null ? null : parsed;
 }
 
+function getCommissionFinalPriceValue(commission, requirePublished = false) {
+    if (!commission) return null;
+    if (requirePublished && commission.finalPricePublished !== true) return null;
+    const parsed = parseAdminPriceInput(commission.finalPrice);
+    return parsed == null ? null : parsed;
+}
+
+function getCommissionPaidAmount(commission) {
+    const parsed = parseAdminPriceInput(commission?.amountPaid);
+    return parsed == null ? 0 : parsed;
+}
+
+function normalizeCommissionQueueStatus(value) {
+    return String(value || 'Not Started').trim().toLowerCase();
+}
+
+function isCommissionInRevenueScope(commission, scope) {
+    const normalizedScope = normalizeAdminRevenueScope(scope);
+    const status = normalizeCommissionQueueStatus(commission?.queueStatus);
+
+    if (normalizedScope === 'completed-only') {
+        return status === 'finished';
+    }
+
+    if (normalizedScope === 'paid-plus') {
+        return status === 'started' || status === 'finished' || getCommissionPaidAmount(commission) > 0;
+    }
+
+    return true;
+}
+
+function getCommissionRevenueValue(commission, basis = 'estimate') {
+    const normalizedBasis = normalizeAdminRevenueBasis(basis);
+    const estimated = getCommissionEstimatedPriceValue(commission);
+
+    if (normalizedBasis === 'published-final-first') {
+        return getCommissionFinalPriceValue(commission, true) ?? (estimated ?? 0);
+    }
+
+    if (normalizedBasis === 'final-first') {
+        return getCommissionFinalPriceValue(commission, false) ?? (estimated ?? 0);
+    }
+
+    return estimated ?? 0;
+}
+
+function getCommissionServiceType(commission) {
+    const raw = String(commission?.commissionType || '').toLowerCase();
+    if (raw.includes('fursuit') || raw.includes('paw') || raw.includes('tail') || raw.includes('partial') || raw.includes('head')) return 'fursuits';
+    if (raw.includes('sticker')) return 'stickers';
+    if (raw.includes('keychain')) return 'keychains';
+    if (raw.includes('animation')) return 'animation';
+    if (raw.includes('art') || raw.includes('icon') || raw.includes('bust') || raw.includes('fullbody') || raw.includes('scene') || raw.includes('ref')) return 'art';
+
+    const owner = normalizeCommissionQueueOwnerValue(commission?.queueOwner, commission);
+    return owner === 'lopside' ? 'fursuits' : 'art';
+}
+
+function getCommissionTimestampMs(commission) {
+    return getComparableTimestampMs(commission?.createdAt || commission?.updatedAt);
+}
+
 function getOrderTimestampMs(order) {
     if (!order || !order.createdAt) return 0;
     try {
@@ -7709,11 +7771,29 @@ function computeAdminDashboardMetrics() {
         return status === 'pending review' || status === 'new' || status === 'reviewed' || status === 'accepted';
     });
 
-    const revenueTotal = scopedRevenueOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0);
-    const estimatedAcceptedRevenue = acceptedOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0);
-    const estimatedPendingRevenue = pendingRevenueOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0);
-    const estimatedCompletedRevenue = completedOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0);
-    const totalAmountPaid = orders.reduce((sum, order) => sum + getOrderPaidAmount(order), 0);
+    const scopedRevenueCommissions = commissions.filter((commission) => isCommissionInRevenueScope(commission, revenueOptions.scope));
+    const commissionAccepted = commissions.filter((commission) => {
+        const status = normalizeCommissionQueueStatus(commission.queueStatus);
+        return status === 'started' || status === 'finished';
+    });
+    const commissionPending = commissions.filter((commission) => normalizeCommissionQueueStatus(commission.queueStatus) === 'not started');
+    const commissionCompleted = commissions.filter((commission) => normalizeCommissionQueueStatus(commission.queueStatus) === 'finished');
+
+    const revenueTotal =
+        scopedRevenueOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0) +
+        scopedRevenueCommissions.reduce((sum, commission) => sum + getCommissionRevenueValue(commission, revenueOptions.basis), 0);
+    const estimatedAcceptedRevenue =
+        acceptedOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0) +
+        commissionAccepted.reduce((sum, commission) => sum + getCommissionRevenueValue(commission, revenueOptions.basis), 0);
+    const estimatedPendingRevenue =
+        pendingRevenueOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0) +
+        commissionPending.reduce((sum, commission) => sum + getCommissionRevenueValue(commission, revenueOptions.basis), 0);
+    const estimatedCompletedRevenue =
+        completedOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0) +
+        commissionCompleted.reduce((sum, commission) => sum + getCommissionRevenueValue(commission, revenueOptions.basis), 0);
+    const totalAmountPaid =
+        orders.reduce((sum, order) => sum + getOrderPaidAmount(order), 0) +
+        commissions.reduce((sum, commission) => sum + getCommissionPaidAmount(commission), 0);
     const lopsideDepositCollected = orders.reduce((sum, order) => sum + getOrderLopsideDepositCollected(order), 0);
 
     const revenueByCreator = { husky: 0, lopside: 0 };
@@ -7726,6 +7806,14 @@ function computeAdminDashboardMetrics() {
         if (revenueByService[serviceType] != null) revenueByService[serviceType] += value;
     });
 
+    scopedRevenueCommissions.forEach((commission) => {
+        const creator = normalizeCommissionQueueOwnerValue(commission.queueOwner, commission);
+        const serviceType = getCommissionServiceType(commission);
+        const value = getCommissionRevenueValue(commission, revenueOptions.basis);
+        if (revenueByCreator[creator] != null) revenueByCreator[creator] += value;
+        if (revenueByService[serviceType] != null) revenueByService[serviceType] += value;
+    });
+
     const monthlyBuckets = getMonthBuckets();
     scopedRevenueOrders.forEach((order) => {
         const orderTime = getOrderTimestampMs(order);
@@ -7735,6 +7823,16 @@ function computeAdminDashboardMetrics() {
         const key = getMonthKeyFromMs(orderTime);
         const bucket = monthlyBuckets.find((item) => item.key === key);
         if (bucket) bucket.value += getOrderRevenueValue(order, revenueOptions.basis);
+    });
+
+    scopedRevenueCommissions.forEach((commission) => {
+        const commissionTime = getCommissionTimestampMs(commission);
+        const commissionDate = commissionTime ? new Date(commissionTime) : null;
+        if (!commissionDate || commissionDate.getFullYear() !== new Date().getFullYear()) return;
+
+        const key = getMonthKeyFromMs(commissionTime);
+        const bucket = monthlyBuckets.find((item) => item.key === key);
+        if (bucket) bucket.value += getCommissionRevenueValue(commission, revenueOptions.basis);
     });
 
     const newestOrder = [...orders].sort((a, b) => getOrderTimestampMs(b) - getOrderTimestampMs(a))[0] || null;
@@ -9626,6 +9724,9 @@ function loadAdminDashboard() {
                         <div class="commission-admin-form-column">
                         <label class="admin-label">Commission ID<input type="text" id="commissionIdField" class="admin-input" placeholder="e.g. COM-001"></label>
                         <label class="admin-label">Display Name<input type="text" id="commissionDisplayNameField" class="admin-input" placeholder="Public username or initials"></label>
+                        <label class="admin-label">Commission Type<input type="text" id="commissionTypeField" class="admin-input" placeholder="e.g. Fursuit Partial, Animation, Icon"></label>
+                        <label class="admin-label">Estimated Price<input type="number" id="commissionEstimatedPriceField" class="admin-input" placeholder="0" min="0" step="0.01"></label>
+                        <label class="admin-label">Amount Paid<input type="number" id="commissionAmountPaidField" class="admin-input" placeholder="0" min="0" step="0.01"></label>
                         <label class="admin-label">Queue Owner<select id="commissionQueueOwnerField" class="admin-input"><option value="husky">Husky</option><option value="lopside">Lopside</option></select></label>
                         <label class="admin-label">Queue Status<select id="commissionQueueStatusField" class="admin-input"><option>Not Started</option><option>Started</option><option>Finished</option></select></label>
                         <label class="admin-label admin-checkbox-label-wrap"><input type="checkbox" id="commissionIsPublicField" class="admin-checkbox"> Show public</label>
@@ -10650,6 +10751,9 @@ function setupAdminCommissionManager() {
 
             const commissionId = document.getElementById('commissionIdField').value.trim();
             const displayName = document.getElementById('commissionDisplayNameField').value.trim();
+            const commissionType = document.getElementById('commissionTypeField').value.trim();
+            const estimatedPriceField = document.getElementById('commissionEstimatedPriceField');
+            const amountPaidField = document.getElementById('commissionAmountPaidField');
             const queueOwner = document.getElementById('commissionQueueOwnerField').value || 'husky';
             const queueStatus = document.getElementById('commissionQueueStatusField').value;
             const isPublic = document.getElementById('commissionIsPublicField').checked;
@@ -10659,8 +10763,28 @@ function setupAdminCommissionManager() {
             const privateEmail = document.getElementById('commissionPrivateEmailField').value.trim();
             const transactionInfo = document.getElementById('commissionTransactionInfoField').value.trim();
 
+            const estimatedPriceRaw = estimatedPriceField instanceof HTMLInputElement ? estimatedPriceField.value.trim() : '';
+            const amountPaidRaw = amountPaidField instanceof HTMLInputElement ? amountPaidField.value.trim() : '';
+            const estimatedPrice = estimatedPriceRaw ? parseAdminPriceInput(estimatedPriceRaw) : null;
+            const amountPaid = amountPaidRaw ? parseAdminPriceInput(amountPaidRaw) : 0;
+
             if (!commissionId || !displayName) {
                 alert('Please provide a commission ID and display name.');
+                return;
+            }
+
+            if (estimatedPriceRaw && estimatedPrice == null) {
+                alert('Estimated price must be a valid non-negative amount.');
+                return;
+            }
+
+            if (amountPaidRaw && amountPaid == null) {
+                alert('Amount paid must be a valid non-negative amount.');
+                return;
+            }
+
+            if (estimatedPrice != null && amountPaid > estimatedPrice) {
+                alert('Amount paid cannot be greater than the estimated price.');
                 return;
             }
 
@@ -10670,11 +10794,17 @@ function setupAdminCommissionManager() {
             const publicPayload = {
                 commissionId,
                 displayName,
+                commissionType,
                 queueOwner,
                 queueStatus,
                 isPublic,
+                amountPaid,
                 updatedAt: serverTimestamp()
             };
+
+            if (estimatedPrice != null) {
+                publicPayload.estimatedPrice = estimatedPrice;
+            }
 
             const privatePayload = {
                 commissionId,
@@ -10688,7 +10818,10 @@ function setupAdminCommissionManager() {
 
             try {
                 if (window.currentEditingCommissionId) {
-                    await updateDoc(doc(db, 'commissions', window.currentEditingCommissionId), publicPayload);
+                    const updatePayload = { ...publicPayload };
+                    if (!commissionType) updatePayload.commissionType = deleteField();
+                    if (estimatedPrice == null) updatePayload.estimatedPrice = deleteField();
+                    await updateDoc(doc(db, 'commissions', window.currentEditingCommissionId), updatePayload);
                     await setDoc(doc(db, 'commissionPrivate', window.currentEditingCommissionId), privatePayload, { merge: true });
                     showAdminToast('Commission updated! ✨');
                 } else {
@@ -10806,6 +10939,9 @@ function applyCommissionAdminFilters() {
     const filteredCommissions = allCommissions.filter((commission) => matchesAdminQueueFilters(commission, filters, [
         'commissionId',
         'displayName',
+        'commissionType',
+        'estimatedPrice',
+        'amountPaid',
         'queueOwner',
         'queueStatus',
         'isPublic'
@@ -10908,15 +11044,18 @@ function renderAdminCommissionList(commissions, totalCommissions = commissions.l
         husky: commissions.filter((commission) => normalizeCommissionQueueOwnerValue(commission.queueOwner, commission) === 'husky')
     };
 
-    const buildCommissionItemHtml = (commission) => {
+    const buildCommissionItemHtml = (commission, queuePosition) => {
         const estimatedPrice = getCommissionEstimatedPriceValue(commission);
+        const amountPaid = getCommissionPaidAmount(commission);
         const finalPrice = parseAdminPriceInput(commission.finalPrice);
         const isFinalPublished = commission.finalPricePublished === true;
         const finalPriceInputValue = finalPrice != null ? String(finalPrice) : '';
         const estimateText = estimatedPrice != null ? formatMoney(estimatedPrice) : 'Not set';
+        const paidText = formatMoney(amountPaid);
         const finalStateLabel = isFinalPublished
             ? `Published to Client: ${finalPrice != null ? formatMoney(finalPrice) : 'No value set'}`
             : 'Draft / Admin Only';
+        const commissionType = String(commission.commissionType || '').trim();
 
         return `
         <div class="admin-commission-item">
@@ -10927,7 +11066,10 @@ function renderAdminCommissionList(commissions, totalCommissions = commissions.l
                 </div>
                 <div class="admin-queue-item-subline">${escapeHTML(commission.displayName || 'Anonymous')}</div>
                 <div class="admin-queue-meta-row">
+                    <span class="admin-queue-meta-pill"><strong>#</strong>${escapeHTML(String(queuePosition))}</span>
                     <span class="admin-queue-meta-pill">${escapeHTML(normalizeCommissionQueueOwnerValue(commission.queueOwner, commission).replace(/^./, c => c.toUpperCase()))}</span>
+                    ${commissionType ? `<span class="admin-queue-meta-pill">${escapeHTML(commissionType)}</span>` : ''}
+                    <span class="admin-queue-meta-pill"><strong>Paid:</strong> ${escapeHTML(paidText)}</span>
                     <span class="admin-queue-meta-pill admin-queue-meta-pill-visibility">${commission.isPublic ? 'Public' : 'Hidden'}</span>
                 </div>
                 <div class="admin-final-price-control-row">
@@ -10954,7 +11096,7 @@ function renderAdminCommissionList(commissions, totalCommissions = commissions.l
                 <span class="admin-list-count-badge">${groupedCommissions.lopside.length}</span>
             </div>
             <div class="admin-commission-owner-list">
-                ${groupedCommissions.lopside.length > 0 ? groupedCommissions.lopside.map(buildCommissionItemHtml).join('') : '<p class="admin-commission-owner-empty">No Lopside commission entries in this view.</p>'}
+                ${groupedCommissions.lopside.length > 0 ? groupedCommissions.lopside.map((commission, index) => buildCommissionItemHtml(commission, index + 1)).join('') : '<p class="admin-commission-owner-empty">No Lopside commission entries in this view.</p>'}
             </div>
         </section>
         <section class="admin-commission-owner-group">
@@ -10963,7 +11105,7 @@ function renderAdminCommissionList(commissions, totalCommissions = commissions.l
                 <span class="admin-list-count-badge">${groupedCommissions.husky.length}</span>
             </div>
             <div class="admin-commission-owner-list">
-                ${groupedCommissions.husky.length > 0 ? groupedCommissions.husky.map(buildCommissionItemHtml).join('') : '<p class="admin-commission-owner-empty">No Husky commission entries in this view.</p>'}
+                ${groupedCommissions.husky.length > 0 ? groupedCommissions.husky.map((commission, index) => buildCommissionItemHtml(commission, index + 1)).join('') : '<p class="admin-commission-owner-empty">No Husky commission entries in this view.</p>'}
             </div>
         </section>
     `;
@@ -10973,6 +11115,9 @@ function populateCommissionForm(commission) {
     window.currentEditingCommissionId = commission.id;
     document.getElementById('commissionIdField').value = commission.commissionId || '';
     document.getElementById('commissionDisplayNameField').value = commission.displayName || '';
+    document.getElementById('commissionTypeField').value = commission.commissionType || '';
+    document.getElementById('commissionEstimatedPriceField').value = getCommissionEstimatedPriceValue(commission) ?? '';
+    document.getElementById('commissionAmountPaidField').value = getCommissionPaidAmount(commission) || '';
     document.getElementById('commissionQueueOwnerField').value = normalizeCommissionQueueOwnerValue(commission.queueOwner, commission);
     document.getElementById('commissionQueueStatusField').value = commission.queueStatus || 'Not Started';
     document.getElementById('commissionIsPublicField').checked = commission.isPublic === true;
@@ -11015,6 +11160,9 @@ function clearCommissionForm() {
     window.currentEditingCommissionId = null;
     document.getElementById('commissionIdField').value = '';
     document.getElementById('commissionDisplayNameField').value = '';
+    document.getElementById('commissionTypeField').value = '';
+    document.getElementById('commissionEstimatedPriceField').value = '';
+    document.getElementById('commissionAmountPaidField').value = '';
     document.getElementById('commissionQueueOwnerField').value = 'husky';
     document.getElementById('commissionQueueStatusField').value = 'Not Started';
     document.getElementById('commissionIsPublicField').checked = false;
@@ -11567,8 +11715,13 @@ function exportCommissionsCSV() {
     const rows = (Array.isArray(window.adminCommissionEntries) ? window.adminCommissionEntries : []).map((commission) => ({
         commissionId: commission.commissionId || '',
         displayName: commission.displayName || '',
+        commissionType: commission.commissionType || '',
         queueOwner: normalizeCommissionQueueOwnerValue(commission.queueOwner, commission),
         queueStatus: commission.queueStatus || '',
+        estimatedPrice: getCommissionEstimatedPriceValue(commission) ?? '',
+        finalPrice: parseAdminPriceInput(commission.finalPrice) ?? '',
+        finalPricePublished: commission.finalPricePublished === true ? 'true' : 'false',
+        amountPaid: getCommissionPaidAmount(commission),
         isPublic: commission.isPublic === true ? 'true' : 'false',
         updatedAt: normalizeDateForCSV(commission.updatedAt)
     }));
