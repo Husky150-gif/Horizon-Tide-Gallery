@@ -6447,7 +6447,7 @@ function loadStatusCheckPage() {
             <h1 style="color: #ffffff; text-shadow: 0 0 15px #00f2fe; margin-bottom: 10px; font-size: 2.5rem;">Check Status</h1>
             <p style="margin-bottom: 25px; color: #e0f7fa; font-size: 1.1rem;">Enter your Order Number to check the status of your request.</p>
             <form id="statusCheckForm" style="display: flex; flex-direction: column; gap: 15px;">
-                <input type="text" id="searchQuery" class="form-input" placeholder="e.g. HTG-2026-XXXXXX or XXXXXX" required style="font-size: 1.1rem; text-align: center;">
+                <input type="text" id="searchQuery" class="form-input" placeholder="e.g. HTG-YYYY-XXXXXX or XXXXXX" required style="font-size: 1.1rem; text-align: center;">
                 <button type="submit" class="preorder-btn" style="border-color: #a855f7;">Search ✨</button>
             </form>
             <div id="statusResults" style="margin-top: 25px; text-align: left; display: flex; flex-direction: column; gap: 15px;"></div>
@@ -6634,7 +6634,8 @@ function generateOrderID() {
     for (let i = 0; i < 6; i++) {
         id += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    return `HTG-2026-${id}`;
+    const currentYear = new Date().getFullYear();
+    return `HTG-${currentYear}-${id}`;
 }
 
 function buildOrderLookupCandidates(rawInput) {
@@ -9411,9 +9412,74 @@ function setupAdminDashboardDelegation() {
             return;
         }
 
+function getQueueSyncPlanFromOrderStatus(status) {
+    const normalized = normalizeOrderStatus(status);
+
+    if (normalized === 'accepted') {
+        return { shouldExist: true, queueStatus: 'Not Started' };
+    }
+
+    if (normalized === 'in progress') {
+        return { shouldExist: true, queueStatus: 'Started' };
+    }
+
+    if (normalized === 'finished' || normalized === 'shipped') {
+        return { shouldExist: true, queueStatus: 'Finished' };
+    }
+
+    return { shouldExist: false, queueStatus: '' };
+}
+
+function toPublicQueueDisplayName(name) {
+    const safe = String(name || '').trim();
+    if (!safe) return 'Guest';
+    return safe.slice(0, 42);
+}
+
+async function syncOrderQueueFallbackFromAdmin(order, status) {
+    if (!order || !order.orderId) return;
+
+    const orderId = String(order.orderId).trim();
+    if (!orderId) return;
+
+    const plan = getQueueSyncPlanFromOrderStatus(status);
+    const autoDocId = `auto_${orderId}`;
+    const queueDocRef = doc(db, 'commissions', autoDocId);
+
+    if (!plan.shouldExist) {
+        await deleteDoc(queueDocRef);
+        return;
+    }
+
+    const itemType = String(order.itemType || order.orderType || 'Commission').trim();
+    const payload = {
+        commissionId: orderId,
+        preorderOrderId: orderId,
+        displayName: toPublicQueueDisplayName(order.name),
+        commissionType: itemType,
+        queueOwner: getOrderCreator(getOrderServiceType(order)),
+        queueStatus: plan.queueStatus,
+        sourceType: 'Website Preorder',
+        isPublic: true,
+        updatedAt: serverTimestamp()
+    };
+
+    if (!order.createdAt) {
+        payload.createdAt = serverTimestamp();
+    }
+
+    await setDoc(queueDocRef, payload, { merge: true });
+}
         try {
             const statusUpdate = await updateOrderStatusWithInventoryAtomic(orderId, nextStatus);
             const inventoryResult = statusUpdate?.inventoryResult || null;
+
+            try {
+                await syncOrderQueueFallbackFromAdmin(order, nextStatus);
+            } catch (queueSyncError) {
+                console.error('Admin fallback queue sync failed:', queueSyncError);
+                showAdminToast('Status saved, but queue auto-sync fallback failed. Try status update again in a moment.', true);
+            }
 
             order.status = nextStatus;
             if (inventoryResult?.applied) {

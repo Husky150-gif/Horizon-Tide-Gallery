@@ -13097,3 +13097,56 @@ body[data-page="home"] .home-top-nav {
         justify-content: flex-start;
     }
 }
+
+/* Admin overflow hardening: keep long IDs/text inside boxes across cards and lists */
+#adminDashboardView .admin-card,
+#adminDashboardView .admin-chart-card,
+#adminDashboardView .admin-overview-card,
+#adminDashboardView .admin-refund-item,
+#adminDashboardView .admin-commission-item,
+#adminDashboardView .admin-activity-item,
+#adminDashboardView .admin-reviews-card,
+#adminDashboardView .admin-comments-card,
+#adminDashboardView .admin-list-header-actions,
+#adminDashboardView .admin-queue-actions {
+    min-width: 0;
+}
+
+#adminDashboardView .admin-card-title,
+#adminDashboardView .admin-card-subtitle,
+#adminDashboardView .admin-overview-label,
+#adminDashboardView .admin-overview-value,
+#adminDashboardView .admin-overview-group,
+#adminDashboardView .admin-activity-label,
+#adminDashboardView .admin-activity-description,
+#adminDashboardView .admin-queue-meta-pill,
+#adminDashboardView .admin-list-count-badge,
+#adminDashboardView .admin-order-detail-row,
+#adminDashboardView .admin-review-body,
+#adminDashboardView .admin-comment-body,
+#adminDashboardView .admin-reply-item,
+#adminDashboardView .admin-diagnostics-grid,
+#adminDashboardView .admin-detail {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
+}
+
+#adminDashboardView .admin-queue-actions > button,
+#adminDashboardView .admin-btn-edit,
+#adminDashboardView .admin-btn-delete,
+#adminDashboardView .admin-btn-save,
+#adminDashboardView .admin-btn-publish,
+#adminDashboardView .admin-side-link,
+#adminDashboardView .admin-review-filter-btn,
+#adminDashboardView .admin-comment-filter-btn {
+    white-space: normal;
+    line-height: 1.25;
+}
+
+#adminDashboardView .admin-input,
+#adminDashboardView .admin-textarea,
+#adminDashboardView .admin-label {
+    min-width: 0;
+    max-width: 100%;
+}
