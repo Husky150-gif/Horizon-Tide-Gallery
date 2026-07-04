@@ -2665,9 +2665,11 @@ function renderInteractiveStars() {
     interactiveStarField.innerHTML = "";
     
     if (bodyElement.getAttribute('data-page') !== 'home') return; 
-    if (window.innerWidth <= 768) return; 
     
-    const countTarget = isLiteVisualMode ? 5 : 10;
+    const isMobileViewport = window.innerWidth <= 768;
+    const countTarget = isMobileViewport
+        ? (isLiteVisualMode ? 2 : 4)
+        : (isLiteVisualMode ? 5 : 10);
     for (let i = 0; i < countTarget; i++) {
         spawnSingleInteractiveStar(interactiveStarField);
     }

@@ -4605,7 +4605,7 @@ body[data-page="reviews"] .reviews-submit-btn {
         animation: none !important;
     }
 }
-    .star-cluster-field, .cosmic-shooting-star { display: none !important; }
+    .cosmic-shooting-star { display: none !important; }
     .magical-bubble:nth-child(even) { display: none; } 
     .distant-ripple-layer, .mid-sea-layer-2 { animation: none; opacity: 0.5; } 
     .fish-scene { transform: scale(0.6); right: 5%; bottom: 30px; }
@@ -8219,6 +8219,20 @@ body[data-page="reviews"] .reviews-submit-btn {
     gap: 8px;
     flex-wrap: wrap;
     justify-content: flex-end;
+    align-items: stretch;
+}
+
+.admin-commission-item .admin-queue-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    justify-items: stretch;
+    align-items: stretch;
+}
+
+.admin-commission-item .admin-queue-actions > button {
+    width: 100%;
+    min-width: 0;
 }
 
 .admin-commission-item {
@@ -8281,6 +8295,7 @@ body[data-page="reviews"] .reviews-submit-btn {
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
+    min-width: 0;
 }
 
 .admin-final-price-label {
@@ -8292,6 +8307,7 @@ body[data-page="reviews"] .reviews-submit-btn {
 
 .admin-final-price-input {
     width: 138px;
+    max-width: 100%;
     min-height: 36px;
     padding: 6px 10px;
 }
@@ -9581,6 +9597,8 @@ body[data-page="admin"] .global-sale-banner {
     display: inline-flex;
     gap: 8px;
     align-items: center;
+    flex-wrap: wrap;
+    min-width: 0;
 }
 
 .discount-controls {
@@ -11634,6 +11652,7 @@ body[data-page="preorder"] #footerCredit {
     border: 1px solid #00f3ff;
     background: rgba(0, 243, 255, 0.05);
     color: #dffcff;
+    min-height: 40px;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04), 0 0 0 rgba(0, 243, 255, 0);
     transition: background 0.24s ease, color 0.24s ease, box-shadow 0.24s ease, transform 0.24s ease, border-color 0.24s ease;
 }
@@ -11650,8 +11669,20 @@ body[data-page="preorder"] #footerCredit {
     border: 0;
     background: rgba(255, 255, 255, 0.03);
     color: rgba(255, 255, 255, 0.72);
+    min-height: 42px;
+    padding: 10px 12px;
     box-shadow: none;
     transition: background 0.22s ease, color 0.22s ease, transform 0.22s ease;
+}
+
+.admin-header-actions .nav-btn,
+.admin-quick-actions-grid .nav-btn,
+.admin-queue-actions button,
+.admin-order-card .admin-actions > * {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.2;
 }
 
 .admin-quick-actions-grid .nav-btn:hover,
@@ -13033,5 +13064,36 @@ body[data-page="home"] .home-top-nav {
     .commission-admin-form-column .admin-inline-collapsible-body,
     .refund-admin-form-column .admin-inline-collapsible-body {
         grid-template-columns: 1fr;
+    }
+
+    .admin-header-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .admin-header-actions .nav-btn {
+        flex: 1 1 180px;
+    }
+
+    .admin-quick-actions-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-queue-actions {
+        justify-content: flex-start;
+        gap: 6px;
+    }
+
+    .admin-queue-actions button {
+        flex: 1 1 140px;
+    }
+
+    .admin-commission-item .admin-queue-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-list-header-actions {
+        width: 100%;
+        justify-content: flex-start;
     }
 }

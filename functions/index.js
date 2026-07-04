@@ -1,11 +1,26 @@
-const functions = require('firebase-functions');
+const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 const sgMail = require('@sendgrid/mail');
 
 admin.initializeApp();
 
-// Configure SendGrid key via: firebase functions:config:set sendgrid.key="YOUR_SENDGRID_KEY"
-const sendgridKey = functions.config().sendgrid && functions.config().sendgrid.key;
+function readLegacyRuntimeConfig() {
+  const rawConfig = process.env.CLOUD_RUNTIME_CONFIG;
+  if (!rawConfig) return {};
+  try {
+    return JSON.parse(rawConfig);
+  } catch (error) {
+    console.warn('Failed to parse CLOUD_RUNTIME_CONFIG; using direct environment variables only.');
+    return {};
+  }
+}
+
+const legacyRuntimeConfig = readLegacyRuntimeConfig();
+const sendgridKey =
+  process.env.SENDGRID_KEY ||
+  process.env.SENDGRID_API_KEY ||
+  (legacyRuntimeConfig.sendgrid && legacyRuntimeConfig.sendgrid.key);
+
 if (sendgridKey) sgMail.setApiKey(sendgridKey);
 
 exports.sendReportEmail = functions.firestore
