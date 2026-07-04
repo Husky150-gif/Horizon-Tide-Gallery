@@ -227,6 +227,9 @@ const PUBLIC_HEAD_METADATA = {
     description: 'Horizon Tide Gallery - Custom 2D animation, illustration, and premium handmade fursuits.',
     ogTitle: 'Horizon Tide Gallery',
     ogDescription: 'Explore custom artwork, animation portfolios, and high-end creative commissions.',
+    ogUrl: 'https://the-horizon-8f72f.web.app/',
+    twitterTitle: 'The Horizon | Horizon Tide Gallery',
+    twitterDescription: 'Commission art, fursuits, keychains, and stickers with clear communication and queue transparency.',
     ogType: 'website',
     robots: 'index, follow'
 };
@@ -250,6 +253,16 @@ function removeMetaTag(selector) {
     document.head.querySelector(selector)?.remove();
 }
 
+function upsertCanonicalLink(href) {
+    let linkTag = document.head.querySelector('link[rel="canonical"]');
+    if (!(linkTag instanceof HTMLLinkElement)) {
+        linkTag = document.createElement('link');
+        linkTag.setAttribute('rel', 'canonical');
+        document.head.appendChild(linkTag);
+    }
+    linkTag.setAttribute('href', href);
+}
+
 function applyHeadMetadataForRoute(isAdminView) {
     const robotsSelector = 'meta[name="robots"]';
     document.title = PUBLIC_HEAD_METADATA.title;
@@ -265,8 +278,12 @@ function applyHeadMetadataForRoute(isAdminView) {
     upsertMetaTag('meta[name="description"]', { name: 'description', content: PUBLIC_HEAD_METADATA.description });
     upsertMetaTag('meta[property="og:title"]', { property: 'og:title', content: PUBLIC_HEAD_METADATA.ogTitle });
     upsertMetaTag('meta[property="og:description"]', { property: 'og:description', content: PUBLIC_HEAD_METADATA.ogDescription });
+    upsertMetaTag('meta[property="og:url"]', { property: 'og:url', content: PUBLIC_HEAD_METADATA.ogUrl });
+    upsertMetaTag('meta[name="twitter:title"]', { name: 'twitter:title', content: PUBLIC_HEAD_METADATA.twitterTitle });
+    upsertMetaTag('meta[name="twitter:description"]', { name: 'twitter:description', content: PUBLIC_HEAD_METADATA.twitterDescription });
     upsertMetaTag('meta[property="og:type"]', { property: 'og:type', content: PUBLIC_HEAD_METADATA.ogType });
     upsertMetaTag(robotsSelector, { name: 'robots', content: PUBLIC_HEAD_METADATA.robots });
+    upsertCanonicalLink(PUBLIC_HEAD_METADATA.ogUrl);
 }
 let lastCursorSparkleTime = 0;
 let activeCursorSparkles = 0;
@@ -293,6 +310,52 @@ function getAdaptiveCount(desktopCount, mobileCount) {
     const base = window.innerWidth <= 768 ? mobileCount : desktopCount;
     if (!isLiteVisualMode) return base;
     return Math.max(3, Math.round(base * 0.55));
+}
+
+const ANALYTICS_EVENT_CACHE_KEY = 'hz_analytics_event_cache';
+const ANALYTICS_EVENT_COOLDOWN_MS = 9000;
+
+function shouldTrackAnalyticsEvent(eventName) {
+    const name = String(eventName || '').trim().toLowerCase();
+    if (!name) return false;
+
+    const host = String(window.location.hostname || '').toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1') return false;
+
+    try {
+        const now = Date.now();
+        const raw = localStorage.getItem(ANALYTICS_EVENT_CACHE_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        const lastAt = Number(parsed[name] || 0);
+        if (lastAt > 0 && (now - lastAt) < ANALYTICS_EVENT_COOLDOWN_MS) return false;
+        parsed[name] = now;
+        localStorage.setItem(ANALYTICS_EVENT_CACHE_KEY, JSON.stringify(parsed));
+        return true;
+    } catch {
+        return true;
+    }
+}
+
+function trackAnalyticsEvent(eventName, meta = {}) {
+    const event = String(eventName || '').trim();
+    if (!shouldTrackAnalyticsEvent(event)) return;
+
+    const page = String(bodyElement?.getAttribute('data-page') || 'unknown').slice(0, 64);
+    const route = String(window.location.hash || '#home').slice(0, 80);
+    const source = String(meta.source || '').slice(0, 64);
+    const status = String(meta.status || '').slice(0, 48);
+
+    const payload = {
+        event: event.slice(0, 64),
+        page,
+        route,
+        source,
+        status,
+        isAdminSession: isAdminSessionActive(),
+        createdAt: serverTimestamp()
+    };
+
+    addDoc(collection(db, 'analyticsEvents'), payload).catch(() => {});
 }
 
 // === CENTRALIZED TOS CONTENT ===
@@ -3156,10 +3219,19 @@ function bindCoreMenuControls() {
     document.getElementById('socialsBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadSocialsPage, '#socials'));
     
     document.getElementById('btnGalleryHome')?.addEventListener('click', (e) => cinematicTransition(e, loadGalleryPage, '#gallery'));
-    document.getElementById('btnDiscordHome')?.addEventListener('click', (e) => cinematicTransition(e, loadDiscordPage, '#discord'));
-    document.getElementById('btnPreorderMassive')?.addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
+    document.getElementById('btnDiscordHome')?.addEventListener('click', (e) => {
+        trackAnalyticsEvent('open_discord', { source: 'home_nav' });
+        cinematicTransition(e, loadDiscordPage, '#discord');
+    });
+    document.getElementById('btnPreorderMassive')?.addEventListener('click', (e) => {
+        trackAnalyticsEvent('open_preorder', { source: 'home_nav' });
+        cinematicTransition(e, loadPreorderPage, '#preorder');
+    });
     document.getElementById('homeFeaturedReviewBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadReviewsPage, '#reviews'));
-    document.getElementById('homeFinalCtaPreorderBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
+    document.getElementById('homeFinalCtaPreorderBtn')?.addEventListener('click', (e) => {
+        trackAnalyticsEvent('open_preorder', { source: 'home_final_cta' });
+        cinematicTransition(e, loadPreorderPage, '#preorder');
+    });
     document.getElementById('homeFinalCtaContactBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadContactPage, '#contact'));
     document.getElementById('homeFinalCtaPricingBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadPricingPage, '#pricing'));
     
@@ -3229,13 +3301,12 @@ function bindCoreMenuControls() {
         };
 
         const handleWindowScroll = () => {
-            setSidebarDim(true);
             if (scrollFadeTimeout) {
                 window.clearTimeout(scrollFadeTimeout);
             }
             scrollFadeTimeout = window.setTimeout(() => {
                 scheduleCollisionCheck();
-            }, 160);
+            }, 80);
         };
 
         homeSidebarNav.addEventListener('mouseenter', handleSidebarMouseEnter);
@@ -6546,6 +6617,10 @@ function loadStatusCheckPage() {
             resultsDiv.innerHTML = "";
 
             const lookupCandidates = buildOrderLookupCandidates(queryValRaw);
+            trackAnalyticsEvent('status_lookup_submitted', {
+                source: 'status_page',
+                status: lookupCandidates.length > 0 ? 'valid' : 'invalid'
+            });
             if (lookupCandidates.length === 0) {
                 resultsDiv.innerHTML = `<p style="color: #ef4444; text-align: center; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px;">Please enter a valid order number (HTG-YYYY-XXXXXX or just XXXXXX).</p>`;
                 return;
@@ -6563,8 +6638,10 @@ function loadStatusCheckPage() {
             }
 
             if (!statusDoc || !statusDoc.exists()) {
+                trackAnalyticsEvent('status_lookup_result', { source: 'status_page', status: 'not_found' });
                 resultsDiv.innerHTML = `<p style="color: #f8d66d; text-align: center; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px;">Your order was not found in the public tracker yet. New submissions may appear after admin review. Please check back soon.</p>`;
             } else {
+                trackAnalyticsEvent('status_lookup_result', { source: 'status_page', status: 'found' });
                 const data = statusDoc.data();
                 const resolvedOrderId = data.orderId || matchedOrderId || lookupCandidates[0] || 'Unknown ID';
                 const orderDate = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleDateString() : 'Unknown Date';
@@ -6763,6 +6840,10 @@ async function submitPreorder(event, orderType) {
     const orderValues = Object.values(orderData).join(" ");
     if (containsProfanity(orderValues)) { showErrorMsg(form, "Hold on! Please keep your request family-friendly. We do not allow swearing, slurs, or NSFW content in our forms."); return; }
 
+    trackAnalyticsEvent('preorder_submit_attempt', {
+        source: String(orderType || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 48)
+    });
+
     submitBtn.innerHTML = submitLoaderHTML("Sending order...");
     submitBtn.classList.add('btn-loading-wave');
     submitBtn.disabled = true;
@@ -6875,6 +6956,9 @@ async function submitPreorder(event, orderType) {
             message: compiledNotes
         };
         emailjs.send("service_jn29dsl", "template_0p1cxof", templateParams).catch(e => console.error(e));
+        trackAnalyticsEvent('preorder_submit_success', {
+            source: String(orderType || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 48)
+        });
         triggerConfetti();
 
         const formContainer = form.closest('.form-card') || form.closest('.preorder-card') || form;
@@ -9099,6 +9183,9 @@ function setupAdminDashboardDelegation() {
                 await navigator.clipboard.writeText(decodeURIComponent(payload));
                 showAdminToast('Reminder draft copied.');
             } catch (error) {
+                trackAnalyticsEvent('preorder_submit_failure', {
+                    source: String(orderType || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 48)
+                });
                 console.error(error);
                 showAdminToast('Could not copy reminder draft.', true);
             }

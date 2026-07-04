@@ -166,3 +166,170 @@ exports.cleanupCommissionQueueOnPreorderDelete = functions.firestore
 
     return null;
   });
+
+function parseMoney(value, fallback = 0) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return fallback;
+  return Math.max(0, num);
+}
+
+function normalizeStatus(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function isLopsideFursuitOrder(order) {
+  const owner = normalizeQueueOwnerFromItemType(order?.itemType || order?.orderType || '');
+  if (owner === 'lopside') return true;
+  const text = String(order?.itemType || order?.orderType || '').toLowerCase();
+  return text.includes('fursuit') || text.includes('paw') || text.includes('tail') || text.includes('partial') || text.includes('head');
+}
+
+function getOrderReminderPlan(order) {
+  const status = normalizeStatus(order?.status);
+  const quoteAmount = parseMoney(order?.quoteAmount);
+  const paidAmount = parseMoney(order?.amountPaid);
+  const depositCollected = parseMoney(order?.lopsideDepositPaidAmount);
+  const depositTarget = quoteAmount > 0 ? Math.round(quoteAmount * 0.3 * 100) / 100 : 0;
+
+  const needsDepositReminder =
+    (status === 'accepted' || status === 'in progress') &&
+    isLopsideFursuitOrder(order) &&
+    depositTarget > 0 &&
+    depositCollected < depositTarget;
+
+  if (needsDepositReminder) {
+    return {
+      shouldSend: true,
+      type: 'deposit',
+      amountDue: Math.max(0, Math.round((depositTarget - depositCollected) * 100) / 100)
+    };
+  }
+
+  const remainingBalance = Math.max(0, Math.round((quoteAmount - paidAmount - depositCollected) * 100) / 100);
+  const eligibleFinalStatuses = new Set(['in progress', 'paid', 'finished', 'shipped']);
+  const needsFinalReminder = eligibleFinalStatuses.has(status) && quoteAmount > 0 && remainingBalance > 0;
+
+  if (needsFinalReminder) {
+    return {
+      shouldSend: true,
+      type: 'final',
+      amountDue: remainingBalance
+    };
+  }
+
+  return {
+    shouldSend: false,
+    type: '',
+    amountDue: 0
+  };
+}
+
+function buildReminderEmail(order, plan) {
+  const customerName = String(order?.name || 'there').trim() || 'there';
+  const orderId = String(order?.orderId || '').trim() || 'Unknown';
+  const amountLabel = `$${Number(plan.amountDue || 0).toFixed(2)}`;
+  const typeLabel = plan.type === 'deposit' ? 'Deposit Reminder' : 'Payment Reminder';
+  const subject = `Horizon Tide | Order ${orderId} | ${typeLabel}`;
+
+  const text = plan.type === 'deposit'
+    ? [
+        `Hi ${customerName},`,
+        '',
+        `This is a friendly reminder for order ${orderId}.`,
+        `Current deposit due: ${amountLabel}.`,
+        '',
+        'Once the deposit is settled, we can keep your project moving smoothly in queue.',
+        '',
+        'Thank you for supporting Horizon Tide!'
+      ].join('\n')
+    : [
+        `Hi ${customerName},`,
+        '',
+        `This is a friendly payment reminder for order ${orderId}.`,
+        `Current remaining balance: ${amountLabel}.`,
+        '',
+        'Reply when ready and we will finalize next steps.',
+        '',
+        'Thank you for supporting Horizon Tide!'
+      ].join('\n');
+
+  return { subject, text };
+}
+
+exports.sendAutomatedPaymentReminders = functions.pubsub
+  .schedule('every 24 hours')
+  .timeZone('America/New_York')
+  .onRun(async () => {
+    if (!sendgridKey) {
+      console.warn('SendGrid key not configured; skipping automated reminders.');
+      return null;
+    }
+
+    const statuses = ['Accepted', 'In Progress', 'Paid', 'Finished', 'Shipped'];
+    const cooldownMs = 72 * 60 * 60 * 1000;
+    const nowMs = Date.now();
+
+    const snapshot = await admin
+      .firestore()
+      .collection('preorders')
+      .where('status', 'in', statuses)
+      .limit(120)
+      .get();
+
+    if (snapshot.empty) {
+      console.log('Automated reminders: no matching preorders found.');
+      return null;
+    }
+
+    let sentCount = 0;
+    let skippedCount = 0;
+
+    for (const docSnap of snapshot.docs) {
+      const order = docSnap.data() || {};
+      const email = String(order.email || '').trim().toLowerCase();
+      const orderId = String(order.orderId || '').trim();
+      if (!email || !orderId) {
+        skippedCount += 1;
+        continue;
+      }
+
+      const lastSentAt = order.lastReminderSentAt && typeof order.lastReminderSentAt.toDate === 'function'
+        ? order.lastReminderSentAt.toDate().getTime()
+        : 0;
+
+      if (lastSentAt && (nowMs - lastSentAt) < cooldownMs) {
+        skippedCount += 1;
+        continue;
+      }
+
+      const plan = getOrderReminderPlan(order);
+      if (!plan.shouldSend) {
+        skippedCount += 1;
+        continue;
+      }
+
+      const emailContent = buildReminderEmail(order, plan);
+      const msg = {
+        to: email,
+        from: 'no-reply@horizontidegallery.com',
+        subject: emailContent.subject,
+        text: emailContent.text
+      };
+
+      try {
+        await sgMail.send(msg);
+        await docSnap.ref.update({
+          lastReminderSentAt: admin.firestore.FieldValue.serverTimestamp(),
+          lastReminderType: plan.type,
+          lastReminderAmountDue: plan.amountDue,
+          lastReminderSentBy: 'automation'
+        });
+        sentCount += 1;
+      } catch (error) {
+        console.error('Automated reminder failed for preorder:', orderId, error);
+      }
+    }
+
+    console.log(`Automated reminders completed. Sent: ${sentCount}, skipped: ${skippedCount}.`);
+    return null;
+  });
