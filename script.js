@@ -144,6 +144,8 @@ const ADMIN_REVENUE_CALCULATOR_PREF_KEY = 'hz_admin_revenue_calc';
 const ADMIN_REVENUE_BASIS_OPTIONS = new Set(['estimate', 'final-first', 'published-final-first']);
 const ADMIN_REVENUE_SCOPE_OPTIONS = new Set(['pipeline', 'paid-plus', 'completed-only']);
 const ADMIN_IDLE_TIMEOUT_MS = 10 * 60 * 1000;
+const ADMIN_ACCEPTED_STALE_DAYS = 7;
+const ADMIN_REMINDER_COOLDOWN_MS = 18 * 60 * 60 * 1000;
 const NAVIGATION_ENTRY = typeof performance !== 'undefined' && typeof performance.getEntriesByType === 'function'
     ? performance.getEntriesByType('navigation')[0]
     : null;
@@ -2391,6 +2393,57 @@ let moonClockOffsetMs = 0;
 let moonClockLastSyncMs = 0;
 let moonClockSource = 'device';
 let moonClockSyncTimerId = null;
+let moonClockTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+function isSupportedTimeZone(value) {
+    const candidate = String(value || '').trim();
+    if (!candidate) return false;
+    try {
+        Intl.DateTimeFormat(undefined, { timeZone: candidate });
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function resolveMoonDisplayTimeZone(remoteTimeZone, localTimeZone) {
+    const localTz = isSupportedTimeZone(localTimeZone) ? localTimeZone : 'UTC';
+    const remoteTz = String(remoteTimeZone || '').trim();
+    if (!isSupportedTimeZone(remoteTz)) return localTz;
+
+    const normalized = remoteTz.toUpperCase();
+    if (normalized === 'UTC' || normalized === 'ETC/UTC' || normalized === 'GMT' || normalized === 'ETC/GMT') {
+        // UTC-only endpoints are acceptable for epoch sync, but display should remain local.
+        return localTz;
+    }
+
+    return remoteTz;
+}
+
+function hasExplicitTimeZoneOffset(value) {
+    const text = String(value || '').trim();
+    if (!text) return false;
+    return /(?:Z|[+-]\d{2}:?\d{2})$/i.test(text);
+}
+
+function parseRemoteDateCandidate(value, payload = null) {
+    if (typeof value !== 'string' || !value.trim()) return null;
+
+    const raw = value.trim();
+    const rawMs = Date.parse(raw);
+    if (hasExplicitTimeZoneOffset(raw) && !Number.isNaN(rawMs)) {
+        return rawMs;
+    }
+
+    const payloadZone = String(payload?.timezone || payload?.timeZone || '').trim().toUpperCase();
+    if ((payloadZone === 'UTC' || payloadZone === 'ETC/UTC' || payloadZone === 'GMT' || payloadZone === 'ETC/GMT')) {
+        const utcMs = Date.parse(`${raw}Z`);
+        if (!Number.isNaN(utcMs)) return utcMs;
+    }
+
+    // If the source omitted timezone and we cannot safely infer it, skip instead of introducing drift.
+    return null;
+}
 
 const SYNODIC_MONTH_MS = 29.53058867 * 24 * 60 * 60 * 1000;
 const MOON_REFERENCE_NEW_MOON_UTC_MS = Date.UTC(2000, 0, 6, 18, 14, 0, 0);
@@ -2409,24 +2462,34 @@ function getMoonPhaseFractionRealtime(nowMs = getMoonClockNowMs()) {
     return phase;
 }
 
-function extractRemoteEpochMs(payload) {
+function extractRemoteTimeInfo(payload) {
     if (!payload || typeof payload !== 'object') return null;
 
     const candidates = [payload.utc_datetime, payload.datetime, payload.currentDateTime, payload.dateTime];
     for (const value of candidates) {
-        if (typeof value !== 'string' || !value.trim()) continue;
-        const ms = Date.parse(value);
-        if (!Number.isNaN(ms)) return ms;
+        const ms = parseRemoteDateCandidate(value, payload);
+        if (Number.isFinite(ms)) {
+            const zone = typeof payload.timezone === 'string' && payload.timezone.trim()
+                ? payload.timezone.trim()
+                : null;
+            return { epochMs: ms, timeZone: zone };
+        }
     }
 
     if (typeof payload.unixtime === 'number') {
-        return Math.trunc(payload.unixtime * 1000);
+        const zone = typeof payload.timezone === 'string' && payload.timezone.trim()
+            ? payload.timezone.trim()
+            : null;
+        return {
+            epochMs: Math.trunc(payload.unixtime * 1000),
+            timeZone: zone
+        };
     }
 
     return null;
 }
 
-async function fetchNetworkEpochMs(url, timeoutMs = 3200) {
+async function fetchNetworkTimeInfo(url, timeoutMs = 3200) {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -2437,7 +2500,7 @@ async function fetchNetworkEpochMs(url, timeoutMs = 3200) {
         });
         if (!response.ok) return null;
         const payload = await response.json();
-        return extractRemoteEpochMs(payload);
+        return extractRemoteTimeInfo(payload);
     } catch {
         return null;
     } finally {
@@ -2446,19 +2509,23 @@ async function fetchNetworkEpochMs(url, timeoutMs = 3200) {
 }
 
 async function syncMoonClockOffset() {
+    const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    const encodedLocalTz = encodeURIComponent(localTz);
     const endpoints = [
-        'https://worldtimeapi.org/api/timezone/America/New_York',
         'https://worldtimeapi.org/api/ip',
+        `https://worldtimeapi.org/api/timezone/${encodedLocalTz}`,
         'https://timeapi.io/api/Time/current/zone?timeZone=UTC'
     ];
 
     for (const endpoint of endpoints) {
-        const remoteMs = await fetchNetworkEpochMs(endpoint);
+        const info = await fetchNetworkTimeInfo(endpoint);
+        const remoteMs = info?.epochMs;
         if (!Number.isFinite(remoteMs)) continue;
 
         moonClockOffsetMs = remoteMs - Date.now();
         moonClockLastSyncMs = Date.now();
         moonClockSource = 'network';
+        moonClockTimeZone = resolveMoonDisplayTimeZone(info?.timeZone, localTz);
 
         if (document.getElementById('dynamicMoonContainer')) {
             renderDynamicMoon();
@@ -2467,6 +2534,7 @@ async function syncMoonClockOffset() {
     }
 
     moonClockSource = 'device';
+    moonClockTimeZone = resolveMoonDisplayTimeZone(localTz, localTz);
     return false;
 }
 
@@ -2542,12 +2610,21 @@ function renderDynamicMoon() {
     if (globalQuoteIndex < 0) globalQuoteIndex = 0;
 
     const nowDate = getMoonClockNowDate();
+    const formatOptions = moonClockTimeZone
+        ? { timeZone: moonClockTimeZone }
+        : {};
+
     const localDateLabel = nowDate.toLocaleDateString(undefined, {
+        ...formatOptions,
         weekday: 'short',
         month: 'short',
         day: 'numeric'
     });
-    const localTimeLabel = nowDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    const localTimeLabel = nowDate.toLocaleTimeString([], {
+        ...formatOptions,
+        hour: 'numeric',
+        minute: '2-digit'
+    });
     const sourceLabel = moonClockSource === 'network' ? 'web-synced' : 'device clock';
     
     tooltip.innerHTML = `<strong>${moonData.name}</strong><br><small>${escapeHTML(localDateLabel)} ${escapeHTML(localTimeLabel)} • ${moonData.illumination}% lit • ${escapeHTML(sourceLabel)}</small><br><em id="rotatingMoonQuote" class="moon-quote-text">"${moonQuoteRotation[globalQuoteIndex]}"</em>`;
@@ -6558,35 +6635,21 @@ function loadDiscordPage() {
 
     appViewport.innerHTML = `
         <div class="preorder-card menu-large" style="border-color: #ec4899; box-shadow: 0 0 40px rgba(236, 72, 153, 0.4); text-align: center; padding: 35px 20px;">
-            <h1 style="color: #ffffff; text-shadow: 0 0 15px #ec4899; font-size: 2.5rem; margin-bottom: 15px;">The Critter Café</h1>
+            <h1 style="color: #ffffff; text-shadow: 0 0 15px #ec4899; font-size: 2.5rem; margin-bottom: 15px;">Meowter Space</h1>
             
             <div style="background: rgba(0,0,0,0.4); padding: 30px; border-radius: 16px; border: 1px solid rgba(236, 72, 153, 0.3); text-align: left; color: #e2e8f0; line-height: 1.8; font-size: 1.05rem; white-space: pre-wrap; font-family: 'Fredoka', sans-serif;">
-<div style="text-align: center; color: #ec4899; font-weight: bold; margin-bottom: 15px;">╭━━━☕🐾 THE CRITTER CAFÉ 🐾☕━━━╮
-      a cozy escape made just for you…
-╰━━━━━━━━━━━━━━━━━━━━━━━╯</div>
-Step into a warm, softly-lit café where the air is calm, the vibes are gentle, and everyone is welcome.
-Whether you’re an artist, a gamer, or just someone looking for a place to breathe—this is your home away from home.
+🌙🐾 Welcome to <strong>Meowter Space</strong>! 🐾🌙
 
-<span style="color: #00f2fe; font-weight: 500;">✧･ﾟ: * what we’re brewing * :･ﾟ✧</span>
-☕ <strong>chill, non-toxic community</strong>
-🎨 <strong>art sharing + weekly prompts</strong>
-🎮 <strong>game nights & cozy events</strong>
-💬 <strong>friendly chats, vent spaces & support</strong>
-🎁 <strong>giveaways, raffles & fun perks</strong>
-🐾 <strong>adorable café roles (Baristas, Brewmasters & more!)</strong>
+You've officially drifted into our little corner of the galaxy, a cozy, space-themed server for artists, gamers, creatives, cat lovers, and anyone who just wants a fun place to hang out.
 
-<span style="color: #22c55e; font-weight: 500;">✧･ﾟ: * our vibe * :･ﾟ✧</span>
-soft • welcoming • creative • drama-free
+Here you can share your art, talk about your interests, post your pets, make friends, vibe in the stars, and enjoy a chill community without all the chaos. Whether you're here to lurk, chat, create, or cause harmless space-cat mischief, you're welcome here.
 
-No pressure. No judgment.
-Just a place to exist, create, and connect at your own pace.
+Before you blast off, please check the rules, grab your roles, and introduce yourself when you're ready!
 
-<div style="text-align: center; color: #a855f7; font-weight: bold; margin-top: 15px;">╭━━━🌿 pull up a chair… 🌿━━━╮
-      Your drink is waiting ♡
-╰━━━━━━━━━━━━━━━━━━━━━━━╯</div>
+Enjoy your stay in <strong>Meowter Space</strong> where the vibes are cosmic, and the cats are probably knocking things off the spaceship. 🚀✨
             </div>
             
-            <a href="https://discord.gg/c7M822zuBG" target="_blank" class="nav-btn btn-pink-highlight" style="display: inline-block; margin-top: 25px; text-decoration: none;">Join The Critter Café ☕</a>
+            <a href="https://discord.gg/JJt4wJca79" target="_blank" class="nav-btn btn-pink-highlight" style="display: inline-block; margin-top: 25px; text-decoration: none;">Join Meowter Space 🚀</a>
             <br>
             <button type="button" id="backHomeBtn" class="nav-btn" style="margin-top: 20px;">← Back to Horizon</button>
         </div>
@@ -7784,6 +7847,176 @@ function getMonthKeyFromMs(ms) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function getOrderAgeDays(order) {
+    const createdAtMs = getOrderTimestampMs(order);
+    if (!createdAtMs) return 0;
+    return Math.max(0, Math.floor((Date.now() - createdAtMs) / (24 * 60 * 60 * 1000)));
+}
+
+function getOrderPublicId(order) {
+    const raw = String(order?.orderId || '').trim();
+    if (raw) return raw;
+    const fallback = String(order?.id || '').trim();
+    return fallback ? `DOC-${fallback.slice(0, 8).toUpperCase()}` : 'Unknown';
+}
+
+function buildAdminReminderSubject(order, type) {
+    const orderId = getOrderPublicId(order);
+    if (type === 'deposit') return `Horizon Tide | Order ${orderId} | Deposit Reminder`;
+    return `Horizon Tide | Order ${orderId} | Payment Reminder`;
+}
+
+function buildAdminReminderMessage(order, type, amountDue = 0) {
+    const customerName = String(order?.name || 'there').trim() || 'there';
+    const orderId = getOrderPublicId(order);
+    const safeAmount = Math.max(0, Number(amountDue) || 0);
+
+    if (type === 'deposit') {
+        return [
+            `Hi ${customerName},`,
+            '',
+            `Quick update for order ${orderId}: this is a friendly deposit reminder.`,
+            `Current deposit due: ${formatMoney(safeAmount)}.`,
+            '',
+            'Once that is settled, we will keep your queue progress moving smoothly.',
+            '',
+            'Thank you so much for supporting Horizon Tide!'
+        ].join('\n');
+    }
+
+    return [
+        `Hi ${customerName},`,
+        '',
+        `Quick update for order ${orderId}: this is a friendly payment reminder.`,
+        `Current remaining balance: ${formatMoney(safeAmount)}.`,
+        '',
+        'Reply whenever you are ready and we can finalize next steps.',
+        '',
+        'Thank you so much for supporting Horizon Tide!'
+    ].join('\n');
+}
+
+function buildAdminReminderMailto(order, reminderType, amountDue) {
+    const email = String(order?.email || '').trim();
+    if (!email) return '';
+    const subject = buildAdminReminderSubject(order, reminderType);
+    const body = buildAdminReminderMessage(order, reminderType, amountDue);
+    return `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function getAdminReminderRows(orders = []) {
+    const now = Date.now();
+    const rows = [];
+
+    orders.forEach((order) => {
+        const status = normalizeOrderStatus(order?.status);
+        const email = String(order?.email || '').trim();
+        if (!email) return;
+
+        const lastSentAtMs = getComparableTimestampMs(order?.lastReminderSentAt);
+        const cooldownPassed = !lastSentAtMs || (now - lastSentAtMs) >= ADMIN_REMINDER_COOLDOWN_MS;
+        if (!cooldownPassed) return;
+
+        const ageDays = getOrderAgeDays(order);
+        const remainingBalance = Math.max(0, getOrderRemainingBalance(order));
+
+        if ((status === 'accepted' || status === 'in progress') && isLopsideFursuitOrder(order)) {
+            const depositTarget = Math.max(0, getOrderLopsideDepositTarget(order));
+            const depositCollected = Math.max(0, getOrderLopsideDepositCollected(order));
+            const depositDue = Math.max(0, roundMoney(depositTarget - depositCollected));
+            if (depositDue > 0) {
+                rows.push({
+                    orderDocId: order.id,
+                    orderId: getOrderPublicId(order),
+                    name: String(order.name || 'Guest'),
+                    email,
+                    status: order.status || 'Pending Review',
+                    ageDays,
+                    type: 'deposit',
+                    amountDue: depositDue,
+                    lastSentAtMs,
+                    mailto: buildAdminReminderMailto(order, 'deposit', depositDue),
+                    message: buildAdminReminderMessage(order, 'deposit', depositDue)
+                });
+                return;
+            }
+        }
+
+        if ((status === 'in progress' || status === 'finished' || status === 'shipped' || status === 'paid') && remainingBalance > 0) {
+            rows.push({
+                orderDocId: order.id,
+                orderId: getOrderPublicId(order),
+                name: String(order.name || 'Guest'),
+                email,
+                status: order.status || 'Pending Review',
+                ageDays,
+                type: 'final',
+                amountDue: remainingBalance,
+                lastSentAtMs,
+                mailto: buildAdminReminderMailto(order, 'final', remainingBalance),
+                message: buildAdminReminderMessage(order, 'final', remainingBalance)
+            });
+        }
+    });
+
+    rows.sort((a, b) => {
+        if (a.type !== b.type) return a.type === 'deposit' ? -1 : 1;
+        return (b.amountDue || 0) - (a.amountDue || 0);
+    });
+
+    return rows.slice(0, 14);
+}
+
+function getAdminSmartAlertRows(orders = [], reminderRows = []) {
+    const pendingReviews = orders.filter((order) => {
+        const status = normalizeOrderStatus(order?.status);
+        return status === 'pending review' || status === 'new';
+    }).length;
+
+    const staleAccepted = orders.filter((order) => {
+        const status = normalizeOrderStatus(order?.status);
+        if (status !== 'accepted') return false;
+        return getOrderAgeDays(order) >= ADMIN_ACCEPTED_STALE_DAYS;
+    }).length;
+
+    const missingDeposit = orders.filter((order) => {
+        const status = normalizeOrderStatus(order?.status);
+        if (!(status === 'accepted' || status === 'in progress')) return false;
+        if (!isLopsideFursuitOrder(order)) return false;
+        const target = Math.max(0, getOrderLopsideDepositTarget(order));
+        if (target <= 0) return false;
+        const collected = Math.max(0, getOrderLopsideDepositCollected(order));
+        return collected < target;
+    }).length;
+
+    return [
+        {
+            tone: pendingReviews > 0 ? 'amber' : 'green',
+            title: 'Pending Reviews',
+            value: pendingReviews,
+            detail: pendingReviews > 0 ? 'New requests waiting for decision.' : 'No pending review items right now.'
+        },
+        {
+            tone: staleAccepted > 0 ? 'purple' : 'green',
+            title: `Accepted ${ADMIN_ACCEPTED_STALE_DAYS}+ Days`,
+            value: staleAccepted,
+            detail: staleAccepted > 0 ? 'Accepted orders waiting without movement.' : 'Accepted orders look fresh.'
+        },
+        {
+            tone: missingDeposit > 0 ? 'red' : 'green',
+            title: 'Missing Lopside Deposit',
+            value: missingDeposit,
+            detail: missingDeposit > 0 ? 'Deposit not fully recorded yet.' : 'No Lopside deposit gaps.'
+        },
+        {
+            tone: reminderRows.length > 0 ? 'cyan' : 'green',
+            title: 'Reminder Queue',
+            value: reminderRows.length,
+            detail: reminderRows.length > 0 ? 'Customers ready for payment follow-up.' : 'No reminders currently due.'
+        }
+    ];
+}
+
 function computeAdminDashboardMetrics() {
     const orders = Array.isArray(window.allOrders) ? window.allOrders : [];
     const refunds = Array.isArray(window.adminRefundEntries) ? window.adminRefundEntries : [];
@@ -7847,6 +8080,13 @@ function computeAdminDashboardMetrics() {
         orders.reduce((sum, order) => sum + getOrderPaidAmount(order), 0) +
         commissions.reduce((sum, commission) => sum + getCommissionPaidAmount(commission), 0);
     const lopsideDepositCollected = orders.reduce((sum, order) => sum + getOrderLopsideDepositCollected(order), 0);
+    const lopsideDepositOutstanding = orders.reduce((sum, order) => {
+        if (!isLopsideFursuitOrder(order)) return sum;
+        const target = Math.max(0, getOrderLopsideDepositTarget(order));
+        if (target <= 0) return sum;
+        const collected = Math.max(0, getOrderLopsideDepositCollected(order));
+        return sum + Math.max(0, roundMoney(target - collected));
+    }, 0);
 
     const revenueByCreator = { husky: 0, lopside: 0 };
     const revenueByService = { art: 0, animation: 0, fursuits: 0, keychains: 0, stickers: 0 };
@@ -7886,6 +8126,11 @@ function computeAdminDashboardMetrics() {
         const bucket = monthlyBuckets.find((item) => item.key === key);
         if (bucket) bucket.value += getCommissionRevenueValue(commission, revenueOptions.basis);
     });
+
+    const thisMonthRevenue = monthlyBuckets[monthlyBuckets.length - 1]?.value || 0;
+    const pipelineOutstandingRevenue = Math.max(0, roundMoney(revenueTotal - totalAmountPaid));
+    const reminderRows = getAdminReminderRows(orders);
+    const alertRows = getAdminSmartAlertRows(orders, reminderRows);
 
     const newestOrder = [...orders].sort((a, b) => getOrderTimestampMs(b) - getOrderTimestampMs(a))[0] || null;
     const latestRefund = [...refunds].sort((a, b) => {
@@ -7931,9 +8176,14 @@ function computeAdminDashboardMetrics() {
         estimatedAcceptedRevenue,
         estimatedPendingRevenue,
         estimatedCompletedRevenue,
+        thisMonthRevenue,
+        pipelineOutstandingRevenue,
+        lopsideDepositOutstanding,
         revenueByCreator,
         revenueByService,
         monthlyBuckets,
+        alertRows,
+        reminderRows,
         newestOrder,
         latestRefund,
         latestCommission,
@@ -8314,11 +8564,65 @@ function renderPipelineChart(rows) {
     `;
 }
 
+function renderAdminSmartAlerts(rows = []) {
+    if (!Array.isArray(rows) || rows.length === 0) {
+        return '<p class="admin-detail">No alerts yet.</p>';
+    }
+
+    return `<div class="admin-alert-grid">${rows.map((row) => {
+        const tone = String(row.tone || 'cyan').toLowerCase();
+        const toneClass = ['amber', 'purple', 'red', 'green', 'cyan'].includes(tone) ? tone : 'cyan';
+        const value = Math.max(0, Number(row.value) || 0);
+        return `
+            <article class="admin-alert-item is-${toneClass}">
+                <p class="admin-alert-title">${escapeHTML(String(row.title || 'Alert'))}</p>
+                <strong class="admin-alert-value">${escapeHTML(String(value))}</strong>
+                <p class="admin-alert-detail">${escapeHTML(String(row.detail || ''))}</p>
+            </article>
+        `;
+    }).join('')}</div>`;
+}
+
+function renderAdminReminderRows(rows = []) {
+    if (!Array.isArray(rows) || rows.length === 0) {
+        return '<p class="admin-detail">No reminder emails are due right now.</p>';
+    }
+
+    return rows.map((row) => {
+        const typeLabel = row.type === 'deposit' ? 'Deposit Due' : 'Payment Due';
+        const mailtoAttr = row.mailto ? `data-mailto="${escapeHTML(row.mailto)}"` : '';
+        const messagePayload = encodeURIComponent(String(row.message || ''));
+        const lastSentLabel = row.lastSentAtMs
+            ? `Last sent ${getRelativeTimeLabel(row.lastSentAtMs)}`
+            : 'Not sent yet';
+
+        return `
+            <article class="admin-reminder-item">
+                <div class="admin-reminder-meta">
+                    <span class="admin-reminder-pill">${escapeHTML(typeLabel)}</span>
+                    <span class="admin-reminder-pill">${escapeHTML(String(row.status || 'Pending Review'))}</span>
+                    <span class="admin-reminder-pill">${escapeHTML(`Age ${Math.max(0, Number(row.ageDays) || 0)}d`)}</span>
+                </div>
+                <h4>${escapeHTML(String(row.orderId || 'Unknown'))} | ${escapeHTML(String(row.name || 'Guest'))}</h4>
+                <p>${escapeHTML(String(row.email || 'No email'))}</p>
+                <p class="admin-reminder-amount">Amount Due: ${escapeHTML(formatMoney(Math.max(0, Number(row.amountDue) || 0)))}</p>
+                <small>${escapeHTML(lastSentLabel)}</small>
+                <div class="admin-reminder-actions">
+                    <button type="button" class="admin-btn-edit admin-copy-reminder-btn" data-reminder-msg="${messagePayload}">Copy Draft</button>
+                    <button type="button" class="admin-btn-edit admin-send-reminder-btn" data-order-doc-id="${escapeHTML(String(row.orderDocId || ''))}" data-reminder-type="${escapeHTML(String(row.type || 'final'))}" ${mailtoAttr}>Email Draft</button>
+                </div>
+            </article>
+        `;
+    }).join('');
+}
+
 function updateAdminDashboardOverview() {
     const container = document.getElementById('adminOverviewCards');
     const chartContainer = document.getElementById('adminRevenuePanels');
     const activityContainer = document.getElementById('adminRecentActivityList');
-    if (!container || !chartContainer || !activityContainer) return;
+    const alertsContainer = document.getElementById('adminSmartAlertsList');
+    const remindersContainer = document.getElementById('adminReminderQueueList');
+    if (!container || !chartContainer || !activityContainer || !alertsContainer || !remindersContainer) return;
 
     const metrics = computeAdminDashboardMetrics();
 
@@ -8396,6 +8700,9 @@ function updateAdminDashboardOverview() {
         { label: 'Completed', value: metrics.estimatedCompletedRevenue }
     ];
 
+    alertsContainer.innerHTML = renderAdminSmartAlerts(metrics.alertRows);
+    remindersContainer.innerHTML = renderAdminReminderRows(metrics.reminderRows);
+
     chartContainer.innerHTML = `
         <article class="admin-chart-card">
             <h3>Revenue Observatory | By Month</h3>
@@ -8425,6 +8732,20 @@ function updateAdminDashboardOverview() {
             <h3>Commission Pipeline</h3>
             <p>Pending vs accepted vs completed value flow for the selected basis.</p>
             ${renderPipelineChart(statusRows)}
+        </article>
+        <article class="admin-chart-card">
+            <h3>Forecast Snapshot</h3>
+            <p>Quick forecast for current pipeline and payment health.</p>
+            ${renderWidgetStatChips([
+                { label: 'This Month', value: formatMoney(metrics.thisMonthRevenue) },
+                { label: 'Outstanding', value: formatMoney(metrics.pipelineOutstandingRevenue) },
+                { label: 'Deposit Due', value: formatMoney(metrics.lopsideDepositOutstanding) }
+            ])}
+            ${renderMiniColumnChart([
+                { label: 'Projected', value: metrics.revenueTotal },
+                { label: 'Collected', value: metrics.totalAmountPaid },
+                { label: 'Outstanding', value: metrics.pipelineOutstandingRevenue }
+            ])}
         </article>
     `;
 
@@ -8747,6 +9068,64 @@ function setupAdminDashboardDelegation() {
 
         const button = target.closest('button');
         if (!button) return;
+
+        if (button.matches('.admin-status-chip')) {
+            const status = String(button.getAttribute('data-status-filter') || 'All');
+            filterOrders(status);
+            return;
+        }
+
+        if (button.id === 'adminSelectVisibleOrdersBtn') {
+            setVisibleAdminOrderSelection(true);
+            return;
+        }
+
+        if (button.id === 'adminClearVisibleOrdersBtn') {
+            setVisibleAdminOrderSelection(false);
+            return;
+        }
+
+        if (button.id === 'adminApplyBulkStatusBtn') {
+            const bulkSelect = document.getElementById('adminBulkStatusSelect');
+            const status = bulkSelect instanceof HTMLSelectElement ? bulkSelect.value : '';
+            await applyBulkAdminStatusUpdate(status);
+            return;
+        }
+
+        if (button.matches('.admin-copy-reminder-btn')) {
+            const payload = button.getAttribute('data-reminder-msg');
+            if (!payload) return;
+            try {
+                await navigator.clipboard.writeText(decodeURIComponent(payload));
+                showAdminToast('Reminder draft copied.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Could not copy reminder draft.', true);
+            }
+            return;
+        }
+
+        if (button.matches('.admin-send-reminder-btn')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before sending reminders.')) return;
+            const mailto = String(button.getAttribute('data-mailto') || '').trim();
+            const orderDocId = String(button.getAttribute('data-order-doc-id') || '').trim();
+            const reminderType = String(button.getAttribute('data-reminder-type') || 'final').trim();
+            if (!mailto) {
+                showAdminToast('This reminder has no email address.', true);
+                return;
+            }
+
+            window.location.href = mailto;
+
+            try {
+                await markOrderReminderSent(orderDocId, reminderType);
+                showAdminToast('Reminder opened and logged.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Reminder opened, but logging failed.', true);
+            }
+            return;
+        }
 
         if (button.matches('.btn-edit-discount')) {
             const id = button.getAttribute('data-id');
@@ -9396,6 +9775,10 @@ function setupAdminDashboardDelegation() {
     appViewport.addEventListener('change', async (event) => {
         const target = event.target instanceof Element ? event.target : null;
         const dashboardRoot = target?.closest('#adminDashboardView');
+        if (dashboardRoot && target instanceof HTMLInputElement && target.matches('.admin-order-select')) {
+            updateAdminOrderSelectionSummary();
+            return;
+        }
         const statusSelect = target?.closest('.admin-order-status-select');
         if (!dashboardRoot || !(statusSelect instanceof HTMLSelectElement)) return;
 
@@ -9673,6 +10056,20 @@ function loadAdminDashboard() {
                     </div>
                 </section>
 
+                <section class="admin-dashboard-band" aria-labelledby="adminSmartAlertsHeading">
+                    <h2 id="adminSmartAlertsHeading" class="admin-zone-heading">Smart Admin Alerts</h2>
+                    <section class="admin-card" id="adminSmartAlertsList" aria-live="polite">
+                        <p class="admin-detail">Loading smart alerts...</p>
+                    </section>
+                </section>
+
+                <section class="admin-dashboard-band" aria-labelledby="adminReminderCenterHeading">
+                    <h2 id="adminReminderCenterHeading" class="admin-zone-heading">Reminder Center</h2>
+                    <section class="admin-card admin-reminder-center" id="adminReminderQueueList" aria-live="polite">
+                        <p class="admin-detail">Loading reminders...</p>
+                    </section>
+                </section>
+
                 <section class="admin-dashboard-band" aria-labelledby="adminMissionStatusHeading">
                     <h2 id="adminMissionStatusHeading" class="admin-zone-heading">Mission Status Cards</h2>
                     <section class="admin-overview-grid" id="adminOverviewCards"></section>
@@ -9715,6 +10112,32 @@ function loadAdminDashboard() {
                 <details class="admin-collapsible" id="adminSectionOrders" open>
                     <summary><span class="admin-summary-label">Orders <span class="admin-panel-badge" id="adminOrdersCountBadge" data-tone="amber">0</span></span></summary>
                     <div class="admin-collapsible-body">
+                        <div class="admin-orders-toolbar">
+                            <div class="admin-filters admin-filters--chips">
+                                <button type="button" class="nav-btn admin-status-chip" data-status-filter="All">All</button>
+                                <button type="button" class="nav-btn admin-status-chip" data-status-filter="Pending Review">Pending</button>
+                                <button type="button" class="nav-btn admin-status-chip" data-status-filter="Accepted">Accepted</button>
+                                <button type="button" class="nav-btn admin-status-chip" data-status-filter="In Progress">In Progress</button>
+                                <button type="button" class="nav-btn admin-status-chip" data-status-filter="Finished">Finished</button>
+                            </div>
+                            <div class="admin-bulk-actions" aria-label="Bulk order actions">
+                                <span class="admin-list-count-badge" id="adminBulkSelectionCount">0 selected</span>
+                                <button type="button" class="admin-btn-edit" id="adminSelectVisibleOrdersBtn">Select Visible</button>
+                                <button type="button" class="admin-btn-edit" id="adminClearVisibleOrdersBtn">Clear Selection</button>
+                                <select id="adminBulkStatusSelect" class="admin-input">
+                                    <option value="">Bulk status...</option>
+                                    <option value="Pending Review">Pending Review</option>
+                                    <option value="Reviewed">Reviewed</option>
+                                    <option value="Accepted">Accepted</option>
+                                    <option value="Paid">Paid</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="Finished">Finished</option>
+                                    <option value="Shipped">Shipped</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                </select>
+                                <button type="button" class="admin-btn-save" id="adminApplyBulkStatusBtn">Apply Bulk Status</button>
+                            </div>
+                        </div>
                         <div class="admin-filters">
                             <button type="button" class="nav-btn" id="filterAll">All Orders</button>
                             <button type="button" class="nav-btn" id="filterNew">Pending Review</button>
@@ -11467,6 +11890,93 @@ function renderAdminCommentsManager() {
     }).join('');
 }
 
+function getSelectedAdminOrderIds() {
+    return Array.from(document.querySelectorAll('.admin-order-select:checked'))
+        .map((input) => String(input.getAttribute('data-order-id') || '').trim())
+        .filter(Boolean);
+}
+
+function updateAdminOrderSelectionSummary() {
+    const countEl = document.getElementById('adminBulkSelectionCount');
+    if (!countEl) return;
+    const selectedCount = getSelectedAdminOrderIds().length;
+    countEl.textContent = `${selectedCount} selected`;
+}
+
+function setVisibleAdminOrderSelection(checked) {
+    document.querySelectorAll('.admin-order-select').forEach((input) => {
+        if (!(input instanceof HTMLInputElement)) return;
+        input.checked = checked;
+    });
+    updateAdminOrderSelectionSummary();
+}
+
+async function markOrderReminderSent(orderDocId, reminderType) {
+    const id = String(orderDocId || '').trim();
+    if (!id) return;
+
+    await updateDoc(doc(db, 'preorders', id), {
+        lastReminderSentAt: serverTimestamp(),
+        lastReminderType: String(reminderType || 'final'),
+        lastReminderSentBy: auth.currentUser?.email || 'admin'
+    });
+}
+
+async function applyBulkAdminStatusUpdate(nextStatus) {
+    if (!requireAdminSession('Please sign in with an authorized admin account before bulk status updates.')) return;
+
+    const status = String(nextStatus || '').trim();
+    if (!status) {
+        showAdminToast('Pick a bulk status first.', true);
+        return;
+    }
+
+    const selectedIds = getSelectedAdminOrderIds();
+    if (!selectedIds.length) {
+        showAdminToast('Select at least one order first.', true);
+        return;
+    }
+
+    let updated = 0;
+    let failed = 0;
+
+    for (const orderDocId of selectedIds) {
+        const order = (Array.isArray(window.allOrders) ? window.allOrders : []).find((entry) => entry.id === orderDocId);
+        if (!order) {
+            failed += 1;
+            continue;
+        }
+
+        const previousStatus = String(order.status || 'Pending Review');
+        if (previousStatus === status) continue;
+
+        try {
+            await updateOrderStatusWithInventoryAtomic(orderDocId, status);
+            try {
+                await syncOrderQueueFallbackFromAdmin(order, status);
+            } catch (queueSyncError) {
+                console.error('Bulk queue fallback sync failed:', queueSyncError);
+            }
+            order.status = status;
+            updated += 1;
+        } catch (error) {
+            console.error('Bulk status update failed for', orderDocId, error);
+            failed += 1;
+        }
+    }
+
+    setVisibleAdminOrderSelection(false);
+    applyAdminOrderFilters();
+    updateAdminDashboardOverview();
+
+    if (failed > 0) {
+        showAdminToast(`Bulk update finished: ${updated} updated, ${failed} failed.`, true);
+        return;
+    }
+
+    showAdminToast(`Bulk status update complete: ${updated} order(s) moved to ${status}.`);
+}
+
 function renderAdminOrders(ordersArr) {
     const ordersGrid = document.getElementById('ordersGrid');
     ordersGrid.innerHTML = "";
@@ -11613,6 +12123,10 @@ function renderAdminOrders(ordersArr) {
 
         card.innerHTML = `
             <div class="admin-order-title-row">
+                <label class="admin-order-select-wrap" title="Select order for bulk actions">
+                    <input type="checkbox" class="admin-order-select" data-order-id="${order.id}" aria-label="Select order ${escapeHTML(order.orderId || order.id || 'unknown')}">
+                    <span>Select</span>
+                </label>
                 <h3>${escapeHTML(order.orderType || order.itemType || 'Order')}</h3>
                 <span class="admin-order-badge ${badgeToneClass}">${escapeHTML(attentionBadge)}</span>
             </div>
@@ -11715,6 +12229,8 @@ function renderAdminOrders(ordersArr) {
         `;
         ordersGrid.appendChild(card);
     });
+
+    updateAdminOrderSelectionSummary();
 }
 
 function showAdminToast(msg, isError = false) {

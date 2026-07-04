@@ -13150,3 +13150,156 @@ body[data-page="home"] .home-top-nav {
     min-width: 0;
     max-width: 100%;
 }
+
+#adminDashboardView .admin-alert-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 10px;
+}
+
+#adminDashboardView .admin-alert-item {
+    border: 1px solid rgba(34, 211, 238, 0.2);
+    border-radius: 12px;
+    padding: 10px;
+    background: rgba(8, 15, 30, 0.62);
+}
+
+#adminDashboardView .admin-alert-item.is-amber {
+    border-color: rgba(245, 158, 11, 0.42);
+}
+
+#adminDashboardView .admin-alert-item.is-purple {
+    border-color: rgba(167, 139, 250, 0.44);
+}
+
+#adminDashboardView .admin-alert-item.is-red {
+    border-color: rgba(248, 113, 113, 0.44);
+}
+
+#adminDashboardView .admin-alert-item.is-green {
+    border-color: rgba(74, 222, 128, 0.38);
+}
+
+#adminDashboardView .admin-alert-title {
+    margin: 0;
+    font-size: 0.74rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #a6c4df;
+}
+
+#adminDashboardView .admin-alert-value {
+    display: block;
+    margin-top: 6px;
+    font-size: 1.35rem;
+    line-height: 1;
+    color: #f8fdff;
+}
+
+#adminDashboardView .admin-alert-detail {
+    margin: 6px 0 0;
+    font-size: 0.82rem;
+    color: #b7cade;
+}
+
+#adminDashboardView .admin-reminder-center {
+    display: grid;
+    gap: 10px;
+}
+
+#adminDashboardView .admin-reminder-item {
+    border: 1px solid rgba(125, 211, 252, 0.24);
+    border-radius: 12px;
+    padding: 10px;
+    background: linear-gradient(160deg, rgba(7, 16, 32, 0.92), rgba(5, 12, 24, 0.88));
+}
+
+#adminDashboardView .admin-reminder-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+#adminDashboardView .admin-reminder-pill {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid rgba(129, 140, 248, 0.34);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    color: #dbeafe;
+}
+
+#adminDashboardView .admin-reminder-item h4 {
+    margin: 0;
+    color: #f5fbff;
+}
+
+#adminDashboardView .admin-reminder-item p {
+    margin: 4px 0;
+}
+
+#adminDashboardView .admin-reminder-amount {
+    color: #67e8f9;
+    font-weight: 600;
+}
+
+#adminDashboardView .admin-reminder-actions {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+#adminDashboardView .admin-orders-toolbar {
+    position: sticky;
+    top: 8px;
+    z-index: 5;
+    display: grid;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid rgba(34, 211, 238, 0.24);
+    border-radius: 12px;
+    background: rgba(6, 14, 28, 0.82);
+    backdrop-filter: blur(6px);
+}
+
+#adminDashboardView .admin-filters--chips {
+    margin: 0;
+}
+
+#adminDashboardView .admin-bulk-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+#adminDashboardView .admin-bulk-actions .admin-input {
+    width: min(240px, 100%);
+}
+
+#adminDashboardView .admin-order-select-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #a7c9e7;
+    font-size: 0.78rem;
+    margin-right: auto;
+}
+
+#adminDashboardView .admin-order-select-wrap input {
+    accent-color: #22d3ee;
+}
+
+@media (max-width: 780px) {
+    #adminDashboardView .admin-orders-toolbar {
+        position: static;
+    }
+
+    #adminDashboardView .admin-bulk-actions .admin-input {
+        width: 100%;
+    }
+}
