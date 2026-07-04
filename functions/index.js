@@ -78,6 +78,10 @@ function normalizePreorderStatus(status) {
 function getQueueSyncPlanFromPreorderStatus(status) {
   const normalized = normalizePreorderStatus(status);
 
+  if (normalized === 'accepted') {
+    return { shouldExist: true, queueStatus: 'Not Started' };
+  }
+
   if (normalized === 'in progress') {
     return { shouldExist: true, queueStatus: 'Started' };
   }

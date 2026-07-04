@@ -6447,7 +6447,7 @@ function loadStatusCheckPage() {
             <h1 style="color: #ffffff; text-shadow: 0 0 15px #00f2fe; margin-bottom: 10px; font-size: 2.5rem;">Check Status</h1>
             <p style="margin-bottom: 25px; color: #e0f7fa; font-size: 1.1rem;">Enter your Order Number to check the status of your request.</p>
             <form id="statusCheckForm" style="display: flex; flex-direction: column; gap: 15px;">
-                <input type="text" id="searchQuery" class="form-input" placeholder="e.g. HTG-2026-XXXXXX" required style="font-size: 1.1rem; text-align: center;">
+                <input type="text" id="searchQuery" class="form-input" placeholder="e.g. HTG-2026-XXXXXX or XXXXXX" required style="font-size: 1.1rem; text-align: center;">
                 <button type="submit" class="preorder-btn" style="border-color: #a855f7;">Search ✨</button>
             </form>
             <div id="statusResults" style="margin-top: 25px; text-align: left; display: flex; flex-direction: column; gap: 15px;"></div>
@@ -6459,7 +6459,7 @@ function loadStatusCheckPage() {
 
     document.getElementById('statusCheckForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const queryVal = document.getElementById('searchQuery').value.trim().toUpperCase();
+        const queryValRaw = document.getElementById('searchQuery').value;
         const resultsDiv = document.getElementById('statusResults');
         const btn = e.target.querySelector('button');
         btn.textContent = "Searching... 🌊";
@@ -6468,17 +6468,28 @@ function loadStatusCheckPage() {
         try {
             resultsDiv.innerHTML = "";
 
-            if (!/^HTG-2026-[A-Z0-9]{6}$/.test(queryVal)) {
-                resultsDiv.innerHTML = `<p style="color: #ef4444; text-align: center; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px;">Please enter a valid order number (HTG-2026-XXXXXX).</p>`;
+            const lookupCandidates = buildOrderLookupCandidates(queryValRaw);
+            if (lookupCandidates.length === 0) {
+                resultsDiv.innerHTML = `<p style="color: #ef4444; text-align: center; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px;">Please enter a valid order number (HTG-YYYY-XXXXXX or just XXXXXX).</p>`;
                 return;
             }
 
-            const statusDoc = await getDoc(doc(db, "preorderStatusPublic", queryVal));
+            let statusDoc = null;
+            let matchedOrderId = '';
+            for (const candidate of lookupCandidates) {
+                const maybeDoc = await getDoc(doc(db, "preorderStatusPublic", candidate));
+                if (maybeDoc.exists()) {
+                    statusDoc = maybeDoc;
+                    matchedOrderId = candidate;
+                    break;
+                }
+            }
 
-            if (!statusDoc.exists()) {
+            if (!statusDoc || !statusDoc.exists()) {
                 resultsDiv.innerHTML = `<p style="color: #f8d66d; text-align: center; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px;">Your order was not found in the public tracker yet. New submissions may appear after admin review. Please check back soon.</p>`;
             } else {
                 const data = statusDoc.data();
+                const resolvedOrderId = data.orderId || matchedOrderId || lookupCandidates[0] || 'Unknown ID';
                 const orderDate = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleDateString() : 'Unknown Date';
                 const estimatePrice = parseAdminPriceInput(data.estimatedPrice);
                 const publishedFinalPrice = data.finalPricePublished === true
@@ -6517,7 +6528,7 @@ function loadStatusCheckPage() {
                 resultsDiv.innerHTML = `
                     <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid ${statusColor}; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: center;">
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 10px;">
-                            <strong style="color: #ffffff; font-size: 1.1rem; letter-spacing: 1px;">${escapeHTML(data.orderId || 'Unknown ID')}</strong>
+                            <strong style="color: #ffffff; font-size: 1.1rem; letter-spacing: 1px;">${escapeHTML(resolvedOrderId)}</strong>
                             <span style="background: rgba(255,255,255,0.1); color: ${statusColor}; padding: 4px 12px; border-radius: 20px; font-size: 0.9rem; border: 1px solid ${statusColor};">${escapeHTML(data.status || 'Pending Review')}</span>
                         </div>
                         ${iconAnim}
@@ -6624,6 +6635,35 @@ function generateOrderID() {
         id += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return `HTG-2026-${id}`;
+}
+
+function buildOrderLookupCandidates(rawInput) {
+    const cleaned = String(rawInput || '')
+        .trim()
+        .toUpperCase()
+        .replace(/\s+/g, '')
+        .replace(/[^A-Z0-9-]/g, '');
+
+    if (!cleaned) return [];
+
+    const candidates = [];
+    const pushCandidate = (value) => {
+        if (!value) return;
+        if (!/^HTG-\d{4}-[A-Z0-9]{6}$/.test(value)) return;
+        if (!candidates.includes(value)) candidates.push(value);
+    };
+
+    const currentYear = String(new Date().getFullYear());
+
+    if (/^HTG-\d{4}-[A-Z0-9]{6}$/.test(cleaned)) pushCandidate(cleaned);
+    if (/^\d{4}-[A-Z0-9]{6}$/.test(cleaned)) pushCandidate(`HTG-${cleaned}`);
+
+    if (/^[A-Z0-9]{6}$/.test(cleaned)) {
+        pushCandidate(`HTG-${currentYear}-${cleaned}`);
+        if (currentYear !== '2026') pushCandidate(`HTG-2026-${cleaned}`);
+    }
+
+    return candidates;
 }
 
 // =====================================
@@ -6760,7 +6800,16 @@ async function submitPreorder(event, orderType) {
         
         localStorage.setItem('hz_preorder_cooldown', Date.now().toString());
 
-        const templateParams = { name: preorderPayload.name, email: preorderPayload.email, order_id: newOrderId.replace('HTG-', ''), request_type: preorderPayload.itemType, message: compiledNotes };
+        const compactOrderId = newOrderId.replace(/^HTG-/, '');
+        const templateParams = {
+            name: preorderPayload.name,
+            email: preorderPayload.email,
+            order_id: newOrderId,
+            order_number: newOrderId,
+            order_id_compact: compactOrderId,
+            request_type: preorderPayload.itemType,
+            message: compiledNotes
+        };
         emailjs.send("service_jn29dsl", "template_0p1cxof", templateParams).catch(e => console.error(e));
         triggerConfetti();
 
