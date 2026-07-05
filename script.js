@@ -6802,6 +6802,101 @@ function findCustomerFaqAssistantAnswer(rawQuery) {
         : 'I could not find an exact match yet. Use Revision Request for art changes, Self-Serve Edits for order detail updates, or Upload Center for new reference links.';
 }
 
+const CUSTOMER_UPLOAD_MAX_FILES = 4;
+const CUSTOMER_UPLOAD_MAX_BYTES = 8 * 1024 * 1024;
+
+function getCustomerRequestHistoryStorageKey(orderId) {
+    return `hz_customer_requests_${String(orderId || '').trim().toUpperCase()}`;
+}
+
+function readCustomerRequestHistory(orderId) {
+    const key = getCustomerRequestHistoryStorageKey(orderId);
+    try {
+        const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function writeCustomerRequestHistory(orderId, entries = []) {
+    const key = getCustomerRequestHistoryStorageKey(orderId);
+    localStorage.setItem(key, JSON.stringify(Array.isArray(entries) ? entries.slice(0, 14) : []));
+}
+
+function pushCustomerRequestHistory(orderId, entry) {
+    const existing = readCustomerRequestHistory(orderId);
+    existing.unshift(entry);
+    writeCustomerRequestHistory(orderId, existing);
+}
+
+function getCustomerRequestTypeLabel(type) {
+    const value = String(type || '').trim().toLowerCase();
+    if (value === 'self_serve_edit') return 'Self-Serve Edit';
+    if (value === 'revision_request') return 'Revision Request';
+    if (value === 'upload_center') return 'Upload Center';
+    if (value === 'payment_reminder_request') return 'Payment Reminder';
+    if (value === 'dm_alert_preference') return 'DM Alerts Preference';
+    return 'Customer Request';
+}
+
+function renderCustomerRequestHistoryCards(orderId) {
+    const entries = readCustomerRequestHistory(orderId);
+    if (!entries.length) {
+        return '<p style="margin: 0; color: #94a3b8; font-size: 0.86rem;">No local request history yet for this order on this device.</p>';
+    }
+
+    return entries.map((entry) => {
+        const when = Number(entry.whenMs || 0) ? new Date(entry.whenMs).toLocaleString() : 'Unknown time';
+        const label = getCustomerRequestTypeLabel(entry.type);
+        const uploadCount = Math.max(0, Number(entry.uploadCount) || 0);
+        const note = String(entry.note || '').trim();
+        const link = String(entry.link || '').trim();
+
+        return `
+            <article style="background: rgba(15, 23, 42, 0.62); border: 1px solid rgba(148, 163, 184, 0.22); border-radius: 10px; padding: 10px; margin-bottom: 8px;">
+                <p style="margin: 0 0 4px; color: #e2e8f0;"><strong>${escapeHTML(label)}</strong> • ${escapeHTML(when)}</p>
+                <p style="margin: 0; color: #cbd5e1; font-size: 0.85rem;">${uploadCount > 0 ? `${uploadCount} file(s) uploaded` : 'No file upload'}${link ? ' • link included' : ''}</p>
+                ${note ? `<p style="margin: 6px 0 0; color: #94a3b8; font-size: 0.82rem;">${escapeHTML(note)}</p>` : ''}
+            </article>
+        `;
+    }).join('');
+}
+
+function sanitizeCustomerUploadFileName(fileName) {
+    return String(fileName || 'upload')
+        .replace(/[^a-zA-Z0-9._-]+/g, '_')
+        .slice(0, 90) || 'upload';
+}
+
+async function uploadCustomerSupportFiles(orderId, filesInput) {
+    const files = Array.from(filesInput || []);
+    if (!files.length) return [];
+
+    if (files.length > CUSTOMER_UPLOAD_MAX_FILES) {
+        throw new Error(`Please upload ${CUSTOMER_UPLOAD_MAX_FILES} files or fewer.`);
+    }
+
+    const uploaded = [];
+    for (const file of files) {
+        if (!file) continue;
+        if (Number(file.size || 0) > CUSTOMER_UPLOAD_MAX_BYTES) {
+            throw new Error(`File too large: ${file.name}. Max size is 8MB.`);
+        }
+
+        const safeOrderId = String(orderId || 'unknown').replace(/[^A-Z0-9-]+/gi, '_');
+        const randomSuffix = Math.random().toString(36).slice(2, 8);
+        const safeName = sanitizeCustomerUploadFileName(file.name);
+        const path = `customerUploads/${safeOrderId}/${Date.now()}_${randomSuffix}_${safeName}`;
+        const fileRef = ref(storage, path);
+        await uploadBytes(fileRef, file);
+        const url = await getDownloadURL(fileRef);
+        uploaded.push(url);
+    }
+
+    return uploaded;
+}
+
 function renderCustomerPhaseTwoPanel(orderId, orderData = {}) {
     const safeOrderId = escapeHTML(String(orderId || 'Unknown'));
     const normalizedStatus = escapeHTML(String(orderData?.status || 'Pending Review'));
@@ -6832,6 +6927,11 @@ function renderCustomerPhaseTwoPanel(orderId, orderData = {}) {
                     <input type="url" id="customerUploadLink" class="form-input" placeholder="https://..." style="text-align: left;">
                 </label>
 
+                <label style="display: grid; gap: 6px; color: #cbd5e1; font-size: 0.9rem;">
+                    Upload Center files (images/docs, up to 4 files, 8MB each)
+                    <input type="file" id="customerUploadFiles" class="form-input" multiple accept="image/*,.pdf,.txt,.doc,.docx" style="text-align: left; padding: 8px;">
+                </label>
+
                 <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                     <button type="button" id="customerSubmitEditBtn" class="preorder-btn" style="border-color: #38bdf8;">Submit Self-Serve Edit</button>
                     <button type="button" id="customerSubmitRevisionBtn" class="preorder-btn" style="border-color: #f59e0b;">Submit Revision Request</button>
@@ -6854,13 +6954,18 @@ function renderCustomerPhaseTwoPanel(orderId, orderData = {}) {
                     <p id="customerFaqAnswer" style="margin: 10px 0 0; color: #cbd5e1; font-size: 0.9rem;">Ask a quick question to get guided to the right tool.</p>
                 </div>
 
+                <div style="margin-top: 4px; border-top: 1px solid rgba(148, 163, 184, 0.25); padding-top: 10px; text-align: left;">
+                    <p style="margin: 0 0 8px; color: #e2e8f0;"><strong>Request History (This Device)</strong></p>
+                    <div id="customerRequestHistoryList">${renderCustomerRequestHistoryCards(orderId)}</div>
+                </div>
+
                 <p id="customerActionStatus" style="margin: 8px 0 0; color: #bae6fd; font-size: 0.9rem;"></p>
             </div>
         </section>
     `;
 }
 
-async function submitCustomerActionTicket({ orderId, email, type, message, uploadLink, discordHandle, dmAlertsEnabled }) {
+async function submitCustomerActionTicket({ orderId, email, type, message, uploadLink, attachmentUrls, discordHandle, dmAlertsEnabled }) {
     const safeOrderId = String(orderId || '').trim();
     if (!safeOrderId) throw new Error('Missing order ID');
 
@@ -6868,6 +6973,7 @@ async function submitCustomerActionTicket({ orderId, email, type, message, uploa
     const normalizedType = String(type || '').trim().toLowerCase();
     const safeMessage = String(message || '').trim();
     const safeUploadLink = String(uploadLink || '').trim();
+    const urls = Array.isArray(attachmentUrls) ? attachmentUrls.filter(Boolean).slice(0, CUSTOMER_UPLOAD_MAX_FILES) : [];
     const safeDiscord = String(discordHandle || '').trim();
 
     await addDoc(collection(db, 'reports'), {
@@ -6878,6 +6984,8 @@ async function submitCustomerActionTicket({ orderId, email, type, message, uploa
         orderId: safeOrderId,
         requestType: `customer_${normalizedType}`,
         uploadLink: safeUploadLink,
+        attachmentUrls: urls,
+        attachmentCount: urls.length,
         discordHandle: safeDiscord,
         dmAlertsEnabled: Boolean(dmAlertsEnabled),
         createdAt: serverTimestamp()
@@ -6890,10 +6998,16 @@ function bindCustomerPhaseTwoPanel(orderId) {
     const discordEl = document.getElementById('customerActionDiscord');
     const messageEl = document.getElementById('customerActionMessage');
     const uploadEl = document.getElementById('customerUploadLink');
+    const filesEl = document.getElementById('customerUploadFiles');
     const faqInputEl = document.getElementById('customerFaqInput');
     const faqAnswerEl = document.getElementById('customerFaqAnswer');
+    const historyEl = document.getElementById('customerRequestHistoryList');
 
-    if (!statusEl || !emailEl || !discordEl || !messageEl || !uploadEl || !faqInputEl || !faqAnswerEl) return;
+    if (!statusEl || !emailEl || !discordEl || !messageEl || !uploadEl || !faqInputEl || !faqAnswerEl || !historyEl) return;
+
+    const refreshHistory = () => {
+        historyEl.innerHTML = renderCustomerRequestHistoryCards(orderId);
+    };
 
     const setStatus = (text, isError = false) => {
         statusEl.textContent = text;
@@ -6907,21 +7021,47 @@ function bindCustomerPhaseTwoPanel(orderId) {
             return;
         }
 
+        const directLink = String(options.uploadLink != null ? options.uploadLink : uploadEl.value || '').trim();
+        const selectedFiles = Array.from(filesEl?.files || []);
+
+        if (String(type || '').toLowerCase() === 'upload_center' && !directLink && selectedFiles.length === 0) {
+            setStatus('Upload Center needs at least one link or file.', true);
+            return;
+        }
+
         setStatus('Submitting request...');
         try {
+            let uploadedUrls = [];
+            if (selectedFiles.length > 0) {
+                setStatus('Uploading file(s)...');
+                uploadedUrls = await uploadCustomerSupportFiles(orderId, selectedFiles);
+            }
+
             await submitCustomerActionTicket({
                 orderId,
                 email,
                 type,
                 message: options.message != null ? options.message : messageEl.value,
-                uploadLink: options.uploadLink != null ? options.uploadLink : uploadEl.value,
+                uploadLink: directLink,
+                attachmentUrls: uploadedUrls,
                 discordHandle: discordEl.value,
                 dmAlertsEnabled: Boolean(options.dmAlertsEnabled)
             });
+
+            pushCustomerRequestHistory(orderId, {
+                type,
+                whenMs: Date.now(),
+                note: String(options.message != null ? options.message : messageEl.value || '').trim().slice(0, 180),
+                uploadCount: uploadedUrls.length,
+                link: directLink
+            });
+            refreshHistory();
+            if (filesEl) filesEl.value = '';
             setStatus('Request sent successfully. We logged your request and will follow up via email.');
         } catch (error) {
             console.error('Customer action request failed:', error);
-            setStatus('Could not submit right now. Please try again in a moment.', true);
+            const safeMessage = String(error && error.message ? error.message : 'Could not submit right now. Please try again in a moment.');
+            setStatus(safeMessage, true);
         }
     };
 
