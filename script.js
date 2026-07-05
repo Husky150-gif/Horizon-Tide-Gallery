@@ -178,14 +178,14 @@ window.adminCustomerRequestFilterState = {
 window.adminRevenueCalculatorOptions = (() => {
     try {
         const raw = localStorage.getItem(ADMIN_REVENUE_CALCULATOR_PREF_KEY);
-        if (!raw) return { basis: 'estimate', scope: 'pipeline' };
+        if (!raw) return { basis: 'final-first', scope: 'pipeline' };
         const parsed = JSON.parse(raw);
         return {
             basis: ADMIN_REVENUE_BASIS_OPTIONS.has(parsed?.basis) ? parsed.basis : 'estimate',
             scope: ADMIN_REVENUE_SCOPE_OPTIONS.has(parsed?.scope) ? parsed.scope : 'pipeline'
         };
     } catch {
-        return { basis: 'estimate', scope: 'pipeline' };
+        return { basis: 'final-first', scope: 'pipeline' };
     }
 })();
 
@@ -8005,7 +8005,7 @@ function renderActiveDiscountsList() {
 }
 
 function normalizeAdminRevenueBasis(value) {
-    return ADMIN_REVENUE_BASIS_OPTIONS.has(value) ? value : 'estimate';
+    return ADMIN_REVENUE_BASIS_OPTIONS.has(value) ? value : 'final-first';
 }
 
 function normalizeAdminRevenueScope(value) {
@@ -8235,7 +8235,7 @@ async function normalizeLegacyFinanceEntries() {
     return { updated, scanned: orders.length };
 }
 
-function getOrderRevenueValue(order, basis = 'estimate') {
+function getOrderRevenueValue(order, basis = 'final-first') {
     const normalizedBasis = normalizeAdminRevenueBasis(basis);
     if (normalizedBasis === 'estimate') return estimateOrderRevenue(order);
 
@@ -8289,7 +8289,7 @@ function isCommissionInRevenueScope(commission, scope) {
     return true;
 }
 
-function getCommissionRevenueValue(commission, basis = 'estimate') {
+function getCommissionRevenueValue(commission, basis = 'final-first') {
     const normalizedBasis = normalizeAdminRevenueBasis(basis);
     const estimated = getCommissionEstimatedPriceValue(commission);
 
