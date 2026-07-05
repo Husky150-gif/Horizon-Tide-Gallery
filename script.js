@@ -2272,6 +2272,30 @@ function attachHomeReviewSummaryListener() {
 }
 attachHomeReviewSummaryListener();
 
+function getLatestQueueUpdatedAtMs(refunds = [], commissions = []) {
+    const refundLatest = (Array.isArray(refunds) ? refunds : []).reduce((latest, entry) => Math.max(
+        latest,
+        getComparableTimestampMs(entry?.updatedAt),
+        getComparableTimestampMs(entry?.lastUpdated),
+        getComparableTimestampMs(entry?.createdAt)
+    ), 0);
+
+    const commissionLatest = (Array.isArray(commissions) ? commissions : []).reduce((latest, entry) => Math.max(
+        latest,
+        getComparableTimestampMs(entry?.updatedAt),
+        getComparableTimestampMs(entry?.createdAt)
+    ), 0);
+
+    return Math.max(refundLatest, commissionLatest);
+}
+
+function updatePublicQueueLastUpdatedLabel(refunds = [], commissions = []) {
+    const lastUpdated = document.getElementById('refundsLastUpdated');
+    if (!lastUpdated) return;
+    const latestMs = getLatestQueueUpdatedAtMs(refunds, commissions);
+    lastUpdated.innerText = latestMs ? formatDisplayDate(new Date(latestMs)) : 'Awaiting first update';
+}
+
 function updateHomeQueueFreshnessState(kind, entries) {
     const latestMs = (Array.isArray(entries) ? entries : []).reduce((latest, entry) => {
         const candidate = Math.max(
