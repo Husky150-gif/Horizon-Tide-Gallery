@@ -170,6 +170,8 @@ window.adminCommentFilterState = {
 window.adminAnnouncementsEntries = [];
 window.adminCommentsEntries = [];
 window.adminCommentsUnsub = null;
+window.adminReportsUnsub = null;
+window.adminCustomerRequestsEntries = [];
 window.adminRevenueCalculatorOptions = (() => {
     try {
         const raw = localStorage.getItem(ADMIN_REVENUE_CALCULATOR_PREF_KEY);
@@ -6767,23 +6769,23 @@ const CUSTOMER_FAQ_ASSISTANT_ENTRIES = [
     },
     {
         keywords: ['payment', 'pay', 'invoice', 'deposit', 'balance'],
-        answer: 'Use One-Click Payment Reminder in Customer Actions and we will send your payment reminder details. For fursuit orders, the deposit step may be required before queue progress continues.'
+        answer: 'Use the payment reminder option below and we will send your reminder details. For fursuit orders, the deposit step may be required before queue progress continues.'
     },
     {
         keywords: ['edit', 'change', 'update order', 'fix', 'mistake'],
-        answer: 'Use Self-Serve Edits and include exactly what changed (character details, notes, deadline, contact updates). Include your order ID in the request message.'
+        answer: 'Use the order update option below and include exactly what changed, like character details, notes, deadline, or contact updates. Include your order ID in the request message.'
     },
     {
         keywords: ['revision', 'revise', 'redo', 'changes'],
-        answer: 'Use Revision Request and describe what part to adjust. Add visual references in Upload Center if needed so changes are clear.'
+        answer: 'Use Revision Request and describe what part to adjust. Add visual references in Files and Links if needed so changes are clear.'
     },
     {
         keywords: ['upload', 'reference', 'file', 'image', 'link'],
-        answer: 'Use Upload Center to submit a Google Drive/Dropbox/Discord CDN link plus notes. Keep files organized and include your order ID in the description.'
+        answer: 'Use Files and Links to share a Drive, Dropbox, or Discord file link plus notes. Keep everything organized and include your order ID in the description.'
     },
     {
         keywords: ['dm', 'discord', 'alerts', 'notification', 'notify'],
-        answer: 'DM Alerts are optional. Save your Discord tag in Customer Actions and we will keep it on file for manual status nudges when available.'
+        answer: 'DM alerts are optional. Save your Discord tag below and we will keep it on file for manual status nudges when available.'
     }
 ];
 
@@ -6799,7 +6801,7 @@ function findCustomerFaqAssistantAnswer(rawQuery) {
 
     return matched
         ? matched.answer
-        : 'I could not find an exact match yet. Use Revision Request for art changes, Self-Serve Edits for order detail updates, or Upload Center for new reference links.';
+        : 'I could not find an exact match yet. Use the order update option for order detail changes, the revision request option for art changes, or Files and Links for new reference links.';
 }
 
 const CUSTOMER_UPLOAD_MAX_FILES = 4;
@@ -6832,11 +6834,11 @@ function pushCustomerRequestHistory(orderId, entry) {
 
 function getCustomerRequestTypeLabel(type) {
     const value = String(type || '').trim().toLowerCase();
-    if (value === 'self_serve_edit') return 'Self-Serve Edit';
+    if (value === 'self_serve_edit') return 'Order Update';
     if (value === 'revision_request') return 'Revision Request';
-    if (value === 'upload_center') return 'Upload Center';
+    if (value === 'upload_center') return 'Files and Links';
     if (value === 'payment_reminder_request') return 'Payment Reminder';
-    if (value === 'dm_alert_preference') return 'DM Alerts Preference';
+    if (value === 'dm_alert_preference') return 'DM Alerts';
     return 'Customer Request';
 }
 
@@ -6903,7 +6905,7 @@ function renderCustomerPhaseTwoPanel(orderId, orderData = {}) {
 
     return `
         <section style="background: rgba(6, 12, 28, 0.75); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 14px; padding: 16px;">
-            <h3 style="margin: 0 0 8px; color: #f8fafc;">Customer Actions (Phase 2)</h3>
+            <h3 style="margin: 0 0 8px; color: #f8fafc;">Need Help With This Order?</h3>
             <p style="margin: 0 0 12px; color: #cbd5e1; font-size: 0.95rem;">Order <strong>${safeOrderId}</strong> • Current status: <strong>${normalizedStatus}</strong></p>
 
             <div style="display: grid; gap: 10px;">
@@ -6918,44 +6920,44 @@ function renderCustomerPhaseTwoPanel(orderId, orderData = {}) {
                 </label>
 
                 <label style="display: grid; gap: 6px; color: #cbd5e1; font-size: 0.9rem;">
-                    Self-Serve Edits / Revision details
-                    <textarea id="customerActionMessage" class="form-input" rows="4" placeholder="Describe changes, revisions, or priority notes..." style="text-align: left;"></textarea>
+                    What would you like to change or ask for?
+                    <textarea id="customerActionMessage" class="form-input" rows="4" placeholder="Tell us what changed, what you need revised, or any important notes..." style="text-align: left;"></textarea>
                 </label>
 
                 <label style="display: grid; gap: 6px; color: #cbd5e1; font-size: 0.9rem;">
-                    Upload Center link (Drive/Dropbox/Discord CDN)
-                    <input type="url" id="customerUploadLink" class="form-input" placeholder="https://..." style="text-align: left;">
+                    File link from Drive, Dropbox, or Discord
+                    <input type="url" id="customerUploadLink" class="form-input" placeholder="Paste a share link here" style="text-align: left;">
                 </label>
 
                 <label style="display: grid; gap: 6px; color: #cbd5e1; font-size: 0.9rem;">
-                    Upload Center files (images/docs, up to 4 files, 8MB each)
+                    Upload files from your device (images/docs, up to 4 files, 8MB each)
                     <input type="file" id="customerUploadFiles" class="form-input" multiple accept="image/*,.pdf,.txt,.doc,.docx" style="text-align: left; padding: 8px;">
                 </label>
 
                 <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                    <button type="button" id="customerSubmitEditBtn" class="preorder-btn" style="border-color: #38bdf8;">Submit Self-Serve Edit</button>
-                    <button type="button" id="customerSubmitRevisionBtn" class="preorder-btn" style="border-color: #f59e0b;">Submit Revision Request</button>
-                    <button type="button" id="customerSubmitUploadBtn" class="preorder-btn" style="border-color: #22c55e;">Submit Upload Center Link</button>
-                    <button type="button" id="customerPaymentReminderBtn" class="preorder-btn" style="border-color: #a855f7;">One-Click Payment Reminder</button>
-                    <button type="button" id="customerSaveDmAlertsBtn" class="preorder-btn" style="border-color: #ec4899;">Save Optional DM Alerts</button>
+                    <button type="button" id="customerSubmitEditBtn" class="preorder-btn" style="border-color: #38bdf8;">Request an Order Update</button>
+                    <button type="button" id="customerSubmitRevisionBtn" class="preorder-btn" style="border-color: #f59e0b;">Request a Revision</button>
+                    <button type="button" id="customerSubmitUploadBtn" class="preorder-btn" style="border-color: #22c55e;">Send Files & Links</button>
+                    <button type="button" id="customerPaymentReminderBtn" class="preorder-btn" style="border-color: #a855f7;">Send Me a Payment Reminder</button>
+                    <button type="button" id="customerSaveDmAlertsBtn" class="preorder-btn" style="border-color: #ec4899;">Turn On DM Alerts</button>
                 </div>
 
                 <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                    <button type="button" id="customerShareTrackingBtn" class="nav-btn">Share Mobile Tracking Link</button>
-                    <button type="button" id="customerCopyTrackingBtn" class="nav-btn">Copy Tracking Link</button>
+                    <button type="button" id="customerShareTrackingBtn" class="nav-btn">Share This Order Page</button>
+                    <button type="button" id="customerCopyTrackingBtn" class="nav-btn">Copy Order Page Link</button>
                 </div>
 
                 <div style="margin-top: 4px; border-top: 1px solid rgba(148, 163, 184, 0.25); padding-top: 10px;">
-                    <p style="margin: 0 0 8px; color: #e2e8f0;"><strong>FAQ Assistant</strong></p>
+                    <p style="margin: 0 0 8px; color: #e2e8f0;"><strong>Quick Help</strong></p>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <input type="text" id="customerFaqInput" class="form-input" placeholder="Ask: payment, revisions, ETA, uploads..." style="text-align: left; flex: 1 1 260px;">
-                        <button type="button" id="customerFaqAskBtn" class="preorder-btn" style="border-color: #64748b;">Ask FAQ</button>
+                        <input type="text" id="customerFaqInput" class="form-input" placeholder="Ask about payment, revisions, ETA, or files..." style="text-align: left; flex: 1 1 260px;">
+                        <button type="button" id="customerFaqAskBtn" class="preorder-btn" style="border-color: #64748b;">Get Help</button>
                     </div>
-                    <p id="customerFaqAnswer" style="margin: 10px 0 0; color: #cbd5e1; font-size: 0.9rem;">Ask a quick question to get guided to the right tool.</p>
+                    <p id="customerFaqAnswer" style="margin: 10px 0 0; color: #cbd5e1; font-size: 0.9rem;">Ask a quick question and we’ll point you to the right option.</p>
                 </div>
 
                 <div style="margin-top: 4px; border-top: 1px solid rgba(148, 163, 184, 0.25); padding-top: 10px; text-align: left;">
-                    <p style="margin: 0 0 8px; color: #e2e8f0;"><strong>Request History (This Device)</strong></p>
+                    <p style="margin: 0 0 8px; color: #e2e8f0;"><strong>Your Recent Requests</strong></p>
                     <div id="customerRequestHistoryList">${renderCustomerRequestHistoryCards(orderId)}</div>
                 </div>
 
@@ -6983,6 +6985,7 @@ async function submitCustomerActionTicket({ orderId, email, type, message, uploa
         commentText: safeMessage || `Customer request submitted for ${safeOrderId}`,
         orderId: safeOrderId,
         requestType: `customer_${normalizedType}`,
+        requestStatus: 'new',
         uploadLink: safeUploadLink,
         attachmentUrls: urls,
         attachmentCount: urls.length,
@@ -7025,7 +7028,7 @@ function bindCustomerPhaseTwoPanel(orderId) {
         const selectedFiles = Array.from(filesEl?.files || []);
 
         if (String(type || '').toLowerCase() === 'upload_center' && !directLink && selectedFiles.length === 0) {
-            setStatus('Upload Center needs at least one link or file.', true);
+            setStatus('Files & Links needs at least one link or file.', true);
             return;
         }
 
@@ -9398,6 +9401,18 @@ function updateAdminDashboardOverview() {
             timestampMs: ts
         });
     }
+    const customerRequestEntries = (Array.isArray(window.adminCustomerRequestsEntries) ? window.adminCustomerRequestsEntries : [])
+        .filter((entry) => isCustomerRequestReport(entry));
+    if (customerRequestEntries[0]) {
+        const latestRequest = customerRequestEntries[0];
+        const ts = getComparableTimestampMs(latestRequest.createdAt);
+        activities.push({
+            type: 'Customer Request',
+            description: `${getCustomerRequestTypeLabel(latestRequest.requestType || latestRequest.reason)} for ${latestRequest.orderId || 'Unknown order'}`,
+            time: getRelativeTimeLabel(ts),
+            timestampMs: ts
+        });
+    }
     if (Array.isArray(window.activeSales) && window.activeSales[0]) {
         activities.push({
             type: 'Discount',
@@ -9414,7 +9429,7 @@ function updateAdminDashboardOverview() {
     const reviewEntries = allComments.filter((entry) => isReviewEntry(entry));
     const commentEntries = allComments.filter((entry) => !isReviewEntry(entry));
     const pendingReviewCount = reviewEntries.filter((entry) => !isReviewApproved(entry)).length;
-    const commentsNeedingReplyCount = commentEntries.filter((entry) => !(Array.isArray(entry.replies) && entry.replies.length > 0)).length;
+    const customerRequestCount = customerRequestEntries.filter((entry) => !isCustomerRequestArchived(entry)).length;
     const queueOpenCount = metrics.refundCount + metrics.activeCommissionsCount;
 
     const setPanelBadge = (id, value) => {
@@ -9431,7 +9446,7 @@ function updateAdminDashboardOverview() {
     };
 
     setPanelBadge('adminOrdersCountBadge', metrics.pendingOrdersCount);
-    setPanelBadge('adminCustomerCountBadge', commentsNeedingReplyCount);
+    setPanelBadge('adminCustomerCountBadge', customerRequestCount);
     setPanelBadge('adminReviewsCountBadge', pendingReviewCount);
     setPanelBadge('adminCommentsCountBadge', commentEntries.length);
     setPanelBadge('adminQueueCountBadge', queueOpenCount);
@@ -9966,6 +9981,25 @@ function setupAdminDashboardDelegation() {
             } catch (error) {
                 console.error(error);
                 showAdminToast('Unable to copy comment text.', true);
+            }
+            return;
+        }
+
+        if (button.matches('.admin-customer-request-status-btn')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before updating customer requests.')) return;
+            const reportId = button.getAttribute('data-report-id');
+            const nextStatus = String(button.getAttribute('data-next-status') || 'new').trim().toLowerCase();
+            if (!reportId) return;
+
+            button.disabled = true;
+            try {
+                await updateCustomerRequestStatus(reportId, nextStatus);
+                showAdminToast(`Customer request marked ${getCustomerRequestStatusLabel(nextStatus).toLowerCase()}.`);
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to update customer request.', true);
+            } finally {
+                button.disabled = false;
             }
             return;
         }
@@ -10623,6 +10657,11 @@ function loadAdminDashboard() {
                     </div>
 
                     <div class="admin-sidebar-group">
+                        <p class="admin-sidebar-group-title">Customer</p>
+                        <button type="button" id="adminNavCustomerRequests" class="admin-side-link" data-admin-scroll="adminSectionCustomer">Customer Requests</button>
+                    </div>
+
+                    <div class="admin-sidebar-group">
                         <p class="admin-sidebar-group-title">Business</p>
                         <button type="button" id="adminNavDiscounts" class="admin-side-link" data-admin-scroll="adminDiscountManagerSection">Discounts</button>
                         <button type="button" id="adminNavAvailability" class="admin-side-link" data-admin-scroll="adminAvailabilitySection">Availability</button>
@@ -10658,6 +10697,7 @@ function loadAdminDashboard() {
                     <div class="admin-quick-actions-grid">
                         <button type="button" class="nav-btn" id="adminQuickNewAnnouncementBtn">New Announcement</button>
                         <button type="button" class="nav-btn" id="adminQuickReviewQueueBtn">Review Queue</button>
+                        <button type="button" class="nav-btn" id="adminQuickCustomerRequestsBtn">Customer Requests</button>
                         <button type="button" class="nav-btn" id="adminQueueFocusRefunds">Refund Queue</button>
                         <button type="button" class="nav-btn" id="adminQueueFocusCommissions">Commission Queue</button>
                         <button type="button" class="nav-btn" id="adminOpenContactPageBtn">Contact Inbox</button>
@@ -10759,9 +10799,16 @@ function loadAdminDashboard() {
                 </details>
 
                 <details class="admin-collapsible" id="adminSectionCustomer">
-                    <summary><span class="admin-summary-label">Customer <span class="admin-panel-badge" id="adminCustomerCountBadge" data-tone="amber">0</span></span></summary>
+                    <summary><span class="admin-summary-label">Customer Requests <span class="admin-panel-badge" id="adminCustomerCountBadge" data-tone="amber">0</span></span></summary>
                     <div class="admin-collapsible-body">
-                        <p class="admin-section-note">Use Quick Actions to jump into refunds, commissions, reviews, and the contact inbox.</p>
+                        <p class="admin-section-note">Customer Actions submissions land here so you can triage edits, uploads, reminders, and DM alerts.</p>
+                        <div class="admin-card admin-comments-card" id="adminCustomerRequestsCard">
+                            <h3 class="admin-card-title">Customer Requests Inbox</h3>
+                            <p class="admin-card-subtitle">Tickets submitted from the status page Customer Actions panel.</p>
+                            <div id="adminCustomerRequestsList" class="admin-comments-list">
+                                <p class="admin-detail">Loading customer requests...</p>
+                            </div>
+                        </div>
                     </div>
                 </details>
 
@@ -11097,6 +11144,7 @@ function loadAdminDashboard() {
     setupAdminCommissionManager();
     renderAdminReviewsManager();
     renderAdminCommentsManager();
+    renderAdminCustomerRequestsManager();
     updateAdminDashboardOverview();
     renderAdminDiagnosticsPanel();
     attachAdminDiagnosticsListeners();
@@ -11475,11 +11523,26 @@ function loadAdminDashboard() {
         updateAdminDashboardOverview();
         renderAdminReviewsManager();
         renderAdminCommentsManager();
+        renderAdminCustomerRequestsManager();
     }, () => {
         window.adminCommentsEntries = [];
         updateAdminDashboardOverview();
         renderAdminReviewsManager();
         renderAdminCommentsManager();
+        renderAdminCustomerRequestsManager();
+    });
+
+    if (window.adminReportsUnsub) window.adminReportsUnsub();
+    window.adminReportsUnsub = onSnapshot(collection(db, 'reports'), (snapshot) => {
+        const reports = [];
+        snapshot.forEach((docSnap) => reports.push({ id: docSnap.id, ...docSnap.data() }));
+        window.adminCustomerRequestsEntries = reports.filter((entry) => isCustomerRequestReport(entry));
+        updateAdminDashboardOverview();
+        renderAdminCustomerRequestsManager();
+    }, () => {
+        window.adminCustomerRequestsEntries = [];
+        updateAdminDashboardOverview();
+        renderAdminCustomerRequestsManager();
     });
 
     document.getElementById('btnPreviewAnnouncementsPublic')?.addEventListener('click', (e) => cinematicTransition(e, loadAnnouncementsPage, '#updates'));
@@ -11496,6 +11559,13 @@ function loadAdminDashboard() {
         if (reviewsSection instanceof HTMLDetailsElement) reviewsSection.open = true;
         const reviewCard = document.getElementById('adminReviewsManagerCard');
         if (reviewCard) reviewCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    document.getElementById('adminQuickCustomerRequestsBtn')?.addEventListener('click', () => {
+        const customerSection = document.getElementById('adminSectionCustomer');
+        if (customerSection instanceof HTMLDetailsElement) customerSection.open = true;
+        const customerCard = document.getElementById('adminCustomerRequestsCard');
+        if (customerCard) customerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
     document.getElementById('adminQueueFocusRefunds')?.addEventListener('click', () => {
@@ -12325,6 +12395,126 @@ function clearCommissionForm() {
     if (saveBtn) saveBtn.innerText = 'Save Commission';
     const summary = document.getElementById('commissionInlineSummary');
     if (summary) summary.textContent = 'Create Commission Entry';
+}
+
+function isCustomerRequestReport(entry) {
+    const requestType = String(entry?.requestType || '').trim().toLowerCase();
+    const reason = String(entry?.reason || '').trim().toLowerCase();
+    return requestType.startsWith('customer_') || reason.startsWith('customer_');
+}
+
+function getCustomerRequestStatus(entry) {
+    const status = String(entry?.requestStatus || entry?.status || entry?.adminStatus || 'new').trim().toLowerCase();
+    if (status === 'working' || status === 'in progress' || status === 'in-progress') return 'in progress';
+    if (status === 'done' || status === 'complete' || status === 'completed' || status === 'resolved') return 'done';
+    if (status === 'archived' || status === 'closed') return 'archived';
+    return 'new';
+}
+
+function getCustomerRequestStatusLabel(status) {
+    const normalized = getCustomerRequestStatus({ requestStatus: status });
+    if (normalized === 'in progress') return 'In Progress';
+    if (normalized === 'done') return 'Done';
+    if (normalized === 'archived') return 'Archived';
+    return 'New';
+}
+
+function getCustomerRequestStatusTone(status) {
+    const normalized = getCustomerRequestStatus({ requestStatus: status });
+    if (normalized === 'in progress') return 'cyan';
+    if (normalized === 'done') return 'green';
+    if (normalized === 'archived') return 'purple';
+    return 'amber';
+}
+
+function isCustomerRequestArchived(entry) {
+    return getCustomerRequestStatus(entry) === 'archived';
+}
+
+async function updateCustomerRequestStatus(reportId, nextStatus) {
+    const id = String(reportId || '').trim();
+    if (!id) return;
+
+    const normalized = getCustomerRequestStatus({ requestStatus: nextStatus });
+    const payload = {
+        requestStatus: normalized,
+        requestStatusUpdatedAt: serverTimestamp(),
+        requestStatusUpdatedBy: auth.currentUser?.email || 'admin'
+    };
+
+    if (normalized === 'done') {
+        payload.handledAt = serverTimestamp();
+        payload.handledBy = auth.currentUser?.email || 'admin';
+    }
+
+    if (normalized === 'archived') {
+        payload.archivedAt = serverTimestamp();
+        payload.archivedBy = auth.currentUser?.email || 'admin';
+    }
+
+    await updateDoc(doc(db, 'reports', id), payload);
+}
+
+function renderAdminCustomerRequestsManager() {
+    const listEl = document.getElementById('adminCustomerRequestsList');
+    if (!listEl) return;
+
+    const entries = (Array.isArray(window.adminCustomerRequestsEntries) ? window.adminCustomerRequestsEntries : [])
+        .filter((entry) => isCustomerRequestReport(entry))
+        .sort((a, b) => {
+            const aArchived = isCustomerRequestArchived(a) ? 1 : 0;
+            const bArchived = isCustomerRequestArchived(b) ? 1 : 0;
+            if (aArchived !== bArchived) return aArchived - bArchived;
+            const aTime = getComparableTimestampMs(a?.createdAt);
+            const bTime = getComparableTimestampMs(b?.createdAt);
+            return bTime - aTime;
+        });
+
+    if (!entries.length) {
+        listEl.innerHTML = '<p class="admin-detail">No customer requests yet.</p>';
+        return;
+    }
+
+    listEl.innerHTML = entries.slice(0, 40).map((entry) => {
+        const requestType = getCustomerRequestTypeLabel(entry.requestType || entry.reason);
+        const requestStatus = getCustomerRequestStatus(entry);
+        const requestStatusLabel = getCustomerRequestStatusLabel(requestStatus);
+        const requestStatusTone = getCustomerRequestStatusTone(requestStatus);
+        const orderId = String(entry.orderId || 'Unknown').trim() || 'Unknown';
+        const email = String(entry.reporterEmail || '').trim() || 'Not provided';
+        const createdAtMs = getComparableTimestampMs(entry.createdAt);
+        const createdLabel = createdAtMs ? getRelativeTimeLabel(createdAtMs) : 'Unknown time';
+        const note = String(entry.commentText || '').trim();
+        const uploadLink = String(entry.uploadLink || '').trim();
+        const attachmentUrls = Array.isArray(entry.attachmentUrls) ? entry.attachmentUrls.filter(Boolean) : [];
+        const discordHandle = String(entry.discordHandle || '').trim();
+
+        return `
+            <article class="admin-comment-row">
+                <div class="admin-comment-row-head">
+                    <strong>${escapeHTML(requestType)}</strong>
+                    <span>${escapeHTML(createdLabel)}</span>
+                </div>
+                <div class="admin-comment-meta-row">
+                    <span class="admin-comment-meta-pill is-on is-${escapeHTML(requestStatusTone)}">Status: ${escapeHTML(requestStatusLabel)}</span>
+                    <span class="admin-comment-meta-pill">Order: ${escapeHTML(orderId)}</span>
+                    <span class="admin-comment-meta-pill">Email: ${escapeHTML(email)}</span>
+                    ${discordHandle ? `<span class="admin-comment-meta-pill">Discord: ${escapeHTML(discordHandle)}</span>` : ''}
+                </div>
+                ${note ? `<p class="admin-comment-row-text">${escapeHTML(note)}</p>` : '<p class="admin-comment-row-text">No message provided.</p>'}
+                ${uploadLink ? `<p class="admin-detail"><strong>File link:</strong> <a href="${encodeURI(uploadLink)}" target="_blank" rel="noopener noreferrer">Open share link</a></p>` : ''}
+                ${attachmentUrls.length ? `<div class="admin-comment-replies-preview">${attachmentUrls.map((url, index) => `<p><strong>Uploaded file ${index + 1}:</strong> <a href="${encodeURI(url)}" target="_blank" rel="noopener noreferrer">Open file</a></p>`).join('')}</div>` : ''}
+                <div class="admin-comment-row-actions">
+                    <button type="button" class="admin-btn-edit admin-btn-neutral" data-copy-email="${escapeHTML(email)}">Copy Email</button>
+                    <button type="button" class="admin-btn-edit admin-btn-neutral" data-copy-comment="${encodeURIComponent(note || `Customer request for ${orderId}`)}">Copy Note</button>
+                    <button type="button" class="admin-btn-edit admin-btn-success admin-customer-request-status-btn" data-report-id="${entry.id}" data-next-status="new">Mark New</button>
+                    <button type="button" class="admin-btn-edit admin-btn-success admin-customer-request-status-btn" data-report-id="${entry.id}" data-next-status="in progress">In Progress</button>
+                    <button type="button" class="admin-btn-edit admin-btn-success admin-customer-request-status-btn" data-report-id="${entry.id}" data-next-status="done">Mark Done</button>
+                    <button type="button" class="admin-btn-edit admin-btn-neutral admin-customer-request-status-btn" data-report-id="${entry.id}" data-next-status="archived">Archive</button>
+                </div>
+            </article>
+        `;
+    }).join('');
 }
 
 function renderAdminReviewsManager() {
