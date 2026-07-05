@@ -8664,29 +8664,11 @@ function computeAdminDashboardMetrics() {
         return status === 'pending review' || status === 'new' || status === 'reviewed' || status === 'accepted';
     });
 
-    const scopedRevenueCommissions = commissionsForMoneyMetrics.filter((commission) => isCommissionInRevenueScope(commission, revenueOptions.scope));
-    const commissionAccepted = commissionsForMoneyMetrics.filter((commission) => {
-        const status = normalizeCommissionQueueStatus(commission.queueStatus);
-        return status === 'started' || status === 'finished';
-    });
-    const commissionPending = commissionsForMoneyMetrics.filter((commission) => normalizeCommissionQueueStatus(commission.queueStatus) === 'not started');
-    const commissionCompleted = commissionsForMoneyMetrics.filter((commission) => normalizeCommissionQueueStatus(commission.queueStatus) === 'finished');
-
-    const revenueTotal =
-        scopedRevenueOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0) +
-        scopedRevenueCommissions.reduce((sum, commission) => sum + getCommissionRevenueValue(commission, revenueOptions.basis), 0);
-    const estimatedAcceptedRevenue =
-        acceptedOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0) +
-        commissionAccepted.reduce((sum, commission) => sum + getCommissionRevenueValue(commission, revenueOptions.basis), 0);
-    const estimatedPendingRevenue =
-        pendingRevenueOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0) +
-        commissionPending.reduce((sum, commission) => sum + getCommissionRevenueValue(commission, revenueOptions.basis), 0);
-    const estimatedCompletedRevenue =
-        completedOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0) +
-        commissionCompleted.reduce((sum, commission) => sum + getCommissionRevenueValue(commission, revenueOptions.basis), 0);
-    const totalAmountPaid =
-        orders.reduce((sum, order) => sum + getOrderPaidAmount(order), 0) +
-        commissionsForMoneyMetrics.reduce((sum, commission) => sum + getCommissionPaidAmount(commission), 0);
+    const revenueTotal = scopedRevenueOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0);
+    const estimatedAcceptedRevenue = acceptedOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0);
+    const estimatedPendingRevenue = pendingRevenueOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0);
+    const estimatedCompletedRevenue = completedOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0);
+    const totalAmountPaid = orders.reduce((sum, order) => sum + getOrderPaidAmount(order), 0);
     const lopsideDepositCollected = orders.reduce((sum, order) => sum + getOrderLopsideDepositCollected(order), 0);
     const lopsideDepositOutstanding = orders.reduce((sum, order) => {
         if (!isLopsideFursuitOrder(order)) return sum;
@@ -8706,14 +8688,6 @@ function computeAdminDashboardMetrics() {
         if (revenueByService[serviceType] != null) revenueByService[serviceType] += value;
     });
 
-    scopedRevenueCommissions.forEach((commission) => {
-        const creator = normalizeCommissionQueueOwnerValue(commission.queueOwner, commission);
-        const serviceType = getCommissionServiceType(commission);
-        const value = getCommissionRevenueValue(commission, revenueOptions.basis);
-        if (revenueByCreator[creator] != null) revenueByCreator[creator] += value;
-        if (revenueByService[serviceType] != null) revenueByService[serviceType] += value;
-    });
-
     const monthlyBuckets = getMonthBuckets();
     scopedRevenueOrders.forEach((order) => {
         const orderTime = getOrderTimestampMs(order);
@@ -8723,16 +8697,6 @@ function computeAdminDashboardMetrics() {
         const key = getMonthKeyFromMs(orderTime);
         const bucket = monthlyBuckets.find((item) => item.key === key);
         if (bucket) bucket.value += getOrderRevenueValue(order, revenueOptions.basis);
-    });
-
-    scopedRevenueCommissions.forEach((commission) => {
-        const commissionTime = getCommissionTimestampMs(commission);
-        const commissionDate = commissionTime ? new Date(commissionTime) : null;
-        if (!commissionDate || commissionDate.getFullYear() !== new Date().getFullYear()) return;
-
-        const key = getMonthKeyFromMs(commissionTime);
-        const bucket = monthlyBuckets.find((item) => item.key === key);
-        if (bucket) bucket.value += getCommissionRevenueValue(commission, revenueOptions.basis);
     });
 
     const thisMonthRevenue = monthlyBuckets[monthlyBuckets.length - 1]?.value || 0;
