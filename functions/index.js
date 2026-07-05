@@ -264,6 +264,126 @@ function buildReminderEmail(order, plan) {
   return { subject, text };
 }
 
+function buildMilestoneEmail(order, nextStatus) {
+  const customerName = String(order?.name || 'there').trim() || 'there';
+  const orderId = String(order?.orderId || '').trim() || 'Unknown';
+  const statusLabel = String(nextStatus || 'Updated').trim();
+
+  const subject = `Horizon Tide | Order ${orderId} | Status: ${statusLabel}`;
+  const text = [
+    `Hi ${customerName},`,
+    '',
+    `Your order ${orderId} moved to: ${statusLabel}.`,
+    '',
+    'You can keep tracking progress from the Horizon status page anytime.',
+    '',
+    'Thank you for supporting Horizon Tide!'
+  ].join('\n');
+
+  return { subject, text };
+}
+
+exports.sendOrderMilestoneEmail = functions.firestore
+  .document('preorders/{preorderDocId}')
+  .onUpdate(async (change) => {
+    if (!sendgridKey) return null;
+
+    const beforeData = change.before.data() || {};
+    const afterData = change.after.data() || {};
+
+    const beforeStatus = normalizeStatus(beforeData.status);
+    const afterStatus = normalizeStatus(afterData.status);
+    if (!afterStatus || beforeStatus === afterStatus) return null;
+
+    const email = String(afterData.email || '').trim().toLowerCase();
+    const orderId = String(afterData.orderId || '').trim();
+    if (!email || !orderId) return null;
+
+    const alreadySentForStatus = normalizeStatus(afterData.lastMilestoneEmailStatus) === afterStatus;
+    if (alreadySentForStatus) return null;
+
+    const milestoneEmail = buildMilestoneEmail(afterData, afterData.status || afterStatus);
+    try {
+      await sgMail.send({
+        to: email,
+        from: 'horizontidegallery@gmail.com',
+        subject: milestoneEmail.subject,
+        text: milestoneEmail.text
+      });
+
+      await change.after.ref.update({
+        lastMilestoneEmailStatus: afterStatus,
+        lastMilestoneEmailSentAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      console.log('Milestone email sent:', orderId, afterStatus);
+    } catch (error) {
+      console.error('Milestone email failed:', orderId, afterStatus, error);
+    }
+
+    return null;
+  });
+
+exports.processCustomerPaymentReminderRequest = functions.firestore
+  .document('reports/{reportId}')
+  .onCreate(async (snap, context) => {
+    if (!sendgridKey) return null;
+
+    const data = snap.data() || {};
+    const requestType = String(data.requestType || '').trim().toLowerCase();
+    if (requestType !== 'customer_payment_reminder_request') return null;
+
+    const orderId = String(data.orderId || '').trim();
+    const requesterEmail = String(data.reporterEmail || '').trim().toLowerCase();
+    if (!orderId || !requesterEmail) return null;
+
+    try {
+      const preorderSnapshot = await admin
+        .firestore()
+        .collection('preorders')
+        .where('orderId', '==', orderId)
+        .limit(1)
+        .get();
+
+      const order = preorderSnapshot.empty ? { orderId, name: 'there' } : (preorderSnapshot.docs[0].data() || {});
+      const plan = getOrderReminderPlan(order);
+      const payload = plan.shouldSend
+        ? buildReminderEmail(order, plan)
+        : {
+            subject: `Horizon Tide | Order ${orderId} | Payment Snapshot`,
+            text: [
+              `Hi ${String(order?.name || 'there').trim() || 'there'},`,
+              '',
+              `We received your one-click payment reminder request for order ${orderId}.`,
+              'There is no immediate payment reminder flagged right now, but your request was logged.',
+              '',
+              'If you still need details, reply to this email and we will follow up manually.'
+            ].join('\n')
+          };
+
+      await sgMail.send({
+        to: requesterEmail,
+        from: 'horizontidegallery@gmail.com',
+        subject: payload.subject,
+        text: payload.text
+      });
+
+      await snap.ref.update({
+        processedAt: admin.firestore.FieldValue.serverTimestamp(),
+        processingStatus: 'completed'
+      });
+      console.log('Processed one-click payment reminder request:', context.params.reportId, orderId);
+    } catch (error) {
+      await snap.ref.update({
+        processedAt: admin.firestore.FieldValue.serverTimestamp(),
+        processingStatus: 'failed',
+        processingError: String(error && error.message ? error.message : 'Unknown error').slice(0, 500)
+      });
+      console.error('Failed processing one-click payment reminder request:', context.params.reportId, error);
+    }
+
+    return null;
+  });
+
 exports.sendAutomatedPaymentReminders = functions.pubsub
   .schedule('every 24 hours')
   .timeZone('America/New_York')

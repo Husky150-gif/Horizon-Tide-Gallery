@@ -6746,7 +6746,9 @@ function loadStatusCheckPage() {
                         ${estimatePrice != null ? `<p style="color: #cfe3f6; margin: 4px 0;"><strong>Estimate:</strong> ${escapeHTML(formatMoney(estimatePrice))}</p>` : ''}
                         ${publishedFinalPrice != null ? `<p style="color: #bbf7d0; margin: 4px 0;"><strong>Final Price:</strong> ${escapeHTML(formatMoney(publishedFinalPrice))}</p>` : ''}
                     </div>
+                    ${renderCustomerPhaseTwoPanel(resolvedOrderId, data)}
                 `;
+                bindCustomerPhaseTwoPanel(resolvedOrderId);
             }
         } catch (error) {
             console.error("Status Check Error:", error);
@@ -6754,6 +6756,220 @@ function loadStatusCheckPage() {
         } finally {
             btn.textContent = "Search ✨";
             btn.disabled = false;
+        }
+    });
+}
+
+const CUSTOMER_FAQ_ASSISTANT_ENTRIES = [
+    {
+        keywords: ['eta', 'how long', 'turnaround', 'when done', 'finish'],
+        answer: 'Most requests move from Pending Review to Accepted first. For active work, updates are posted in the queue and status tracker. If your deadline is tight, submit a revision/request note with your order ID so we can review priority.'
+    },
+    {
+        keywords: ['payment', 'pay', 'invoice', 'deposit', 'balance'],
+        answer: 'Use One-Click Payment Reminder in Customer Actions and we will send your payment reminder details. For fursuit orders, the deposit step may be required before queue progress continues.'
+    },
+    {
+        keywords: ['edit', 'change', 'update order', 'fix', 'mistake'],
+        answer: 'Use Self-Serve Edits and include exactly what changed (character details, notes, deadline, contact updates). Include your order ID in the request message.'
+    },
+    {
+        keywords: ['revision', 'revise', 'redo', 'changes'],
+        answer: 'Use Revision Request and describe what part to adjust. Add visual references in Upload Center if needed so changes are clear.'
+    },
+    {
+        keywords: ['upload', 'reference', 'file', 'image', 'link'],
+        answer: 'Use Upload Center to submit a Google Drive/Dropbox/Discord CDN link plus notes. Keep files organized and include your order ID in the description.'
+    },
+    {
+        keywords: ['dm', 'discord', 'alerts', 'notification', 'notify'],
+        answer: 'DM Alerts are optional. Save your Discord tag in Customer Actions and we will keep it on file for manual status nudges when available.'
+    }
+];
+
+function findCustomerFaqAssistantAnswer(rawQuery) {
+    const queryText = String(rawQuery || '').trim().toLowerCase();
+    if (!queryText) {
+        return 'Ask about payment, revisions, edits, ETA, uploads, or DM alerts and I will point you to the right action.';
+    }
+
+    const matched = CUSTOMER_FAQ_ASSISTANT_ENTRIES.find((entry) =>
+        entry.keywords.some((keyword) => queryText.includes(keyword))
+    );
+
+    return matched
+        ? matched.answer
+        : 'I could not find an exact match yet. Use Revision Request for art changes, Self-Serve Edits for order detail updates, or Upload Center for new reference links.';
+}
+
+function renderCustomerPhaseTwoPanel(orderId, orderData = {}) {
+    const safeOrderId = escapeHTML(String(orderId || 'Unknown'));
+    const normalizedStatus = escapeHTML(String(orderData?.status || 'Pending Review'));
+
+    return `
+        <section style="background: rgba(6, 12, 28, 0.75); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 14px; padding: 16px;">
+            <h3 style="margin: 0 0 8px; color: #f8fafc;">Customer Actions (Phase 2)</h3>
+            <p style="margin: 0 0 12px; color: #cbd5e1; font-size: 0.95rem;">Order <strong>${safeOrderId}</strong> • Current status: <strong>${normalizedStatus}</strong></p>
+
+            <div style="display: grid; gap: 10px;">
+                <label style="display: grid; gap: 6px; color: #cbd5e1; font-size: 0.9rem;">
+                    Contact email
+                    <input type="email" id="customerActionEmail" class="form-input" placeholder="you@example.com" style="text-align: left;">
+                </label>
+
+                <label style="display: grid; gap: 6px; color: #cbd5e1; font-size: 0.9rem;">
+                    Optional Discord (for DM alerts)
+                    <input type="text" id="customerActionDiscord" class="form-input" placeholder="username or @handle" style="text-align: left;">
+                </label>
+
+                <label style="display: grid; gap: 6px; color: #cbd5e1; font-size: 0.9rem;">
+                    Self-Serve Edits / Revision details
+                    <textarea id="customerActionMessage" class="form-input" rows="4" placeholder="Describe changes, revisions, or priority notes..." style="text-align: left;"></textarea>
+                </label>
+
+                <label style="display: grid; gap: 6px; color: #cbd5e1; font-size: 0.9rem;">
+                    Upload Center link (Drive/Dropbox/Discord CDN)
+                    <input type="url" id="customerUploadLink" class="form-input" placeholder="https://..." style="text-align: left;">
+                </label>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    <button type="button" id="customerSubmitEditBtn" class="preorder-btn" style="border-color: #38bdf8;">Submit Self-Serve Edit</button>
+                    <button type="button" id="customerSubmitRevisionBtn" class="preorder-btn" style="border-color: #f59e0b;">Submit Revision Request</button>
+                    <button type="button" id="customerSubmitUploadBtn" class="preorder-btn" style="border-color: #22c55e;">Submit Upload Center Link</button>
+                    <button type="button" id="customerPaymentReminderBtn" class="preorder-btn" style="border-color: #a855f7;">One-Click Payment Reminder</button>
+                    <button type="button" id="customerSaveDmAlertsBtn" class="preorder-btn" style="border-color: #ec4899;">Save Optional DM Alerts</button>
+                </div>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    <button type="button" id="customerShareTrackingBtn" class="nav-btn">Share Mobile Tracking Link</button>
+                    <button type="button" id="customerCopyTrackingBtn" class="nav-btn">Copy Tracking Link</button>
+                </div>
+
+                <div style="margin-top: 4px; border-top: 1px solid rgba(148, 163, 184, 0.25); padding-top: 10px;">
+                    <p style="margin: 0 0 8px; color: #e2e8f0;"><strong>FAQ Assistant</strong></p>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <input type="text" id="customerFaqInput" class="form-input" placeholder="Ask: payment, revisions, ETA, uploads..." style="text-align: left; flex: 1 1 260px;">
+                        <button type="button" id="customerFaqAskBtn" class="preorder-btn" style="border-color: #64748b;">Ask FAQ</button>
+                    </div>
+                    <p id="customerFaqAnswer" style="margin: 10px 0 0; color: #cbd5e1; font-size: 0.9rem;">Ask a quick question to get guided to the right tool.</p>
+                </div>
+
+                <p id="customerActionStatus" style="margin: 8px 0 0; color: #bae6fd; font-size: 0.9rem;"></p>
+            </div>
+        </section>
+    `;
+}
+
+async function submitCustomerActionTicket({ orderId, email, type, message, uploadLink, discordHandle, dmAlertsEnabled }) {
+    const safeOrderId = String(orderId || '').trim();
+    if (!safeOrderId) throw new Error('Missing order ID');
+
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const normalizedType = String(type || '').trim().toLowerCase();
+    const safeMessage = String(message || '').trim();
+    const safeUploadLink = String(uploadLink || '').trim();
+    const safeDiscord = String(discordHandle || '').trim();
+
+    await addDoc(collection(db, 'reports'), {
+        reporterEmail: normalizedEmail || 'anonymous',
+        reason: `customer_${normalizedType}`,
+        commentId: `customer-${safeOrderId}-${Date.now()}`,
+        commentText: safeMessage || `Customer request submitted for ${safeOrderId}`,
+        orderId: safeOrderId,
+        requestType: `customer_${normalizedType}`,
+        uploadLink: safeUploadLink,
+        discordHandle: safeDiscord,
+        dmAlertsEnabled: Boolean(dmAlertsEnabled),
+        createdAt: serverTimestamp()
+    });
+}
+
+function bindCustomerPhaseTwoPanel(orderId) {
+    const statusEl = document.getElementById('customerActionStatus');
+    const emailEl = document.getElementById('customerActionEmail');
+    const discordEl = document.getElementById('customerActionDiscord');
+    const messageEl = document.getElementById('customerActionMessage');
+    const uploadEl = document.getElementById('customerUploadLink');
+    const faqInputEl = document.getElementById('customerFaqInput');
+    const faqAnswerEl = document.getElementById('customerFaqAnswer');
+
+    if (!statusEl || !emailEl || !discordEl || !messageEl || !uploadEl || !faqInputEl || !faqAnswerEl) return;
+
+    const setStatus = (text, isError = false) => {
+        statusEl.textContent = text;
+        statusEl.style.color = isError ? '#fca5a5' : '#bae6fd';
+    };
+
+    const runSubmit = async (type, options = {}) => {
+        const email = emailEl.value;
+        if (!String(email || '').trim()) {
+            setStatus('Please enter your contact email first so we can reply.', true);
+            return;
+        }
+
+        setStatus('Submitting request...');
+        try {
+            await submitCustomerActionTicket({
+                orderId,
+                email,
+                type,
+                message: options.message != null ? options.message : messageEl.value,
+                uploadLink: options.uploadLink != null ? options.uploadLink : uploadEl.value,
+                discordHandle: discordEl.value,
+                dmAlertsEnabled: Boolean(options.dmAlertsEnabled)
+            });
+            setStatus('Request sent successfully. We logged your request and will follow up via email.');
+        } catch (error) {
+            console.error('Customer action request failed:', error);
+            setStatus('Could not submit right now. Please try again in a moment.', true);
+        }
+    };
+
+    document.getElementById('customerSubmitEditBtn')?.addEventListener('click', () => runSubmit('self_serve_edit'));
+    document.getElementById('customerSubmitRevisionBtn')?.addEventListener('click', () => runSubmit('revision_request'));
+    document.getElementById('customerSubmitUploadBtn')?.addEventListener('click', () => runSubmit('upload_center'));
+    document.getElementById('customerPaymentReminderBtn')?.addEventListener('click', () => runSubmit('payment_reminder_request', {
+        message: `One-click payment reminder requested for ${orderId}.`
+    }));
+    document.getElementById('customerSaveDmAlertsBtn')?.addEventListener('click', () => runSubmit('dm_alert_preference', {
+        dmAlertsEnabled: true,
+        message: `Optional DM alerts preference saved for ${orderId}.`
+    }));
+
+    document.getElementById('customerFaqAskBtn')?.addEventListener('click', () => {
+        faqAnswerEl.textContent = findCustomerFaqAssistantAnswer(faqInputEl.value);
+    });
+
+    const trackingLink = `${window.location.origin}${window.location.pathname}#status`;
+    document.getElementById('customerCopyTrackingBtn')?.addEventListener('click', async () => {
+        try {
+            await navigator.clipboard.writeText(trackingLink);
+            setStatus('Tracking link copied to clipboard.');
+        } catch {
+            setStatus('Clipboard access blocked. You can copy this manually: ' + trackingLink, true);
+        }
+    });
+
+    document.getElementById('customerShareTrackingBtn')?.addEventListener('click', async () => {
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Horizon Tide Order Tracking',
+                    text: `Track order ${orderId} on Horizon Tide Gallery`,
+                    url: trackingLink
+                });
+                setStatus('Share sheet opened.');
+                return;
+            } catch {
+                // Fall through to copy fallback.
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(trackingLink);
+            setStatus('Share not available on this device. Link copied instead.');
+        } catch {
+            setStatus('Share not available. Manual link: ' + trackingLink, true);
         }
     });
 }
@@ -9134,7 +9350,9 @@ function renderAdminDiagnosticsPanel() {
     inventoryDetailEl.textContent = inventorySummary.detail;
     inventoryAtEl.textContent = inventorySummary.at;
 
-    if (state.lastPublicStatusSyncAtMs) {
+    if (state.publicStatusPermissionDenied) {
+        statusSyncEl.textContent = 'Public status diagnostics limited by current Firestore rules.';
+    } else if (state.lastPublicStatusSyncAtMs) {
         const relative = getRelativeTimeLabel(state.lastPublicStatusSyncAtMs);
         const absolute = new Date(state.lastPublicStatusSyncAtMs).toLocaleString();
         const orderLabel = state.lastPublicStatusOrderId ? ` | Order ${state.lastPublicStatusOrderId}` : '';
@@ -9183,11 +9401,22 @@ function attachAdminDiagnosticsListeners() {
         const data = latest ? latest.data() : null;
         window.adminDiagnosticsState = {
             ...(window.adminDiagnosticsState || {}),
+            publicStatusPermissionDenied: false,
             lastPublicStatusSyncAtMs: getComparableTimestampMs(data?.updatedAt),
             lastPublicStatusOrderId: String(data?.orderId || latest?.id || '')
         };
         renderAdminDiagnosticsPanel();
     }, (error) => {
+        const code = String(error?.code || '').toLowerCase();
+        const isPermissionIssue = code.includes('permission') || /insufficient permissions/i.test(String(error?.message || ''));
+        if (isPermissionIssue) {
+            window.adminDiagnosticsState = {
+                ...(window.adminDiagnosticsState || {}),
+                publicStatusPermissionDenied: true
+            };
+            renderAdminDiagnosticsPanel();
+            return;
+        }
         console.warn('Public status diagnostics listener failed:', error);
     });
 }

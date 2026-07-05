@@ -65,7 +65,7 @@ service cloud.firestore {
 
     match /preorderStatusPublic/{orderId} {
       allow get: if true;
-      allow list: if false;
+      allow list: if isAdmin();
       allow create: if request.resource.data.keys().hasOnly(['orderId', 'orderType', 'status', 'createdAt', 'updatedAt'])
         && request.resource.data.orderId == orderId
         && request.resource.data.orderId is string

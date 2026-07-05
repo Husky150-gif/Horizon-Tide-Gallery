@@ -12,7 +12,7 @@ firebase login
 ```bash
 cd functions
 firebase init functions
-# choose existing project, node 18, JavaScript
+# choose existing project, node 22, JavaScript
 ```
 
 3. Install dependencies:
@@ -26,6 +26,7 @@ npm install
 
 ```bash
 firebase functions:config:set sendgrid.key="YOUR_SENDGRID_API_KEY"
+# or set SENDGRID_KEY as an environment variable in your deploy environment
 ```
 
 5. Deploy functions:
@@ -35,6 +36,7 @@ firebase deploy --only functions
 ```
 
 Notes:
-- The function expects SendGrid to be configured via `functions.config().sendgrid.key`.
-- Verify the `from` address in SendGrid (or set to a verified sender).
-- You may want to harden Firestore rules to restrict who can write reports, or rate-limit from client side.
+- The function reads SendGrid key from `SENDGRID_KEY` (with legacy config fallback).
+- Verify the `from` address in SendGrid (or set to a verified sender/domain).
+- Milestone emails send when preorder status changes.
+- One-click reminder requests are processed from `reports` docs with `requestType = customer_payment_reminder_request`.
