@@ -418,6 +418,7 @@ const TOS_CONTENT_HTML = `
         <li>Repeated violation of our boundaries or policies</li>
     </ul>
     <p>We reserve the right to decline any request without explanation.<br>Clients commissioning NSFW content or entering payment agreements independently must be 18 years of age or older. Certain commission types may require parental permission for minors.</p>
+    <p>All commission requests and custom order inquiries must be submitted through official Horizon Tide website forms. DM-only or social-only messages are not treated as accepted orders until the website form is submitted.</p>
     
     <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">PRODUCTS & SERVICES</h2>
     <p>Horizon Tide Gallery may offer products and services including, but not limited to: Fursuits, parts & accessories (Tails, paws, partials), Character artwork & Digital illustrations, Keychains, charms, handmade merchandise & custom crafts. Because many products are handmade, slight variations may occur between finished items.</p>
@@ -426,6 +427,8 @@ const TOS_CONTENT_HTML = `
     <p>Accepted payment methods may include: PayPal, CashApp, Ko-fi, or other approved platforms.</p>
     <ul>
         <li>A non-refundable deposit of 10%–30% may be required before work begins.</li>
+        <li>For Lopside handmade/fursuit orders, a supplies deposit is required for materials before the order is added to active production.</li>
+        <li>The Lopside supplies deposit is non-refundable once materials are purchased for your project.</li>
         <li>Smaller or digital commissions may require full upfront payment.</li>
         <li>Payment plans may be available for orders over $200.</li>
         <li>Full payment must be completed before physical items are shipped.</li>
@@ -634,17 +637,22 @@ function getChecklistHTML(options = {}) {
     const {
         excludeRefImage = false,
         includeHandmadeTiming = true,
-        includeInstantShipping = true
+        includeInstantShipping = true,
+        includeLopsideSuppliesDeposit = false
     } = options;
 
     const refHtml = excludeRefImage ? '' : `<div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I have clear reference images ready</label></div>`;
     const handmadeHtml = includeHandmadeTiming ? `<div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I know handmade/custom items take time</label></div>` : '';
     const shippingHtml = includeInstantShipping ? `<div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I understand this is not instant shipping</label></div>` : '';
+    const lopsideDepositHtml = includeLopsideSuppliesDeposit
+        ? `<div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I understand Lopside handmade/fursuit orders require a non-refundable supplies deposit for materials before production starts.</label></div>`
+        : '';
     
     return `
         <div class="before-order-checklist">
             <h4>📋 Before You Order:</h4>
             ${handmadeHtml}
+            ${lopsideDepositHtml}
             ${refHtml}
             ${shippingHtml}
             <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I understand prices are estimates and final pricing may vary</label></div>
@@ -4684,7 +4692,7 @@ function loadHuskyArtForm() {
             <form id="artForm">
                 <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" maxlength="50" required></div>
                 <div class="form-group"><label>Email <span>*</span></label><input type="email" name="email" class="form-input" maxlength="100" required></div>
-                <div class="form-group"><label>Discord Username <span>*</span></label><input type="text" name="discord" class="form-input" maxlength="100" required></div>
+                <div class="form-group"><label>Discord or Social Handle (Optional)</label><input type="text" name="discord" class="form-input" maxlength="120" placeholder="Discord, Instagram, TikTok, X, Telegram, etc."></div>
                 <div class="form-group"><label>Character Name</label><input type="text" name="characterName" class="form-input" maxlength="100"></div>
                 
                 ${getFileUploadHTML()}
@@ -4843,7 +4851,7 @@ function loadFursuitForm() {
             <form id="fursuitForm">
                 <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" maxlength="50" required></div>
                 <div class="form-group"><label>Email <span>*</span></label><input type="email" name="email" class="form-input" maxlength="100" required></div>
-                <div class="form-group"><label>Discord Username <span>*</span></label><input type="text" name="discord" class="form-input" maxlength="100" required></div>
+                <div class="form-group"><label>Discord or Social Handle (Optional)</label><input type="text" name="discord" class="form-input" maxlength="120" placeholder="Discord, Instagram, TikTok, X, Telegram, etc."></div>
                 <div class="form-group"><label>Character/Species <span>*</span></label><input type="text" name="species" class="form-input" maxlength="100" required></div>
                 
                 ${getFileUploadHTML()}
@@ -4882,7 +4890,8 @@ function loadFursuitForm() {
                 ${getChecklistHTML({
                     excludeRefImage: false,
                     includeHandmadeTiming: true,
-                    includeInstantShipping: true
+                    includeInstantShipping: true,
+                    includeLopsideSuppliesDeposit: true
                 })}
 
                 <button type="submit" class="preorder-btn" style="border-color: #22c55e;">Submit Request</button>
@@ -4896,7 +4905,7 @@ function loadFursuitForm() {
         sections: [
             {
                 title: 'Contact details',
-                description: 'Tell us who to reach and what character or species this is for.',
+                description: 'Tell us who to reach and what character or species this is for. Email is required, and Discord or a social handle is optional.',
                 targets: ['name', 'email', 'discord', 'species']
             },
             {
@@ -4975,7 +4984,7 @@ function loadCustomKeychainsForm() {
             <form id="customKeychainForm">
                 <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" maxlength="50" required></div>
                 <div class="form-group"><label>Email <span>*</span></label><input type="email" name="email" class="form-input" maxlength="100" required></div>
-                <div class="form-group"><label>Discord Username <span>*</span></label><input type="text" name="discord" class="form-input" maxlength="100" required></div>
+                <div class="form-group"><label>Discord or Social Handle (Optional)</label><input type="text" name="discord" class="form-input" maxlength="120" placeholder="Discord, Instagram, TikTok, X, Telegram, etc."></div>
                 <div class="form-group"><label>Character/Design Name</label><input type="text" name="characterName" class="form-input" maxlength="100"></div>
                 <div class="form-group"><label>What do you want on the keychain? <span>*</span></label><textarea name="description" class="form-textarea" rows="3" maxlength="1000" required></textarea></div>
                 
@@ -5053,7 +5062,7 @@ function loadCustomKeychainsForm() {
         sections: [
             {
                 title: 'Contact details',
-                description: 'Basic contact first, then we can focus on the design.',
+                description: 'Basic contact first, then we can focus on the design. Email is required, and Discord or a social handle is optional.',
                 targets: ['name', 'email', 'discord', 'characterName']
             },
             {
@@ -5130,7 +5139,7 @@ function loadCustomStickersForm() {
             <form id="stickerForm">
                 <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" maxlength="50" required></div>
                 <div class="form-group"><label>Email <span>*</span></label><input type="email" name="email" class="form-input" maxlength="100" required></div>
-                <div class="form-group"><label>Discord Username <span>*</span></label><input type="text" name="discord" class="form-input" maxlength="100" required></div>
+                <div class="form-group"><label>Discord or Social Handle (Optional)</label><input type="text" name="discord" class="form-input" maxlength="120" placeholder="Discord, Instagram, TikTok, X, Telegram, etc."></div>
                 <div class="form-group"><label>Sticker Subject <span>*</span></label><input type="text" name="subject" class="form-input" maxlength="100" required></div>
                 
                 ${getFileUploadHTML()}
@@ -5203,7 +5212,7 @@ function loadCustomStickersForm() {
         sections: [
             {
                 title: 'Contact details',
-                description: 'A few basics first so we know where to reply.',
+                description: 'A few basics first so we know where to reply. Email is required, and Discord or a social handle is optional.',
                 targets: ['name', 'email', 'discord', 'subject']
             },
             {
@@ -5286,7 +5295,7 @@ function loadPremadeKeychainsForm() {
             <form id="premadeKeychainForm">
                 <div class="form-group"><label>Name <span>*</span></label><input type="text" name="name" class="form-input" maxlength="50" required></div>
                 <div class="form-group"><label>Email <span>*</span></label><input type="email" name="email" class="form-input" maxlength="100" required></div>
-                <div class="form-group"><label>Discord Username <span>*</span></label><input type="text" name="discord" class="form-input" maxlength="100" required></div>
+                <div class="form-group"><label>Discord or Social Handle (Optional)</label><input type="text" name="discord" class="form-input" maxlength="120" placeholder="Discord, Instagram, TikTok, X, Telegram, etc."></div>
                 <div class="form-group">
                     <label>Which premade design do you want? <span>*</span></label>
                     <select name="designChoice" class="form-select" required>
@@ -5331,7 +5340,7 @@ function loadPremadeKeychainsForm() {
         sections: [
             {
                 title: 'Contact details',
-                description: 'Tell us who you are and the best way to reach you.',
+                description: 'Tell us who you are and the best way to reach you. Email is required, and Discord or a social handle is optional.',
                 targets: ['name', 'email', 'discord']
             },
             {
@@ -7324,11 +7333,12 @@ async function submitPreorder(event, orderType) {
     appendDetail('Character Count', orderData.characterCount);
     appendDetail('Shading Style', orderData.shadingStyle);
     appendDetail('Needs Measurements', orderData.needsMeasurements);
+    appendDetail('Other Social Handle', orderData.socialHandle);
     appendDetail('Reference Link', orderData.refLink);
     if (addons.length > 0) appendDetail('Selected Add-ons', addons.join(', '));
     if (uploadedImageUrls.length > 0) appendDetail('Reference Uploads', uploadedImageUrls.join(' | '));
 
-    const primaryAllowedFields = new Set(['name', 'email', 'discord', 'notes', 'refLink']);
+    const primaryAllowedFields = new Set(['name', 'email', 'discord', 'socialHandle', 'notes', 'refLink']);
     Object.entries(orderData).forEach(([key, value]) => {
         if (primaryAllowedFields.has(key) || key === 'addon' || key === 'refFiles') return;
         if (typeof value !== 'string') return;
@@ -7350,6 +7360,7 @@ async function submitPreorder(event, orderType) {
         name: (orderData.name || '').trim(),
         email: (orderData.email || '').trim().toLowerCase(),
         discord: (orderData.discord || '').trim(),
+        socialHandle: (orderData.socialHandle || '').trim(),
         itemType: orderType,
         notes: compiledNotes,
         refLink: (orderData.refLink || '').trim(),
@@ -10613,6 +10624,7 @@ function applyAdminOrderFilters() {
             order.name,
             order.orderId,
             order.discord,
+            order.socialHandle,
             order.email,
             order.itemType,
             order.orderType,
@@ -12878,6 +12890,7 @@ function renderAdminOrders(ordersArr) {
             pushRow('Date', order.createdAt && order.createdAt.toDate ? order.createdAt.toDate().toLocaleString() : order.createdAt || 'Unknown');
             pushRow('Email', order.email);
             pushRow('Discord', order.discord);
+            pushRow('Other Social Handle', order.socialHandle);
             pushRow('Item Type', order.itemType);
             pushRow('Art Type', order.artType);
             pushRow('Part Type', order.partType);
@@ -13077,6 +13090,7 @@ function renderAdminOrders(ordersArr) {
                 ${imagesHtml ? `<div class="admin-order-detail-row"><strong>Uploads:</strong>${imagesHtml}</div>` : ''}
                 <div class="admin-order-detail-row"><strong>Email:</strong> <span>${escapeHTML(email)}</span></div>
                 <div class="admin-order-detail-row"><strong>Discord:</strong> <span>${escapeHTML(order.discord || 'N/A')}</span></div>
+                <div class="admin-order-detail-row"><strong>Other Social:</strong> <span>${escapeHTML(order.socialHandle || 'N/A')}</span></div>
             </div>
         `;
         ordersGrid.appendChild(card);
@@ -13171,6 +13185,7 @@ function exportPreordersCSV() {
         name: order.name || '',
         email: order.email || '',
         discord: order.discord || '',
+        socialHandle: order.socialHandle || '',
         createdAt: normalizeDateForCSV(order.createdAt),
         notes: order.notes || order.description || order.materials || ''
     }));
