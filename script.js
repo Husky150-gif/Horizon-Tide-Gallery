@@ -8602,6 +8602,19 @@ function computeAdminDashboardMetrics() {
     const comments = Array.isArray(window.adminCommentsEntries) ? window.adminCommentsEntries : [];
     const announcements = Array.isArray(window.adminAnnouncementsEntries) ? window.adminAnnouncementsEntries : [];
 
+    const existingPreorderOrderIds = new Set(
+        orders
+            .map((order) => String(order?.orderId || '').trim())
+            .filter(Boolean)
+    );
+
+    // Ignore orphaned website-preorder queue rows so deleted forms stop impacting money metrics.
+    const commissionsForMoneyMetrics = commissions.filter((commission) => {
+        const linkedPreorderId = String(commission?.preorderOrderId || '').trim();
+        if (!linkedPreorderId) return true;
+        return existingPreorderOrderIds.has(linkedPreorderId);
+    });
+
     const pendingOrders = orders.filter((o) => {
         const status = normalizeOrderStatus(o.status);
         return status === 'pending review' || status === 'new';
@@ -8634,13 +8647,13 @@ function computeAdminDashboardMetrics() {
         return status === 'pending review' || status === 'new' || status === 'reviewed' || status === 'accepted';
     });
 
-    const scopedRevenueCommissions = commissions.filter((commission) => isCommissionInRevenueScope(commission, revenueOptions.scope));
-    const commissionAccepted = commissions.filter((commission) => {
+    const scopedRevenueCommissions = commissionsForMoneyMetrics.filter((commission) => isCommissionInRevenueScope(commission, revenueOptions.scope));
+    const commissionAccepted = commissionsForMoneyMetrics.filter((commission) => {
         const status = normalizeCommissionQueueStatus(commission.queueStatus);
         return status === 'started' || status === 'finished';
     });
-    const commissionPending = commissions.filter((commission) => normalizeCommissionQueueStatus(commission.queueStatus) === 'not started');
-    const commissionCompleted = commissions.filter((commission) => normalizeCommissionQueueStatus(commission.queueStatus) === 'finished');
+    const commissionPending = commissionsForMoneyMetrics.filter((commission) => normalizeCommissionQueueStatus(commission.queueStatus) === 'not started');
+    const commissionCompleted = commissionsForMoneyMetrics.filter((commission) => normalizeCommissionQueueStatus(commission.queueStatus) === 'finished');
 
     const revenueTotal =
         scopedRevenueOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0) +
@@ -8656,7 +8669,7 @@ function computeAdminDashboardMetrics() {
         commissionCompleted.reduce((sum, commission) => sum + getCommissionRevenueValue(commission, revenueOptions.basis), 0);
     const totalAmountPaid =
         orders.reduce((sum, order) => sum + getOrderPaidAmount(order), 0) +
-        commissions.reduce((sum, commission) => sum + getCommissionPaidAmount(commission), 0);
+        commissionsForMoneyMetrics.reduce((sum, commission) => sum + getCommissionPaidAmount(commission), 0);
     const lopsideDepositCollected = orders.reduce((sum, order) => sum + getOrderLopsideDepositCollected(order), 0);
     const lopsideDepositOutstanding = orders.reduce((sum, order) => {
         if (!isLopsideFursuitOrder(order)) return sum;
