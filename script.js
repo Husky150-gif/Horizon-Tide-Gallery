@@ -172,6 +172,9 @@ window.adminCommentsEntries = [];
 window.adminCommentsUnsub = null;
 window.adminReportsUnsub = null;
 window.adminCustomerRequestsEntries = [];
+window.adminCustomerRequestFilterState = {
+    status: 'all'
+};
 window.adminRevenueCalculatorOptions = (() => {
     try {
         const raw = localStorage.getItem(ADMIN_REVENUE_CALCULATOR_PREF_KEY);
@@ -10004,6 +10007,14 @@ function setupAdminDashboardDelegation() {
             return;
         }
 
+        if (button.matches('.admin-customer-request-filter-btn')) {
+            const nextFilter = String(button.getAttribute('data-request-filter') || 'all').trim().toLowerCase();
+            if (!['all', 'new', 'in progress', 'done', 'archived'].includes(nextFilter)) return;
+            window.adminCustomerRequestFilterState.status = nextFilter;
+            renderAdminCustomerRequestsManager();
+            return;
+        }
+
         if (button.matches('.admin-delete-comment-btn')) {
             if (!requireAdminSession('Please sign in with an authorized admin account before deleting comments.')) return;
             const id = button.getAttribute('data-id');
@@ -12431,6 +12442,15 @@ function isCustomerRequestArchived(entry) {
     return getCustomerRequestStatus(entry) === 'archived';
 }
 
+function getCustomerRequestStatusDetail(entry) {
+    const updatedAt = entry?.requestStatusUpdatedAt || entry?.handledAt || entry?.archivedAt || entry?.updatedAt || entry?.createdAt || null;
+    const updatedBy = String(entry?.requestStatusUpdatedBy || entry?.handledBy || entry?.archivedBy || entry?.updatedBy || '').trim();
+    return {
+        updatedAtMs: getComparableTimestampMs(updatedAt),
+        updatedBy: updatedBy || 'Admin'
+    };
+}
+
 async function updateCustomerRequestStatus(reportId, nextStatus) {
     const id = String(reportId || '').trim();
     if (!id) return;
@@ -12459,6 +12479,8 @@ function renderAdminCustomerRequestsManager() {
     const listEl = document.getElementById('adminCustomerRequestsList');
     if (!listEl) return;
 
+    const activeFilter = String(window.adminCustomerRequestFilterState?.status || 'all').trim().toLowerCase();
+
     const entries = (Array.isArray(window.adminCustomerRequestsEntries) ? window.adminCustomerRequestsEntries : [])
         .filter((entry) => isCustomerRequestReport(entry))
         .sort((a, b) => {
@@ -12470,20 +12492,49 @@ function renderAdminCustomerRequestsManager() {
             return bTime - aTime;
         });
 
+    const counts = entries.reduce((accumulator, entry) => {
+        const status = getCustomerRequestStatus(entry);
+        accumulator.all += 1;
+        accumulator[status] += 1;
+        return accumulator;
+    }, { all: 0, new: 0, 'in progress': 0, done: 0, archived: 0 });
+
+    const filterBarHtml = `
+        <div class="admin-review-filter-row" role="group" aria-label="Filter customer requests">
+            <button type="button" class="admin-review-filter-btn admin-customer-request-filter-btn ${activeFilter === 'all' ? 'is-active' : ''}" data-request-filter="all">All (${counts.all})</button>
+            <button type="button" class="admin-review-filter-btn admin-customer-request-filter-btn ${activeFilter === 'new' ? 'is-active' : ''}" data-request-filter="new">New (${counts.new})</button>
+            <button type="button" class="admin-review-filter-btn admin-customer-request-filter-btn ${activeFilter === 'in progress' ? 'is-active' : ''}" data-request-filter="in progress">In Progress (${counts['in progress']})</button>
+            <button type="button" class="admin-review-filter-btn admin-customer-request-filter-btn ${activeFilter === 'done' ? 'is-active' : ''}" data-request-filter="done">Done (${counts.done})</button>
+            <button type="button" class="admin-review-filter-btn admin-customer-request-filter-btn ${activeFilter === 'archived' ? 'is-active' : ''}" data-request-filter="archived">Archived (${counts.archived})</button>
+        </div>
+    `;
+
+    const filteredEntries = entries.filter((entry) => {
+        if (activeFilter === 'all') return true;
+        return getCustomerRequestStatus(entry) === activeFilter;
+    });
+
     if (!entries.length) {
-        listEl.innerHTML = '<p class="admin-detail">No customer requests yet.</p>';
+        listEl.innerHTML = `${filterBarHtml}<p class="admin-detail">No customer requests yet.</p>`;
         return;
     }
 
-    listEl.innerHTML = entries.slice(0, 40).map((entry) => {
+    if (!filteredEntries.length) {
+        listEl.innerHTML = `${filterBarHtml}<p class="admin-detail">No customer requests match this filter.</p>`;
+        return;
+    }
+
+    listEl.innerHTML = filterBarHtml + filteredEntries.slice(0, 40).map((entry) => {
         const requestType = getCustomerRequestTypeLabel(entry.requestType || entry.reason);
         const requestStatus = getCustomerRequestStatus(entry);
         const requestStatusLabel = getCustomerRequestStatusLabel(requestStatus);
         const requestStatusTone = getCustomerRequestStatusTone(requestStatus);
+        const statusDetail = getCustomerRequestStatusDetail(entry);
         const orderId = String(entry.orderId || 'Unknown').trim() || 'Unknown';
         const email = String(entry.reporterEmail || '').trim() || 'Not provided';
         const createdAtMs = getComparableTimestampMs(entry.createdAt);
         const createdLabel = createdAtMs ? getRelativeTimeLabel(createdAtMs) : 'Unknown time';
+        const updatedLabel = statusDetail.updatedAtMs ? getRelativeTimeLabel(statusDetail.updatedAtMs) : 'Unknown';
         const note = String(entry.commentText || '').trim();
         const uploadLink = String(entry.uploadLink || '').trim();
         const attachmentUrls = Array.isArray(entry.attachmentUrls) ? entry.attachmentUrls.filter(Boolean) : [];
@@ -12501,6 +12552,7 @@ function renderAdminCustomerRequestsManager() {
                     <span class="admin-comment-meta-pill">Email: ${escapeHTML(email)}</span>
                     ${discordHandle ? `<span class="admin-comment-meta-pill">Discord: ${escapeHTML(discordHandle)}</span>` : ''}
                 </div>
+                <p class="admin-detail" style="margin-top: 6px;"><strong>Updated:</strong> ${escapeHTML(updatedLabel)}${statusDetail.updatedBy ? ` by ${escapeHTML(statusDetail.updatedBy)}` : ''}</p>
                 ${note ? `<p class="admin-comment-row-text">${escapeHTML(note)}</p>` : '<p class="admin-comment-row-text">No message provided.</p>'}
                 ${uploadLink ? `<p class="admin-detail"><strong>File link:</strong> <a href="${encodeURI(uploadLink)}" target="_blank" rel="noopener noreferrer">Open share link</a></p>` : ''}
                 ${attachmentUrls.length ? `<div class="admin-comment-replies-preview">${attachmentUrls.map((url, index) => `<p><strong>Uploaded file ${index + 1}:</strong> <a href="${encodeURI(url)}" target="_blank" rel="noopener noreferrer">Open file</a></p>`).join('')}</div>` : ''}
