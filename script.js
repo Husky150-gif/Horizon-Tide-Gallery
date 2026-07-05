@@ -138,6 +138,12 @@ const ADMIN_EMAIL_ALLOWLIST = new Set([
     'littlelopsidestudio@gmail.com'
 ]);
 
+const OWNER_ROLE_BY_EMAIL = new Map([
+    ['musicisbae6547@gmail.com', 'Husky (Owner)'],
+    ['horizontidegallery@gmail.com', 'Husky (Owner Shared Inbox)'],
+    ['littlelopsidestudio@gmail.com', 'Lopside (Owner)']
+]);
+
 const ADMIN_PERSISTENCE_PREF_KEY = 'hz_admin_stay_signed_in';
 const ADMIN_REVENUE_STATUSES = new Set(['accepted', 'approved', 'paid', 'in progress', 'finished', 'shipped']);
 const ADMIN_REVENUE_CALCULATOR_PREF_KEY = 'hz_admin_revenue_calc';
@@ -190,8 +196,33 @@ function isAdminSessionActive() {
     return ADMIN_EMAIL_ALLOWLIST.has(String(user.email).toLowerCase());
 }
 
+function getAdminRoleLabel(email = auth.currentUser?.email) {
+    const normalized = String(email || '').toLowerCase();
+    if (!normalized) return 'Admin';
+    return OWNER_ROLE_BY_EMAIL.get(normalized) || 'Admin';
+}
+
+function isOwnerSession() {
+    const email = String(auth.currentUser?.email || '').toLowerCase();
+    if (!email) return false;
+    return OWNER_ROLE_BY_EMAIL.has(email);
+}
+
+function getAdminSessionStatusLabel() {
+    const email = String(auth.currentUser?.email || 'Admin');
+    const role = getAdminRoleLabel(email);
+    return `Signed in: ${email} • ${role}`;
+}
+
 function requireAdminSession(message = 'Please sign into an authorized admin account first.') {
     if (isAdminSessionActive()) return true;
+    alert(message);
+    return false;
+}
+
+function requireOwnerSession(message = 'Owner access required for this action.') {
+    if (!requireAdminSession()) return false;
+    if (isOwnerSession()) return true;
     alert(message);
     return false;
 }
@@ -4248,7 +4279,7 @@ function loadPreorderPage() {
     
     document.getElementById('btnPricing').addEventListener('click', (e) => cinematicTransition(e, loadPricingPage, '#pricing'));
     document.getElementById('btnStatusCheck').addEventListener('click', (e) => cinematicTransition(e, loadStatusCheckPage, '#status'));
-    document.getElementById('btnHuskysList').addEventListener('click', (e) => cinematicTransition(e, loadHuskysListPage, '#huskys-list'));
+    document.getElementById('btnHuskysList').addEventListener('click', (e) => cinematicTransition(e, loadHuskysListPage, '#horizon-queue'));
     document.getElementById('btnCustomStickers').addEventListener('click', (e) => cinematicTransition(e, loadCustomStickersForm, '#stickers'));
     document.getElementById('btnPremadeKeychains').addEventListener('click', (e) => cinematicTransition(e, loadPremadeKeychainsForm, '#premade'));
     document.getElementById('btnCustomPlushies').addEventListener('click', (e) => cinematicTransition(e, () => loadNotReadyPage('Custom Plushies', 'Custom plushies are not ready yet, but they may open in the future.')));
@@ -8051,6 +8082,72 @@ function getAdminReminderRows(orders = []) {
     return rows.slice(0, 14);
 }
 
+function getReminderSkipReasonLabel(order, nowMs) {
+    const status = normalizeOrderStatus(order?.status);
+    const trackedStatuses = new Set(['accepted', 'in progress', 'paid', 'finished', 'shipped']);
+    if (!trackedStatuses.has(status)) return '';
+
+    const email = String(order?.email || '').trim();
+    if (!email) return 'Missing customer email';
+
+    const orderId = String(order?.orderId || '').trim();
+    if (!orderId) return 'Missing order ID';
+
+    const lastSentAtMs = getComparableTimestampMs(order?.lastReminderSentAt);
+    if (lastSentAtMs && (nowMs - lastSentAtMs) < ADMIN_REMINDER_COOLDOWN_MS) {
+        const remainingMs = ADMIN_REMINDER_COOLDOWN_MS - (nowMs - lastSentAtMs);
+        const remainingHours = Math.max(1, Math.ceil(remainingMs / (60 * 60 * 1000)));
+        return `Cooldown active (~${remainingHours}h remaining)`;
+    }
+
+    const isFursuit = isLopsideFursuitOrder(order);
+    const quoteAmount = Math.max(0, getOrderQuoteAmount(order));
+    const remainingBalance = Math.max(0, getOrderRemainingBalance(order));
+    const depositTarget = Math.max(0, getOrderLopsideDepositTarget(order));
+    const depositCollected = Math.max(0, getOrderLopsideDepositCollected(order));
+    const depositDue = Math.max(0, roundMoney(depositTarget - depositCollected));
+
+    if ((status === 'accepted' || status === 'in progress') && isFursuit) {
+        if (depositTarget <= 0) return 'Missing quote amount for deposit target';
+        if (depositDue <= 0) return 'Deposit already satisfied';
+        return '';
+    }
+
+    if ((status === 'in progress' || status === 'finished' || status === 'shipped' || status === 'paid') && quoteAmount > 0) {
+        if (remainingBalance <= 0) return 'No remaining balance due';
+        return '';
+    }
+
+    if (quoteAmount <= 0) return 'No quote amount recorded yet';
+    return 'Not currently eligible for reminder rules';
+}
+
+function getAdminReminderSkipRows(orders = []) {
+    const nowMs = Date.now();
+    const rows = [];
+
+    orders.forEach((order) => {
+        const reason = getReminderSkipReasonLabel(order, nowMs);
+        if (!reason) return;
+
+        rows.push({
+            orderId: getOrderPublicId(order),
+            name: String(order?.name || 'Guest'),
+            status: String(order?.status || 'Pending Review'),
+            reason,
+            lastSentAtMs: getComparableTimestampMs(order?.lastReminderSentAt)
+        });
+    });
+
+    rows.sort((a, b) => {
+        const aTime = Number(a.lastSentAtMs || 0);
+        const bTime = Number(b.lastSentAtMs || 0);
+        return aTime - bTime;
+    });
+
+    return rows.slice(0, 10);
+}
+
 function getAdminSmartAlertRows(orders = [], reminderRows = []) {
     const pendingReviews = orders.filter((order) => {
         const status = normalizeOrderStatus(order?.status);
@@ -8214,6 +8311,7 @@ function computeAdminDashboardMetrics() {
     const thisMonthRevenue = monthlyBuckets[monthlyBuckets.length - 1]?.value || 0;
     const pipelineOutstandingRevenue = Math.max(0, roundMoney(revenueTotal - totalAmountPaid));
     const reminderRows = getAdminReminderRows(orders);
+    const reminderSkipRows = getAdminReminderSkipRows(orders);
     const alertRows = getAdminSmartAlertRows(orders, reminderRows);
 
     const newestOrder = [...orders].sort((a, b) => getOrderTimestampMs(b) - getOrderTimestampMs(a))[0] || null;
@@ -8268,6 +8366,7 @@ function computeAdminDashboardMetrics() {
         monthlyBuckets,
         alertRows,
         reminderRows,
+        reminderSkipRows,
         newestOrder,
         latestRefund,
         latestCommission,
@@ -8700,6 +8799,35 @@ function renderAdminReminderRows(rows = []) {
     }).join('');
 }
 
+function renderAdminReminderSkipRows(rows = []) {
+    if (!Array.isArray(rows) || rows.length === 0) {
+        return `
+            <section class="admin-reminder-skip-wrap">
+                <h3 class="admin-card-title">Skipped Snapshot</h3>
+                <p class="admin-detail">No skipped reminder diagnostics to show right now.</p>
+            </section>
+        `;
+    }
+
+    return `
+        <section class="admin-reminder-skip-wrap">
+            <h3 class="admin-card-title">Skipped Snapshot</h3>
+            <div class="admin-reminder-skip-list">
+                ${rows.map((row) => {
+                    const lastSent = row.lastSentAtMs ? getRelativeTimeLabel(row.lastSentAtMs) : 'Never';
+                    return `
+                        <article class="admin-reminder-skip-item">
+                            <p><strong>${escapeHTML(String(row.orderId || 'Unknown'))}</strong> • ${escapeHTML(String(row.name || 'Guest'))}</p>
+                            <p>${escapeHTML(String(row.reason || 'Skipped'))}</p>
+                            <small>Status: ${escapeHTML(String(row.status || 'Pending Review'))} • Last sent: ${escapeHTML(lastSent)}</small>
+                        </article>
+                    `;
+                }).join('')}
+            </div>
+        </section>
+    `;
+}
+
 function updateAdminDashboardOverview() {
     const container = document.getElementById('adminOverviewCards');
     const chartContainer = document.getElementById('adminRevenuePanels');
@@ -8785,7 +8913,7 @@ function updateAdminDashboardOverview() {
     ];
 
     alertsContainer.innerHTML = renderAdminSmartAlerts(metrics.alertRows);
-    remindersContainer.innerHTML = renderAdminReminderRows(metrics.reminderRows);
+    remindersContainer.innerHTML = `${renderAdminReminderRows(metrics.reminderRows)}${renderAdminReminderSkipRows(metrics.reminderSkipRows)}`;
 
     chartContainer.innerHTML = `
         <article class="admin-chart-card">
@@ -9335,7 +9463,7 @@ function setupAdminDashboardDelegation() {
         }
 
         if (button.matches('.delete-refund-btn')) {
-            if (!requireAdminSession('Please log into the Secret Corner with an authorized admin account before deleting refunds.')) return;
+            if (!requireOwnerSession('Owner access required before deleting refund entries.')) return;
             const id = button.getAttribute('data-id');
             if (!id || !confirm('Delete this refund entry permanently?')) return;
             try {
@@ -9378,7 +9506,7 @@ function setupAdminDashboardDelegation() {
         }
 
         if (button.matches('.delete-commission-btn')) {
-            if (!requireAdminSession('Please log into the Secret Corner with an authorized admin account before deleting commissions.')) return;
+            if (!requireOwnerSession('Owner access required before deleting commission entries.')) return;
             const id = button.getAttribute('data-id');
             if (!id || !confirm('Delete this commission entry permanently?')) return;
             try {
@@ -9572,6 +9700,7 @@ function setupAdminDashboardDelegation() {
         }
 
         if (button.matches('.admin-order-delete-btn')) {
+            if (!requireOwnerSession('Owner access required before deleting orders.')) return;
             const orderId = button.getAttribute('data-order-id');
             if (orderId) await deleteOrder(orderId);
             return;
@@ -10122,7 +10251,7 @@ function loadAdminDashboard() {
                     <div>
                         <p class="admin-top-kicker">Horizon Mission Control</p>
                         <h1>Horizon Admin Dashboard</h1>
-                        <p id="adminCurrentUserStatus" class="admin-top-meta">Signed in: ${escapeHTML(auth.currentUser?.email || 'Admin')}</p>
+                        <p id="adminCurrentUserStatus" class="admin-top-meta">${escapeHTML(getAdminSessionStatusLabel())}</p>
                     </div>
                     <div class="admin-header-actions">
                         <input type="search" id="adminQuickSearch" class="admin-input admin-quick-search" placeholder="Quick search orders, IDs, names...">
@@ -11098,12 +11227,13 @@ function loadAdminDashboard() {
         const lastSignIn = auth.currentUser?.metadata?.lastSignInTime || 'Unknown time';
         showAdminToast(`Security check passed for ${email}. Last sign-in: ${lastSignIn}`);
     });
-    document.getElementById('adminToolsOpenQueuePageBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadHuskysListPage, '#huskys-list'));
+    document.getElementById('adminToolsOpenQueuePageBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadHuskysListPage, '#horizon-queue'));
     document.getElementById('adminToolsOpenUpdatesPageBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadAnnouncementsPage, '#updates'));
     document.getElementById('exportPreordersCsvBtn')?.addEventListener('click', () => exportPreordersCSV());
     document.getElementById('exportRefundsCsvBtn')?.addEventListener('click', () => exportRefundsCSV());
     document.getElementById('exportCommissionsCsvBtn')?.addEventListener('click', () => exportCommissionsCSV());
     document.getElementById('adminToolsExportAllBtn')?.addEventListener('click', () => {
+        if (!requireOwnerSession('Owner access required before exporting all datasets at once.')) return;
         exportPreordersCSV();
         exportRefundsCSV();
         exportCommissionsCSV();
@@ -12688,6 +12818,20 @@ function bindCareGuideGridModal() {
 
 let suppressNextHashRoute = false;
 
+function normalizeRouteHash(rawHash) {
+    const value = String(rawHash || '#home').trim() || '#home';
+
+    // Support both '#route' and '#/route' forms from pasted/shared links.
+    let normalized = value.startsWith('#/') ? `#${value.slice(2)}` : value;
+
+    // Legacy alias: keep old links working but standardize on Horizon Queue naming.
+    if (normalized === '#huskys-list') {
+        normalized = '#horizon-queue';
+    }
+
+    return normalized;
+}
+
 function resetViewportToTop() {
     window.scrollTo(0, 0);
 
@@ -12717,7 +12861,10 @@ const routes = {
     '#custom-keychain': loadCustomKeychainsForm,
     '#art': loadHuskyArtForm,
     '#fursuits': loadFursuitForm,
-    '#huskys-list': loadHuskysListPage
+    '#horizon-queue': loadHuskysListPage,
+    '#huskys-list': loadHuskysListPage,
+    '#/horizon-queue': loadHuskysListPage,
+    '#/huskys-list': loadHuskysListPage
 };
 
 function routeProtectedAdminHash() {
@@ -12730,7 +12877,10 @@ function routeProtectedAdminHash() {
 }
 
 function initRouter() {
-    let initialHash = window.location.hash || '#home';
+    let initialHash = normalizeRouteHash(window.location.hash || '#home');
+    if (initialHash !== (window.location.hash || '#home')) {
+        window.history.replaceState(null, '', initialHash);
+    }
     resetViewportToTop();
     applyHeadMetadataForRoute(initialHash === '#admin');
 
@@ -12755,7 +12905,11 @@ function initRouter() {
             return;
         }
 
-        const currentHash = window.location.hash || '#home';
+        const rawHash = window.location.hash || '#home';
+        const currentHash = normalizeRouteHash(rawHash);
+        if (currentHash !== rawHash) {
+            window.history.replaceState(null, '', currentHash);
+        }
         applyHeadMetadataForRoute(currentHash === '#admin');
 
         if (currentHash === '#admin') {
