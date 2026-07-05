@@ -16,10 +16,18 @@ function readLegacyRuntimeConfig() {
 }
 
 const legacyRuntimeConfig = readLegacyRuntimeConfig();
-const sendgridKey =
-  process.env.SENDGRID_KEY ||
-  process.env.SENDGRID_API_KEY ||
-  (legacyRuntimeConfig.sendgrid && legacyRuntimeConfig.sendgrid.key);
+function readSendgridKey() {
+  const directKey =
+    process.env.SENDGRID_KEY ||
+    process.env.SENDGRID_KEY_ ||
+    process.env['SENDGRID_KEY '] ||
+    process.env.SENDGRID_API_KEY ||
+    (legacyRuntimeConfig.sendgrid && legacyRuntimeConfig.sendgrid.key);
+
+  return String(directKey || '').trim();
+}
+
+const sendgridKey = readSendgridKey();
 
 if (sendgridKey) sgMail.setApiKey(sendgridKey);
 
@@ -311,7 +319,7 @@ exports.sendAutomatedPaymentReminders = functions.pubsub
       const emailContent = buildReminderEmail(order, plan);
       const msg = {
         to: email,
-        from: 'no-reply@horizontidegallery.com',
+        from: 'horizontidegallery@gmail.com',
         subject: emailContent.subject,
         text: emailContent.text
       };
@@ -322,10 +330,19 @@ exports.sendAutomatedPaymentReminders = functions.pubsub
           lastReminderSentAt: admin.firestore.FieldValue.serverTimestamp(),
           lastReminderType: plan.type,
           lastReminderAmountDue: plan.amountDue,
-          lastReminderSentBy: 'automation'
+          lastReminderSentBy: 'automation',
+          lastReminderAttemptAt: admin.firestore.FieldValue.serverTimestamp(),
+          lastReminderAttemptStatus: 'sent',
+          lastReminderAttemptError: ''
         });
         sentCount += 1;
       } catch (error) {
+        const errorMessage = error && error.message ? String(error.message) : 'Unknown SendGrid error';
+        await docSnap.ref.update({
+          lastReminderAttemptAt: admin.firestore.FieldValue.serverTimestamp(),
+          lastReminderAttemptStatus: 'failed',
+          lastReminderAttemptError: errorMessage.slice(0, 500)
+        });
         console.error('Automated reminder failed for preorder:', orderId, error);
       }
     }
