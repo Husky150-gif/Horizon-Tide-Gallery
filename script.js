@@ -10813,7 +10813,7 @@ function loadAdminDashboard() {
                     <summary><span class="admin-summary-label">Customer Requests <span class="admin-panel-badge" id="adminCustomerCountBadge" data-tone="amber">0</span></span></summary>
                     <div class="admin-collapsible-body">
                         <p class="admin-section-note">Customer Actions submissions land here so you can triage edits, uploads, reminders, and DM alerts.</p>
-                        <div class="admin-card admin-comments-card" id="adminCustomerRequestsCard">
+                        <div class="admin-card admin-comments-card admin-customer-requests-card" id="adminCustomerRequestsCard">
                             <h3 class="admin-card-title">Customer Requests Inbox</h3>
                             <p class="admin-card-subtitle">Tickets submitted from the status page Customer Actions panel.</p>
                             <div id="adminCustomerRequestsList" class="admin-comments-list">
@@ -12500,7 +12500,7 @@ function renderAdminCustomerRequestsManager() {
     }, { all: 0, new: 0, 'in progress': 0, done: 0, archived: 0 });
 
     const filterBarHtml = `
-        <div class="admin-review-filter-row" role="group" aria-label="Filter customer requests">
+        <div class="admin-review-filter-row admin-customer-request-filter-row" role="group" aria-label="Filter customer requests">
             <button type="button" class="admin-review-filter-btn admin-customer-request-filter-btn ${activeFilter === 'all' ? 'is-active' : ''}" data-request-filter="all">All (${counts.all})</button>
             <button type="button" class="admin-review-filter-btn admin-customer-request-filter-btn ${activeFilter === 'new' ? 'is-active' : ''}" data-request-filter="new">New (${counts.new})</button>
             <button type="button" class="admin-review-filter-btn admin-customer-request-filter-btn ${activeFilter === 'in progress' ? 'is-active' : ''}" data-request-filter="in progress">In Progress (${counts['in progress']})</button>

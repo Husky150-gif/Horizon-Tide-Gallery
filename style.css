@@ -9333,6 +9333,32 @@ body[data-page="admin"] .global-sale-banner {
     grid-template-columns: 1fr;
 }
 
+.admin-customer-requests-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-color: rgba(103, 232, 249, 0.32);
+    background: linear-gradient(180deg, rgba(8, 16, 34, 0.96), rgba(6, 12, 26, 0.92));
+    box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.08), 0 18px 40px rgba(2, 8, 23, 0.35);
+}
+
+.admin-customer-requests-card .admin-card-title {
+    margin-bottom: 0;
+}
+
+.admin-customer-requests-card .admin-card-subtitle {
+    margin-bottom: 0;
+    max-width: 64ch;
+}
+
+.admin-customer-requests-card .admin-detail {
+    margin: 0;
+}
+
+.admin-customer-requests-card .admin-comments-list {
+    grid-template-columns: 1fr;
+}
+
 .admin-reviews-list {
     display: grid;
     gap: 10px;
@@ -9343,6 +9369,10 @@ body[data-page="admin"] .global-sale-banner {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+}
+
+.admin-customer-request-filter-row {
+    padding: 2px 0 4px;
 }
 
 .admin-review-filter-btn {
@@ -9367,6 +9397,23 @@ body[data-page="admin"] .global-sale-banner {
     border-color: rgba(110, 231, 183, 0.8);
     background: rgba(6, 78, 59, 0.6);
     color: #d1fae5;
+}
+
+.admin-customer-request-filter-btn {
+    border-color: rgba(125, 211, 252, 0.28);
+    background: rgba(5, 20, 35, 0.82);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.admin-customer-request-filter-btn:hover {
+    border-color: rgba(125, 211, 252, 0.75);
+    background: rgba(8, 32, 55, 0.9);
+}
+
+.admin-customer-request-filter-btn.is-active {
+    border-color: rgba(74, 222, 128, 0.8);
+    background: rgba(15, 118, 110, 0.55);
+    color: #ecfeff;
 }
 
 .admin-review-row {
@@ -9528,6 +9575,16 @@ body[data-page="admin"] .global-sale-banner {
     gap: 8px;
 }
 
+.admin-customer-requests-card .admin-comment-row {
+    padding: 14px;
+    border-radius: 16px;
+    border-color: rgba(103, 232, 249, 0.18);
+    background:
+        radial-gradient(circle at top right, rgba(34, 211, 238, 0.08), transparent 34%),
+        linear-gradient(180deg, rgba(10, 18, 38, 0.92), rgba(8, 15, 30, 0.9));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
 .admin-comment-row-head {
     display: flex;
     justify-content: space-between;
@@ -9574,6 +9631,12 @@ body[data-page="admin"] .global-sale-banner {
     word-break: break-word;
 }
 
+.admin-customer-requests-card .admin-comment-row-text {
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: #e0f2fe;
+}
+
 .admin-comment-replies-preview {
     display: grid;
     gap: 5px;
@@ -9594,6 +9657,94 @@ body[data-page="admin"] .global-sale-banner {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+}
+
+.admin-customer-requests-card .admin-comment-row-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.admin-customer-requests-card .admin-comment-row-actions > button {
+    width: 100%;
+}
+
+.admin-customer-requests-card .admin-comment-row-head strong {
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+}
+
+.admin-customer-requests-card .admin-comment-row-head span {
+    color: #9fd6ff;
+    font-size: 0.78rem;
+}
+
+.admin-customer-requests-card .admin-comment-meta-row {
+    gap: 6px;
+}
+
+.admin-customer-requests-card .admin-comment-meta-pill {
+    padding: 4px 10px;
+    font-size: 0.76rem;
+}
+
+.admin-customer-requests-card .admin-detail {
+    color: #9fd6ff;
+}
+
+.admin-customer-requests-card .admin-detail strong {
+    color: #f9a8d4;
+}
+
+.admin-customer-requests-card .admin-customer-request-filter-row,
+.admin-customer-requests-card .admin-review-filter-row {
+    margin-bottom: 2px;
+}
+
+@media (max-width: 760px) {
+    .admin-customer-requests-card {
+        gap: 10px;
+        padding: 14px;
+    }
+
+    .admin-customer-requests-card .admin-card-subtitle {
+        max-width: 100%;
+    }
+
+    .admin-customer-requests-card .admin-customer-request-filter-row {
+        gap: 6px;
+    }
+
+    .admin-customer-requests-card .admin-customer-request-filter-btn {
+        flex: 1 1 112px;
+        min-width: 0;
+    }
+
+    .admin-customer-requests-card .admin-comment-row {
+        padding: 12px;
+    }
+
+    .admin-customer-requests-card .admin-comment-row-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-customer-requests-card .admin-comment-row-head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .admin-customer-requests-card .admin-comment-meta-row {
+        width: 100%;
+    }
+
+    .admin-customer-requests-card .admin-comment-meta-pill {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .admin-customer-requests-card .admin-comment-row-actions > button {
+        min-height: 42px;
+    }
 }
 
 .admin-comment-reply-wrap {
