@@ -8620,8 +8620,16 @@ function computeAdminDashboardMetrics() {
     // Ignore orphaned website-preorder queue rows so deleted forms stop impacting money metrics.
     const commissionsForMoneyMetrics = commissions.filter((commission) => {
         const linkedPreorderId = String(commission?.preorderOrderId || '').trim();
-        if (!linkedPreorderId) return true;
-        return existingPreorderOrderIds.has(linkedPreorderId);
+        if (linkedPreorderId) return existingPreorderOrderIds.has(linkedPreorderId);
+
+        const sourceType = String(commission?.sourceType || '').trim().toLowerCase();
+        const commissionId = String(commission?.commissionId || '').trim();
+        const looksLikeWebsitePreorderMirror =
+            (sourceType === 'website preorder' || sourceType === 'website order') &&
+            /^htg-\d{4}-[a-z0-9]+$/i.test(commissionId);
+
+        if (!looksLikeWebsitePreorderMirror) return true;
+        return existingPreorderOrderIds.has(commissionId);
     });
 
     const pendingOrders = orders.filter((o) => {
