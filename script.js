@@ -8637,6 +8637,11 @@ function computeAdminDashboardMetrics() {
         return status === 'pending review' || status === 'new';
     });
 
+    const activePreorderWorkOrders = orders.filter((o) => {
+        const status = normalizeOrderStatus(o.status);
+        return status === 'accepted' || status === 'paid' || status === 'in progress';
+    });
+
     const activeCommissions = commissions.filter((c) => {
         const status = String(c.queueStatus || '').toLowerCase();
         return status === 'started' || status === 'not started';
@@ -8731,6 +8736,7 @@ function computeAdminDashboardMetrics() {
         pendingOrdersCount: pendingOrders.length,
         waitingPaymentsCount: waitingPayments.length,
         urgentActionsCount: urgentActions,
+        activePreorderWorkCount: activePreorderWorkOrders.length,
         activeCommissionsCount: activeCommissions.length,
         preorderCount: orders.length,
         refundCount: openRefunds.length,
@@ -9255,7 +9261,7 @@ function updateAdminDashboardOverview() {
                 { group: 'Business Health', label: 'Revenue', value: formatMoney(metrics.revenueTotal) },
                 { group: 'Business Health', label: 'Paid So Far', value: formatMoney(metrics.totalAmountPaid) },
                 { group: 'Business Health', label: 'Lopside Deposits', value: formatMoney(metrics.lopsideDepositCollected) },
-                { group: 'Business Health', label: 'Active Work', value: metrics.activeCommissionsCount },
+                { group: 'Business Health', label: 'Active Preorders', value: metrics.activePreorderWorkCount },
                 { group: 'Business Health', label: 'Open Slots', value: metrics.huskyOpenSlots + metrics.lopsideOpenSlots }
             ]
         },
