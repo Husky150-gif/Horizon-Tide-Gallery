@@ -8239,12 +8239,17 @@ function getOrderRevenueValue(order, basis = 'final-first') {
     const normalizedBasis = normalizeAdminRevenueBasis(basis);
     if (normalizedBasis === 'estimate') return estimateOrderRevenue(order);
 
+    const orderStatus = normalizeOrderStatus(order?.status);
+    const isPreAcceptanceStage = orderStatus === 'pending review' || orderStatus === 'new' || orderStatus === 'reviewed';
+
     if (normalizedBasis === 'published-final-first') {
+        if (isPreAcceptanceStage) return estimateOrderRevenue(order);
         const publishedFinal = getOrderPublishedFinalPrice(order);
         if (publishedFinal != null) return publishedFinal;
         return estimateOrderRevenue(order);
     }
 
+    if (isPreAcceptanceStage) return estimateOrderRevenue(order);
     const anyFinal = parseAdminPriceInput(order?.finalPrice);
     if (anyFinal != null) return anyFinal;
     return estimateOrderRevenue(order);
@@ -8292,12 +8297,16 @@ function isCommissionInRevenueScope(commission, scope) {
 function getCommissionRevenueValue(commission, basis = 'final-first') {
     const normalizedBasis = normalizeAdminRevenueBasis(basis);
     const estimated = getCommissionEstimatedPriceValue(commission);
+    const queueStatus = normalizeCommissionQueueStatus(commission?.queueStatus);
+    const isPreAcceptanceStage = queueStatus === 'not started';
 
     if (normalizedBasis === 'published-final-first') {
+        if (isPreAcceptanceStage) return estimated ?? 0;
         return getCommissionFinalPriceValue(commission, true) ?? (estimated ?? 0);
     }
 
     if (normalizedBasis === 'final-first') {
+        if (isPreAcceptanceStage) return estimated ?? 0;
         return getCommissionFinalPriceValue(commission, false) ?? (estimated ?? 0);
     }
 
