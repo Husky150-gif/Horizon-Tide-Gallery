@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Firebase Deploy: Hosting + Firestore Rules",
+      "type": "shell",
+      "command": "firebase",
+      "args": ["deploy", "--only", "hosting,firestore:rules", "--project", "the-horizon-8f72f"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Firebase Deploy: Hosting Only",
+      "type": "shell",
+      "command": "firebase",
+      "args": ["deploy", "--only", "hosting", "--project", "the-horizon-8f72f"],
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}

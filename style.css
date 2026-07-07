@@ -176,6 +176,20 @@ a, button, .nav-btn, .preorder-btn, .interactive, .dynamic-moon-phase, input[typ
     transform: scale(1.4);
 }
 
+.app-animations-paused .magical-bubble,
+.app-animations-paused .star.decorative,
+.app-animations-paused .star.interactive,
+.app-animations-paused .dashboard-star,
+.app-animations-paused .cosmic-shooting-star,
+.app-animations-paused .fluid-wave,
+.app-animations-paused .constellation-drift,
+.app-animations-paused .stardust-particle,
+.app-animations-paused .jumping-fish,
+.app-animations-paused .water-splash,
+.app-animations-paused .tos-nebula {
+    animation-play-state: paused !important;
+}
+
 @keyframes magicStarFall {
     0% { transform: translateY(-5vh) translateX(0) scale(0.8); opacity: 0; }
     5% { opacity: 1; }

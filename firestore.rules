@@ -58,6 +58,154 @@ service cloud.firestore {
         && !('isPrivate' in request.resource.data.keys());
     }
 
+    function isShortString(value, maxLen) {
+      return value is string && value.size() > 0 && value.size() <= maxLen;
+    }
+
+    function optionalShortString(fieldName, maxLen) {
+      return !(fieldName in request.resource.data.keys())
+        || (request.resource.data[fieldName] is string && request.resource.data[fieldName].size() <= maxLen);
+    }
+
+    function optionalBool(fieldName) {
+      return !(fieldName in request.resource.data.keys()) || request.resource.data[fieldName] is bool;
+    }
+
+    function optionalStringList(fieldName, maxItems) {
+      return !(fieldName in request.resource.data.keys())
+        || (
+          request.resource.data[fieldName] is list
+          && request.resource.data[fieldName].size() <= maxItems
+          && (request.resource.data[fieldName].size() < 1 || request.resource.data[fieldName][0] is string)
+          && (request.resource.data[fieldName].size() < 2 || request.resource.data[fieldName][1] is string)
+          && (request.resource.data[fieldName].size() < 3 || request.resource.data[fieldName][2] is string)
+          && (request.resource.data[fieldName].size() < 4 || request.resource.data[fieldName][3] is string)
+        );
+    }
+
+    function commentAllowedKeys() {
+      return request.resource.data.keys().hasOnly([
+        'name',
+        'text',
+        'replies',
+        'timestamp',
+        'entryType',
+        'approved',
+        'safeForPublic',
+        'displayName',
+        'rating',
+        'reviewRating',
+        'reviewText',
+        'commissionType',
+        'reviewImageUrl'
+      ]);
+    }
+
+    function commentIsBasicEntry() {
+      return isShortString(request.resource.data.name, 50)
+        && isShortString(request.resource.data.text, 500)
+        && request.resource.data.timestamp == request.time
+        && request.resource.data.replies is list
+        && request.resource.data.replies.size() == 0
+        && !('entryType' in request.resource.data.keys());
+    }
+
+    function commentIsReviewEntry() {
+      return request.resource.data.entryType == 'review'
+        && isShortString(request.resource.data.displayName, 50)
+        && isShortString(request.resource.data.name, 50)
+        && isShortString(request.resource.data.reviewText, 1500)
+        && isShortString(request.resource.data.text, 1500)
+        && request.resource.data.timestamp == request.time
+        && request.resource.data.replies is list
+        && request.resource.data.replies.size() == 0
+        && request.resource.data.approved == false
+        && request.resource.data.safeForPublic == false
+        && request.resource.data.rating is int
+        && request.resource.data.reviewRating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.reviewRating >= 1
+        && request.resource.data.reviewRating <= 5
+        && optionalShortString('commissionType', 80)
+        && optionalShortString('reviewImageUrl', 700);
+    }
+
+    function reportAllowedKeys() {
+      return request.resource.data.keys().hasOnly([
+        'commentId',
+        'commentText',
+        'reporterEmail',
+        'reason',
+        'createdAt',
+        'to',
+        'message',
+        'orderId',
+        'requestType',
+        'requestStatus',
+        'uploadLink',
+        'attachmentUrls',
+        'attachmentCount',
+        'discordHandle',
+        'dmAlertsEnabled'
+      ]);
+    }
+
+    function reportHasSafeDefaults() {
+      return isShortString(request.resource.data.commentId, 140)
+        && optionalShortString('commentText', 4000)
+        && optionalShortString('reporterEmail', 160)
+        && optionalShortString('reason', 120)
+        && optionalShortString('orderId', 32)
+        && optionalShortString('requestStatus', 32)
+        && optionalShortString('uploadLink', 700)
+        && optionalShortString('discordHandle', 80)
+        && optionalBool('dmAlertsEnabled')
+        && optionalStringList('attachmentUrls', 4)
+        && (
+          !('attachmentCount' in request.resource.data.keys())
+          || (
+            request.resource.data.attachmentCount is int
+            && request.resource.data.attachmentCount >= 0
+            && request.resource.data.attachmentCount <= 4
+          )
+        )
+        && (
+          !('requestType' in request.resource.data.keys())
+          || request.resource.data.requestType.matches('^customer_[a-z0-9_]{2,64}$')
+        )
+        && (
+          !('to' in request.resource.data.keys())
+          || (
+            request.resource.data.to is list
+            && request.resource.data.to.size() <= 3
+            && (request.resource.data.to.size() < 1 || request.resource.data.to[0] is string)
+            && (request.resource.data.to.size() < 2 || request.resource.data.to[1] is string)
+            && (request.resource.data.to.size() < 3 || request.resource.data.to[2] is string)
+          )
+        )
+        && (
+          !('message' in request.resource.data.keys())
+          || (
+            request.resource.data.message is map
+            && request.resource.data.message.keys().hasOnly(['subject', 'text', 'html'])
+            && (
+              !('subject' in request.resource.data.message.keys())
+              || (request.resource.data.message.subject is string && request.resource.data.message.subject.size() <= 180)
+            )
+            && (
+              !('text' in request.resource.data.message.keys())
+              || (request.resource.data.message.text is string && request.resource.data.message.text.size() <= 6000)
+            )
+            && (
+              !('html' in request.resource.data.message.keys())
+              || (request.resource.data.message.html is string && request.resource.data.message.html.size() <= 12000)
+            )
+          )
+        )
+        && request.resource.data.createdAt == request.time;
+    }
+
     match /preorders/{orderDocId} {
       allow create: if preorderAllowedKeys() && preorderHasSafeDefaults();
       allow get, list, update, delete: if isAdmin();
@@ -113,12 +261,12 @@ service cloud.firestore {
 
     match /comments/{commentId} {
       allow get, list: if true;
-      allow create: if true;
+      allow create: if commentAllowedKeys() && (commentIsBasicEntry() || commentIsReviewEntry());
       allow update, delete: if isAdmin();
     }
 
     match /reports/{reportId} {
-      allow create: if true;
+      allow create: if reportAllowedKeys() && reportHasSafeDefaults();
       allow get, list, update, delete: if isAdmin();
     }
 
@@ -137,6 +285,13 @@ service cloud.firestore {
         && request.resource.data.route is string
         && request.resource.data.source is string
         && request.resource.data.status is string
+        && request.resource.data.event.size() >= 2
+        && request.resource.data.event.size() <= 64
+        && request.resource.data.event.matches('^[a-z0-9_:-]+$')
+        && request.resource.data.page.size() <= 64
+        && request.resource.data.route.size() <= 80
+        && request.resource.data.source.size() <= 64
+        && request.resource.data.status.size() <= 48
         && request.resource.data.isAdminSession is bool
         && request.resource.data.createdAt == request.time;
       allow get, list, update, delete: if isAdmin();

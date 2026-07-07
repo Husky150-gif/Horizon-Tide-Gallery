@@ -14,9 +14,6 @@
     <meta name="twitter:title" content="The Horizon | Horizon Tide Gallery">
     <meta name="twitter:description" content="Commission art, fursuits, keychains, and stickers with clear communication and queue transparency.">
     <meta name="theme-color" content="#080d1f">
-    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <link rel="canonical" href="https://the-horizon-8f72f.web.app/">
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⭐</text></svg>">
@@ -26,7 +23,7 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=84">
+    <link rel="stylesheet" href="style.css?v=85">
     
     <script defer type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
@@ -452,52 +449,7 @@
         </div>
     </div>
 
-    <script type="module" src="script.js?v=84"></script>
-
-    <script>
-        (function () {
-            var loaderRemoved = false;
-
-            function removeTidepoolLoader() {
-                if (loaderRemoved) return;
-                var loader = document.getElementById('tidepoolLoader');
-                if (!loader) {
-                    loaderRemoved = true;
-                    return;
-                }
-
-                loaderRemoved = true;
-                loader.classList.add('fade-out');
-                setTimeout(function () {
-                    if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
-                }, 800);
-            }
-
-            function scheduleRemove(delay) {
-                setTimeout(removeTidepoolLoader, delay);
-            }
-
-            // Preferred path once all resources are ready.
-            window.addEventListener('load', function () {
-                scheduleRemove(450);
-            }, { once: true });
-
-            // Safety path if some resources stall.
-            document.addEventListener('DOMContentLoaded', function () {
-                scheduleRemove(1200);
-            }, { once: true });
-
-            // Hard failsafe so loader never gets stuck.
-            scheduleRemove(5000);
-
-            // If module/network errors occur, unblock UI.
-            window.addEventListener('error', function () {
-                scheduleRemove(150);
-            });
-            window.addEventListener('unhandledrejection', function () {
-                scheduleRemove(150);
-            });
-        })();
-    </script>
+    <script type="module" src="script.js?v=85"></script>
+    <script defer src="loader.js?v=1"></script>
 </body>
 </html>

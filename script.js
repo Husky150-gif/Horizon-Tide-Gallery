@@ -6,6 +6,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/fireba
 import { initializeFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp, doc, updateDoc, deleteDoc, where, getDoc, setDoc, runTransaction, deleteField } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
 import { getAuth, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence, inMemoryPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+import { detectLiteVisualMode, adaptiveCount, attachVisibilityAnimationPause } from "./modules/visualRuntime.js";
+import { installViewportMediaOptimizer, installSiteFeedback, shouldDeferHomeVisuals } from "./modules/siteEnhancements.js";
 
 // === INITIALIZE EMAILJS ===
 emailjs.init("3stRxyurkRVP3ym8o");
@@ -34,6 +36,9 @@ const bodyElement = document.body;
 const homeStarField = document.getElementById('homeStarField');
 const interactiveStarField = document.getElementById('interactiveStarField');
 const dashboardStarField = document.getElementById('dashboardStarField');
+attachVisibilityAnimationPause(bodyElement, 'app-animations-paused');
+installViewportMediaOptimizer(appViewport);
+installSiteFeedback();
 
 // Discount System State
 window.activeSales = [];
@@ -336,16 +341,45 @@ const STICKY_PREORDER_INPUT_HIDE_GUTTER_PX = 260;
 const STICKY_PREORDER_MOBILE_KEYBOARD_VIEWPORT_RATIO = 0.84;
 const STICKY_PREORDER_FLOATING_CONTROL_HIDE_MS = 1600;
 
-const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const saveDataEnabled = Boolean(navigator.connection && navigator.connection.saveData);
-const lowPowerByCpu = Number.isFinite(navigator.hardwareConcurrency) && navigator.hardwareConcurrency > 0 && navigator.hardwareConcurrency <= 4;
-const lowPowerByMemory = Number.isFinite(navigator.deviceMemory) && navigator.deviceMemory > 0 && navigator.deviceMemory <= 4;
-const isLiteVisualMode = prefersReducedMotion || saveDataEnabled || lowPowerByCpu || lowPowerByMemory;
+const isLiteVisualMode = detectLiteVisualMode(window, navigator);
 
 function getAdaptiveCount(desktopCount, mobileCount) {
-    const base = window.innerWidth <= 768 ? mobileCount : desktopCount;
-    if (!isLiteVisualMode) return base;
-    return Math.max(3, Math.round(base * 0.55));
+    return adaptiveCount(desktopCount, mobileCount, isLiteVisualMode, window.innerWidth);
+}
+
+function canRunHeavyVisuals() {
+    return document.visibilityState !== 'hidden';
+}
+
+function checkClientCooldown(storageKey, cooldownMs) {
+    const now = Date.now();
+    const previous = Number(localStorage.getItem(storageKey) || 0);
+    if (previous > 0 && (now - previous) < cooldownMs) {
+        return false;
+    }
+    localStorage.setItem(storageKey, String(now));
+    return true;
+}
+
+const HOME_VISUAL_BOOTSTRAP_DELAY_MS = 160;
+let homeVisualBootstrapToken = 0;
+
+function bootstrapHomeVisuals() {
+    const token = ++homeVisualBootstrapToken;
+    const runVisuals = () => {
+        if (token !== homeVisualBootstrapToken) return;
+        if (bodyElement.getAttribute('data-page') !== 'home') return;
+        renderHomeStars();
+        renderInteractiveStars();
+        renderDynamicMoon();
+    };
+
+    if (shouldDeferHomeVisuals(window)) {
+        window.setTimeout(runVisuals, HOME_VISUAL_BOOTSTRAP_DELAY_MS);
+        return;
+    }
+
+    runVisuals();
 }
 
 const ANALYTICS_EVENT_CACHE_KEY = 'hz_analytics_event_cache';
@@ -2776,6 +2810,7 @@ function createBubbles() {
     const container = document.getElementById('bubbleContainer');
     if (!container) return;
     container.innerHTML = "";
+    if (!canRunHeavyVisuals()) return;
     
     const bubbleCount = getAdaptiveCount(28, 8);
     
@@ -2800,6 +2835,7 @@ function clearBubbles() {
 function renderHomeStars() {
     if (!homeStarField) return;
     homeStarField.innerHTML = "";
+    if (!canRunHeavyVisuals()) return;
     
     const countTarget = getAdaptiveCount(120, 28);
     
@@ -2822,6 +2858,7 @@ function renderHomeStars() {
 
 function spawnSingleInteractiveStar(container) {
     if (bodyElement.getAttribute('data-page') !== 'home') return; 
+    if (!canRunHeavyVisuals()) return;
     
     const potentialLeft = Math.floor(Math.random() * 80) + 10;
     
@@ -2857,7 +2894,7 @@ function spawnSingleInteractiveStar(container) {
             
             setTimeout(() => {
                 const currentContainer = document.getElementById('interactiveStarField');
-                if (currentContainer && currentContainer.children.length < 15) {
+                if (currentContainer && currentContainer.children.length < 15 && canRunHeavyVisuals()) {
                     spawnSingleInteractiveStar(currentContainer);
                 }
             }, Math.random() * 8000 + 4000);
@@ -2873,6 +2910,7 @@ function renderInteractiveStars() {
     interactiveStarField.innerHTML = "";
     
     if (bodyElement.getAttribute('data-page') !== 'home') return; 
+    if (!canRunHeavyVisuals()) return;
     
     const isMobileViewport = window.innerWidth <= 768;
     const countTarget = isMobileViewport
@@ -2886,6 +2924,7 @@ function renderInteractiveStars() {
 function renderDashboardStars() {
     if(!dashboardStarField) return;
     dashboardStarField.innerHTML = "";
+    if (!canRunHeavyVisuals()) return;
     
     const countTarget = getAdaptiveCount(18, 6);
     
@@ -2906,6 +2945,7 @@ function renderTOSConstellations() {
     const wrapper = document.getElementById('tosConstellationWrapper');
     if (!wrapper) return;
     wrapper.innerHTML = ""; 
+    if (!canRunHeavyVisuals()) return;
 
     const svgs = [
         `<svg width="150" height="150" viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="120" r="1.5" fill="#fff"/><circle cx="50" cy="100" r="1" fill="#fff"/><circle cx="80" cy="110" r="1.5" fill="#fff"/><circle cx="110" cy="80" r="1" fill="#fff"/><circle cx="130" cy="40" r="2" fill="#fff"/><path pathLength="100" class="constellation-line" d="M20 120L50 100L80 110L110 80L130 40" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/></svg>`,
@@ -3931,9 +3971,6 @@ function loadHomePage() {
     bodyElement.setAttribute('data-page', 'home');
     setEnvironmentInteractivity('home');
     if (appViewport) appViewport.style.pointerEvents = '';
-    renderHomeStars();
-    renderInteractiveStars();
-    renderDynamicMoon();
     attachInnerScrollListener(); 
 
     const availability = normalizeHomeAvailability(window.homeAvailability);
@@ -4128,6 +4165,7 @@ function loadHomePage() {
     bindSecretCornerTrigger();
     applyHomeAvailabilityToCurrentDOM();
     applyHomeTrustSignalsToCurrentDOM();
+    bootstrapHomeVisuals();
 }
 
 function loadGalleryPage() {
@@ -6518,6 +6556,11 @@ function loadContactPage() {
 
     commentsFeed.addEventListener('click', async (e) => {
         if (e.target.classList.contains('report-btn')) {
+            if (!checkClientCooldown('hz_comment_report_cooldown', 10000)) {
+                alert('Please wait a few seconds before sending another report.');
+                return;
+            }
+
             const id = e.target.getAttribute('data-id');
             const comment = globalCommentsArray.find(c => c.id === id) || {};
 
@@ -6532,8 +6575,8 @@ function loadContactPage() {
                 await addDoc(collection(db, 'reports'), {
                     commentId: id,
                     commentText: comment.text || '',
-                    reporterEmail: reporterEmail || null,
-                    reason: reason || null,
+                    reporterEmail: reporterEmail || '',
+                    reason: reason || '',
                     createdAt: serverTimestamp(),
                     to: ['horizontidegallery@gmail.com'],
                     message: {
@@ -6983,6 +7026,9 @@ function renderCustomerPhaseTwoPanel(orderId, orderData = {}) {
 async function submitCustomerActionTicket({ orderId, email, type, message, uploadLink, attachmentUrls, discordHandle, dmAlertsEnabled }) {
     const safeOrderId = String(orderId || '').trim();
     if (!safeOrderId) throw new Error('Missing order ID');
+    if (!checkClientCooldown('hz_customer_action_cooldown', 7000)) {
+        throw new Error('Please wait a few seconds before sending another request.');
+    }
 
     const normalizedEmail = String(email || '').trim().toLowerCase();
     const normalizedType = String(type || '').trim().toLowerCase();
