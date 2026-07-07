@@ -631,29 +631,32 @@ const siteGuide = installGuidedTour({
         {
             key: 'home-availability',
             route: '#home',
-            selector: '#homeGuideStepAvailability',
+            selector: '#homeGuideStepAvailabilityTitle',
             title: 'Step 1: Check Availability',
             body: 'Start here first. This card shows open slots, current response time, and who is available before someone starts a request.',
             scrollBehavior: 'auto',
-            scrollBlock: 'center'
+            scrollBlock: 'center',
+            cardSide: 'top'
         },
         {
             key: 'home-prep',
             route: '#home',
-            selector: '#homeGuideStepPrep',
+            selector: '#homeGuideStepPrepTitle',
             title: 'Step 2: Prep Your Request',
             body: 'This checklist helps visitors gather their references, commission type, deadline, notes, and contact details before submitting.',
             scrollBehavior: 'auto',
-            scrollBlock: 'center'
+            scrollBlock: 'center',
+            cardSide: 'top'
         },
         {
             key: 'home-submit',
             route: '#home',
-            selector: '#homeGuideStepSubmit',
+            selector: '#homeGuideStepSubmitTitle',
             title: 'Step 3: Submit Your Inquiry',
             body: 'Once everything is ready, this card explains the final handoff into the preorder flow and what to include in the request.',
             scrollBehavior: 'auto',
-            scrollBlock: 'center'
+            scrollBlock: 'center',
+            cardSide: 'top'
         },
         {
             key: 'home-why-horizon',
@@ -667,11 +670,12 @@ const siteGuide = installGuidedTour({
         {
             key: 'home-guides',
             route: '#home',
-            selector: '.care-guide-pill',
+            selector: '.home-trust-card .care-guide-pill[data-care-key="Fursuit washing guides"]',
             title: 'Use The Care Guides Too',
             body: 'Near the bottom of the homepage, these guides help people with fursuit care, keychain protection, and sticker weatherproofing tips.',
             scrollBehavior: 'auto',
-            scrollBlock: 'center'
+            scrollBlock: 'center',
+            cardSide: 'top'
         },
         {
             key: 'home-preorder',
@@ -688,7 +692,7 @@ const siteGuide = installGuidedTour({
         {
             key: 'preorder-launcher',
             route: '#preorder',
-            selector: '.preorder-guide-shell',
+            selector: '.preorder-guide-shell h3',
             title: 'Use The Best-Fit Launcher',
             body: 'These cards help visitors choose the right form instead of guessing where to start.',
             scrollBehavior: 'auto'
@@ -4326,7 +4330,7 @@ function loadHomePage() {
 
         <section class="home-pro-grid">
             <article class="home-pro-card home-availability-card" id="homeGuideStepAvailability">
-                <h3>Step 1: Check Availability</h3>
+                <h3 id="homeGuideStepAvailabilityTitle">Step 1: Check Availability</h3>
                 <p class="home-pro-card-subtitle">Quick-scan availability, open slots, and current reply timing for each artist.</p>
                 <div class="availability-list">
                     <div class="availability-item">
@@ -4357,7 +4361,7 @@ function loadHomePage() {
             </article>
 
             <article class="home-pro-card" id="homeGuideStepPrep">
-                <h3>Step 2: Prep Your Request</h3>
+                <h3 id="homeGuideStepPrepTitle">Step 2: Prep Your Request</h3>
                 <p class="home-pro-card-subtitle">Use this prep list so your request is easier to review and quote accurately.</p>
                 <ul class="pro-checklist">
                     <li>Character reference ready</li>
@@ -4372,7 +4376,7 @@ function loadHomePage() {
 
         <section class="home-pro-grid">
             <article class="home-pro-card home-updates-card" id="homeGuideStepSubmit">
-                <h3>Step 3: Submit Your Inquiry</h3>
+                <h3 id="homeGuideStepSubmitTitle">Step 3: Submit Your Inquiry</h3>
                 <p class="home-pro-card-subtitle">Once ready, open Preorder Menu and submit everything in one message.</p>
                 <ul class="mini-updates-list">
                     <li><span class="update-dot"></span><span>Choose your commission category</span></li>

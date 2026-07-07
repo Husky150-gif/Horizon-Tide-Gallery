@@ -249,6 +249,7 @@ export function installGuidedTour(options = {}) {
     let scrollSettleTimerId = 0;
     let stepTransitionTimerId = 0;
     let lastRenderedStepKey = '';
+    let lastSpotlightRect = null;
 
     const syncGuideState = (step = null) => {
         const body = document.body;
@@ -323,6 +324,7 @@ export function installGuidedTour(options = {}) {
         host.classList.remove('is-following-scroll');
         syncGuideState();
         lastRenderedStepKey = '';
+        lastSpotlightRect = null;
         if (stateValue) {
             writeState(stateValue);
         }
@@ -393,15 +395,89 @@ export function installGuidedTour(options = {}) {
 
         const rect = target.getBoundingClientRect();
         const padding = 10;
-        spotlight.style.left = `${Math.max(8, rect.left - padding)}px`;
-        spotlight.style.top = `${Math.max(8, rect.top - padding)}px`;
-        spotlight.style.width = `${Math.max(48, rect.width + (padding * 2))}px`;
-        spotlight.style.height = `${Math.max(48, rect.height + (padding * 2))}px`;
+        const nextRect = {
+            left: Math.max(8, rect.left - padding),
+            top: Math.max(8, rect.top - padding),
+            width: Math.max(48, rect.width + (padding * 2)),
+            height: Math.max(48, rect.height + (padding * 2))
+        };
+
+        const hasMeaningfulChange = !lastSpotlightRect
+            || Math.abs(nextRect.left - lastSpotlightRect.left) > 1
+            || Math.abs(nextRect.top - lastSpotlightRect.top) > 1
+            || Math.abs(nextRect.width - lastSpotlightRect.width) > 1
+            || Math.abs(nextRect.height - lastSpotlightRect.height) > 1;
+
+        if (!hasMeaningfulChange) {
+            return;
+        }
+
+        lastSpotlightRect = nextRect;
+        spotlight.style.left = `${nextRect.left}px`;
+        spotlight.style.top = `${nextRect.top}px`;
+        spotlight.style.width = `${nextRect.width}px`;
+        spotlight.style.height = `${nextRect.height}px`;
+
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+        const isMobile = window.innerWidth <= 768;
+        const cardHeight = Math.max(card.offsetHeight || 0, isMobile ? 220 : 200);
+        const saleBanner = document.getElementById('globalSaleBanner');
+        const bannerRect = saleBanner instanceof HTMLElement ? saleBanner.getBoundingClientRect() : null;
+        const bannerVisible = Boolean(
+            saleBanner instanceof HTMLElement
+            && bannerRect
+            && bannerRect.height > 0
+            && window.getComputedStyle(saleBanner).display !== 'none'
+            && window.getComputedStyle(saleBanner).visibility !== 'hidden'
+        );
+        const topGap = isMobile
+            ? Math.max(12, (bannerVisible && bannerRect ? Math.ceil(bannerRect.bottom) + 8 : 12))
+            : 18;
+        const bottomGap = isMobile ? 18 : 24;
+        const safeGap = 14;
+
+        const cardWidth = Math.max(280, Math.min(card.offsetWidth || 0, viewportWidth - 10)) || Math.min(360, viewportWidth - 24);
+        const cardLeft = Math.max(5, (viewportWidth - cardWidth) / 2);
+        const cardRight = cardLeft + cardWidth;
+
+        const targetLeft = nextRect.left - safeGap;
+        const targetTop = nextRect.top - safeGap;
+        const targetRight = nextRect.left + nextRect.width + safeGap;
+        const targetBottom = nextRect.top + nextRect.height + safeGap;
+
+        const overlapArea = (cardTopValue) => {
+            const cardTopValueClamped = Math.max(0, cardTopValue);
+            const cardBottomValue = cardTopValueClamped + cardHeight;
+            const overlapX = Math.max(0, Math.min(targetRight, cardRight) - Math.max(targetLeft, cardLeft));
+            const overlapY = Math.max(0, Math.min(targetBottom, cardBottomValue) - Math.max(targetTop, cardTopValueClamped));
+            return overlapX * overlapY;
+        };
+
+        const topPlacementTop = topGap;
+        const bottomPlacementTop = Math.max(0, viewportHeight - cardHeight - bottomGap);
+        const overlapTop = overlapArea(topPlacementTop);
+        const overlapBottom = overlapArea(bottomPlacementTop);
+
         card.style.left = '50%';
-        card.style.top = 'auto';
-        card.style.bottom = window.innerWidth <= 768 ? '18px' : '24px';
         card.style.transform = 'translateX(-50%)';
-        card.dataset.side = 'bottom';
+
+        const step = steps[currentIndex] || null;
+        const preferredCardSide = String(step?.cardSide || 'auto').toLowerCase();
+        const shouldPlaceTop = preferredCardSide === 'top'
+            ? true
+            : preferredCardSide === 'bottom'
+                ? false
+                : overlapTop + 6 < overlapBottom;
+        if (shouldPlaceTop) {
+            card.style.top = `${topGap}px`;
+            card.style.bottom = 'auto';
+            card.dataset.side = 'top';
+        } else {
+            card.style.top = 'auto';
+            card.style.bottom = `${bottomGap}px`;
+            card.dataset.side = 'bottom';
+        }
     };
 
     const renderStep = (attempt = 0) => {
@@ -559,11 +635,11 @@ export function installGuidedTour(options = {}) {
         }
     });
 
-    document.addEventListener('scroll', () => {
+    window.addEventListener('scroll', () => {
         if (activeTarget instanceof HTMLElement) {
             schedulePositionUpdate(activeTarget, 'scroll');
         }
-    }, true);
+    }, { passive: true });
 
     window.startSiteGuide = () => start(0);
     window.resetSiteGuide = () => {

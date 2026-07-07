@@ -9058,12 +9058,23 @@ body[data-page="huskys-list"] #footerCredit {
     flex-direction: column; 
     justify-content: center; 
     align-items: center;
-    transition: opacity 0.8s ease, visibility 0.8s ease;
+    transition: opacity 0.45s ease, visibility 0.45s ease;
+    animation: tidepoolAutoDismiss 2.8s 1.6s forwards;
 }
 
 #tidepoolLoader.fade-out {
     opacity: 0; 
     visibility: hidden;
+    pointer-events: none;
+    animation: none;
+}
+
+@keyframes tidepoolAutoDismiss {
+    to {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
 }
 
 .loader-wave {
@@ -12583,6 +12594,7 @@ body[data-page="home"] .home-top-nav {
 .celestial-nav-console {
     position: relative;
     width: min(96vw, 1020px);
+    box-sizing: border-box;
     max-width: none;
     margin-left: auto;
     margin-right: auto;
@@ -12879,6 +12891,19 @@ body[data-page="home"] .home-top-nav {
         margin-bottom: 16px;
     }
 
+    body[data-page="home"] .home-hero-header,
+    body[data-page="home"] .home-hero-note,
+    body[data-page="home"] .button-container-home.home-card-deck-shell,
+    body[data-page="home"] .home-cta-proof-row,
+    body[data-page="home"] .home-availability-snapshot,
+    body[data-page="home"] .celestial-nav-console {
+        box-sizing: border-box;
+        width: min(calc(100vw - 16px), 100%);
+        max-width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
     body[data-page="home"] .home-hero-header {
         margin-bottom: 12px;
     }
@@ -12956,7 +12981,7 @@ body[data-page="home"] .home-top-nav {
         bottom: auto;
         left: auto;
         transform: none;
-        width: min(94vw, 640px);
+        width: min(calc(100vw - 16px), 640px);
         flex-direction: column;
         align-items: stretch;
         border-radius: 26px;
@@ -13784,10 +13809,42 @@ body.guided-tour-active[data-guided-tour-step="preorder-forms"] .home-top-nav-st
 }
 
 @media (max-width: 768px) {
+    .guided-tour-card {
+        width: min(342px, calc(100vw - 14px));
+        padding: 14px 14px 12px;
+        border-radius: 18px;
+    }
+
+    .guided-tour-progress {
+        margin-bottom: 4px;
+        font-size: 0.74rem;
+    }
+
+    .guided-tour-title {
+        font-size: 1.12rem;
+        margin-bottom: 6px;
+    }
+
+    .guided-tour-body {
+        font-size: 0.96rem;
+        line-height: 1.45;
+    }
+
+    .guided-tour-actions {
+        margin-top: 12px;
+        gap: 8px;
+    }
+
+    .guided-tour-btn {
+        padding: 8px 12px;
+        min-height: 40px;
+    }
+
     body[data-page="home"] .site-guide-launcher,
     .site-guide-launcher {
         top: calc(78px + env(safe-area-inset-top, 0px));
-        right: 14px;
+        left: 14px;
+        right: auto;
         bottom: auto;
     }
 
@@ -13872,7 +13929,7 @@ textarea:focus-visible,
     }
 
     body[data-page="home"] .celestial-nav-console {
-        width: min(95vw, 620px);
+        width: min(calc(100vw - 16px), 620px);
         padding: 9px;
         gap: 7px;
         border-radius: 22px;
@@ -13886,6 +13943,11 @@ textarea:focus-visible,
 
     body[data-page="home"] .celestial-nav-console .nav-item .nav-item__icon {
         font-size: 1.05rem;
+    }
+
+    body.guided-tour-active[data-guided-tour-step="home-start"] .home-hero-header h1.guided-tour-target {
+        outline: none;
+        box-shadow: none;
     }
 }
 
@@ -13924,7 +13986,8 @@ textarea:focus-visible,
 
 @media (max-width: 768px) {
     .site-guide-launcher {
-        right: 14px;
+        left: 14px;
+        right: auto;
         top: calc(78px + env(safe-area-inset-top, 0px));
         bottom: auto;
         padding: 11px 14px;
