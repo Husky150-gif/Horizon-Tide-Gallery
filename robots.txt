@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://the-horizon-8f72f.web.app/sitemap.xml

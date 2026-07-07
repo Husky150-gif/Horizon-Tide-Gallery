@@ -297,6 +297,36 @@ service cloud.firestore {
       allow get, list, update, delete: if isAdmin();
     }
 
+    match /clientErrorReports/{reportId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'kind',
+          'message',
+          'page',
+          'route',
+          'source',
+          'userAgent',
+          'isAdminSession',
+          'createdAt'
+        ])
+        && request.resource.data.kind is string
+        && request.resource.data.kind.size() >= 2
+        && request.resource.data.kind.size() <= 48
+        && request.resource.data.kind.matches('^[a-z0-9_:-]+$')
+        && request.resource.data.message is string
+        && request.resource.data.message.size() <= 220
+        && request.resource.data.page is string
+        && request.resource.data.page.size() <= 64
+        && request.resource.data.route is string
+        && request.resource.data.route.size() <= 80
+        && request.resource.data.source is string
+        && request.resource.data.source.size() <= 180
+        && request.resource.data.userAgent is string
+        && request.resource.data.userAgent.size() <= 320
+        && request.resource.data.isAdminSession is bool
+        && request.resource.data.createdAt == request.time;
+      allow get, list, update, delete: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

@@ -9,12 +9,24 @@
     <meta property="og:description" content="Explore custom artwork, animation portfolios, and high-end creative commissions.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://the-horizon-8f72f.web.app/">
+    <meta property="og:image" content="https://the-horizon-8f72f.web.app/Images/banner%201.jpg">
     <meta name="robots" content="index, follow">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="The Horizon | Horizon Tide Gallery">
     <meta name="twitter:description" content="Commission art, fursuits, keychains, and stickers with clear communication and queue transparency.">
+    <meta name="twitter:image" content="https://the-horizon-8f72f.web.app/Images/banner%201.jpg">
     <meta name="theme-color" content="#080d1f">
     <link rel="canonical" href="https://the-horizon-8f72f.web.app/">
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "Horizon Tide Gallery",
+            "url": "https://the-horizon-8f72f.web.app/",
+            "logo": "https://the-horizon-8f72f.web.app/Images/banner%201.jpg",
+            "description": "Custom art, animation, fursuits, and handmade creations with clear commission guidance and transparent queue updates."
+        }
+    </script>
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⭐</text></svg>">
     
@@ -28,6 +40,7 @@
     <script defer type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body data-theme="horizon" data-page="home">
+    <a class="skip-link" href="#app-viewport">Skip to content</a>
     <div id="globalSaleBanner" class="sale-banner global-sale-banner" style="display: none;">
         🌙✨ <span id="bannerSaleMessage">Summer Commission Event</span> — Save <span id="bannerDiscountAmt"></span>%! ✨🌙
     </div>
@@ -79,7 +92,7 @@
         <div id="interactiveStarField" class="interactive-star-field"></div>
     </div>
 
-    <main id="app-viewport" class="content-layer"></main>
+    <main id="app-viewport" class="content-layer" role="main" tabindex="-1"></main>
 
     <div id="particleExplosionContainer" class="particle-explosion-container"></div>
     <div id="pageTransitionCircle" class="transition-circle"></div>
@@ -110,6 +123,7 @@
     
     <button type="button" id="backToTopBtn" class="back-to-top-btn" aria-label="Back to top">⭐ Top</button>
     <button type="button" id="stickyPreorderCtaBtn" class="sticky-preorder-cta" aria-label="Start preorder">🛒 Start Preorder</button>
+    <button type="button" id="siteGuideLauncher" class="site-guide-launcher" aria-label="Start or restart site guide" data-site-guide-launch="true">Start / Restart Guide</button>
 
     <div id="footerCredit" class="footer-credit" style="position: fixed; bottom: 15px; left: 20px; font-family: 'Starborn', 'Fredoka', sans-serif; color: rgba(255,255,255,0.5); font-size: 0.95rem; z-index: 99999; pointer-events: none; text-shadow: 0 0 8px rgba(0, 242, 254, 0.4); letter-spacing: 1px;">coded by Husky</div>
 

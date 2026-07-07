@@ -7,7 +7,7 @@ import { initializeFirestore, collection, addDoc, onSnapshot, query, orderBy, li
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
 import { getAuth, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence, inMemoryPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 import { detectLiteVisualMode, adaptiveCount, attachVisibilityAnimationPause } from "./modules/visualRuntime.js";
-import { installViewportMediaOptimizer, installSiteFeedback, shouldDeferHomeVisuals } from "./modules/siteEnhancements.js";
+import { installViewportMediaOptimizer, installSiteFeedback, installGuidedTour, shouldDeferHomeVisuals } from "./modules/siteEnhancements.js";
 
 // === INITIALIZE EMAILJS ===
 emailjs.init("3stRxyurkRVP3ym8o");
@@ -38,7 +38,7 @@ const interactiveStarField = document.getElementById('interactiveStarField');
 const dashboardStarField = document.getElementById('dashboardStarField');
 attachVisibilityAnimationPause(bodyElement, 'app-animations-paused');
 installViewportMediaOptimizer(appViewport);
-installSiteFeedback();
+installSiteFeedback({ reportIssue: reportClientIssue });
 
 // Discount System State
 window.activeSales = [];
@@ -263,16 +263,90 @@ let isGlobalScrollAttached = false;
 let globalQuoteIndex = 0;
 let globalQuoteInterval = null;
 
+const SITE_BASE_URL = 'https://the-horizon-8f72f.web.app/';
+const DEFAULT_SOCIAL_IMAGE = `${SITE_BASE_URL}${encodeURI('Images/banner 1.jpg')}`;
+
 const PUBLIC_HEAD_METADATA = {
-    title: 'The Horizon',
+    title: 'The Horizon | Horizon Tide Gallery',
     description: 'Horizon Tide Gallery - Custom 2D animation, illustration, and premium handmade fursuits.',
     ogTitle: 'Horizon Tide Gallery',
     ogDescription: 'Explore custom artwork, animation portfolios, and high-end creative commissions.',
-    ogUrl: 'https://the-horizon-8f72f.web.app/',
+    ogUrl: SITE_BASE_URL,
     twitterTitle: 'The Horizon | Horizon Tide Gallery',
     twitterDescription: 'Commission art, fursuits, keychains, and stickers with clear communication and queue transparency.',
     ogType: 'website',
-    robots: 'index, follow'
+    robots: 'index, follow',
+    ogImage: DEFAULT_SOCIAL_IMAGE,
+    twitterCard: 'summary_large_image',
+    themeColor: '#080d1f'
+};
+
+const ROUTE_HEAD_METADATA = {
+    '#home': {
+        title: 'The Horizon | Art, Fursuits, and Handmade Creations',
+        description: 'Start your commission with clear steps, artist availability, reviews, and a transparent queue at Horizon Tide Gallery.',
+        ogDescription: 'Custom art, fursuits, merch, and step-by-step commission guidance from Horizon Tide Gallery.'
+    },
+    '#gallery': {
+        title: 'Gallery | The Horizon',
+        description: 'Browse Horizon Tide Gallery artwork, fursuit builds, merch samples, and animation previews.',
+        ogTitle: 'Gallery | Horizon Tide Gallery'
+    },
+    '#preorder': {
+        title: 'Preorder Menu | The Horizon',
+        description: 'Choose the right commission form, check pricing, and prep your request with Horizon Tide Gallery.',
+        ogTitle: 'Preorder Menu | Horizon Tide Gallery'
+    },
+    '#pricing': {
+        title: 'Pricing Sheet | The Horizon',
+        description: 'Review starting prices for art, animation, stickers, keychains, and fursuit work at Horizon Tide Gallery.',
+        ogTitle: 'Pricing Sheet | Horizon Tide Gallery'
+    },
+    '#updates': {
+        title: 'Cosmic Updates | The Horizon',
+        description: 'Read announcements, queue news, and fresh updates from Horizon Tide Gallery.',
+        ogTitle: 'Cosmic Updates | Horizon Tide Gallery'
+    },
+    '#reviews': {
+        title: 'Client Reviews | The Horizon',
+        description: 'See client reviews and feedback for Horizon Tide Gallery commissions and handmade creations.',
+        ogTitle: 'Client Reviews | Horizon Tide Gallery'
+    },
+    '#contact': {
+        title: 'Contact | The Horizon',
+        description: 'Contact Horizon Tide Gallery for commission questions, custom requests, and order guidance.',
+        ogTitle: 'Contact | Horizon Tide Gallery'
+    },
+    '#tos': {
+        title: 'Terms of Service | The Horizon',
+        description: 'Review Horizon Tide Gallery terms of service, payment policies, shipping notes, and commission rules.',
+        ogTitle: 'Terms of Service | Horizon Tide Gallery'
+    },
+    '#socials': {
+        title: 'Artists, FAQ, and Socials | The Horizon',
+        description: 'Meet the artists, find ordering answers, and visit Horizon Tide Gallery social links.',
+        ogTitle: 'Artists, FAQ, and Socials | Horizon Tide Gallery'
+    },
+    '#discord': {
+        title: 'Discord Community | The Horizon',
+        description: 'Join the Meowter Space Discord community and stay close to Horizon Tide Gallery updates.',
+        ogTitle: 'Discord Community | Horizon Tide Gallery'
+    },
+    '#status': {
+        title: 'Order Status | The Horizon',
+        description: 'Check your Horizon Tide Gallery preorder or commission status with your order ID and email.',
+        ogTitle: 'Order Status | Horizon Tide Gallery'
+    },
+    '#whatwedo': {
+        title: 'What We Do | The Horizon',
+        description: 'See the services, specialties, and creative offerings available from Horizon Tide Gallery.',
+        ogTitle: 'What We Do | Horizon Tide Gallery'
+    },
+    '#horizon-queue': {
+        title: 'Horizon Queue | The Horizon',
+        description: 'View the public Horizon queue and current progress for active client work.',
+        ogTitle: 'Horizon Queue | Horizon Tide Gallery'
+    }
 };
 
 function upsertMetaTag(selector, attributes) {
@@ -304,27 +378,59 @@ function upsertCanonicalLink(href) {
     linkTag.setAttribute('href', href);
 }
 
-function applyHeadMetadataForRoute(isAdminView) {
+function getPublicRouteUrl(routeHash) {
+    const normalized = normalizeRouteHash(routeHash || '#home');
+    return normalized === '#home' ? SITE_BASE_URL : `${SITE_BASE_URL}${normalized}`;
+}
+
+function getRouteHeadMetadata(routeHash) {
+    const normalized = normalizeRouteHash(routeHash || '#home');
+    const routeOverrides = ROUTE_HEAD_METADATA[normalized] || ROUTE_HEAD_METADATA['#home'];
+    const routeUrl = getPublicRouteUrl(normalized);
+
+    return {
+        ...PUBLIC_HEAD_METADATA,
+        ...routeOverrides,
+        ogUrl: routeUrl,
+        canonicalUrl: routeUrl
+    };
+}
+
+function applyHeadMetadataForRoute(routeOrAdmin) {
     const robotsSelector = 'meta[name="robots"]';
-    document.title = PUBLIC_HEAD_METADATA.title;
+    const isAdminView = routeOrAdmin === true || routeOrAdmin === '#admin';
+    const metadata = getRouteHeadMetadata(typeof routeOrAdmin === 'string' ? routeOrAdmin : '#home');
+    document.title = metadata.title;
 
     if (isAdminView) {
         removeMetaTag('meta[name="description"]');
         removeMetaTag('meta[property="og:title"]');
         removeMetaTag('meta[property="og:description"]');
+        removeMetaTag('meta[property="og:url"]');
+        removeMetaTag('meta[property="og:image"]');
+        removeMetaTag('meta[property="og:site_name"]');
+        removeMetaTag('meta[name="twitter:title"]');
+        removeMetaTag('meta[name="twitter:description"]');
+        removeMetaTag('meta[name="twitter:card"]');
+        removeMetaTag('meta[name="twitter:image"]');
         upsertMetaTag(robotsSelector, { name: 'robots', content: 'noindex, nofollow' });
         return;
     }
 
-    upsertMetaTag('meta[name="description"]', { name: 'description', content: PUBLIC_HEAD_METADATA.description });
-    upsertMetaTag('meta[property="og:title"]', { property: 'og:title', content: PUBLIC_HEAD_METADATA.ogTitle });
-    upsertMetaTag('meta[property="og:description"]', { property: 'og:description', content: PUBLIC_HEAD_METADATA.ogDescription });
-    upsertMetaTag('meta[property="og:url"]', { property: 'og:url', content: PUBLIC_HEAD_METADATA.ogUrl });
-    upsertMetaTag('meta[name="twitter:title"]', { name: 'twitter:title', content: PUBLIC_HEAD_METADATA.twitterTitle });
-    upsertMetaTag('meta[name="twitter:description"]', { name: 'twitter:description', content: PUBLIC_HEAD_METADATA.twitterDescription });
-    upsertMetaTag('meta[property="og:type"]', { property: 'og:type', content: PUBLIC_HEAD_METADATA.ogType });
-    upsertMetaTag(robotsSelector, { name: 'robots', content: PUBLIC_HEAD_METADATA.robots });
-    upsertCanonicalLink(PUBLIC_HEAD_METADATA.ogUrl);
+    upsertMetaTag('meta[name="description"]', { name: 'description', content: metadata.description });
+    upsertMetaTag('meta[property="og:title"]', { property: 'og:title', content: metadata.ogTitle });
+    upsertMetaTag('meta[property="og:description"]', { property: 'og:description', content: metadata.ogDescription });
+    upsertMetaTag('meta[property="og:url"]', { property: 'og:url', content: metadata.ogUrl });
+    upsertMetaTag('meta[property="og:type"]', { property: 'og:type', content: metadata.ogType });
+    upsertMetaTag('meta[property="og:image"]', { property: 'og:image', content: metadata.ogImage });
+    upsertMetaTag('meta[property="og:site_name"]', { property: 'og:site_name', content: 'Horizon Tide Gallery' });
+    upsertMetaTag('meta[name="twitter:title"]', { name: 'twitter:title', content: metadata.twitterTitle || metadata.title });
+    upsertMetaTag('meta[name="twitter:description"]', { name: 'twitter:description', content: metadata.twitterDescription || metadata.description });
+    upsertMetaTag('meta[name="twitter:card"]', { name: 'twitter:card', content: metadata.twitterCard });
+    upsertMetaTag('meta[name="twitter:image"]', { name: 'twitter:image', content: metadata.ogImage });
+    upsertMetaTag('meta[name="theme-color"]', { name: 'theme-color', content: metadata.themeColor });
+    upsertMetaTag(robotsSelector, { name: 'robots', content: metadata.robots });
+    upsertCanonicalLink(metadata.canonicalUrl);
 }
 let lastCursorSparkleTime = 0;
 let activeCursorSparkles = 0;
@@ -384,9 +490,11 @@ function bootstrapHomeVisuals() {
 
 const ANALYTICS_EVENT_CACHE_KEY = 'hz_analytics_event_cache';
 const ANALYTICS_EVENT_COOLDOWN_MS = 9000;
+const CLIENT_ISSUE_CACHE_KEY = 'hz_client_issue_cache';
+const CLIENT_ISSUE_COOLDOWN_MS = 45000;
 
-function shouldTrackAnalyticsEvent(eventName) {
-    const name = String(eventName || '').trim().toLowerCase();
+function shouldTrackAnalyticsEvent(eventKey) {
+    const name = String(eventKey || '').trim().toLowerCase();
     if (!name) return false;
 
     const host = String(window.location.hostname || '').toLowerCase();
@@ -408,12 +516,13 @@ function shouldTrackAnalyticsEvent(eventName) {
 
 function trackAnalyticsEvent(eventName, meta = {}) {
     const event = String(eventName || '').trim();
-    if (!shouldTrackAnalyticsEvent(event)) return;
-
     const page = String(bodyElement?.getAttribute('data-page') || 'unknown').slice(0, 64);
     const route = String(window.location.hash || '#home').slice(0, 80);
     const source = String(meta.source || '').slice(0, 64);
     const status = String(meta.status || '').slice(0, 48);
+    const cooldownKey = String(meta.cooldownKey || [event, route, source, status].filter(Boolean).join('|')).slice(0, 180);
+
+    if (!shouldTrackAnalyticsEvent(cooldownKey)) return;
 
     const payload = {
         event: event.slice(0, 64),
@@ -428,6 +537,202 @@ function trackAnalyticsEvent(eventName, meta = {}) {
     addDoc(collection(db, 'analyticsEvents'), payload).catch(() => {});
 }
 
+function shouldReportClientIssue(issueKey) {
+    const key = String(issueKey || '').trim().toLowerCase();
+    if (!key) return false;
+
+    try {
+        const now = Date.now();
+        const raw = localStorage.getItem(CLIENT_ISSUE_CACHE_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        const lastAt = Number(parsed[key] || 0);
+        if (lastAt > 0 && (now - lastAt) < CLIENT_ISSUE_COOLDOWN_MS) return false;
+        parsed[key] = now;
+        localStorage.setItem(CLIENT_ISSUE_CACHE_KEY, JSON.stringify(parsed));
+        return true;
+    } catch {
+        return true;
+    }
+}
+
+function reportClientIssue({ kind = 'client_issue', message = '', source = '' } = {}) {
+    const cleanKind = String(kind || 'client_issue').trim().slice(0, 48) || 'client_issue';
+    const cleanMessage = String(message || '').trim().slice(0, 220);
+    const cleanSource = String(source || '').trim().slice(0, 180);
+    const route = String(window.location.hash || '#home').slice(0, 80);
+    const page = String(bodyElement?.getAttribute('data-page') || 'unknown').slice(0, 64);
+    const issueKey = [cleanKind, cleanMessage, route].filter(Boolean).join('|');
+
+    if (!shouldReportClientIssue(issueKey)) return;
+
+    addDoc(collection(db, 'clientErrorReports'), {
+        kind: cleanKind,
+        message: cleanMessage,
+        page,
+        route,
+        source: cleanSource,
+        userAgent: String(navigator.userAgent || 'unknown').slice(0, 320),
+        isAdminSession: isAdminSessionActive(),
+        createdAt: serverTimestamp()
+    }).catch(() => {});
+}
+
+const siteGuide = installGuidedTour({
+    autoStartRoute: '#home',
+    autoStartDelayMs: 1400,
+    storageKey: 'hz_site_guide_v1',
+    onComplete: () => {
+        trackAnalyticsEvent('guide_completed', { source: 'site_guide' });
+        if ((window.location.hash || '#home') !== '#home') {
+            window.location.hash = '#home';
+        }
+        window.setTimeout(() => {
+            if (typeof window.showSiteFeedback === 'function') {
+                window.showSiteFeedback('Guide finished. You are back on the home page.', 'success', 4200);
+            }
+        }, 180);
+    },
+    steps: [
+        {
+            key: 'home-start',
+            route: '#home',
+            selector: '.home-hero-header h1',
+            title: 'Start Here',
+            body: 'This home page shows the fastest path into commissions, trust signals, and current availability.'
+        },
+        {
+            key: 'home-tos',
+            route: '#home',
+            selector: '#tosBtn',
+            title: 'Check The Terms First',
+            body: 'This opens the site terms so visitors can review the rules, policies, and ordering expectations before they commission.'
+        },
+        {
+            key: 'home-socials',
+            route: '#home',
+            selector: '#socialsBtn',
+            title: 'Meet The Artists',
+            body: 'This opens the artist info, FAQ, and ordering help page when someone wants to learn who they are commissioning from.'
+        },
+        {
+            key: 'home-reviews',
+            route: '#home',
+            selector: '#reviewsBtn',
+            title: 'Read Or Leave A Review',
+            body: 'This takes visitors to the reviews page so they can check client feedback and leave a review of their own later.'
+        },
+        {
+            key: 'home-gallery',
+            route: '#home',
+            selector: '#btnGalleryHome',
+            title: 'Browse The Gallery',
+            body: 'The gallery is where people can preview finished work, fursuit builds, merch, and animation examples.'
+        },
+        {
+            key: 'home-availability',
+            route: '#home',
+            selector: '#homeGuideStepAvailability',
+            title: 'Step 1: Check Availability',
+            body: 'Start here first. This card shows open slots, current response time, and who is available before someone starts a request.',
+            scrollBehavior: 'auto',
+            scrollBlock: 'center'
+        },
+        {
+            key: 'home-prep',
+            route: '#home',
+            selector: '#homeGuideStepPrep',
+            title: 'Step 2: Prep Your Request',
+            body: 'This checklist helps visitors gather their references, commission type, deadline, notes, and contact details before submitting.',
+            scrollBehavior: 'auto',
+            scrollBlock: 'center'
+        },
+        {
+            key: 'home-submit',
+            route: '#home',
+            selector: '#homeGuideStepSubmit',
+            title: 'Step 3: Submit Your Inquiry',
+            body: 'Once everything is ready, this card explains the final handoff into the preorder flow and what to include in the request.',
+            scrollBehavior: 'auto',
+            scrollBlock: 'center'
+        },
+        {
+            key: 'home-why-horizon',
+            route: '#home',
+            selector: '#homeGuideTrustHead',
+            title: 'Why Commission With Horizon?',
+            body: 'This section points out the biggest trust reasons to commission here: clear communication, artist guidance, queue transparency, and handmade care.',
+            scrollBehavior: 'auto',
+            scrollBlock: 'center'
+        },
+        {
+            key: 'home-guides',
+            route: '#home',
+            selector: '.care-guide-pill',
+            title: 'Use The Care Guides Too',
+            body: 'Near the bottom of the homepage, these guides help people with fursuit care, keychain protection, and sticker weatherproofing tips.',
+            scrollBehavior: 'auto',
+            scrollBlock: 'center'
+        },
+        {
+            key: 'home-preorder',
+            route: '#home',
+            selector: '#btnPreorderMassive',
+            title: 'Open The Preorder Menu',
+            body: 'This is the main starting point when you are ready to pick a service and submit your request.',
+            transitionTitle: 'Opening the preorder menu',
+            transitionBody: 'The guide is moving into the order flow so you can see where pricing and forms live.',
+            routeLabel: 'Preorder Menu',
+            scrollBehavior: 'auto',
+            advanceOnTargetClick: true
+        },
+        {
+            key: 'preorder-launcher',
+            route: '#preorder',
+            selector: '.preorder-guide-shell',
+            title: 'Use The Best-Fit Launcher',
+            body: 'These cards help visitors choose the right form instead of guessing where to start.',
+            scrollBehavior: 'auto'
+        },
+        {
+            key: 'preorder-pricing',
+            route: '#preorder',
+            selector: '#btnPricing',
+            title: 'Check Pricing First',
+            body: 'If someone needs budget clarity, this button takes them straight to the pricing sheet before they commit.',
+            scrollBehavior: 'auto'
+        },
+        {
+            key: 'preorder-status',
+            route: '#preorder',
+            selector: '#btnStatusCheck',
+            title: 'Track Existing Orders',
+            body: 'Returning clients can use this status tool instead of starting a new request from scratch.',
+            scrollBehavior: 'auto'
+        },
+        {
+            key: 'preorder-forms',
+            route: '#preorder',
+            selector: '#btnArt',
+            title: 'Choose The Closest Form',
+            body: 'Pick the form that matches the project, then include references, deadline, notes, and contact info. When you finish this guide, you will be returned to the home page.',
+            scrollBehavior: 'auto'
+        }
+    ]
+});
+
+function bindSiteGuideTriggers(root = document) {
+    if (!root || typeof root.querySelectorAll !== 'function') return;
+
+    root.querySelectorAll('[data-site-guide-launch="true"]').forEach((button) => {
+        if (!(button instanceof HTMLButtonElement) || button.dataset.siteGuideBound === 'true') return;
+        button.dataset.siteGuideBound = 'true';
+        button.addEventListener('click', () => {
+            trackAnalyticsEvent('guide_started', { source: button.id || 'guide_launcher' });
+            siteGuide.start(0);
+        });
+    });
+}
+
 // === CENTRALIZED TOS CONTENT ===
 const TOS_CONTENT_HTML = `
     <h1 style="color: #f472b6; font-size: 2.5rem; text-align: center; margin-bottom: 10px; text-shadow: 0 0 15px rgba(244, 114, 182, 0.5);">Terms of Service</h1>
@@ -440,6 +745,7 @@ const TOS_CONTENT_HTML = `
         <a href="#tos-animation" class="tos-jump-btn">Animation Policy</a>
     </div>
     <p>By commissioning, purchasing, or placing an order with Horizon Tide Gallery, the client agrees to the following Terms of Service. Please read carefully before purchasing or commissioning any product or service.</p>
+    <p>This website may store order submissions, status lookup activity, lightweight usage analytics, and technical error reports needed to run the site, improve the ordering flow, and troubleshoot problems. By using the site forms and tools, you agree to that operational use of your submitted information.</p>
     
     <h2 id="tos-general" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">GENERAL</h2>
     <p>Horizon Tide Gallery reserves the right to refuse, decline, cancel, or discontinue any commission, order, inquiry, or interaction for any reason, including but not limited to:</p>
@@ -4019,7 +4325,7 @@ function loadHomePage() {
         </div>
 
         <section class="home-pro-grid">
-            <article class="home-pro-card home-availability-card">
+            <article class="home-pro-card home-availability-card" id="homeGuideStepAvailability">
                 <h3>Step 1: Check Availability</h3>
                 <p class="home-pro-card-subtitle">Quick-scan availability, open slots, and current reply timing for each artist.</p>
                 <div class="availability-list">
@@ -4050,7 +4356,7 @@ function loadHomePage() {
                 </div>
             </article>
 
-            <article class="home-pro-card">
+            <article class="home-pro-card" id="homeGuideStepPrep">
                 <h3>Step 2: Prep Your Request</h3>
                 <p class="home-pro-card-subtitle">Use this prep list so your request is easier to review and quote accurately.</p>
                 <ul class="pro-checklist">
@@ -4065,7 +4371,7 @@ function loadHomePage() {
         </section>
 
         <section class="home-pro-grid">
-            <article class="home-pro-card home-updates-card">
+            <article class="home-pro-card home-updates-card" id="homeGuideStepSubmit">
                 <h3>Step 3: Submit Your Inquiry</h3>
                 <p class="home-pro-card-subtitle">Once ready, open Preorder Menu and submit everything in one message.</p>
                 <ul class="mini-updates-list">
@@ -4090,7 +4396,7 @@ function loadHomePage() {
         </section>
 
         <section class="home-trust-shell" aria-label="Why commission with Horizon Tide">
-            <div class="home-trust-head">
+            <div class="home-trust-head" id="homeGuideTrustHead">
                 <h3>Why Commission With Horizon?</h3>
                 <p>Clear updates, careful work, and a smoother ordering experience.</p>
             </div>
@@ -4162,10 +4468,12 @@ function loadHomePage() {
     `;
     bindCareGuideGridModal();
     bindCoreMenuControls();
+    bindSiteGuideTriggers(appViewport);
     bindSecretCornerTrigger();
     applyHomeAvailabilityToCurrentDOM();
     applyHomeTrustSignalsToCurrentDOM();
     bootstrapHomeVisuals();
+    siteGuide.refresh();
 }
 
 function loadGalleryPage() {
@@ -4352,7 +4660,7 @@ function loadPreorderPage() {
             <button type="button" id="backHomeBtn" class="preorder-btn preorder-back-btn">← Back to Horizon</button>
         </div>
     `;
-    
+
     document.getElementById('btnPricing').addEventListener('click', (e) => cinematicTransition(e, loadPricingPage, '#pricing'));
     document.getElementById('btnStatusCheck').addEventListener('click', (e) => cinematicTransition(e, loadStatusCheckPage, '#status'));
     document.getElementById('btnHuskysList').addEventListener('click', (e) => cinematicTransition(e, loadHuskysListPage, '#horizon-queue'));
@@ -4383,8 +4691,10 @@ function loadPreorderPage() {
             if (targetId) highlightLauncherTarget(targetId);
         });
     });
-    
+
     attachInnerScrollListener();
+    bindSiteGuideTriggers(appViewport);
+    siteGuide.refresh();
 }
 
 function loadPricingPage() {
@@ -13546,6 +13856,7 @@ const routes = {
     '#gallery': loadGalleryPage,
     '#preorder': loadPreorderPage,
     '#pricing': loadPricingPage,
+    '#whatwedo': loadWhatWeDoPage,
     '#updates': loadAnnouncementsPage,
     '#reviews': loadReviewsPage,
     '#contact': loadContactPage,
@@ -13579,7 +13890,7 @@ function initRouter() {
         window.history.replaceState(null, '', initialHash);
     }
     resetViewportToTop();
-    applyHeadMetadataForRoute(initialHash === '#admin');
+    applyHeadMetadataForRoute(initialHash);
 
     if (initialHash === '#admin') {
         routeProtectedAdminHash();
@@ -13587,6 +13898,10 @@ function initRouter() {
         routes[initialHash]();
     } else {
         loadHomePage();
+    }
+
+    if (initialHash !== '#admin') {
+        trackAnalyticsEvent('route_view', { source: 'router_init', status: initialHash.replace('#', '') || 'home' });
     }
 
     requestAnimationFrame(() => {
@@ -13607,7 +13922,7 @@ function initRouter() {
         if (currentHash !== rawHash) {
             window.history.replaceState(null, '', currentHash);
         }
-        applyHeadMetadataForRoute(currentHash === '#admin');
+        applyHeadMetadataForRoute(currentHash);
 
         if (currentHash === '#admin') {
             routeProtectedAdminHash();
@@ -13617,6 +13932,10 @@ function initRouter() {
             routes[currentHash]();
         } else {
             loadHomePage();
+        }
+
+        if (currentHash !== '#admin') {
+            trackAnalyticsEvent('route_view', { source: 'router_hashchange', status: currentHash.replace('#', '') || 'home' });
         }
 
         setTimeout(updateStickyPreorderCtaVisibility, 1300);
@@ -13689,5 +14008,6 @@ bindCareGuideModalOverlay();
 clearReloadedAdminSession().finally(() => {
     initializeMoonClockSync();
     bindStickyPreorderCta();
+    bindSiteGuideTriggers(document);
     initRouter();
 });
