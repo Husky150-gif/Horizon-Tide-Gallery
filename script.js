@@ -469,6 +469,62 @@ function checkClientCooldown(storageKey, cooldownMs) {
 
 const HOME_VISUAL_BOOTSTRAP_DELAY_MS = 160;
 let homeVisualBootstrapToken = 0;
+let sectionRevealObserver = null;
+
+function installSectionRevealAnimations(root = document) {
+    const scope = root instanceof HTMLElement ? root : document;
+    const targets = Array.from(scope.querySelectorAll('.home-hero-shell, .home-pro-intro, .home-pro-card, .home-trust-head, .home-trust-card, .home-featured-review-card, .home-final-cta-shell, .preorder-card > *'));
+
+    if (sectionRevealObserver) {
+        sectionRevealObserver.disconnect();
+        sectionRevealObserver = null;
+    }
+
+    if (targets.length === 0) return;
+
+    const reducedMotion = Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const revealImmediately = reducedMotion || bodyElement.classList.contains('guided-tour-active');
+
+    targets.forEach((target, index) => {
+        target.classList.add('section-reveal');
+        target.style.setProperty('--section-reveal-order', String(index));
+        target.style.animation = `sectionRevealRise 760ms cubic-bezier(0.22, 1, 0.36, 1) ${index * 70}ms both`;
+    });
+
+    if (revealImmediately || typeof IntersectionObserver === 'undefined') {
+        targets.forEach((target) => {
+            target.classList.add('is-revealed');
+            target.style.animation = 'none';
+        });
+        return;
+    }
+
+    sectionRevealObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-revealed');
+                entry.target.style.animation = 'none';
+                observer.unobserve(entry.target);
+            }
+        });
+    }, {
+        threshold: 0.18,
+        rootMargin: '0px 0px -6% 0px'
+    });
+
+    targets.forEach((target) => {
+        const isInitiallyVisible = target.getBoundingClientRect().top < window.innerHeight * 0.92;
+        if (isInitiallyVisible) {
+            window.setTimeout(() => {
+                if (!target.isConnected || target.classList.contains('is-revealed')) return;
+                target.classList.add('is-revealed');
+                target.style.animation = 'none';
+            }, 820 + (Number(target.style.getPropertyValue('--section-reveal-order') || 0) * 70));
+            return;
+        }
+        sectionRevealObserver.observe(target);
+    });
+}
 
 function bootstrapHomeVisuals() {
     const token = ++homeVisualBootstrapToken;
@@ -4474,6 +4530,7 @@ function loadHomePage() {
     bindCoreMenuControls();
     bindSiteGuideTriggers(appViewport);
     bindSecretCornerTrigger();
+    installSectionRevealAnimations(appViewport);
     applyHomeAvailabilityToCurrentDOM();
     applyHomeTrustSignalsToCurrentDOM();
     bootstrapHomeVisuals();
@@ -4698,6 +4755,7 @@ function loadPreorderPage() {
 
     attachInnerScrollListener();
     bindSiteGuideTriggers(appViewport);
+    installSectionRevealAnimations(appViewport);
     siteGuide.refresh();
 }
 
@@ -12764,7 +12822,7 @@ function renderAdminCommissionList(commissions, totalCommissions = commissions.l
         const countLabel = commissions.length === totalCommissions
             ? `${commissions.length} ${commissions.length === 1 ? 'entry' : 'entries'}`
             : `${commissions.length} of ${totalCommissions} shown`;
-        commissionsHeader.innerHTML = `<strong>Existing Commission Entries</strong><div class="admin-list-header-actions"><span class="admin-list-count-badge">${countLabel}</span><button type="button" class="admin-btn-edit" id="commissionOpenCreateBtn">New Commission Entry</button></div>`;
+        commissionsHeader.innerHTML = `<strong>Existing Commission Entries</strong><div class="admin-list-header-actions"><span class="admin-list-count-badge">${countLabel}</span><button type="button" class="admin-btn-edit" id="commissionOpenCreateBtn">New Commission Entry</button></div><p class="admin-commission-legend">Badges show the source, Firestore doc ID, whether the row counts toward revenue, and any missing data flags.</p>`;
     }
 
     if (commissions.length === 0) {
