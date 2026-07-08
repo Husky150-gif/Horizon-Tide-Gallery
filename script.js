@@ -10427,7 +10427,7 @@ function setupAdminDashboardDelegation() {
                 });
                 const collapse = document.getElementById('refundInlinePanel');
                 if (collapse instanceof HTMLDetailsElement) collapse.open = true;
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                collapse?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
             } catch (error) {
                 console.error('Unable to load refund for editing', error);
             }
@@ -10470,7 +10470,7 @@ function setupAdminDashboardDelegation() {
                 });
                 const collapse = document.getElementById('commissionInlinePanel');
                 if (collapse instanceof HTMLDetailsElement) collapse.open = true;
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                collapse?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
             } catch (error) {
                 console.error('Unable to load commission for editing', error);
             }
