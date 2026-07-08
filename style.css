@@ -13860,56 +13860,107 @@ body[data-page="home"] .site-guide-launcher {
     color: #f8fafc;
     box-shadow: 0 16px 34px rgba(2, 6, 23, 0.28);
     pointer-events: auto;
-    transform: translateX(-50%);
+    transform: translateX(calc(-50% + var(--guided-tour-card-shift, 0px)));
     will-change: opacity, transform;
     transition: opacity 220ms ease, transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.guided-tour-card::before,
-.guided-tour-card::after {
+.guided-tour-arrow {
     content: '';
     position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
+    left: var(--guided-tour-arrow-left, 50%);
+    width: var(--guided-tour-arrow-length, 120px);
+    height: 18px;
     pointer-events: none;
+    overflow: visible;
+    transform-origin: 0 50%;
+    transform: rotate(var(--guided-tour-arrow-angle, 90deg));
+    z-index: 0;
+    animation: guidedTourArrowBreath 2.4s ease-in-out infinite;
 }
 
-.guided-tour-card::before {
-    border-left: 11px solid transparent;
-    border-right: 11px solid transparent;
-    filter: drop-shadow(0 0 8px rgba(103, 232, 249, 0.24));
+.guided-tour-arrow::before,
+.guided-tour-arrow::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
-.guided-tour-card::after {
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
+.guided-tour-arrow::before {
+    left: 0;
+    width: calc(100% - 14px);
+    height: 5px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(125, 211, 252, 0), rgba(125, 211, 252, 0.88) 14%, rgba(255, 255, 255, 0.98) 52%, rgba(125, 211, 252, 0.88) 86%, rgba(125, 211, 252, 0));
+    box-shadow: 0 0 12px rgba(103, 232, 249, 0.52), 0 0 2px rgba(15, 23, 42, 0.85);
+    animation: guidedTourArrowGlow 2.4s ease-in-out infinite;
 }
 
-.guided-tour-card[data-side="top"]::before {
-    bottom: -11px;
-    border-top: 11px solid rgba(125, 211, 252, 0.92);
+.guided-tour-arrow::after {
+    right: 0;
+    width: 18px;
+    height: 18px;
+    background: radial-gradient(circle at 38% 35%, rgba(255, 255, 255, 1) 0 26%, rgba(196, 244, 255, 0.96) 27% 54%, rgba(125, 211, 252, 0.98) 55% 100%);
+    clip-path: polygon(0 0, 100% 50%, 0 100%, 34% 50%);
+    filter: drop-shadow(0 0 12px rgba(103, 232, 249, 0.5)) drop-shadow(0 0 2px rgba(15, 23, 42, 0.9));
+    animation: guidedTourArrowTip 2.4s ease-in-out infinite;
 }
 
-.guided-tour-card[data-side="top"]::after {
-    bottom: -8px;
-    border-top: 8px solid rgba(10, 18, 38, 0.98);
+.guided-tour-card[data-side="top"] .guided-tour-arrow {
+    bottom: -16px;
 }
 
-.guided-tour-card[data-side="bottom"]::before {
-    top: -11px;
-    border-bottom: 11px solid rgba(125, 211, 252, 0.92);
+.guided-tour-card[data-side="bottom"] .guided-tour-arrow {
+    top: -16px;
 }
 
-.guided-tour-card[data-side="bottom"]::after {
-    top: -8px;
-    border-bottom: 8px solid rgba(10, 18, 38, 0.98);
+.guided-tour-host.is-transitioning .guided-tour-arrow {
+    opacity: 0.96;
+}
+
+@keyframes guidedTourArrowBreath {
+    0%, 100% {
+        opacity: 0.88;
+        filter: saturate(1.04);
+    }
+    50% {
+        opacity: 1;
+        filter: saturate(1.14);
+    }
+}
+
+@keyframes guidedTourArrowGlow {
+    0%, 100% {
+        transform: translateY(-50%) scaleX(0.985);
+        opacity: 0.9;
+    }
+    50% {
+        transform: translateY(-50%) scaleX(1.015);
+        opacity: 1;
+    }
+}
+
+@keyframes guidedTourArrowTip {
+    0%, 100% {
+        transform: translateY(-50%) rotate(0deg) scale(0.96);
+    }
+    50% {
+        transform: translateY(-50%) rotate(4deg) scale(1.04);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .guided-tour-arrow,
+    .guided-tour-arrow::before,
+    .guided-tour-arrow::after {
+        animation: none !important;
+    }
 }
 
 .guided-tour-host.is-transitioning .guided-tour-card {
     opacity: 0.97;
-    transform: translateX(-50%) translateY(4px) scale(0.992);
+    transform: translateX(calc(-50% + var(--guided-tour-card-shift, 0px))) translateY(4px) scale(0.992);
 }
 
 .guided-tour-host.is-transitioning .guided-tour-spotlight {

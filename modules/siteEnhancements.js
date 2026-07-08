@@ -216,6 +216,7 @@ export function installGuidedTour(options = {}) {
             <div class="guided-tour-scrim"></div>
             <div class="guided-tour-spotlight" aria-hidden="true"></div>
             <section class="guided-tour-card" role="dialog" aria-modal="false" aria-labelledby="guidedTourTitle">
+                <div class="guided-tour-arrow" aria-hidden="true"></div>
                 <button type="button" class="guided-tour-close" id="guidedTourCloseBtn" aria-label="Close guide">&times;</button>
                 <p class="guided-tour-progress" id="guidedTourProgress"></p>
                 <h2 class="guided-tour-title" id="guidedTourTitle"></h2>
@@ -402,16 +403,6 @@ export function installGuidedTour(options = {}) {
             height: Math.max(48, rect.height + (padding * 2))
         };
 
-        const hasMeaningfulChange = !lastSpotlightRect
-            || Math.abs(nextRect.left - lastSpotlightRect.left) > 1
-            || Math.abs(nextRect.top - lastSpotlightRect.top) > 1
-            || Math.abs(nextRect.width - lastSpotlightRect.width) > 1
-            || Math.abs(nextRect.height - lastSpotlightRect.height) > 1;
-
-        if (!hasMeaningfulChange) {
-            return;
-        }
-
         lastSpotlightRect = nextRect;
         spotlight.style.left = `${nextRect.left}px`;
         spotlight.style.top = `${nextRect.top}px`;
@@ -431,15 +422,19 @@ export function installGuidedTour(options = {}) {
             && window.getComputedStyle(saleBanner).display !== 'none'
             && window.getComputedStyle(saleBanner).visibility !== 'hidden'
         );
-        const topGap = isMobile
-            ? Math.max(12, (bannerVisible && bannerRect ? Math.ceil(bannerRect.bottom) + 8 : 12))
-            : 18;
+        const topGap = bannerVisible && bannerRect
+            ? Math.max(12, Math.ceil(bannerRect.bottom) + 12)
+            : (isMobile ? 12 : 18);
         const bottomGap = isMobile ? 18 : 24;
         const safeGap = 14;
 
         const cardWidth = Math.max(280, Math.min(card.offsetWidth || 0, viewportWidth - 10)) || Math.min(360, viewportWidth - 24);
-        const cardLeft = Math.max(5, (viewportWidth - cardWidth) / 2);
+        const targetCenterX = nextRect.left + (nextRect.width / 2);
+        const cardBaseLeft = Math.max(5, (viewportWidth - cardWidth) / 2);
+        const cardLeft = clamp(targetCenterX - (cardWidth / 2), 5, Math.max(5, viewportWidth - cardWidth - 5));
         const cardRight = cardLeft + cardWidth;
+        const cardShift = cardLeft - cardBaseLeft;
+        const arrowLeft = clamp(targetCenterX - cardLeft, 24, Math.max(24, cardWidth - 24));
 
         const targetLeft = nextRect.left - safeGap;
         const targetTop = nextRect.top - safeGap;
@@ -460,7 +455,8 @@ export function installGuidedTour(options = {}) {
         const overlapBottom = overlapArea(bottomPlacementTop);
 
         card.style.left = '50%';
-        card.style.transform = 'translateX(-50%)';
+        card.style.setProperty('--guided-tour-card-shift', `${cardShift}px`);
+        card.style.setProperty('--guided-tour-arrow-left', `${arrowLeft}px`);
 
         const step = steps[currentIndex] || null;
         const preferredCardSide = String(step?.cardSide || 'auto').toLowerCase();
@@ -469,6 +465,19 @@ export function installGuidedTour(options = {}) {
             : preferredCardSide === 'bottom'
                 ? false
                 : overlapTop + 6 < overlapBottom;
+        const cardTopValue = shouldPlaceTop ? topPlacementTop : bottomPlacementTop;
+        const attachmentX = cardLeft + arrowLeft;
+        const attachmentY = shouldPlaceTop ? (cardTopValue + cardHeight) : cardTopValue;
+        const targetAnchorY = shouldPlaceTop
+            ? (nextRect.top - 10)
+            : (nextRect.top + nextRect.height + 10);
+        const deltaX = targetCenterX - attachmentX;
+        const deltaY = targetAnchorY - attachmentY;
+        const arrowAngle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+        const arrowLength = clamp(Math.hypot(deltaX, deltaY), 72, 220);
+
+        card.style.setProperty('--guided-tour-arrow-length', `${arrowLength}px`);
+        card.style.setProperty('--guided-tour-arrow-angle', `${arrowAngle}deg`);
         if (shouldPlaceTop) {
             card.style.top = `${topGap}px`;
             card.style.bottom = 'auto';
