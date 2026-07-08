@@ -8440,8 +8440,27 @@ function getOrderCreator(serviceType) {
     return serviceType === 'fursuits' ? 'lopside' : 'husky';
 }
 
+function isOrderRecordValidForRevenue(order) {
+    if (!order || typeof order !== 'object') return false;
+
+    const docId = String(order.id || '').trim();
+    const orderId = String(order.orderId || '').trim();
+    if (/^security_test/i.test(docId) || /^htg-(sec|inject)-/i.test(orderId)) {
+        return false;
+    }
+
+    const hasServiceType = String(order.itemType || order.orderType || '').trim().length > 0;
+    const hasFinancialValue =
+        parseAdminPriceInput(order.quoteAmount) != null
+        || parseAdminPriceInput(order.finalPrice) != null
+        || parseAdminPriceInput(order.amountPaid) != null;
+
+    return hasServiceType || hasFinancialValue;
+}
+
 function isRevenueEligible(order) {
-    return ADMIN_REVENUE_STATUSES.has(normalizeOrderStatus(order.status));
+    return isOrderRecordValidForRevenue(order)
+        && ADMIN_REVENUE_STATUSES.has(normalizeOrderStatus(order.status));
 }
 
 function estimateOrderRevenue(order) {
@@ -8634,6 +8653,69 @@ function getCommissionFinalPriceValue(commission, requirePublished = false) {
 function getCommissionPaidAmount(commission) {
     const parsed = parseAdminPriceInput(commission?.amountPaid);
     return parsed == null ? 0 : parsed;
+}
+
+function isCommissionRecordValidForRevenue(commission) {
+    if (!commission || typeof commission !== 'object') return false;
+    const docId = String(commission.id || '').trim();
+    if (/^security_test/i.test(docId)) return false;
+
+    const hasIdentity = String(commission.commissionId || commission.displayName || '').trim().length > 0;
+    const hasFinancialValue =
+        getCommissionEstimatedPriceValue(commission) != null
+        || getCommissionFinalPriceValue(commission, false) != null
+        || getCommissionPaidAmount(commission) > 0;
+
+    return hasIdentity || hasFinancialValue;
+}
+
+function getCommissionRevenueInclusionInfo(commission, scope, existingPreorderOrderIds = new Set()) {
+    if (!isCommissionRecordValidForRevenue(commission)) {
+        return {
+            included: false,
+            reason: 'Invalid/test entry'
+        };
+    }
+
+    const linkedPreorderId = String(commission?.preorderOrderId || '').trim();
+    if (linkedPreorderId) {
+        return {
+            included: false,
+            reason: 'Linked preorder mirror'
+        };
+    }
+
+    const sourceType = String(commission?.sourceType || '').trim().toLowerCase();
+    const commissionId = String(commission?.commissionId || '').trim();
+    const looksLikeWebsitePreorderMirror =
+        (sourceType === 'website preorder' || sourceType === 'website order') &&
+        /^htg-\d{4}-[a-z0-9]+$/i.test(commissionId);
+
+    if (looksLikeWebsitePreorderMirror && existingPreorderOrderIds.has(commissionId)) {
+        return {
+            included: false,
+            reason: 'Website mirror (deduped)'
+        };
+    }
+
+    if (looksLikeWebsitePreorderMirror) {
+        return {
+            included: false,
+            reason: 'Website mirror'
+        };
+    }
+
+    if (!isCommissionInRevenueScope(commission, scope)) {
+        return {
+            included: false,
+            reason: `Out of ${getRevenueScopeLabel(scope)}`
+        };
+    }
+
+    return {
+        included: true,
+        reason: 'Standalone commission'
+    };
 }
 
 function normalizeCommissionQueueStatus(value) {
@@ -8978,10 +9060,12 @@ function computeAdminDashboardMetrics() {
             .filter(Boolean)
     );
 
-    // Ignore orphaned website-preorder queue rows so deleted forms stop impacting money metrics.
+    // Revenue should include standalone/manual commission entries but avoid double-counting website preorder mirrors.
     const commissionsForMoneyMetrics = commissions.filter((commission) => {
+        if (!isCommissionRecordValidForRevenue(commission)) return false;
+
         const linkedPreorderId = String(commission?.preorderOrderId || '').trim();
-        if (linkedPreorderId) return existingPreorderOrderIds.has(linkedPreorderId);
+        if (linkedPreorderId) return false;
 
         const sourceType = String(commission?.sourceType || '').trim().toLowerCase();
         const commissionId = String(commission?.commissionId || '').trim();
@@ -8989,8 +9073,11 @@ function computeAdminDashboardMetrics() {
             (sourceType === 'website preorder' || sourceType === 'website order') &&
             /^htg-\d{4}-[a-z0-9]+$/i.test(commissionId);
 
-        if (!looksLikeWebsitePreorderMirror) return true;
-        return existingPreorderOrderIds.has(commissionId);
+        if (looksLikeWebsitePreorderMirror && existingPreorderOrderIds.has(commissionId)) {
+            return false;
+        }
+
+        return !looksLikeWebsitePreorderMirror;
     });
 
     const pendingOrders = orders.filter((o) => {
@@ -9017,24 +9104,48 @@ function computeAdminDashboardMetrics() {
     const revenueStatusScope = getRevenueStatusScopeSet(revenueOptions.scope);
 
     const scopedRevenueOrders = orders.filter((order) => {
-        return revenueStatusScope.has(normalizeOrderStatus(order.status));
+        return isOrderRecordValidForRevenue(order)
+            && revenueStatusScope.has(normalizeOrderStatus(order.status));
+    });
+
+    const scopedRevenueCommissions = commissionsForMoneyMetrics.filter((commission) => {
+        return isCommissionInRevenueScope(commission, revenueOptions.scope);
     });
 
     const acceptedOrders = orders.filter(isRevenueEligible);
+    const acceptedCommissions = commissionsForMoneyMetrics.filter((commission) => normalizeCommissionQueueStatus(commission?.queueStatus) === 'started');
     const completedOrders = orders.filter((o) => {
+        if (!isOrderRecordValidForRevenue(o)) return false;
         const status = normalizeOrderStatus(o.status);
         return status === 'finished' || status === 'shipped';
     });
+    const completedCommissions = commissionsForMoneyMetrics.filter((commission) => normalizeCommissionQueueStatus(commission?.queueStatus) === 'finished');
     const pendingRevenueOrders = orders.filter((o) => {
+        if (!isOrderRecordValidForRevenue(o)) return false;
         const status = normalizeOrderStatus(o.status);
         return status === 'pending review' || status === 'new' || status === 'reviewed' || status === 'accepted';
     });
+    const pendingRevenueCommissions = commissionsForMoneyMetrics.filter((commission) => normalizeCommissionQueueStatus(commission?.queueStatus) === 'not started');
 
-    const revenueTotal = scopedRevenueOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0);
-    const estimatedAcceptedRevenue = acceptedOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0);
-    const estimatedPendingRevenue = pendingRevenueOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0);
-    const estimatedCompletedRevenue = completedOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0);
-    const totalAmountPaid = orders.reduce((sum, order) => sum + getOrderPaidAmount(order), 0);
+    const revenueTotal =
+        scopedRevenueOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0)
+        + scopedRevenueCommissions.reduce((sum, commission) => sum + getCommissionRevenueValue(commission, revenueOptions.basis), 0);
+
+    const estimatedAcceptedRevenue =
+        acceptedOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0)
+        + acceptedCommissions.reduce((sum, commission) => sum + getCommissionRevenueValue(commission, revenueOptions.basis), 0);
+
+    const estimatedPendingRevenue =
+        pendingRevenueOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0)
+        + pendingRevenueCommissions.reduce((sum, commission) => sum + getCommissionRevenueValue(commission, revenueOptions.basis), 0);
+
+    const estimatedCompletedRevenue =
+        completedOrders.reduce((sum, order) => sum + getOrderRevenueValue(order, revenueOptions.basis), 0)
+        + completedCommissions.reduce((sum, commission) => sum + getCommissionRevenueValue(commission, revenueOptions.basis), 0);
+
+    const totalAmountPaid =
+        orders.filter(isOrderRecordValidForRevenue).reduce((sum, order) => sum + getOrderPaidAmount(order), 0)
+        + commissionsForMoneyMetrics.reduce((sum, commission) => sum + getCommissionPaidAmount(commission), 0);
     const lopsideDepositCollected = orders.reduce((sum, order) => sum + getOrderLopsideDepositCollected(order), 0);
     const lopsideDepositOutstanding = orders.reduce((sum, order) => {
         if (!isLopsideFursuitOrder(order)) return sum;
@@ -9053,6 +9164,17 @@ function computeAdminDashboardMetrics() {
         revenueByCreator[creator] += value;
         if (revenueByService[serviceType] != null) revenueByService[serviceType] += value;
     });
+    scopedRevenueCommissions.forEach((commission) => {
+        const serviceType = getCommissionServiceType(commission);
+        const creator = normalizeCommissionQueueOwnerValue(commission?.queueOwner, commission);
+        const value = getCommissionRevenueValue(commission, revenueOptions.basis);
+        if (revenueByCreator[creator] != null) {
+            revenueByCreator[creator] += value;
+        }
+        if (revenueByService[serviceType] != null) {
+            revenueByService[serviceType] += value;
+        }
+    });
 
     const monthlyBuckets = getMonthBuckets();
     scopedRevenueOrders.forEach((order) => {
@@ -9063,6 +9185,15 @@ function computeAdminDashboardMetrics() {
         const key = getMonthKeyFromMs(orderTime);
         const bucket = monthlyBuckets.find((item) => item.key === key);
         if (bucket) bucket.value += getOrderRevenueValue(order, revenueOptions.basis);
+    });
+    scopedRevenueCommissions.forEach((commission) => {
+        const commissionTime = getCommissionTimestampMs(commission);
+        const commissionDate = commissionTime ? new Date(commissionTime) : null;
+        if (!commissionDate || commissionDate.getFullYear() !== new Date().getFullYear()) return;
+
+        const key = getMonthKeyFromMs(commissionTime);
+        const bucket = monthlyBuckets.find((item) => item.key === key);
+        if (bucket) bucket.value += getCommissionRevenueValue(commission, revenueOptions.basis);
     });
 
     const thisMonthRevenue = monthlyBuckets[monthlyBuckets.length - 1]?.value || 0;
@@ -12643,6 +12774,13 @@ function renderAdminCommissionList(commissions, totalCommissions = commissions.l
         return;
     }
 
+    const revenueOptions = getAdminRevenueCalculatorOptions();
+    const existingPreorderOrderIds = new Set(
+        (Array.isArray(window.allOrders) ? window.allOrders : [])
+            .map((order) => String(order?.orderId || '').trim())
+            .filter(Boolean)
+    );
+
     const groupedCommissions = {
         lopside: commissions.filter((commission) => normalizeCommissionQueueOwnerValue(commission.queueOwner, commission) === 'lopside'),
         husky: commissions.filter((commission) => normalizeCommissionQueueOwnerValue(commission.queueOwner, commission) === 'husky')
@@ -12660,6 +12798,29 @@ function renderAdminCommissionList(commissions, totalCommissions = commissions.l
             ? `Published to Client: ${finalPrice != null ? formatMoney(finalPrice) : 'No value set'}`
             : 'Draft / Admin Only';
         const commissionType = String(commission.commissionType || '').trim();
+        const firestoreDocId = String(commission.id || '').trim() || 'unknown';
+        const sourceType = String(
+            commission.sourceType
+            || (String(commission.preorderOrderId || '').trim() ? 'Website Preorder Mirror' : 'Manual Entry')
+        ).trim();
+        const qualityIssues = [];
+        if (!String(commission.commissionId || '').trim()) qualityIssues.push('missing commission ID');
+        if (!String(commission.displayName || '').trim()) qualityIssues.push('missing display name');
+        if (!commissionType) qualityIssues.push('missing commission type');
+        if (!String(commission.email || commission.privateContactInfo || '').trim()) qualityIssues.push('missing contact info');
+        const hasDataWarning = qualityIssues.length > 0;
+        const dataWarningText = hasDataWarning
+            ? `Needs review: ${qualityIssues.join(', ')}.`
+            : '';
+        const revenueInclusion = getCommissionRevenueInclusionInfo(
+            commission,
+            revenueOptions.scope,
+            existingPreorderOrderIds
+        );
+        const revenueInclusionLabel = revenueInclusion.included ? 'Included in Revenue: Yes' : 'Included in Revenue: No';
+        const revenueInclusionToneClass = revenueInclusion.included
+            ? 'admin-queue-meta-pill-revenue-yes'
+            : 'admin-queue-meta-pill-revenue-no';
 
         return `
         <div class="admin-commission-item">
@@ -12669,10 +12830,14 @@ function renderAdminCommissionList(commissions, totalCommissions = commissions.l
                     <span class="admin-queue-status-badge" style="background:${getQueueBadgeColor(commission.queueStatus)};">${escapeHTML(commission.queueStatus || 'Not Started')}</span>
                 </div>
                 <div class="admin-queue-item-subline">${escapeHTML(commission.displayName || 'Anonymous')}</div>
+                ${hasDataWarning ? `<div class="admin-commission-warning" title="${escapeHTML(dataWarningText)}">${escapeHTML(dataWarningText)}</div>` : ''}
                 <div class="admin-queue-meta-row">
                     <span class="admin-queue-meta-pill"><strong>#</strong>${escapeHTML(String(queuePosition))}</span>
                     <span class="admin-queue-meta-pill">${escapeHTML(normalizeCommissionQueueOwnerValue(commission.queueOwner, commission).replace(/^./, c => c.toUpperCase()))}</span>
                     ${commissionType ? `<span class="admin-queue-meta-pill">${escapeHTML(commissionType)}</span>` : ''}
+                    <span class="admin-queue-meta-pill admin-queue-meta-pill-source" title="Entry source">${escapeHTML(sourceType)}</span>
+                    <span class="admin-queue-meta-pill admin-queue-meta-pill-doc" title="Firestore doc ID">Doc: ${escapeHTML(firestoreDocId)}</span>
+                    <span class="admin-queue-meta-pill ${revenueInclusionToneClass}" title="${escapeHTML(revenueInclusion.reason || '')}">${escapeHTML(revenueInclusionLabel)}</span>
                     <span class="admin-queue-meta-pill"><strong>Paid:</strong> ${escapeHTML(paidText)}</span>
                     <span class="admin-queue-meta-pill admin-queue-meta-pill-visibility">${commission.isPublic ? 'Public' : 'Hidden'}</span>
                 </div>

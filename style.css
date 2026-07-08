@@ -8257,6 +8257,48 @@ body[data-page="reviews"] .reviews-submit-btn {
     border-color: rgba(74, 222, 128, 0.18);
 }
 
+.admin-queue-meta-pill-source {
+    background: rgba(125, 211, 252, 0.12);
+    border-color: rgba(125, 211, 252, 0.28);
+    color: #dff4ff;
+}
+
+.admin-queue-meta-pill-doc {
+    font-family: Consolas, 'Courier New', monospace;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    background: rgba(129, 140, 248, 0.14);
+    border-color: rgba(129, 140, 248, 0.26);
+    color: #e0e7ff;
+}
+
+.admin-queue-meta-pill-revenue-yes {
+    background: rgba(16, 185, 129, 0.16);
+    border-color: rgba(52, 211, 153, 0.3);
+    color: #d1fae5;
+}
+
+.admin-queue-meta-pill-revenue-no {
+    background: rgba(245, 158, 11, 0.14);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: #fde68a;
+}
+
+.admin-commission-warning {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    max-width: 100%;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(251, 191, 36, 0.45);
+    background: rgba(120, 53, 15, 0.26);
+    color: #fde68a;
+    font-size: 0.77rem;
+    letter-spacing: 0.02em;
+    line-height: 1.25;
+}
+
 .admin-queue-actions {
     display: flex;
     gap: 8px;
