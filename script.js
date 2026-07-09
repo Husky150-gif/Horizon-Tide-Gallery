@@ -3106,6 +3106,7 @@ function getHemisphereDirection() {
 function startQuoteRotation() {
     if (globalQuoteInterval) clearInterval(globalQuoteInterval);
     globalQuoteInterval = setInterval(() => {
+        if (document.visibilityState === 'hidden') return;
         globalQuoteIndex = (globalQuoteIndex + 1) % moonQuoteRotation.length;
         const quoteEl = document.getElementById('rotatingMoonQuote');
         if (quoteEl) {
@@ -3180,7 +3181,7 @@ function createBubbles() {
     container.innerHTML = "";
     if (!canRunHeavyVisuals()) return;
     
-    const bubbleCount = getAdaptiveCount(28, 8);
+    const bubbleCount = getAdaptiveCount(14, 4);
     
     for (let i = 0; i < bubbleCount; i++) {
         const bubble = document.createElement('div');
@@ -3205,7 +3206,7 @@ function renderHomeStars() {
     homeStarField.innerHTML = "";
     if (!canRunHeavyVisuals()) return;
     
-    const countTarget = getAdaptiveCount(120, 28);
+    const countTarget = getAdaptiveCount(72, 18);
     
     for (let i = 0; i < countTarget; i++) {
         const star = document.createElement('div');
@@ -3282,8 +3283,8 @@ function renderInteractiveStars() {
     
     const isMobileViewport = window.innerWidth <= 768;
     const countTarget = isMobileViewport
-        ? (isLiteVisualMode ? 2 : 4)
-        : (isLiteVisualMode ? 5 : 10);
+        ? (isLiteVisualMode ? 1 : 3)
+        : (isLiteVisualMode ? 2 : 6);
     for (let i = 0; i < countTarget; i++) {
         spawnSingleInteractiveStar(interactiveStarField);
     }
@@ -3294,7 +3295,7 @@ function renderDashboardStars() {
     dashboardStarField.innerHTML = "";
     if (!canRunHeavyVisuals()) return;
     
-    const countTarget = getAdaptiveCount(18, 6);
+    const countTarget = getAdaptiveCount(10, 3);
     
     for (let i = 1; i <= countTarget; i++) {
         const star = document.createElement('div');
@@ -3324,7 +3325,7 @@ function renderTOSConstellations() {
         `<svg width="150" height="150" viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="1.5" fill="#fff"/><circle cx="40" cy="50" r="1" fill="#fff"/><circle cx="90" cy="20" r="2" fill="#fff"/><circle cx="140" cy="80" r="1.5" fill="#fff"/><circle cx="30" cy="120" r="1" fill="#fff"/><circle cx="100" cy="130" r="1.5" fill="#fff"/><path pathLength="100" class="constellation-line" d="M10 10L40 50L90 20" stroke="rgba(255,255,255,0.4)" stroke-width="1"/><path pathLength="100" class="constellation-line" d="M30 120L100 130L140 80" stroke="rgba(255,255,255,0.4)" stroke-width="1"/></svg>`
     ];
 
-    const constellationCount = getAdaptiveCount(9, 6);
+    const constellationCount = getAdaptiveCount(5, 3);
     for (let i = 0; i < constellationCount; i++) {
         const svg = svgs[Math.floor(Math.random() * svgs.length)];
         const div = document.createElement('div');
@@ -3562,11 +3563,12 @@ function attachInnerScrollListener() {
 document.addEventListener('mousemove', (e) => {
     if (window.innerWidth <= 768) return; 
     if (isLiteVisualMode) return;
+    if (bodyElement.getAttribute('data-page') === 'admin') return;
 
     const now = performance.now();
-    if (now - lastCursorSparkleTime < 90) return;
-    if (activeCursorSparkles >= 8) return;
-    if (Math.random() > 0.35) return;
+    if (now - lastCursorSparkleTime < 180) return;
+    if (activeCursorSparkles >= 3) return;
+    if (Math.random() > 0.12) return;
 
     lastCursorSparkleTime = now;
     activeCursorSparkles++;
@@ -3670,7 +3672,7 @@ function cinematicTransition(event, targetPageFunction, hashTarget = '') {
 
 function triggerConfetti() {
     const colors = ['#ec4899', '#00f2fe', '#22c55e', '#a855f7', '#f1c40f'];
-    const confettiCount = getAdaptiveCount(36, 20);
+    const confettiCount = getAdaptiveCount(18, 10);
     for (let i = 0; i < confettiCount; i++) {
         const conf = document.createElement('div');
         conf.className = 'confetti';

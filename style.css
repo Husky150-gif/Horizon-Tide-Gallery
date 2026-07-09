@@ -3152,7 +3152,7 @@ body.admin-login-modal-open {
    --- START TOS PAGE ---
    ========================================== */
 .tos-container {
-    background: rgba(10, 5, 20, 0.85);
+    background: rgba(6, 3, 16, 0.56);
     backdrop-filter: blur(20px);
     border: 3px solid #22c55e;
     box-shadow: 0 0 30px rgba(236, 72, 153, 0.2), inset 0 0 20px rgba(34, 197, 94, 0.1);
@@ -3167,6 +3167,61 @@ body.admin-login-modal-open {
     scroll-behavior: smooth;
     position: relative;
     z-index: 10;
+}
+
+[data-theme="tos"] .tos-container::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+        radial-gradient(circle at 8% 16%, rgba(255,255,255,0.78) 0 1.3px, transparent 1.7px),
+        radial-gradient(circle at 21% 27%, rgba(255,255,255,0.56) 0 1.1px, transparent 1.5px),
+        radial-gradient(circle at 33% 14%, rgba(255,255,255,0.65) 0 1.2px, transparent 1.6px),
+        radial-gradient(circle at 46% 29%, rgba(255,255,255,0.52) 0 1.1px, transparent 1.5px),
+        radial-gradient(circle at 58% 18%, rgba(255,255,255,0.72) 0 1.2px, transparent 1.6px),
+        radial-gradient(circle at 71% 31%, rgba(255,255,255,0.6) 0 1.1px, transparent 1.5px),
+        radial-gradient(circle at 83% 21%, rgba(255,255,255,0.74) 0 1.2px, transparent 1.6px),
+        radial-gradient(circle at 92% 34%, rgba(255,255,255,0.5) 0 1px, transparent 1.4px),
+        radial-gradient(circle at 15% 54%, rgba(255,255,255,0.52) 0 1.1px, transparent 1.5px),
+        radial-gradient(circle at 29% 63%, rgba(255,255,255,0.66) 0 1.2px, transparent 1.6px),
+        radial-gradient(circle at 44% 52%, rgba(255,255,255,0.57) 0 1.1px, transparent 1.5px),
+        radial-gradient(circle at 61% 68%, rgba(255,255,255,0.63) 0 1.1px, transparent 1.5px),
+        radial-gradient(circle at 77% 57%, rgba(255,255,255,0.54) 0 1px, transparent 1.4px),
+        radial-gradient(circle at 89% 71%, rgba(255,255,255,0.68) 0 1.2px, transparent 1.6px);
+    opacity: 0.74;
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.34));
+    animation: tosStardustDrift 16s infinite alternate ease-in-out, tosCardStarPulse 6s infinite alternate ease-in-out;
+}
+
+[data-theme="tos"] .tos-container::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+        radial-gradient(circle at 12% 22%, rgba(255,255,255,0.98) 0 2.8px, transparent 3.8px),
+        radial-gradient(circle at 28% 18%, rgba(255,255,255,0.94) 0 2.6px, transparent 3.6px),
+        radial-gradient(circle at 46% 24%, rgba(255,255,255,0.99) 0 3px, transparent 4.1px),
+        radial-gradient(circle at 63% 19%, rgba(255,255,255,0.92) 0 2.4px, transparent 3.5px),
+        radial-gradient(circle at 79% 27%, rgba(255,255,255,0.97) 0 2.8px, transparent 3.9px),
+        radial-gradient(circle at 18% 58%, rgba(255,255,255,0.93) 0 2.5px, transparent 3.5px),
+        radial-gradient(circle at 36% 66%, rgba(255,255,255,0.98) 0 2.9px, transparent 4px),
+        radial-gradient(circle at 55% 61%, rgba(255,255,255,0.94) 0 2.6px, transparent 3.7px),
+        radial-gradient(circle at 74% 68%, rgba(255,255,255,0.99) 0 3px, transparent 4.2px),
+        radial-gradient(circle at 88% 62%, rgba(255,255,255,0.94) 0 2.6px, transparent 3.7px);
+    opacity: 0.9;
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.58));
+    animation: tosCardStarPulse 4.8s infinite alternate ease-in-out;
+}
+
+[data-theme="tos"] .tos-container > * {
+    position: relative;
+    z-index: 1;
 }
 
 .tos-container::-webkit-scrollbar { width: 10px; }
@@ -4783,22 +4838,71 @@ body[data-page="reviews"] .reviews-submit-btn {
     100% { transform: scale(1.1) translate(20px, 20px); }
 }
 
-/* Less Griddy, Organic Stardust using Prime Numbers */
+/* Non-grid floating stardust layer */
 .tos-stardust {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    background-image: 
-        radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px),
-        radial-gradient(rgba(255,255,255,0.4) 1px, transparent 1px),
-        radial-gradient(rgba(255,255,255,0.2) 2px, transparent 2px);
-    background-size: 73px 91px, 113px 137px, 211px 233px; 
-    background-position: 0 0, 31px 47px, 103px 157px;
-    opacity: 0.6;
-    animation: twinkleStardust 6s infinite alternate;
+    pointer-events: none;
+    background-image:
+        radial-gradient(circle at 7% 14%, rgba(255,255,255,0.75) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 18% 29%, rgba(255,255,255,0.55) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 26% 9%, rgba(255,255,255,0.45) 0 1.4px, transparent 1.6px),
+        radial-gradient(circle at 34% 38%, rgba(255,255,255,0.7) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 42% 16%, rgba(255,255,255,0.5) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 53% 31%, rgba(255,255,255,0.6) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 61% 11%, rgba(255,255,255,0.8) 0 1.2px, transparent 1.4px),
+        radial-gradient(circle at 69% 36%, rgba(255,255,255,0.5) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 77% 18%, rgba(255,255,255,0.65) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 86% 32%, rgba(255,255,255,0.55) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 93% 13%, rgba(255,255,255,0.7) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 12% 45%, rgba(255,255,255,0.45) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 29% 52%, rgba(255,255,255,0.6) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 47% 48%, rgba(255,255,255,0.5) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 64% 54%, rgba(255,255,255,0.65) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 82% 49%, rgba(255,255,255,0.5) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 9% 63%, rgba(255,255,255,0.72) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 21% 72%, rgba(255,255,255,0.5) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 38% 67%, rgba(255,255,255,0.62) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 56% 74%, rgba(255,255,255,0.48) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 73% 69%, rgba(255,255,255,0.7) 0 1px, transparent 1.2px),
+        radial-gradient(circle at 89% 76%, rgba(255,255,255,0.58) 0 1px, transparent 1.2px);
+    opacity: 0.9;
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.34));
+    animation: tosCardStarPulse 5.2s infinite alternate ease-in-out, tosStardustDrift 16s infinite alternate ease-in-out;
+}
+
+.tos-stardust::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+        radial-gradient(circle at 14% 20%, rgba(255,255,255,0.42) 0 0.9px, transparent 1.1px),
+        radial-gradient(circle at 31% 27%, rgba(255,255,255,0.35) 0 0.9px, transparent 1.1px),
+        radial-gradient(circle at 45% 14%, rgba(255,255,255,0.38) 0 0.9px, transparent 1.1px),
+        radial-gradient(circle at 58% 24%, rgba(255,255,255,0.34) 0 0.9px, transparent 1.1px),
+        radial-gradient(circle at 72% 19%, rgba(255,255,255,0.4) 0 0.9px, transparent 1.1px),
+        radial-gradient(circle at 84% 28%, rgba(255,255,255,0.36) 0 0.9px, transparent 1.1px),
+        radial-gradient(circle at 24% 59%, rgba(255,255,255,0.34) 0 0.9px, transparent 1.1px),
+        radial-gradient(circle at 41% 64%, rgba(255,255,255,0.38) 0 0.9px, transparent 1.1px),
+        radial-gradient(circle at 67% 61%, rgba(255,255,255,0.35) 0 0.9px, transparent 1.1px),
+        radial-gradient(circle at 81% 66%, rgba(255,255,255,0.4) 0 0.9px, transparent 1.1px);
+    opacity: 0.78;
+    animation: tosCardStarPulse 6.5s infinite alternate-reverse ease-in-out, tosStardustDrift 20s infinite alternate-reverse ease-in-out;
+}
+
+@keyframes tosCardStarPulse {
+    0% { opacity: 0.82; }
+    100% { opacity: 1; }
 }
 @keyframes twinkleStardust {
     0% { opacity: 0.4; }
     100% { opacity: 0.8; }
+}
+
+@keyframes tosStardustDrift {
+    0% { transform: translate3d(0, 0, 0); }
+    100% { transform: translate3d(-16px, -10px, 0); }
 }
 
 .tos-ocean-shimmer {
@@ -4810,6 +4914,20 @@ body[data-page="reviews"] .reviews-submit-btn {
 @keyframes shimmerPulse {
     0% { opacity: 0.5; transform: scaleY(1); }
     100% { opacity: 1; transform: scaleY(1.2); }
+}
+
+.constellation-drift {
+    position: absolute;
+    opacity: 0.82;
+    animation: slowConstellationDrift 22s linear infinite;
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.32));
+    transform-origin: center;
+}
+
+.constellation-drift svg {
+    width: clamp(72px, 9vw, 150px);
+    height: auto;
+    display: block;
 }
 
 /* Faster Drift with Dynamic Angles */
