@@ -120,6 +120,7 @@ window.adminRefundsUnsub = null;
 window.adminCommissionsUnsub = null;
 window.adminInventoryEventsUnsub = null;
 window.adminPublicStatusUnsub = null;
+window.adminClientErrorsUnsub = null;
 window.publicRefundsUnsub = null;
 window.publicCommissionsUnsub = null;
 window.announcementsUnsubscribe = null;
@@ -134,6 +135,7 @@ window.adminDiagnosticsState = {
     lastInventoryEvent: null,
     lastPublicStatusSyncAtMs: 0,
     lastPublicStatusOrderId: '',
+    lastPreorderSubmitFailure: null,
     lastRenderedAtMs: 0
 };
 
@@ -7780,6 +7782,7 @@ async function submitPreorder(event, orderType) {
         email: (orderData.email || '').trim().toLowerCase(),
         discord: (orderData.discord || '').trim(),
         socialHandle: (orderData.socialHandle || '').trim(),
+        orderType,
         itemType: orderType,
         notes: compiledNotes,
         refLink: (orderData.refLink || '').trim(),
@@ -7844,7 +7847,34 @@ async function submitPreorder(event, orderType) {
         }, 400);
 
     } catch (error) {
-        showErrorMsg(form, "Oh no! Something went wrong sending your order to the database. Please check your connection and try again.");
+        const errorCode = String(error?.code || 'unknown_error').trim() || 'unknown_error';
+        const errorMessage = String(error?.message || 'Unknown preorder submission failure').trim() || 'Unknown preorder submission failure';
+        const safeSource = String(orderType || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 48) || 'unknown';
+
+        trackAnalyticsEvent('preorder_submit_failure', {
+            source: safeSource,
+            status: errorCode.slice(0, 48)
+        });
+
+        reportClientIssue({
+            kind: 'preorder_submit_failure',
+            message: `${errorCode}: ${errorMessage}`,
+            source: `submitPreorder:${safeSource}`
+        });
+
+        console.error('Preorder submission failed', {
+            orderType,
+            errorCode,
+            errorMessage
+        });
+
+        const isPermissionIssue = /permission|denied|insufficient/i.test(errorCode) || /permission|denied|insufficient/i.test(errorMessage);
+        showErrorMsg(
+            form,
+            isPermissionIssue
+                ? "This order was blocked before it could save. Please try again in a moment, and if it still fails contact us so we can check the form logs."
+                : "Oh no! Something went wrong sending your order to the database. Please check your connection and try again."
+        );
         submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false;
     }
 }
@@ -8064,6 +8094,10 @@ function clearAdminRealtimeListeners() {
     if (window.adminPublicStatusUnsub) {
         window.adminPublicStatusUnsub();
         window.adminPublicStatusUnsub = null;
+    }
+    if (window.adminClientErrorsUnsub) {
+        window.adminClientErrorsUnsub();
+        window.adminClientErrorsUnsub = null;
     }
 }
 
@@ -10060,9 +10094,11 @@ function renderAdminDiagnosticsPanel() {
     const inventoryDetailEl = document.getElementById('adminDiagInventoryEvent');
     const inventoryAtEl = document.getElementById('adminDiagInventoryEventTime');
     const statusSyncEl = document.getElementById('adminDiagStatusSync');
+    const preorderFailureEl = document.getElementById('adminDiagPreorderFailure');
+    const preorderFailureTimeEl = document.getElementById('adminDiagPreorderFailureTime');
     const stockSnapshotEl = document.getElementById('adminDiagStockSnapshot');
     const panelUpdatedEl = document.getElementById('adminDiagPanelUpdated');
-    if (!inventoryDetailEl || !inventoryAtEl || !statusSyncEl || !stockSnapshotEl || !panelUpdatedEl) return;
+    if (!inventoryDetailEl || !inventoryAtEl || !statusSyncEl || !preorderFailureEl || !preorderFailureTimeEl || !stockSnapshotEl || !panelUpdatedEl) return;
 
     const state = window.adminDiagnosticsState || {};
     const inventorySummary = getAdminInventoryEventSummary(state.lastInventoryEvent);
@@ -10080,6 +10116,23 @@ function renderAdminDiagnosticsPanel() {
         statusSyncEl.textContent = `Timestamp unavailable | Order ${state.lastPublicStatusOrderId}`;
     } else {
         statusSyncEl.textContent = 'No public status sync detected yet.';
+    }
+
+    const latestPreorderFailure = state.lastPreorderSubmitFailure;
+    if (latestPreorderFailure && typeof latestPreorderFailure === 'object') {
+        const failureCreatedAtMs = getComparableTimestampMs(latestPreorderFailure.createdAt);
+        const message = String(latestPreorderFailure.message || 'Unknown preorder submission failure').trim() || 'Unknown preorder submission failure';
+        const route = String(latestPreorderFailure.route || '').trim();
+        const source = String(latestPreorderFailure.source || '').trim();
+        preorderFailureEl.textContent = message;
+        preorderFailureTimeEl.textContent = [
+            failureCreatedAtMs ? `${new Date(failureCreatedAtMs).toLocaleString()} (${getRelativeTimeLabel(failureCreatedAtMs)})` : 'Timestamp unavailable',
+            route ? `Route ${route}` : '',
+            source ? `Source ${source}` : ''
+        ].filter(Boolean).join(' | ');
+    } else {
+        preorderFailureEl.textContent = 'No preorder submission failures captured yet.';
+        preorderFailureTimeEl.textContent = 'Listening for new customer-side errors.';
     }
 
     stockSnapshotEl.textContent = getAdminPremadeStockSnapshotText(window.premadeKeychainCatalog);
@@ -10100,6 +10153,10 @@ function attachAdminDiagnosticsListeners() {
     if (window.adminPublicStatusUnsub) {
         window.adminPublicStatusUnsub();
         window.adminPublicStatusUnsub = null;
+    }
+    if (window.adminClientErrorsUnsub) {
+        window.adminClientErrorsUnsub();
+        window.adminClientErrorsUnsub = null;
     }
 
     const inventoryQuery = query(collection(db, 'inventoryEvents'), orderBy('createdAt', 'desc'), limit(1));
@@ -10137,6 +10194,18 @@ function attachAdminDiagnosticsListeners() {
             return;
         }
         console.warn('Public status diagnostics listener failed:', error);
+    });
+
+    const clientErrorQuery = query(collection(db, 'clientErrorReports'), orderBy('createdAt', 'desc'), limit(6));
+    window.adminClientErrorsUnsub = onSnapshot(clientErrorQuery, (snapshot) => {
+        const latestPreorderFailureDoc = snapshot.docs.find((docSnap) => String(docSnap.data()?.kind || '').trim() === 'preorder_submit_failure') || null;
+        window.adminDiagnosticsState = {
+            ...(window.adminDiagnosticsState || {}),
+            lastPreorderSubmitFailure: latestPreorderFailureDoc ? { id: latestPreorderFailureDoc.id, ...latestPreorderFailureDoc.data() } : null
+        };
+        renderAdminDiagnosticsPanel();
+    }, (error) => {
+        console.warn('Client error diagnostics listener failed:', error);
     });
 }
 
@@ -11590,6 +11659,11 @@ function loadAdminDashboard() {
                                         <div class="admin-diagnostics-item">
                                             <h4>Last Public Status Sync</h4>
                                             <p id="adminDiagStatusSync">No public status sync detected yet.</p>
+                                        </div>
+                                        <div class="admin-diagnostics-item">
+                                            <h4>Recent Order Submit Failure</h4>
+                                            <p id="adminDiagPreorderFailure">No preorder submission failures captured yet.</p>
+                                            <small id="adminDiagPreorderFailureTime">Listening for new customer-side errors.</small>
                                         </div>
                                         <div class="admin-diagnostics-item admin-diagnostics-item--full">
                                             <h4>Premade Stock Snapshot</h4>
