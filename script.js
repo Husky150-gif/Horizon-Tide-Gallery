@@ -7892,6 +7892,11 @@ function closeAdminLoginModal() {
 function openAdminLoginModal(options = {}) {
     closeAdminLoginModal();
 
+    // Keep Secret Corner login unobstructed if the homepage guide is active or about to auto-start.
+    if (siteGuide && typeof siteGuide.dismiss === 'function') {
+        siteGuide.dismiss();
+    }
+
     const { onSuccess } = options;
 
     const modal = document.createElement('div');
