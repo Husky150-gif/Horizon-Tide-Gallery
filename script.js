@@ -8601,6 +8601,12 @@ function getOrderPaidAmount(order) {
     return parsed == null ? 0 : parsed;
 }
 
+function getOrderCollectedAmount(order) {
+    const paidAmount = getOrderPaidAmount(order);
+    if (!isLopsideFursuitOrder(order)) return paidAmount;
+    return roundMoney(paidAmount + getOrderLopsideDepositCollected(order));
+}
+
 function isLopsideFursuitOrder(order) {
     return getOrderServiceType(order) === 'fursuits';
 }
@@ -9236,7 +9242,7 @@ function computeAdminDashboardMetrics() {
         + completedCommissions.reduce((sum, commission) => sum + getCommissionRevenueValue(commission, revenueOptions.basis), 0);
 
     const totalAmountPaid =
-        orders.filter(isOrderRecordValidForRevenue).reduce((sum, order) => sum + getOrderPaidAmount(order), 0)
+        orders.filter(isOrderRecordValidForRevenue).reduce((sum, order) => sum + getOrderCollectedAmount(order), 0)
         + commissionsForMoneyMetrics.reduce((sum, commission) => sum + getCommissionPaidAmount(commission), 0);
     const lopsideDepositCollected = orders.reduce((sum, order) => sum + getOrderLopsideDepositCollected(order), 0);
     const lopsideDepositOutstanding = orders.reduce((sum, order) => {
