@@ -8087,6 +8087,10 @@ function clearAdminRealtimeListeners() {
         window.adminCommentsUnsub();
         window.adminCommentsUnsub = null;
     }
+    if (window.adminReportsUnsub) {
+        window.adminReportsUnsub();
+        window.adminReportsUnsub = null;
+    }
     if (window.adminInventoryEventsUnsub) {
         window.adminInventoryEventsUnsub();
         window.adminInventoryEventsUnsub = null;
@@ -12246,7 +12250,7 @@ function loadAdminDashboard() {
     document.getElementById('adminIdleBackHomeBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
     document.getElementById('adminIdleLoginBtn')?.addEventListener('click', () => {
         openAdminLoginModal({
-            onSuccess: () => cinematicTransition(null, loadHomePage, '#home')
+            onSuccess: () => cinematicTransition(null, loadAdminDashboard, '#admin')
         });
     });
 
