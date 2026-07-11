@@ -7659,6 +7659,29 @@ function buildOrderLookupCandidates(rawInput) {
 // =====================================
 // ORDER SUBMISSION SYSTEM
 // =====================================
+function extractReferenceUrlsFromNotes(notesValue) {
+    const text = String(notesValue || '');
+    if (!text) return [];
+
+    const urls = [];
+    const lineMatches = text.match(/^Reference Uploads:\s*(.+)$/gim) || [];
+
+    lineMatches.forEach((line) => {
+        const payload = String(line).replace(/^Reference Uploads:\s*/i, '');
+        payload
+            .split('|')
+            .map((chunk) => chunk.trim())
+            .filter(Boolean)
+            .forEach((candidate) => {
+                const clean = candidate.replace(/[),.;]+$/g, '').trim();
+                if (!/^https?:\/\//i.test(clean)) return;
+                if (!urls.includes(clean)) urls.push(clean);
+            });
+    });
+
+    return urls;
+}
+
 async function submitPreorder(event, orderType) {
     event.preventDefault();
     const form = event.target;
@@ -7701,6 +7724,7 @@ async function submitPreorder(event, orderType) {
     
     const fileInput = form.querySelector('#refFilesInput');
     let uploadedImageUrls = [];
+    const failedUploads = [];
     if (fileInput && fileInput.files.length > 0) {
         if (fileInput.files.length > 3) { 
             showErrorMsg(form, "You can only upload a maximum of 3 reference images."); 
@@ -7722,10 +7746,28 @@ async function submitPreorder(event, orderType) {
                 await uploadBytes(storageRef, file);
                 const url = await getDownloadURL(storageRef);
                 uploadedImageUrls.push(url);
-            } catch (err) { 
-                showErrorMsg(form, "Failed to upload images. Please try again or use the link option."); 
-                submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false; 
-                return; 
+            } catch (err) {
+                const errorCode = String(err?.code || 'upload_failed').trim() || 'upload_failed';
+                const errorMessage = String(err?.message || 'Unknown image upload failure').trim() || 'Unknown image upload failure';
+                failedUploads.push(file.name);
+
+                trackAnalyticsEvent('preorder_reference_upload_failure', {
+                    source: String(orderType || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 48),
+                    status: errorCode.slice(0, 48)
+                });
+
+                reportClientIssue({
+                    kind: 'preorder_reference_upload_failure',
+                    message: `${errorCode}: ${errorMessage}`,
+                    source: `submitPreorder:${String(orderType || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 48)}`
+                });
+
+                console.warn('Reference upload failed for preorder form', {
+                    orderType,
+                    fileName: file.name,
+                    errorCode,
+                    errorMessage
+                });
             }
         }
     }
@@ -7760,6 +7802,7 @@ async function submitPreorder(event, orderType) {
     appendDetail('Reference Link', orderData.refLink);
     if (addons.length > 0) appendDetail('Selected Add-ons', addons.join(', '));
     if (uploadedImageUrls.length > 0) appendDetail('Reference Uploads', uploadedImageUrls.join(' | '));
+    if (failedUploads.length > 0) appendDetail('Reference Upload Issues', `${failedUploads.join(', ')} failed to upload from this device.`);
 
     const primaryAllowedFields = new Set(['name', 'email', 'discord', 'socialHandle', 'notes', 'refLink']);
     Object.entries(orderData).forEach(([key, value]) => {
@@ -7788,6 +7831,7 @@ async function submitPreorder(event, orderType) {
         itemType: orderType,
         notes: compiledNotes,
         refLink: (orderData.refLink || '').trim(),
+        referenceImageUrls: uploadedImageUrls,
         status: 'Pending Review'
     };
 
@@ -7813,6 +7857,10 @@ async function submitPreorder(event, orderType) {
         });
         triggerConfetti();
 
+        const uploadSummaryLine = failedUploads.length > 0
+            ? `<p class="success-subtext" style="margin-top: 6px; color: #fde68a;">${failedUploads.length} image(s) could not upload from this device. Your request still sent successfully. You can reply to our confirmation email with those pictures.</p>`
+            : '';
+
         const formContainer = form.closest('.form-card') || form.closest('.preorder-card') || form;
         formContainer.classList.add('form-fade-wrapper', 'form-fade-out');
         
@@ -7833,6 +7881,7 @@ async function submitPreorder(event, orderType) {
                         <h3 style="color: #ffffff; font-size: 2.2rem; letter-spacing: 2px; margin: 0; text-shadow: 0 0 10px rgba(0, 242, 254, 0.4);">${newOrderId}</h3>
                     </div>
                     <p style="color: #a2b7cc; font-size: 0.95rem; margin-top: 5px; margin-bottom: 8px;">Please keep this ID for status checks and support.</p>
+                    ${uploadSummaryLine}
                     <ul class="success-next-steps">
                         <li>Watch your email for follow-up updates from us.</li>
                         <li>We will review your request and contact you with next steps.</li>
@@ -12537,7 +12586,13 @@ function setupAdminRefundManager() {
                 clearRefundForm();
             } catch (error) {
                 console.error('Refund save failed', error);
-                showAdminToast('Failed to save refund.', true);
+                const detail = String(error?.message || error?.code || '').trim();
+                showAdminToast(`Failed to save refund.${detail ? ` ${detail.slice(0, 140)}` : ''}`, true);
+                reportClientIssue({
+                    kind: 'admin_refund_save_failure',
+                    message: detail ? detail.slice(0, 200) : 'Unknown refund save failure',
+                    source: 'setupAdminRefundManager:save'
+                });
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.innerText = 'Save Refund';
@@ -12722,7 +12777,13 @@ function setupAdminCommissionManager() {
                 clearCommissionForm();
             } catch (error) {
                 console.error('Commission save failed', error);
-                showAdminToast('Failed to save commission.', true);
+                const detail = String(error?.message || error?.code || '').trim();
+                showAdminToast(`Failed to save commission.${detail ? ` ${detail.slice(0, 140)}` : ''}`, true);
+                reportClientIssue({
+                    kind: 'admin_commission_save_failure',
+                    message: detail ? detail.slice(0, 200) : 'Unknown commission save failure',
+                    source: 'setupAdminCommissionManager:save'
+                });
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.innerText = 'Save Commission';
@@ -13548,6 +13609,11 @@ function renderAdminOrders(ordersArr) {
 
         const buildOrderDetailRows = () => {
             const rows = [];
+            const allReferenceImageUrls = (() => {
+                const directUrls = Array.isArray(order.referenceImageUrls) ? order.referenceImageUrls.filter(Boolean) : [];
+                const noteUrls = extractReferenceUrlsFromNotes(order.notes);
+                return [...new Set([...directUrls, ...noteUrls])];
+            })();
             const pushRow = (label, value) => {
                 const text = getValue(value);
                 if (!text) return;
@@ -13588,7 +13654,7 @@ function renderAdminOrders(ordersArr) {
             pushRow('Notes', order.notes);
             pushRow('Status History', statusHistory);
             pushRow('Admin Notes', order.adminNotes);
-            pushRow('Uploaded Files', Array.isArray(order.referenceImageUrls) && order.referenceImageUrls.length > 0 ? `${order.referenceImageUrls.length} file(s)` : 'No uploaded files');
+            pushRow('Uploaded Files', allReferenceImageUrls.length > 0 ? `${allReferenceImageUrls.length} file(s)` : 'No uploaded files');
             return rows.join('');
         };
 
@@ -13652,9 +13718,15 @@ function renderAdminOrders(ordersArr) {
         };
         const badgeToneClass = badgeToneMap[attentionBadge] || 'is-cyan';
         
+        const allReferenceImageUrls = (() => {
+            const directUrls = Array.isArray(order.referenceImageUrls) ? order.referenceImageUrls.filter(Boolean) : [];
+            const noteUrls = extractReferenceUrlsFromNotes(order.notes);
+            return [...new Set([...directUrls, ...noteUrls])];
+        })();
+
         let imagesHtml = '';
-        if (order.referenceImageUrls && order.referenceImageUrls.length > 0) {
-            imagesHtml = `<div class="admin-image-thumb-grid">` + order.referenceImageUrls.map((url, i) => `
+        if (allReferenceImageUrls.length > 0) {
+            imagesHtml = `<div class="admin-image-thumb-grid">` + allReferenceImageUrls.map((url, i) => `
                 <button type="button" class="admin-image-thumb" data-image-url="${escapeHTML(url)}" data-image-alt="Order image ${i + 1}">
                     <img src="${escapeHTML(url)}" alt="Order image ${i + 1}" loading="lazy" onerror="handleImageError(this)">
                 </button>
