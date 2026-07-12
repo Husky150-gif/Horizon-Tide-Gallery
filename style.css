@@ -12555,6 +12555,27 @@ body[data-page="preorder"] #footerCredit {
     letter-spacing: 0.02em;
 }
 
+.admin-order-public-refs-flag {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 2px 8px;
+    margin-left: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.admin-order-public-refs-flag.is-published {
+    color: #052e16;
+    background: rgba(134, 239, 172, 0.85);
+}
+
+.admin-order-public-refs-flag.is-hidden {
+    color: #7f1d1d;
+    background: rgba(252, 165, 165, 0.82);
+}
+
 .admin-order-card .admin-detail {
     overflow: visible;
     text-overflow: clip;

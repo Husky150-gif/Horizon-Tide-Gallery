@@ -124,6 +124,7 @@ window.adminClientErrorsUnsub = null;
 window.publicRefundsUnsub = null;
 window.publicCommissionsUnsub = null;
 window.publicStatusGalleryUnsub = null;
+window.adminPublicStatusByOrderId = {};
 window.announcementsUnsubscribe = null;
 window.currentEditingAnnounceId = null;
 window.currentEditingDiscountId = null;
@@ -7777,6 +7778,17 @@ function extractReferenceUrlsFromNotes(notesValue) {
     return urls;
 }
 
+function getOrderReferenceImageUrls(order) {
+    if (!order || typeof order !== 'object') return [];
+    const directUrls = Array.isArray(order.referenceImageUrls)
+        ? order.referenceImageUrls
+            .map((url) => String(url || '').trim())
+            .filter((url) => /^https?:\/\//i.test(url))
+        : [];
+    const noteUrls = extractReferenceUrlsFromNotes(order.notes);
+    return [...new Set([...directUrls, ...noteUrls])];
+}
+
 async function submitPreorder(event, orderType) {
     event.preventDefault();
     const form = event.target;
@@ -8250,6 +8262,7 @@ function clearAdminRealtimeListeners() {
         window.adminPublicStatusUnsub();
         window.adminPublicStatusUnsub = null;
     }
+    window.adminPublicStatusByOrderId = {};
     if (window.adminClientErrorsUnsub) {
         window.adminClientErrorsUnsub();
         window.adminClientErrorsUnsub = null;
@@ -10902,6 +10915,97 @@ function setupAdminDashboardDelegation() {
             return;
         }
 
+        if (button.matches('.admin-order-publish-refs-btn')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before publishing reference uploads.')) return;
+            const orderDocId = String(button.getAttribute('data-order-doc-id') || '').trim();
+            const order = (Array.isArray(window.allOrders) ? window.allOrders : []).find((entry) => entry.id === orderDocId);
+            if (!order) {
+                showAdminToast('Could not find this order in memory. Refresh and try again.', true);
+                return;
+            }
+
+            const orderId = String(order.orderId || '').trim();
+            if (!orderId) {
+                showAdminToast('This order has no public order ID yet.', true);
+                return;
+            }
+
+            const refs = getOrderReferenceImageUrls(order).slice(0, 4);
+            if (refs.length === 0) {
+                showAdminToast('No valid uploaded references found on this order.', true);
+                return;
+            }
+
+            button.disabled = true;
+            try {
+                const payload = {
+                    orderId,
+                    itemType: order.itemType || order.orderType || 'Unknown',
+                    status: order.status || 'Pending Review',
+                    publicReferenceImageUrls: refs,
+                    updatedAt: serverTimestamp()
+                };
+                if (order.createdAt) payload.createdAt = order.createdAt;
+                await setDoc(doc(db, 'preorderStatusPublic', orderId), payload, { merge: true });
+                window.adminPublicStatusByOrderId[orderId] = {
+                    ...(window.adminPublicStatusByOrderId[orderId] || {}),
+                    publicReferenceImageUrls: refs
+                };
+                showAdminToast(`Published ${refs.length} reference image(s) to public gallery.`);
+                applyAdminOrderFilters();
+            } catch (error) {
+                console.error(error);
+                const detail = error instanceof Error && error.message ? ` ${error.message}` : '';
+                showAdminToast(`Failed to publish reference uploads.${detail}`, true);
+            } finally {
+                button.disabled = false;
+            }
+            return;
+        }
+
+        if (button.matches('.admin-order-unpublish-refs-btn')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before unpublishing reference uploads.')) return;
+            const orderDocId = String(button.getAttribute('data-order-doc-id') || '').trim();
+            const order = (Array.isArray(window.allOrders) ? window.allOrders : []).find((entry) => entry.id === orderDocId);
+            if (!order) {
+                showAdminToast('Could not find this order in memory. Refresh and try again.', true);
+                return;
+            }
+
+            const orderId = String(order.orderId || '').trim();
+            if (!orderId) {
+                showAdminToast('This order has no public order ID yet.', true);
+                return;
+            }
+
+            button.disabled = true;
+            try {
+                const statusRef = doc(db, 'preorderStatusPublic', orderId);
+                const statusSnap = await getDoc(statusRef);
+                if (!statusSnap.exists()) {
+                    showAdminToast('No public status record exists for this order yet.', true);
+                    return;
+                }
+                await updateDoc(statusRef, {
+                    publicReferenceImageUrls: deleteField(),
+                    updatedAt: serverTimestamp()
+                });
+                window.adminPublicStatusByOrderId[orderId] = {
+                    ...(window.adminPublicStatusByOrderId[orderId] || {}),
+                    publicReferenceImageUrls: []
+                };
+                showAdminToast('Reference uploads removed from public gallery.');
+                applyAdminOrderFilters();
+            } catch (error) {
+                console.error(error);
+                const detail = error instanceof Error && error.message ? ` ${error.message}` : '';
+                showAdminToast(`Failed to unpublish reference uploads.${detail}`, true);
+            } finally {
+                button.disabled = false;
+            }
+            return;
+        }
+
         if (button.matches('.copy-template-btn')) {
             const orderId = button.getAttribute('data-order-id');
             const order = (Array.isArray(window.allOrders) ? window.allOrders : []).find((entry) => entry.id === orderId);
@@ -12527,6 +12631,23 @@ function loadAdminDashboard() {
         }
         updateAdminDashboardOverview();
     });
+
+    if (window.adminPublicStatusUnsub) window.adminPublicStatusUnsub();
+    const qPublicStatus = query(collection(db, 'preorderStatusPublic'), orderBy('updatedAt', 'desc'), limit(300));
+    window.adminPublicStatusUnsub = onSnapshot(qPublicStatus, (snapshot) => {
+        const map = {};
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data() || {};
+            const orderId = String(data.orderId || docSnap.id || '').trim();
+            if (!orderId) return;
+            map[orderId] = data;
+        });
+        window.adminPublicStatusByOrderId = map;
+        applyAdminOrderFilters();
+    }, () => {
+        window.adminPublicStatusByOrderId = {};
+        applyAdminOrderFilters();
+    });
 }
 
 function renderAdminAvailabilitySettings() {
@@ -13704,11 +13825,7 @@ function renderAdminOrders(ordersArr) {
 
         const buildOrderDetailRows = () => {
             const rows = [];
-            const allReferenceImageUrls = (() => {
-                const directUrls = Array.isArray(order.referenceImageUrls) ? order.referenceImageUrls.filter(Boolean) : [];
-                const noteUrls = extractReferenceUrlsFromNotes(order.notes);
-                return [...new Set([...directUrls, ...noteUrls])];
-            })();
+            const allReferenceImageUrls = getOrderReferenceImageUrls(order);
             const pushRow = (label, value) => {
                 const text = getValue(value);
                 if (!text) return;
@@ -13803,6 +13920,11 @@ function renderAdminOrders(ordersArr) {
         const notesPreview = getPreviewText(notes, 150);
         const attentionBadge = getOrderAttentionBadge(order);
         const currentStatus = order.status || 'Pending Review';
+        const publicStatusDoc = window.adminPublicStatusByOrderId[String(order.orderId || '').trim()] || null;
+        const publishedRefsCount = Array.isArray(publicStatusDoc?.publicReferenceImageUrls)
+            ? publicStatusDoc.publicReferenceImageUrls.filter(Boolean).length
+            : 0;
+        const refsPublished = publishedRefsCount > 0;
         const badgeToneMap = {
             'New': 'is-amber',
             'Pending Review': 'is-amber',
@@ -13813,11 +13935,7 @@ function renderAdminOrders(ordersArr) {
         };
         const badgeToneClass = badgeToneMap[attentionBadge] || 'is-cyan';
         
-        const allReferenceImageUrls = (() => {
-            const directUrls = Array.isArray(order.referenceImageUrls) ? order.referenceImageUrls.filter(Boolean) : [];
-            const noteUrls = extractReferenceUrlsFromNotes(order.notes);
-            return [...new Set([...directUrls, ...noteUrls])];
-        })();
+        const allReferenceImageUrls = getOrderReferenceImageUrls(order);
 
         let imagesHtml = '';
         if (allReferenceImageUrls.length > 0) {
@@ -13845,6 +13963,7 @@ function renderAdminOrders(ordersArr) {
                 <span class="admin-order-meta-pill"><strong>Date:</strong> ${escapeHTML(orderDate)}</span>
                 <span class="admin-order-meta-pill"><strong>Final:</strong> ${escapeHTML(finalMetaValue)}</span>
                 <span class="admin-order-meta-pill"><strong>Status:</strong> ${escapeHTML(currentStatus)}</span>
+                <span class="admin-order-meta-pill"><strong>Public Uploads:</strong> <span class="admin-order-public-refs-flag ${refsPublished ? 'is-published' : 'is-hidden'}">${refsPublished ? `${publishedRefsCount} Published` : 'Hidden'}</span></span>
             </div>
 
             <div class="admin-order-finance-shell">
@@ -13930,6 +14049,15 @@ function renderAdminOrders(ordersArr) {
                 </div>
                 ${order.refLink ? `<div class="admin-order-detail-row"><strong>Reference Link:</strong> <a href="${escapeHTML(order.refLink)}" target="_blank" rel="noopener noreferrer" class="admin-order-link">Open Link</a></div>` : ''}
                 ${imagesHtml ? `<div class="admin-order-detail-row"><strong>Uploads:</strong>${imagesHtml}</div>` : ''}
+                ${allReferenceImageUrls.length > 0 && order.orderId ? `
+                    <div class="admin-order-detail-row">
+                        <strong>Public Gallery:</strong>
+                        <span>
+                            <button type="button" class="admin-order-action-btn admin-order-publish-refs-btn" data-order-doc-id="${escapeHTML(order.id)}">Publish Uploads</button>
+                            <button type="button" class="admin-order-action-btn admin-order-unpublish-refs-btn" data-order-doc-id="${escapeHTML(order.id)}">Unpublish</button>
+                        </span>
+                    </div>
+                ` : ''}
                 <div class="admin-order-detail-row"><strong>Email:</strong> <span>${escapeHTML(email)}</span></div>
                 <div class="admin-order-detail-row"><strong>Discord:</strong> <span>${escapeHTML(order.discord || 'N/A')}</span></div>
                 <div class="admin-order-detail-row"><strong>Other Social:</strong> <span>${escapeHTML(order.socialHandle || 'N/A')}</span></div>
