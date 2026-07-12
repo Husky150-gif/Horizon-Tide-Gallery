@@ -123,6 +123,7 @@ window.adminPublicStatusUnsub = null;
 window.adminClientErrorsUnsub = null;
 window.publicRefundsUnsub = null;
 window.publicCommissionsUnsub = null;
+window.publicStatusGalleryUnsub = null;
 window.announcementsUnsubscribe = null;
 window.currentEditingAnnounceId = null;
 window.currentEditingDiscountId = null;
@@ -1981,11 +1982,18 @@ async function updateOrderStatusWithInventoryAtomic(orderId, nextStatus) {
         transaction.update(preorderRef, updatePayload);
 
         if (liveOrder.orderId) {
+            const publicReferenceImageUrls = Array.isArray(liveOrder.referenceImageUrls)
+                ? liveOrder.referenceImageUrls
+                    .map((url) => String(url || '').trim())
+                    .filter((url) => /^https?:\/\//i.test(url))
+                    .slice(0, 4)
+                : [];
             const publishedFinalPrice = getOrderPublishedFinalPrice(liveOrder);
             const publicStatusPayload = {
                 orderId: liveOrder.orderId,
                 itemType: liveOrder.itemType || liveOrder.orderType || 'Unknown',
                 status: resolvedNextStatus,
+                publicReferenceImageUrls,
                 estimatedPrice: estimateOrderRevenue(liveOrder),
                 finalPricePublished: liveOrder.finalPricePublished === true,
                 finalPrice: publishedFinalPrice != null ? publishedFinalPrice : null,
@@ -6171,6 +6179,14 @@ function loadHuskysListPage() {
                 <div id="refundsGroupsContainer" class="refunds-groups-grid"></div>
             </section>
 
+            <section class="huskys-list-section-shell queue-reveal" style="--queue-stagger: 210ms;">
+                <div class="huskys-list-section-head">
+                    <h2>Customer Uploads</h2>
+                    <p>Public-safe reference previews from active and recently completed orders.</p>
+                </div>
+                <div id="publicReferenceGallery" class="public-reference-gallery-grid"></div>
+            </section>
+
             <button type="button" id="backToPreorderBtn" class="nav-btn btn-spacing-top" style="border-color: #22c55e;">← Back to Preorder</button>
             <p class="refunds-footer-note">Thank you for your patience. This page is updated as refund progress and commission movement are made.</p>
         </div>
@@ -6181,6 +6197,7 @@ function loadHuskysListPage() {
 
     if (window.publicRefundsUnsub) window.publicRefundsUnsub();
     if (window.publicCommissionsUnsub) window.publicCommissionsUnsub();
+    if (window.publicStatusGalleryUnsub) window.publicStatusGalleryUnsub();
     const publicRefundsQuery = query(collection(db, 'refunds'), where('isPublic', '==', true));
     window.publicRefundsUnsub = onSnapshot(publicRefundsQuery, (snapshot) => {
         const refunds = [];
@@ -6249,7 +6266,38 @@ function loadHuskysListPage() {
         console.error('Public commissions query failed', error);
     });
 
+    const publicStatusGalleryQuery = query(collection(db, 'preorderStatusPublic'), orderBy('updatedAt', 'desc'), limit(40));
+    window.publicStatusGalleryUnsub = onSnapshot(publicStatusGalleryQuery, (snapshot) => {
+        const rows = [];
+        snapshot.forEach((docSnap) => {
+            rows.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        const galleryContainer = document.getElementById('publicReferenceGallery');
+        if (!galleryContainer) return;
+
+        renderPublicReferenceGallery(galleryContainer, rows);
+    }, (error) => {
+        const galleryContainer = document.getElementById('publicReferenceGallery');
+        if (galleryContainer) {
+            galleryContainer.innerHTML = `<div class="refunds-empty-state"><p>Unable to load customer uploads right now.</p></div>`;
+        }
+        console.error('Public reference gallery query failed', error);
+    });
+
     attachInnerScrollListener();
+}
+
+if (appViewport && appViewport.dataset.publicReferenceLightboxBound !== 'true') {
+    appViewport.dataset.publicReferenceLightboxBound = 'true';
+    appViewport.addEventListener('click', (event) => {
+        const target = event.target instanceof Element ? event.target : null;
+        const button = target?.closest('.public-reference-card__media');
+        if (!(button instanceof HTMLButtonElement)) return;
+        const imageUrl = button.getAttribute('data-image-url');
+        const imageAlt = button.getAttribute('data-image-alt') || 'Customer reference preview';
+        if (imageUrl) openLightbox(imageUrl, imageAlt);
+    });
 }
 
 function inferCommissionQueueOwner(commission) {
@@ -6317,6 +6365,53 @@ function renderPublicCommissionListItem(commission, index = 0) {
             </div>
         </article>
     `;
+}
+
+function renderPublicReferenceGallery(container, statusRows) {
+    if (!(container instanceof HTMLElement)) return;
+
+    const cards = [];
+    (Array.isArray(statusRows) ? statusRows : []).forEach((row) => {
+        const urls = Array.isArray(row.publicReferenceImageUrls)
+            ? row.publicReferenceImageUrls
+                .map((url) => String(url || '').trim())
+                .filter((url) => /^https?:\/\//i.test(url))
+            : [];
+
+        if (urls.length === 0) return;
+
+        const statusLabel = String(row.status || 'Pending Review').trim() || 'Pending Review';
+        const orderLabel = String(row.orderId || '').trim() || 'Unknown';
+
+        urls.forEach((url) => {
+            cards.push({
+                url,
+                status: statusLabel,
+                orderId: orderLabel,
+                updatedAtMs: row.updatedAt && row.updatedAt.toDate ? row.updatedAt.toDate().getTime() : 0
+            });
+        });
+    });
+
+    cards.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
+    const visible = cards.slice(0, 24);
+
+    if (visible.length === 0) {
+        container.innerHTML = `<div class="refunds-empty-state"><p>No customer uploads are public yet.</p></div>`;
+        return;
+    }
+
+    container.innerHTML = visible.map((entry, index) => `
+        <article class="public-reference-card queue-reveal" style="--queue-stagger: ${120 + (index * 35)}ms;">
+            <button type="button" class="public-reference-card__media" data-image-url="${escapeHTML(entry.url)}" data-image-alt="Customer reference preview ${index + 1}">
+                <img src="${escapeHTML(entry.url)}" alt="Customer reference preview ${index + 1}" loading="lazy" onerror="handleImageError(this)">
+            </button>
+            <div class="public-reference-card__meta">
+                <span class="public-reference-card__status" style="background:${getQueueBadgeColor(entry.status)};">${escapeHTML(entry.status)}</span>
+                <span class="public-reference-card__order">Order ${escapeHTML(entry.orderId)}</span>
+            </div>
+        </article>
+    `).join('');
 }
 
 function renderPublicQueueGroups(container, items, renderCard, emptyMessage, emptySectionMessage) {

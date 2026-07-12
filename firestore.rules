@@ -219,15 +219,16 @@ service cloud.firestore {
 
     match /preorderStatusPublic/{orderId} {
       allow get: if true;
-      allow list: if isAdmin();
+      allow list: if true;
       allow create: if isAdmin() || (
-        request.resource.data.keys().hasOnly(['orderId', 'orderType', 'status', 'createdAt', 'updatedAt'])
+        request.resource.data.keys().hasOnly(['orderId', 'orderType', 'status', 'createdAt', 'updatedAt', 'publicReferenceImageUrls'])
         && request.resource.data.orderId == orderId
         && request.resource.data.orderId is string
         && request.resource.data.orderId.matches('^HTG-[0-9]{4}-[A-Z0-9]{6}$')
         && request.resource.data.orderType is string
         && request.resource.data.status == 'Pending Review'
         && request.resource.data.createdAt == request.time
+        && optionalStringList('publicReferenceImageUrls', 4)
         && request.resource.data.updatedAt == request.time
       );
       allow update, delete: if isAdmin();
