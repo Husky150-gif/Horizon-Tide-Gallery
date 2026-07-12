@@ -10527,7 +10527,7 @@ function setupAdminDashboardDelegation() {
                 showAdminToast('Reminder draft copied.');
             } catch (error) {
                 trackAnalyticsEvent('preorder_submit_failure', {
-                    source: String(orderType || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 48)
+                    source: 'admin-reminder-copy'
                 });
                 console.error(error);
                 showAdminToast('Could not copy reminder draft.', true);
