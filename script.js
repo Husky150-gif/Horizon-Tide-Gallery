@@ -10642,6 +10642,14 @@ function setupAdminDashboardDelegation() {
             if (!id || !confirm('Permanently delete this announcement?')) return;
             try {
                 await deleteDoc(doc(db, 'announcements', id));
+                window.adminAnnouncementsEntries = (Array.isArray(window.adminAnnouncementsEntries) ? window.adminAnnouncementsEntries : [])
+                    .filter((entry) => entry.id !== id);
+                const row = button.closest('.admin-announce-item');
+                if (row instanceof HTMLElement) row.remove();
+                if (window.currentEditingAnnounceId === id) {
+                    window.currentEditingAnnounceId = null;
+                }
+                updateAdminDashboardOverview();
                 showAdminToast('Announcement deleted.');
             } catch (error) {
                 console.error(error);
@@ -10684,6 +10692,10 @@ function setupAdminDashboardDelegation() {
             try {
                 await deleteDoc(doc(db, 'refunds', id));
                 await deleteDoc(doc(db, 'refundPrivate', id));
+                window.adminRefundEntries = (Array.isArray(window.adminRefundEntries) ? window.adminRefundEntries : [])
+                    .filter((entry) => entry.id !== id);
+                applyRefundAdminFilters();
+                updateAdminDashboardOverview();
                 showAdminToast('Refund deleted.');
                 if (window.currentEditingRefundId === id) clearRefundForm();
             } catch (error) {
@@ -10727,6 +10739,10 @@ function setupAdminDashboardDelegation() {
             try {
                 await deleteDoc(doc(db, 'commissions', id));
                 await deleteDoc(doc(db, 'commissionPrivate', id));
+                window.adminCommissionEntries = (Array.isArray(window.adminCommissionEntries) ? window.adminCommissionEntries : [])
+                    .filter((entry) => entry.id !== id);
+                applyCommissionAdminFilters();
+                updateAdminDashboardOverview();
                 showAdminToast('Commission deleted.');
                 if (window.currentEditingCommissionId === id) clearCommissionForm();
             } catch (error) {
@@ -10755,6 +10771,11 @@ function setupAdminDashboardDelegation() {
             if (!id || !confirm('Delete this review/comment permanently?')) return;
             try {
                 await deleteDoc(doc(db, 'comments', id));
+                window.adminCommentsEntries = (Array.isArray(window.adminCommentsEntries) ? window.adminCommentsEntries : [])
+                    .filter((entry) => entry.id !== id);
+                renderAdminReviewsManager();
+                renderAdminCommentsManager();
+                updateAdminDashboardOverview();
                 showAdminToast('Review deleted.');
             } catch (error) {
                 console.error(error);
@@ -10825,6 +10846,11 @@ function setupAdminDashboardDelegation() {
             if (!id || !confirm('Delete this comment permanently?')) return;
             try {
                 await deleteDoc(doc(db, 'comments', id));
+                window.adminCommentsEntries = (Array.isArray(window.adminCommentsEntries) ? window.adminCommentsEntries : [])
+                    .filter((entry) => entry.id !== id);
+                renderAdminCommentsManager();
+                renderAdminReviewsManager();
+                updateAdminDashboardOverview();
                 showAdminToast('Comment deleted.');
             } catch (error) {
                 console.error(error);
@@ -14095,9 +14121,16 @@ async function deleteOrder(id) {
             await deleteDoc(doc(db, "preorders", id));
             if (orderToDelete && orderToDelete.orderId) {
                 await deleteDoc(doc(db, "preorderStatusPublic", orderToDelete.orderId));
+                if (window.adminPublicStatusByOrderId && typeof window.adminPublicStatusByOrderId === 'object') {
+                    delete window.adminPublicStatusByOrderId[orderToDelete.orderId];
+                }
             }
+            window.allOrders = (Array.isArray(window.allOrders) ? window.allOrders : []).filter((order) => order.id !== id);
+            applyAdminOrderFilters();
+            updateAdminDashboardOverview();
+            showAdminToast('Order deleted.');
         }
-        catch (e) { alert("Failed to delete order."); }
+        catch (e) { showAdminToast('Failed to delete order.', true); }
     }
 }
 
