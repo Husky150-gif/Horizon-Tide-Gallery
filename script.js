@@ -4616,9 +4616,10 @@ function loadGalleryPage() {
         const categoryBadges = item.categories.map(cat => `<span class="gallery-category-badge">${cat.replace('-', ' ')}</span>`).join('');
         const mediaClass = item.videoLink ? 'gallery-video-thumb' : '';
         const cardTag = item.videoLink ? 'Animation Clip • Click to play' : item.creator;
+        const gallerySrc = /^https?:\/\//i.test(item.url) ? item.url : encodeURI(item.url);
         galleryHTML += `
             <div class="gallery-card filter-item" data-categories="${item.categories.join(' ')}">
-                <img src="${item.url}" class="gallery-img ${mediaClass}" alt="${item.title || `Gallery Item ${i + 1}`}" loading="lazy" onerror="handleImageError(this)" ${item.videoLink ? `data-video-link="${item.videoLink}"` : ''}>
+                <img src="${gallerySrc}" class="gallery-img ${mediaClass}" alt="${item.title || `Gallery Item ${i + 1}`}" loading="lazy" onerror="handleImageError(this)" ${item.videoLink ? `data-video-link="${item.videoLink}"` : ''}>
                 <p style="color: #ec4899; font-weight: 600;">${cardTag}</p>
                 <p class="gallery-card-title">${item.title || `Gallery Item ${i + 1}`}</p>
                 <div class="gallery-card-cats">${categoryBadges}</div>
@@ -8027,11 +8028,13 @@ async function submitPreorder(event, orderType) {
         });
 
         const isPermissionIssue = /permission|denied|insufficient/i.test(errorCode) || /permission|denied|insufficient/i.test(errorMessage);
+        const shortErrorCode = String(errorCode || '').replace(/^firebase\//i, '').slice(0, 80);
+        const detailSuffix = shortErrorCode && shortErrorCode !== 'unknown_error' ? ` (Code: ${shortErrorCode})` : '';
         showErrorMsg(
             form,
             isPermissionIssue
-                ? "This order was blocked before it could save. Please try again in a moment, and if it still fails contact us so we can check the form logs."
-                : "Oh no! Something went wrong sending your order to the database. Please check your connection and try again."
+                ? `This order was blocked before it could save. Please try again in a moment, and if it still fails contact us so we can check the form logs.${detailSuffix}`
+                : `Oh no! Something went wrong sending your order to the database. Please check your connection and try again.${detailSuffix}`
         );
         submitBtn.innerHTML = originalText; submitBtn.classList.remove('btn-loading-wave'); submitBtn.disabled = false;
     }
@@ -10819,11 +10822,42 @@ function setupAdminDashboardDelegation() {
             const nextStatus = String(button.getAttribute('data-next-status') || 'new').trim().toLowerCase();
             if (!reportId) return;
 
+            const normalizedStatus = getCustomerRequestStatus({ requestStatus: nextStatus });
+            const previousEntries = Array.isArray(window.adminCustomerRequestsEntries)
+                ? window.adminCustomerRequestsEntries.map((entry) => ({ ...entry }))
+                : [];
+
+            // Apply status locally first so cards move immediately without waiting on snapshot latency.
+            window.adminCustomerRequestsEntries = (Array.isArray(window.adminCustomerRequestsEntries) ? window.adminCustomerRequestsEntries : []).map((entry) => {
+                if (entry.id !== reportId) return entry;
+                const now = new Date();
+                const updatedEntry = {
+                    ...entry,
+                    requestStatus: normalizedStatus,
+                    requestStatusUpdatedAt: now,
+                    requestStatusUpdatedBy: auth.currentUser?.email || 'admin'
+                };
+                if (normalizedStatus === 'done') {
+                    updatedEntry.handledAt = now;
+                    updatedEntry.handledBy = auth.currentUser?.email || 'admin';
+                }
+                if (normalizedStatus === 'archived') {
+                    updatedEntry.archivedAt = now;
+                    updatedEntry.archivedBy = auth.currentUser?.email || 'admin';
+                }
+                return updatedEntry;
+            });
+            renderAdminCustomerRequestsManager();
+            updateAdminDashboardOverview();
+
             button.disabled = true;
             try {
                 await updateCustomerRequestStatus(reportId, nextStatus);
                 showAdminToast(`Customer request marked ${getCustomerRequestStatusLabel(nextStatus).toLowerCase()}.`);
             } catch (error) {
+                window.adminCustomerRequestsEntries = previousEntries;
+                renderAdminCustomerRequestsManager();
+                updateAdminDashboardOverview();
                 console.error(error);
                 showAdminToast('Failed to update customer request.', true);
             } finally {
@@ -13484,14 +13518,16 @@ function renderAdminCustomerRequestsManager() {
 
     const counts = entries.reduce((accumulator, entry) => {
         const status = getCustomerRequestStatus(entry);
-        accumulator.all += 1;
+        if (!isCustomerRequestArchived(entry)) {
+            accumulator.all += 1;
+        }
         accumulator[status] += 1;
         return accumulator;
     }, { all: 0, new: 0, 'in progress': 0, done: 0, archived: 0 });
 
     const filterBarHtml = `
         <div class="admin-review-filter-row admin-customer-request-filter-row" role="group" aria-label="Filter customer requests">
-            <button type="button" class="admin-review-filter-btn admin-customer-request-filter-btn ${activeFilter === 'all' ? 'is-active' : ''}" data-request-filter="all">All (${counts.all})</button>
+            <button type="button" class="admin-review-filter-btn admin-customer-request-filter-btn ${activeFilter === 'all' ? 'is-active' : ''}" data-request-filter="all">Open (${counts.all})</button>
             <button type="button" class="admin-review-filter-btn admin-customer-request-filter-btn ${activeFilter === 'new' ? 'is-active' : ''}" data-request-filter="new">New (${counts.new})</button>
             <button type="button" class="admin-review-filter-btn admin-customer-request-filter-btn ${activeFilter === 'in progress' ? 'is-active' : ''}" data-request-filter="in progress">In Progress (${counts['in progress']})</button>
             <button type="button" class="admin-review-filter-btn admin-customer-request-filter-btn ${activeFilter === 'done' ? 'is-active' : ''}" data-request-filter="done">Done (${counts.done})</button>
@@ -13500,7 +13536,7 @@ function renderAdminCustomerRequestsManager() {
     `;
 
     const filteredEntries = entries.filter((entry) => {
-        if (activeFilter === 'all') return true;
+        if (activeFilter === 'all') return !isCustomerRequestArchived(entry);
         return getCustomerRequestStatus(entry) === activeFilter;
     });
 
@@ -13527,7 +13563,11 @@ function renderAdminCustomerRequestsManager() {
         const updatedLabel = statusDetail.updatedAtMs ? getRelativeTimeLabel(statusDetail.updatedAtMs) : 'Unknown';
         const note = String(entry.commentText || '').trim();
         const uploadLink = String(entry.uploadLink || '').trim();
-        const attachmentUrls = Array.isArray(entry.attachmentUrls) ? entry.attachmentUrls.filter(Boolean) : [];
+        const attachmentUrls = Array.isArray(entry.attachmentUrls)
+            ? entry.attachmentUrls
+                .map((url) => String(url || '').trim())
+                .filter((url) => /^https?:\/\//i.test(url))
+            : [];
         const discordHandle = String(entry.discordHandle || '').trim();
 
         return `
@@ -13545,7 +13585,16 @@ function renderAdminCustomerRequestsManager() {
                 <p class="admin-detail" style="margin-top: 6px;"><strong>Updated:</strong> ${escapeHTML(updatedLabel)}${statusDetail.updatedBy ? ` by ${escapeHTML(statusDetail.updatedBy)}` : ''}</p>
                 ${note ? `<p class="admin-comment-row-text">${escapeHTML(note)}</p>` : '<p class="admin-comment-row-text">No message provided.</p>'}
                 ${uploadLink ? `<p class="admin-detail"><strong>File link:</strong> <a href="${encodeURI(uploadLink)}" target="_blank" rel="noopener noreferrer">Open share link</a></p>` : ''}
-                ${attachmentUrls.length ? `<div class="admin-comment-replies-preview">${attachmentUrls.map((url, index) => `<p><strong>Uploaded file ${index + 1}:</strong> <a href="${encodeURI(url)}" target="_blank" rel="noopener noreferrer">Open file</a></p>`).join('')}</div>` : ''}
+                ${attachmentUrls.length ? `
+                    <div class="admin-customer-request-attachments">
+                        ${attachmentUrls.map((url, index) => `
+                            <a class="admin-customer-request-attachment" href="${encodeURI(url)}" target="_blank" rel="noopener noreferrer" aria-label="Open uploaded file ${index + 1}">
+                                <img src="${encodeURI(url)}" alt="Uploaded file ${index + 1}" loading="lazy" onerror="handleImageError(this)">
+                            </a>
+                        `).join('')}
+                    </div>
+                    <div class="admin-comment-replies-preview">${attachmentUrls.map((url, index) => `<p><strong>Uploaded file ${index + 1}:</strong> <a href="${encodeURI(url)}" target="_blank" rel="noopener noreferrer">Open file</a></p>`).join('')}</div>
+                ` : ''}
                 <div class="admin-comment-row-actions">
                     <button type="button" class="admin-btn-edit admin-btn-neutral" data-copy-email="${escapeHTML(email)}">Copy Email</button>
                     <button type="button" class="admin-btn-edit admin-btn-neutral" data-copy-comment="${encodeURIComponent(note || `Customer request for ${orderId}`)}">Copy Note</button>

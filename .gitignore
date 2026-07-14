@@ -4,3 +4,5 @@ node_modules/
 public/
 *-firebase-adminsdk-*.json
 processCustomerReminderDeploy.log
+firebase-debug.log
+deploy-netlify*.zip
