@@ -6921,9 +6921,7 @@ function loadReviewsPage() {
             if (imageFile && reviewImageUploadEnabled) {
                 try {
                     const safeName = (imageFile.name || 'review-image').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 90);
-                    const storageRef = ref(storage, `review-images/${Date.now()}_${safeName}`);
-                    await uploadBytes(storageRef, imageFile);
-                    reviewImageUrl = await getDownloadURL(storageRef);
+                    reviewImageUrl = await uploadFileAndResolveUrl(imageFile, `review-images/${Date.now()}_${safeName}`);
                 } catch (uploadError) {
                     reviewImageUrl = imageLink;
                 }
@@ -7419,9 +7417,7 @@ async function uploadCustomerSupportFiles(orderId, filesInput) {
         const randomSuffix = Math.random().toString(36).slice(2, 8);
         const safeName = sanitizeCustomerUploadFileName(file.name);
         const path = `customerUploads/${safeOrderId}/${Date.now()}_${randomSuffix}_${safeName}`;
-        const fileRef = ref(storage, path);
-        await uploadBytes(fileRef, file);
-        const url = await getDownloadURL(fileRef);
+        const url = await uploadFileAndResolveUrl(file, path);
         uploaded.push(url);
     }
 
@@ -7779,6 +7775,46 @@ function extractReferenceUrlsFromNotes(notesValue) {
     return urls;
 }
 
+function createStorageDownloadToken() {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 12)}`;
+}
+
+function buildStoragePublicDownloadUrl(storageRef, token) {
+    const bucket = String(storageRef?.bucket || '').trim();
+    const fullPath = String(storageRef?.fullPath || '').trim();
+    const safeToken = String(token || '').trim();
+    if (!bucket || !fullPath || !safeToken) return '';
+    return `https://firebasestorage.googleapis.com/v0/b/${encodeURIComponent(bucket)}/o/${encodeURIComponent(fullPath)}?alt=media&token=${encodeURIComponent(safeToken)}`;
+}
+
+async function uploadFileAndResolveUrl(file, storagePath) {
+    const path = String(storagePath || '').trim();
+    if (!(file instanceof File)) throw new Error('A valid file is required for upload.');
+    if (!path) throw new Error('Missing storage path for upload.');
+
+    const token = createStorageDownloadToken();
+    const metadata = {
+        contentType: String(file.type || 'application/octet-stream').trim(),
+        customMetadata: {
+            firebaseStorageDownloadTokens: token
+        }
+    };
+
+    const storageRef = ref(storage, path);
+    await uploadBytes(storageRef, file, metadata);
+
+    try {
+        return await getDownloadURL(storageRef);
+    } catch (_downloadUrlError) {
+        const fallbackUrl = buildStoragePublicDownloadUrl(storageRef, token);
+        if (fallbackUrl) return fallbackUrl;
+        throw new Error('Upload succeeded, but download URL could not be generated.');
+    }
+}
+
 function getOrderReferenceImageUrls(order) {
     if (!order || typeof order !== 'object') return [];
     const directUrls = Array.isArray(order.referenceImageUrls)
@@ -7850,9 +7886,7 @@ async function submitPreorder(event, orderType) {
             
             const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
             try {
-                const storageRef = ref(storage, `references/${Date.now()}_${safeName}`);
-                await uploadBytes(storageRef, file);
-                const url = await getDownloadURL(storageRef);
+                const url = await uploadFileAndResolveUrl(file, `references/${Date.now()}_${safeName}`);
                 uploadedImageUrls.push(url);
             } catch (err) {
                 const errorCode = String(err?.code || 'upload_failed').trim() || 'upload_failed';
