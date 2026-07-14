@@ -4572,7 +4572,7 @@ function loadGalleryPage() {
         { url: 'Images/Meow.jpg', title: 'Meow Portrait', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
         { url: 'Images/My pride.png', title: 'My Pride', creator: 'Husky', categories: ['digital-art'] },
         { url: 'Images/Pounkkayk Icon for artfight 2025.png', title: 'Pounkkayk Icon', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
-        { url: 'https://cdn.discordapp.com/attachments/1346113490351423559/1523543255478702140/Shipppp.png?ex=6a4c7dba&is=6a4b2c3a&hm=9427bfc684c1806814b6cee6bf1a38c2791ac5bd2259af30f6e779154a9f4e25&', title: 'Shipppp Commission', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { url: 'Images/Com_1.png', title: 'Shipppp Commission', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
         { url: 'Images/Spinel but glitchy.png', title: 'Spinel Glitchy', creator: 'Husky', categories: ['digital-art'] },
         { url: 'Images/Sticker 2.png', title: 'Sticker Design', creator: 'Husky', categories: ['stickers', 'finished-commissions'] },
         { url: 'Images/What_safety_cost_me.png', title: 'What Safety Cost Me', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
