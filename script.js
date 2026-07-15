@@ -100,76 +100,80 @@ const PREMADE_CRITICAL_STOCK_THRESHOLD = 2;
 const DEFAULT_PRICING_CONFIG = {
     art: {
         types: {
-            Icon: { flat: 24, cel: 36, rendered: 52 },
-            Headshot: { flat: 32, cel: 44, rendered: 60 },
-            Bust: { flat: 44, cel: 60, rendered: 80 },
-            'Half Body': { flat: 56, cel: 72, rendered: 96 },
-            'Full Body': { flat: 72, cel: 96, rendered: 128 },
-            Scene: { flat: 160, cel: 200, rendered: 240 },
-            'Basic Ref Sheet': { flat: 160, cel: 160, rendered: 160 },
-            'Standard Ref Sheet': { flat: 220, cel: 220, rendered: 220 },
-            'Deluxe Ref Sheet': { flat: 280, cel: 280, rendered: 280 }
+            Icon: { flat: 30, cel: 44, rendered: 64 },
+            Headshot: { flat: 40, cel: 56, rendered: 76 },
+            Bust: { flat: 54, cel: 74, rendered: 98 },
+            'Half Body': { flat: 68, cel: 88, rendered: 116 },
+            'Full Body': { flat: 88, cel: 116, rendered: 154 },
+            Scene: { flat: 190, cel: 238, rendered: 286 },
+            'Basic Ref Sheet': { flat: 190, cel: 190, rendered: 190 },
+            'Standard Ref Sheet': { flat: 260, cel: 260, rendered: 260 },
+            'Deluxe Ref Sheet': { flat: 330, cel: 330, rendered: 330 }
         },
         addOns: {
             extraCharacterPercent: 80,
-            extraOutfit: 24,
-            prop: 16,
-            detailedBackgroundMin: 40,
-            detailedBackgroundMax: 80,
-            rushPercent: 50,
+            extraOutfit: 32,
+            prop: 24,
+            detailedBackgroundMin: 56,
+            detailedBackgroundMax: 96,
+            rushPercent: 60,
             commercialLicensePercent: 100
         }
     },
     stickers: {
         types: {
-            'Single Sticker': 20,
-            'Matching Pair': 36,
-            'Sticker Sheet': 80,
-            'Small Batch': 100
+            'Single Sticker': 24,
+            'Matching Pair': 42,
+            'Sticker Sheet': 96,
+            'Small Batch': 124
         },
         printingAddon: {
-            first: 6,
-            additional: 3
+            first: 8,
+            additional: 4
         }
     },
     keychains: {
         custom: {
-            'Chibi/Icon': 56,
-            'Half Body': 72,
-            'Full Body': 92,
-            'Complex Character': 120
+            'Chibi/Icon': 68,
+            'Half Body': 86,
+            'Full Body': 110,
+            'Complex Character': 142
         },
         premade: {
-            'Clear Acrylic': 22,
-            Epoxy: 24,
-            'Colored Acrylic': 24,
-            'Rainbow Acrylic': 26,
-            'Translucent Acrylic': 26,
-            Holographic: 26,
-            'Glow in the Dark': 28
+            'Clear Acrylic': 26,
+            Epoxy: 29,
+            'Colored Acrylic': 29,
+            'Rainbow Acrylic': 32,
+            'Translucent Acrylic': 32,
+            Holographic: 32,
+            'Glow in the Dark': 36
         }
     },
     fursuits: {
         parts: {
-            Tail: 100,
-            Paws: 170,
-            'Paws & Tail': 260,
-            'Feet Paws': 270,
-            'Trio Set': 530,
-            Head: 1100,
-            'Mini Partial': 1350,
-            'Full Partial': 1620,
-            Accessories: 50
+            Tail: 130,
+            Paws: 220,
+            'Paws & Tail': 330,
+            'Feet Paws': 350,
+            'Trio Set': 680,
+            Head: 1400,
+            'Mini Partial': 1720,
+            'Full Partial': 2060,
+            Accessories: 70
         },
-        rushOrderFlat: 100
+        rushOrderFlat: 160
     },
-    sustainableFloorMultiplier: 0.85
+    sustainableFloorMultiplier: 0.9
 };
 
 function toPricingAmount(value, fallback) {
     const parsed = Number(value);
     if (!Number.isFinite(parsed) || parsed < 0) return fallback;
     return Math.round(parsed * 100) / 100;
+}
+
+function toPricingAmountWithMin(value, fallback, minValue = fallback) {
+    return Math.max(toPricingAmount(value, fallback), toPricingAmount(minValue, fallback));
 }
 
 function cloneDefaultPricingConfig() {
@@ -182,37 +186,37 @@ function normalizePricingConfig(raw) {
 
     Object.entries(fallback.art.types).forEach(([type, values]) => {
         const incoming = source?.art?.types?.[type] || {};
-        values.flat = toPricingAmount(incoming.flat, values.flat);
-        values.cel = toPricingAmount(incoming.cel, values.cel);
-        values.rendered = toPricingAmount(incoming.rendered, values.rendered);
+        values.flat = toPricingAmountWithMin(incoming.flat, values.flat, values.flat);
+        values.cel = toPricingAmountWithMin(incoming.cel, values.cel, values.cel);
+        values.rendered = toPricingAmountWithMin(incoming.rendered, values.rendered, values.rendered);
     });
 
     Object.entries(fallback.stickers.types).forEach(([type, value]) => {
-        fallback.stickers.types[type] = toPricingAmount(source?.stickers?.types?.[type], value);
+        fallback.stickers.types[type] = toPricingAmountWithMin(source?.stickers?.types?.[type], value, value);
     });
 
     Object.entries(fallback.keychains.custom).forEach(([type, value]) => {
-        fallback.keychains.custom[type] = toPricingAmount(source?.keychains?.custom?.[type], value);
+        fallback.keychains.custom[type] = toPricingAmountWithMin(source?.keychains?.custom?.[type], value, value);
     });
 
     Object.entries(fallback.keychains.premade).forEach(([type, value]) => {
-        fallback.keychains.premade[type] = toPricingAmount(source?.keychains?.premade?.[type], value);
+        fallback.keychains.premade[type] = toPricingAmountWithMin(source?.keychains?.premade?.[type], value, value);
     });
 
     Object.entries(fallback.fursuits.parts).forEach(([type, value]) => {
-        fallback.fursuits.parts[type] = toPricingAmount(source?.fursuits?.parts?.[type], value);
+        fallback.fursuits.parts[type] = toPricingAmountWithMin(source?.fursuits?.parts?.[type], value, value);
     });
 
-    fallback.fursuits.rushOrderFlat = toPricingAmount(source?.fursuits?.rushOrderFlat, fallback.fursuits.rushOrderFlat);
-    fallback.art.addOns.extraCharacterPercent = toPricingAmount(source?.art?.addOns?.extraCharacterPercent, fallback.art.addOns.extraCharacterPercent);
-    fallback.art.addOns.extraOutfit = toPricingAmount(source?.art?.addOns?.extraOutfit, fallback.art.addOns.extraOutfit);
-    fallback.art.addOns.prop = toPricingAmount(source?.art?.addOns?.prop, fallback.art.addOns.prop);
-    fallback.art.addOns.detailedBackgroundMin = toPricingAmount(source?.art?.addOns?.detailedBackgroundMin, fallback.art.addOns.detailedBackgroundMin);
-    fallback.art.addOns.detailedBackgroundMax = toPricingAmount(source?.art?.addOns?.detailedBackgroundMax, fallback.art.addOns.detailedBackgroundMax);
-    fallback.art.addOns.rushPercent = toPricingAmount(source?.art?.addOns?.rushPercent, fallback.art.addOns.rushPercent);
-    fallback.art.addOns.commercialLicensePercent = toPricingAmount(source?.art?.addOns?.commercialLicensePercent, fallback.art.addOns.commercialLicensePercent);
-    fallback.stickers.printingAddon.first = toPricingAmount(source?.stickers?.printingAddon?.first, fallback.stickers.printingAddon.first);
-    fallback.stickers.printingAddon.additional = toPricingAmount(source?.stickers?.printingAddon?.additional, fallback.stickers.printingAddon.additional);
+    fallback.fursuits.rushOrderFlat = toPricingAmountWithMin(source?.fursuits?.rushOrderFlat, fallback.fursuits.rushOrderFlat, fallback.fursuits.rushOrderFlat);
+    fallback.art.addOns.extraCharacterPercent = toPricingAmountWithMin(source?.art?.addOns?.extraCharacterPercent, fallback.art.addOns.extraCharacterPercent, fallback.art.addOns.extraCharacterPercent);
+    fallback.art.addOns.extraOutfit = toPricingAmountWithMin(source?.art?.addOns?.extraOutfit, fallback.art.addOns.extraOutfit, fallback.art.addOns.extraOutfit);
+    fallback.art.addOns.prop = toPricingAmountWithMin(source?.art?.addOns?.prop, fallback.art.addOns.prop, fallback.art.addOns.prop);
+    fallback.art.addOns.detailedBackgroundMin = toPricingAmountWithMin(source?.art?.addOns?.detailedBackgroundMin, fallback.art.addOns.detailedBackgroundMin, fallback.art.addOns.detailedBackgroundMin);
+    fallback.art.addOns.detailedBackgroundMax = toPricingAmountWithMin(source?.art?.addOns?.detailedBackgroundMax, fallback.art.addOns.detailedBackgroundMax, fallback.art.addOns.detailedBackgroundMax);
+    fallback.art.addOns.rushPercent = toPricingAmountWithMin(source?.art?.addOns?.rushPercent, fallback.art.addOns.rushPercent, fallback.art.addOns.rushPercent);
+    fallback.art.addOns.commercialLicensePercent = toPricingAmountWithMin(source?.art?.addOns?.commercialLicensePercent, fallback.art.addOns.commercialLicensePercent, fallback.art.addOns.commercialLicensePercent);
+    fallback.stickers.printingAddon.first = toPricingAmountWithMin(source?.stickers?.printingAddon?.first, fallback.stickers.printingAddon.first, fallback.stickers.printingAddon.first);
+    fallback.stickers.printingAddon.additional = toPricingAmountWithMin(source?.stickers?.printingAddon?.additional, fallback.stickers.printingAddon.additional, fallback.stickers.printingAddon.additional);
 
     const floorMultiplier = Number(source?.sustainableFloorMultiplier);
     fallback.sustainableFloorMultiplier = Number.isFinite(floorMultiplier) && floorMultiplier > 0.3 && floorMultiplier <= 1.5
@@ -9143,12 +9147,12 @@ function getMinimumSustainableQuote(order) {
     const pricing = getPricingConfig();
     const serviceType = getOrderServiceType(order || {});
     const hardFloorByType = {
-        art: 40,
-        animation: 140,
-        fursuits: 300,
-        keychains: 56,
-        stickers: 20,
-        other: 50
+        art: 55,
+        animation: 180,
+        fursuits: 420,
+        keychains: 68,
+        stickers: 24,
+        other: 70
     };
 
     const baselineEstimate = estimateOrderRevenue(order || {});
