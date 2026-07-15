@@ -48,6 +48,7 @@ let globalHomeReviewListener = null;
 let globalHomeRefundFreshnessListener = null;
 let globalHomeCommissionFreshnessListener = null;
 let globalPremadeKeychainCatalogListener = null;
+let globalPricingSettingsListener = null;
 
 const DEFAULT_HOME_AVAILABILITY = {
     artists: {
@@ -96,8 +97,138 @@ const DEFAULT_PREMADE_KEYCHAIN_CATALOG = {
 const PREMADE_LOW_STOCK_THRESHOLD = 5;
 const PREMADE_CRITICAL_STOCK_THRESHOLD = 2;
 
+const DEFAULT_PRICING_CONFIG = {
+    art: {
+        types: {
+            Icon: { flat: 24, cel: 36, rendered: 52 },
+            Headshot: { flat: 32, cel: 44, rendered: 60 },
+            Bust: { flat: 44, cel: 60, rendered: 80 },
+            'Half Body': { flat: 56, cel: 72, rendered: 96 },
+            'Full Body': { flat: 72, cel: 96, rendered: 128 },
+            Scene: { flat: 160, cel: 200, rendered: 240 },
+            'Basic Ref Sheet': { flat: 160, cel: 160, rendered: 160 },
+            'Standard Ref Sheet': { flat: 220, cel: 220, rendered: 220 },
+            'Deluxe Ref Sheet': { flat: 280, cel: 280, rendered: 280 }
+        },
+        addOns: {
+            extraCharacterPercent: 80,
+            extraOutfit: 24,
+            prop: 16,
+            detailedBackgroundMin: 40,
+            detailedBackgroundMax: 80,
+            rushPercent: 50,
+            commercialLicensePercent: 100
+        }
+    },
+    stickers: {
+        types: {
+            'Single Sticker': 20,
+            'Matching Pair': 36,
+            'Sticker Sheet': 80,
+            'Small Batch': 100
+        },
+        printingAddon: {
+            first: 6,
+            additional: 3
+        }
+    },
+    keychains: {
+        custom: {
+            'Chibi/Icon': 56,
+            'Half Body': 72,
+            'Full Body': 92,
+            'Complex Character': 120
+        },
+        premade: {
+            'Clear Acrylic': 22,
+            Epoxy: 24,
+            'Colored Acrylic': 24,
+            'Rainbow Acrylic': 26,
+            'Translucent Acrylic': 26,
+            Holographic: 26,
+            'Glow in the Dark': 28
+        }
+    },
+    fursuits: {
+        parts: {
+            Tail: 100,
+            Paws: 170,
+            'Paws & Tail': 260,
+            'Feet Paws': 270,
+            'Trio Set': 530,
+            Head: 1100,
+            'Mini Partial': 1350,
+            'Full Partial': 1620,
+            Accessories: 50
+        },
+        rushOrderFlat: 100
+    },
+    sustainableFloorMultiplier: 0.85
+};
+
+function toPricingAmount(value, fallback) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+    return Math.round(parsed * 100) / 100;
+}
+
+function cloneDefaultPricingConfig() {
+    return JSON.parse(JSON.stringify(DEFAULT_PRICING_CONFIG));
+}
+
+function normalizePricingConfig(raw) {
+    const fallback = cloneDefaultPricingConfig();
+    const source = raw && typeof raw === 'object' ? raw : {};
+
+    Object.entries(fallback.art.types).forEach(([type, values]) => {
+        const incoming = source?.art?.types?.[type] || {};
+        values.flat = toPricingAmount(incoming.flat, values.flat);
+        values.cel = toPricingAmount(incoming.cel, values.cel);
+        values.rendered = toPricingAmount(incoming.rendered, values.rendered);
+    });
+
+    Object.entries(fallback.stickers.types).forEach(([type, value]) => {
+        fallback.stickers.types[type] = toPricingAmount(source?.stickers?.types?.[type], value);
+    });
+
+    Object.entries(fallback.keychains.custom).forEach(([type, value]) => {
+        fallback.keychains.custom[type] = toPricingAmount(source?.keychains?.custom?.[type], value);
+    });
+
+    Object.entries(fallback.keychains.premade).forEach(([type, value]) => {
+        fallback.keychains.premade[type] = toPricingAmount(source?.keychains?.premade?.[type], value);
+    });
+
+    Object.entries(fallback.fursuits.parts).forEach(([type, value]) => {
+        fallback.fursuits.parts[type] = toPricingAmount(source?.fursuits?.parts?.[type], value);
+    });
+
+    fallback.fursuits.rushOrderFlat = toPricingAmount(source?.fursuits?.rushOrderFlat, fallback.fursuits.rushOrderFlat);
+    fallback.art.addOns.extraCharacterPercent = toPricingAmount(source?.art?.addOns?.extraCharacterPercent, fallback.art.addOns.extraCharacterPercent);
+    fallback.art.addOns.extraOutfit = toPricingAmount(source?.art?.addOns?.extraOutfit, fallback.art.addOns.extraOutfit);
+    fallback.art.addOns.prop = toPricingAmount(source?.art?.addOns?.prop, fallback.art.addOns.prop);
+    fallback.art.addOns.detailedBackgroundMin = toPricingAmount(source?.art?.addOns?.detailedBackgroundMin, fallback.art.addOns.detailedBackgroundMin);
+    fallback.art.addOns.detailedBackgroundMax = toPricingAmount(source?.art?.addOns?.detailedBackgroundMax, fallback.art.addOns.detailedBackgroundMax);
+    fallback.art.addOns.rushPercent = toPricingAmount(source?.art?.addOns?.rushPercent, fallback.art.addOns.rushPercent);
+    fallback.art.addOns.commercialLicensePercent = toPricingAmount(source?.art?.addOns?.commercialLicensePercent, fallback.art.addOns.commercialLicensePercent);
+    fallback.stickers.printingAddon.first = toPricingAmount(source?.stickers?.printingAddon?.first, fallback.stickers.printingAddon.first);
+    fallback.stickers.printingAddon.additional = toPricingAmount(source?.stickers?.printingAddon?.additional, fallback.stickers.printingAddon.additional);
+
+    const floorMultiplier = Number(source?.sustainableFloorMultiplier);
+    fallback.sustainableFloorMultiplier = Number.isFinite(floorMultiplier) && floorMultiplier > 0.3 && floorMultiplier <= 1.5
+        ? Math.round(floorMultiplier * 100) / 100
+        : fallback.sustainableFloorMultiplier;
+
+    return fallback;
+}
+
+function getPricingConfig() {
+    return normalizePricingConfig(window.pricingConfig);
+}
+
 window.homeAvailability = JSON.parse(JSON.stringify(DEFAULT_HOME_AVAILABILITY));
 window.premadeKeychainCatalog = JSON.parse(JSON.stringify(DEFAULT_PREMADE_KEYCHAIN_CATALOG));
+window.pricingConfig = cloneDefaultPricingConfig();
 window.homeReviewSummary = {
     approvedCount: 0,
     featured: null
@@ -2833,6 +2964,114 @@ function attachPremadeKeychainCatalogListener() {
 }
 attachPremadeKeychainCatalogListener();
 
+function renderAdminPricingSettings() {
+    const textarea = document.getElementById('adminPricingConfigJson');
+    const hint = document.getElementById('adminPricingConfigHint');
+    if (!(textarea instanceof HTMLTextAreaElement)) return;
+
+    const normalized = getPricingConfig();
+    textarea.value = JSON.stringify(normalized, null, 2);
+    if (hint) {
+        hint.textContent = 'Tip: keep key names unchanged. You can adjust numbers only.';
+    }
+}
+
+async function saveAdminPricingSettingsFromEditor() {
+    if (!requireAdminSession('Please sign in with an authorized admin account before editing pricing settings.')) return;
+
+    const textarea = document.getElementById('adminPricingConfigJson');
+    const hint = document.getElementById('adminPricingConfigHint');
+    const saveBtn = document.getElementById('btnSavePricingConfig');
+    if (!(textarea instanceof HTMLTextAreaElement)) return;
+
+    let parsed;
+    try {
+        parsed = JSON.parse(textarea.value || '{}');
+    } catch {
+        if (hint) hint.textContent = 'Invalid JSON. Fix formatting and try again.';
+        showAdminToast('Pricing JSON is invalid.', true);
+        return;
+    }
+
+    const payload = normalizePricingConfig(parsed);
+    if (saveBtn instanceof HTMLButtonElement) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+    }
+
+    try {
+        await setDoc(doc(db, 'settings', 'pricing'), payload, { merge: true });
+        window.pricingConfig = payload;
+        textarea.value = JSON.stringify(payload, null, 2);
+        if (hint) hint.textContent = 'Saved. Public calculators and forms now use this pricing.';
+        showAdminToast('Pricing settings saved.');
+        refreshPricingDrivenViews();
+    } catch (error) {
+        console.error(error);
+        if (hint) hint.textContent = 'Save failed. Try again.';
+        showAdminToast('Failed to save pricing settings.', true);
+    } finally {
+        if (saveBtn instanceof HTMLButtonElement) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Pricing';
+        }
+    }
+}
+
+function resetAdminPricingSettingsEditor() {
+    const textarea = document.getElementById('adminPricingConfigJson');
+    const hint = document.getElementById('adminPricingConfigHint');
+    if (!(textarea instanceof HTMLTextAreaElement)) return;
+
+    const defaults = cloneDefaultPricingConfig();
+    textarea.value = JSON.stringify(defaults, null, 2);
+    if (hint) {
+        hint.textContent = 'Defaults loaded in editor. Click Save Pricing to publish.';
+    }
+}
+
+function refreshPricingDrivenViews() {
+    const currentHash = String(window.location.hash || '#home').toLowerCase();
+    const root = document.getElementById('adminDashboardView');
+    if (root) renderAdminPricingSettings();
+
+    if (currentHash === '#pricing') {
+        loadPricingPage();
+        return;
+    }
+    if (currentHash === '#art') {
+        loadHuskyArtForm();
+        return;
+    }
+    if (currentHash === '#custom-keychain') {
+        loadCustomKeychainsForm();
+        return;
+    }
+    if (currentHash === '#stickers') {
+        loadCustomStickersForm();
+        return;
+    }
+    if (currentHash === '#premade') {
+        loadPremadeKeychainsForm();
+        return;
+    }
+    if (currentHash === '#fursuits') {
+        loadFursuitForm();
+    }
+}
+
+function attachPricingSettingsListener() {
+    if (globalPricingSettingsListener) globalPricingSettingsListener();
+    globalPricingSettingsListener = onSnapshot(doc(db, 'settings', 'pricing'), (docSnap) => {
+        window.pricingConfig = normalizePricingConfig(docSnap.exists() ? docSnap.data() : null);
+        refreshPricingDrivenViews();
+    }, () => {
+        window.pricingConfig = cloneDefaultPricingConfig();
+        refreshPricingDrivenViews();
+    });
+}
+attachPricingSettingsListener();
+
 function getBestDiscount(type) {
     if (!window.activeSales || window.activeSales.length === 0) return 0;
     
@@ -3941,6 +4180,7 @@ function attachDynamicEstimator(formId, baseType) {
     if(!estDisplay) return;
 
     function updateEstimate() {
+        const pricing = getPricingConfig();
         let min = 0;
         let max = 0;
         let isPlus = false;
@@ -3951,17 +4191,7 @@ function attachDynamicEstimator(formId, baseType) {
             const charCountInput = form.querySelector('[name="characterCount"]');
             const addons = form.querySelectorAll('[name="addon"]:checked');
 
-            const artPricingTable = {
-                'Icon': { flat: 24, cel: 36, rendered: 52 },
-                'Headshot': { flat: 32, cel: 44, rendered: 60 },
-                'Bust': { flat: 44, cel: 60, rendered: 80 },
-                'Half Body': { flat: 56, cel: 72, rendered: 96 },
-                'Full Body': { flat: 72, cel: 96, rendered: 128 },
-                'Scene': { flat: 160, cel: 200, rendered: 240 },
-                'Basic Ref Sheet': { flat: 160, cel: 160, rendered: 160 },
-                'Standard Ref Sheet': { flat: 220, cel: 220, rendered: 220 },
-                'Deluxe Ref Sheet': { flat: 280, cel: 280, rendered: 280 }
-            };
+            const artPricingTable = pricing.art.types;
 
             const artType = String(typeSel?.value || 'Headshot');
             const finishRaw = String(finishSel?.value || 'Flat Color').toLowerCase();
@@ -3976,39 +4206,39 @@ function attachDynamicEstimator(formId, baseType) {
 
             const characterCount = Math.max(1, parseInt(charCountInput ? charCountInput.value : '1', 10) || 1);
             if (characterCount > 1) {
-                const charMultiplier = 1 + (0.8 * (characterCount - 1));
+                const charMultiplier = 1 + ((pricing.art.addOns.extraCharacterPercent / 100) * (characterCount - 1));
                 min = Math.round(min * charMultiplier);
                 max = Math.round(max * charMultiplier);
             }
 
             addons.forEach(box => {
                 if (box.value === "Extra Character" && characterCount <= 1) {
-                    min = Math.round(min * 1.8);
-                    max = Math.round(max * 1.8);
+                    min = Math.round(min * (1 + (pricing.art.addOns.extraCharacterPercent / 100)));
+                    max = Math.round(max * (1 + (pricing.art.addOns.extraCharacterPercent / 100)));
                 }
                 if (box.value === "Detailed Background") {
-                    min += 40;
-                    max += 80;
+                    min += pricing.art.addOns.detailedBackgroundMin;
+                    max += pricing.art.addOns.detailedBackgroundMax;
                 }
                 if (box.value === "Extra Outfit") {
-                    min += 24;
-                    max += 24;
+                    min += pricing.art.addOns.extraOutfit;
+                    max += pricing.art.addOns.extraOutfit;
                 }
                 if (box.value === "Prop") {
-                    min += 16;
-                    max += 16;
+                    min += pricing.art.addOns.prop;
+                    max += pricing.art.addOns.prop;
                 }
             });
 
             const hasRushAddon = Array.from(addons).some((box) => box.value === 'Rush Order');
             const hasCommercialAddon = Array.from(addons).some((box) => box.value === 'Commercial License');
             if (hasRushAddon) {
-                min = Math.round(min * 1.5);
-                max = Math.round(max * 1.5);
+                min = Math.round(min * (1 + (pricing.art.addOns.rushPercent / 100)));
+                max = Math.round(max * (1 + (pricing.art.addOns.rushPercent / 100)));
             }
             if (hasCommercialAddon) {
-                min = Math.round(min * 2);
-                max = Math.round(max * 2);
+                min = Math.round(min * (1 + (pricing.art.addOns.commercialLicensePercent / 100)));
+                max = Math.round(max * (1 + (pricing.art.addOns.commercialLicensePercent / 100)));
             }
             isPlus = true;
 
@@ -4020,8 +4250,8 @@ function attachDynamicEstimator(formId, baseType) {
 
             addons.forEach(box => {
                 if (box.value === 'Rush Order') {
-                    min += 100;
-                    max += 100;
+                    min += pricing.fursuits.rushOrderFlat;
+                    max += pricing.fursuits.rushOrderFlat;
                 }
             });
 
@@ -4035,15 +4265,7 @@ function attachDynamicEstimator(formId, baseType) {
             let base = 22;
             if (formId === 'premadeKeychainForm') {
                 const finish = String(form.querySelector('[name="finish"]')?.value || 'Any');
-                const premadeFinishPrices = {
-                    'Clear Acrylic': 22,
-                    'Epoxy': 24,
-                    'Colored Acrylic': 24,
-                    'Rainbow Acrylic': 26,
-                    'Translucent Acrylic': 26,
-                    'Holographic': 26,
-                    'Glow in the Dark': 28
-                };
+                const premadeFinishPrices = pricing.keychains.premade;
                 if (finish === 'Any' || !premadeFinishPrices[finish]) {
                     const all = Object.values(premadeFinishPrices);
                     const qty = parseInt(qtyInput ? qtyInput.value : 1, 10) || 1;
@@ -4083,7 +4305,7 @@ function attachDynamicEstimator(formId, baseType) {
                         'Small Batch': 6
                     };
                     const designCount = designCountMap[stickerType] || 1;
-                    const addOnPerDesign = 6 + (Math.max(0, copies - 1) * 3);
+                    const addOnPerDesign = pricing.stickers.printingAddon.first + (Math.max(0, copies - 1) * pricing.stickers.printingAddon.additional);
                     const printAddOnTotal = designCount * addOnPerDesign * qty;
                     min += printAddOnTotal;
                     max += printAddOnTotal;
@@ -4826,6 +5048,7 @@ function loadPreorderPage() {
 }
 
 function loadPricingPage() {
+    const pricing = getPricingConfig();
     clearBubbles();
     bodyElement.setAttribute('data-theme', 'pricing');
     bodyElement.setAttribute('data-page', 'pricing');
@@ -4952,45 +5175,45 @@ function loadPricingPage() {
                 <p style="color: #ef4444; font-size: 0.9rem; margin-top: -5px;">*Animation memes are currently closed due to workload.</p>
                 <h3>Icons</h3>
                 <div class="price-grid">
-                    <div class="price-item price-item-popular"><span>Flat Color <em class="price-item-flag">Popular start</em></span> <span>${renderPrice(24, 'art')}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(36, 'art')}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${renderPrice(52, 'art')}</span></div>
+                    <div class="price-item price-item-popular"><span>Flat Color <em class="price-item-flag">Popular start</em></span> <span>${renderPrice(pricing.art.types.Icon.flat, 'art')}</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(pricing.art.types.Icon.cel, 'art')}</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>${renderPrice(pricing.art.types.Icon.rendered, 'art')}</span></div>
                 </div>
                 <h3>Headshots</h3>
                 <div class="price-grid">
-                    <div class="price-item price-item-popular"><span>Flat Color <em class="price-item-flag">Most common</em></span> <span>${renderPrice(32, 'art')}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(44, 'art')}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${renderPrice(60, 'art')}</span></div>
+                    <div class="price-item price-item-popular"><span>Flat Color <em class="price-item-flag">Most common</em></span> <span>${renderPrice(pricing.art.types.Headshot.flat, 'art')}</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(pricing.art.types.Headshot.cel, 'art')}</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>${renderPrice(pricing.art.types.Headshot.rendered, 'art')}</span></div>
                 </div>
                 <h3>Busts</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Flat Color</span> <span>${renderPrice(44, 'art')}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(60, 'art')}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${renderPrice(80, 'art')}</span></div>
+                    <div class="price-item"><span>Flat Color</span> <span>${renderPrice(pricing.art.types.Bust.flat, 'art')}</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(pricing.art.types.Bust.cel, 'art')}</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>${renderPrice(pricing.art.types.Bust.rendered, 'art')}</span></div>
                 </div>
                 <h3>Half Bodies</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Flat Color</span> <span>${renderPrice(56, 'art')}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(72, 'art')}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${renderPrice(96, 'art')}</span></div>
+                    <div class="price-item"><span>Flat Color</span> <span>${renderPrice(pricing.art.types['Half Body'].flat, 'art')}</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(pricing.art.types['Half Body'].cel, 'art')}</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>${renderPrice(pricing.art.types['Half Body'].rendered, 'art')}</span></div>
                 </div>
                 <h3>Full Bodies</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Flat Color</span> <span>${renderPrice(72, 'art')}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(96, 'art')}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${renderPrice(128, 'art')}</span></div>
+                    <div class="price-item"><span>Flat Color</span> <span>${renderPrice(pricing.art.types['Full Body'].flat, 'art')}</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(pricing.art.types['Full Body'].cel, 'art')}</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>${renderPrice(pricing.art.types['Full Body'].rendered, 'art')}</span></div>
                 </div>
                 <h3>Scenes</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Flat Color</span> <span>${renderPrice(160, 'art')}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(200, 'art')}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${renderPrice(240, 'art')}</span></div>
+                    <div class="price-item"><span>Flat Color</span> <span>${renderPrice(pricing.art.types.Scene.flat, 'art')}</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(pricing.art.types.Scene.cel, 'art')}</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>${renderPrice(pricing.art.types.Scene.rendered, 'art')}</span></div>
                 </div>
                 <h3>Reference Sheets</h3>
                 <ul>
-                    <li><strong>Basic: ${renderPrice(160, 'art')}</strong><br>Includes front view, color palette, and basic info.</li>
-                    <li><strong>Standard: ${renderPrice(220, 'art')}</strong><br>Includes front & back views, palette, and detail notes.</li>
-                    <li><strong>Deluxe: ${renderPrice(280, 'art', true)}</strong><br>Includes front & back views, expressions, outfit variations, props, and detail panels.</li>
+                    <li><strong>Basic: ${renderPrice(pricing.art.types['Basic Ref Sheet'].flat, 'art')}</strong><br>Includes front view, color palette, and basic info.</li>
+                    <li><strong>Standard: ${renderPrice(pricing.art.types['Standard Ref Sheet'].flat, 'art')}</strong><br>Includes front & back views, palette, and detail notes.</li>
+                    <li><strong>Deluxe: ${renderPrice(pricing.art.types['Deluxe Ref Sheet'].flat, 'art', true)}</strong><br>Includes front & back views, expressions, outfit variations, props, and detail panels.</li>
                 </ul>
                 <h3>Discord Stickers</h3>
                 <div class="price-grid">
@@ -4998,12 +5221,12 @@ function loadPricingPage() {
                 </div>
                 <h3>Add-ons</h3>
                 <div class="pricing-chip-grid">
-                    <div class="pricing-chip"><strong>Extra Character</strong><span>+80%</span></div>
-                    <div class="pricing-chip"><strong>Extra Outfit</strong><span>+${renderPrice(24, 'art')}</span></div>
-                    <div class="pricing-chip"><strong>Prop</strong><span>+${renderPrice(16, 'art')}</span></div>
-                    <div class="pricing-chip"><strong>Detailed Background</strong><span>+${renderPrice(40, 'art', true)}</span></div>
-                    <div class="pricing-chip"><strong>Commercial License</strong><span>+100%</span></div>
-                    <div class="pricing-chip"><strong>Rush Order</strong><span>+50%</span></div>
+                    <div class="pricing-chip"><strong>Extra Character</strong><span>+${pricing.art.addOns.extraCharacterPercent}%</span></div>
+                    <div class="pricing-chip"><strong>Extra Outfit</strong><span>+${renderPrice(pricing.art.addOns.extraOutfit, 'art')}</span></div>
+                    <div class="pricing-chip"><strong>Prop</strong><span>+${renderPrice(pricing.art.addOns.prop, 'art')}</span></div>
+                    <div class="pricing-chip"><strong>Detailed Background</strong><span>+${renderPrice(pricing.art.addOns.detailedBackgroundMin, 'art', true)}</span></div>
+                    <div class="pricing-chip"><strong>Commercial License</strong><span>+${pricing.art.addOns.commercialLicensePercent}%</span></div>
+                    <div class="pricing-chip"><strong>Rush Order</strong><span>+${pricing.art.addOns.rushPercent}%</span></div>
                 </div>
                 <div class="pricing-section-actions">${pricingSectionCta('pricingArtCtaBtn', 'Start Art Request')}</div>
             </div>
@@ -5063,12 +5286,12 @@ function loadPricingPage() {
                 </div>
                 <p class="pricing-section-intro">Best for small merch art, emotes, logos, and simple printable designs.</p>
                 <div class="price-grid">
-                    <div class="price-item price-item-popular"><span>Single Sticker <em class="price-item-flag">Most common</em></span> <span>${renderPrice(20, 'stickers')}</span></div>
-                    <div class="price-item"><span>Matching Pair</span> <span>${renderPrice(36, 'stickers')}</span></div>
-                    <div class="price-item"><span>Sticker Sheet (4 unique designs)</span> <span>${renderPrice(80, 'stickers', true)}</span></div>
-                    <div class="price-item"><span>Small Batch (6 unique designs)</span> <span>${renderPrice(100, 'stickers', true)}</span></div>
+                    <div class="price-item price-item-popular"><span>Single Sticker <em class="price-item-flag">Most common</em></span> <span>${renderPrice(pricing.stickers.types['Single Sticker'], 'stickers')}</span></div>
+                    <div class="price-item"><span>Matching Pair</span> <span>${renderPrice(pricing.stickers.types['Matching Pair'], 'stickers')}</span></div>
+                    <div class="price-item"><span>Sticker Sheet (4 unique designs)</span> <span>${renderPrice(pricing.stickers.types['Sticker Sheet'], 'stickers', true)}</span></div>
+                    <div class="price-item"><span>Small Batch (6 unique designs)</span> <span>${renderPrice(pricing.stickers.types['Small Batch'], 'stickers', true)}</span></div>
                 </div>
-                <p style="color: #eab308; font-size: 0.95rem; margin-top: 10px;">*Sticker Printing Add-On: +$6 for the first printed sticker of each design, +$3 for each additional copy of that design.</p>
+                <p style="color: #eab308; font-size: 0.95rem; margin-top: 10px;">*Sticker Printing Add-On: +$${pricing.stickers.printingAddon.first} for the first printed sticker of each design, +$${pricing.stickers.printingAddon.additional} for each additional copy of that design.</p>
                 <div class="pricing-section-actions">${pricingSectionCta('pricingStickerCtaBtn', 'Start Sticker Request')}</div>
             </div>
 
@@ -5079,14 +5302,14 @@ function loadPricingPage() {
                 </div>
                 <p class="pricing-section-intro">Best for tails, paws, heads, partials, and other handmade wearable work.</p>
                 <div class="price-grid">
-                    <div class="price-item price-item-popular"><span>Tails <em class="price-item-flag">Entry option</em></span> <span>${renderPrice(100, 'fursuits')}</span></div>
-                    <div class="price-item price-item-popular"><span>Paws <em class="price-item-flag">Popular build</em></span> <span>${renderPrice(170, 'fursuits')}</span></div>
-                    <div class="price-item"><span>Paws and Tail Set</span> <span>${renderPrice(260, 'fursuits')}</span></div>
-                    <div class="price-item"><span>Feet Paws</span> <span>${renderPrice(270, 'fursuits')}</span></div>
-                    <div class="price-item"><span>Trio Set (Feet, Paws, Tail)</span> <span>${renderPrice(530, 'fursuits')}</span></div>
-                    <div class="price-item"><span>Heads (Artistic Liberty Only)</span> <span>${renderPrice(1100, 'fursuits')}</span></div>
-                    <div class="price-item"><span>Mini Partial</span> <span>${renderPrice(1350, 'fursuits')}</span></div>
-                    <div class="price-item"><span>Full Partial</span> <span>${renderPrice(1620, 'fursuits')}</span></div>
+                    <div class="price-item price-item-popular"><span>Tails <em class="price-item-flag">Entry option</em></span> <span>${renderPrice(pricing.fursuits.parts.Tail, 'fursuits')}</span></div>
+                    <div class="price-item price-item-popular"><span>Paws <em class="price-item-flag">Popular build</em></span> <span>${renderPrice(pricing.fursuits.parts.Paws, 'fursuits')}</span></div>
+                    <div class="price-item"><span>Paws and Tail Set</span> <span>${renderPrice(pricing.fursuits.parts['Paws & Tail'], 'fursuits')}</span></div>
+                    <div class="price-item"><span>Feet Paws</span> <span>${renderPrice(pricing.fursuits.parts['Feet Paws'], 'fursuits')}</span></div>
+                    <div class="price-item"><span>Trio Set (Feet, Paws, Tail)</span> <span>${renderPrice(pricing.fursuits.parts['Trio Set'], 'fursuits')}</span></div>
+                    <div class="price-item"><span>Heads (Artistic Liberty Only)</span> <span>${renderPrice(pricing.fursuits.parts.Head, 'fursuits')}</span></div>
+                    <div class="price-item"><span>Mini Partial</span> <span>${renderPrice(pricing.fursuits.parts['Mini Partial'], 'fursuits')}</span></div>
+                    <div class="price-item"><span>Full Partial</span> <span>${renderPrice(pricing.fursuits.parts['Full Partial'], 'fursuits')}</span></div>
                 </div>
                 <p style="color: #eab308; font-size: 0.95rem; margin-top: 10px;">*Important note: Heads are artistic liberty only.</p>
                 <div class="pricing-section-actions">${pricingSectionCta('pricingFursuitCtaBtn', 'Start Fursuit Request')}</div>
@@ -5100,21 +5323,21 @@ function loadPricingPage() {
                 <p class="pricing-section-intro">Best for acrylic merch, premade charms, and custom small goods with finish options.</p>
                 <h3>Premade Keychains (2.5 inches)</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Clear Acrylic</span> <span>${renderPrice(22, 'keychains')}</span></div>
-                    <div class="price-item"><span>Epoxy</span> <span>${renderPrice(24, 'keychains')}</span></div>
-                    <div class="price-item"><span>Colored Acrylic</span> <span>${renderPrice(24, 'keychains')}</span></div>
-                    <div class="price-item"><span>Rainbow Acrylic</span> <span>${renderPrice(26, 'keychains')}</span></div>
-                    <div class="price-item"><span>Translucent Acrylic</span> <span>${renderPrice(26, 'keychains')}</span></div>
-                    <div class="price-item"><span>Holographic</span> <span>${renderPrice(26, 'keychains')}</span></div>
-                    <div class="price-item"><span>Glow in the Dark</span> <span>${renderPrice(28, 'keychains')}</span></div>
+                    <div class="price-item"><span>Clear Acrylic</span> <span>${renderPrice(pricing.keychains.premade['Clear Acrylic'], 'keychains')}</span></div>
+                    <div class="price-item"><span>Epoxy</span> <span>${renderPrice(pricing.keychains.premade.Epoxy, 'keychains')}</span></div>
+                    <div class="price-item"><span>Colored Acrylic</span> <span>${renderPrice(pricing.keychains.premade['Colored Acrylic'], 'keychains')}</span></div>
+                    <div class="price-item"><span>Rainbow Acrylic</span> <span>${renderPrice(pricing.keychains.premade['Rainbow Acrylic'], 'keychains')}</span></div>
+                    <div class="price-item"><span>Translucent Acrylic</span> <span>${renderPrice(pricing.keychains.premade['Translucent Acrylic'], 'keychains')}</span></div>
+                    <div class="price-item"><span>Holographic</span> <span>${renderPrice(pricing.keychains.premade.Holographic, 'keychains')}</span></div>
+                    <div class="price-item"><span>Glow in the Dark</span> <span>${renderPrice(pricing.keychains.premade['Glow in the Dark'], 'keychains')}</span></div>
                 </div>
                 <p style="font-size: 0.9rem; margin-top: 5px;">*Final premade total depends on selected design, finish availability, quantity, and shipping.</p>
                 <h3>Custom Keychains (2–4 inches)</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Chibi/Icon (includes 1 custom artwork + 1 clear acrylic keychain)</span> <span>${renderPrice(56, 'keychains', true)}</span></div>
-                    <div class="price-item"><span>Half Body (includes 1 custom artwork + 1 clear acrylic keychain)</span> <span>${renderPrice(72, 'keychains', true)}</span></div>
-                    <div class="price-item"><span>Full Body (includes 1 custom artwork + 1 clear acrylic keychain)</span> <span>${renderPrice(92, 'keychains', true)}</span></div>
-                    <div class="price-item"><span>Complex Character (includes 1 custom artwork + 1 clear acrylic keychain)</span> <span>${renderPrice(120, 'keychains', true)}</span></div>
+                    <div class="price-item"><span>Chibi/Icon (includes 1 custom artwork + 1 clear acrylic keychain)</span> <span>${renderPrice(pricing.keychains.custom['Chibi/Icon'], 'keychains', true)}</span></div>
+                    <div class="price-item"><span>Half Body (includes 1 custom artwork + 1 clear acrylic keychain)</span> <span>${renderPrice(pricing.keychains.custom['Half Body'], 'keychains', true)}</span></div>
+                    <div class="price-item"><span>Full Body (includes 1 custom artwork + 1 clear acrylic keychain)</span> <span>${renderPrice(pricing.keychains.custom['Full Body'], 'keychains', true)}</span></div>
+                    <div class="price-item"><span>Complex Character (includes 1 custom artwork + 1 clear acrylic keychain)</span> <span>${renderPrice(pricing.keychains.custom['Complex Character'], 'keychains', true)}</span></div>
                 </div>
                 <div class="pricing-section-actions">${pricingSectionCta('pricingKeychainCtaBtn', 'Start Keychain Request')}</div>
             </div>
@@ -5157,6 +5380,7 @@ function loadPricingPage() {
 // ==========================================
 
 function loadHuskyArtForm() {
+    const pricing = getPricingConfig();
     clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'art-form'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="form-card">
@@ -5177,15 +5401,15 @@ function loadHuskyArtForm() {
                 <div class="form-group">
                     <label>Commission Type <span>*</span></label>
                     <select name="artType" id="artTypeSelect" class="form-select" required>
-                        <option value="Icon" data-price="24">Icon (Start $24)</option>
-                        <option value="Headshot" data-price="32">Headshot (Start $32)</option>
-                        <option value="Bust" data-price="44">Bust (Start $44)</option>
-                        <option value="Half Body" data-price="56">Half Body (Start $56)</option>
-                        <option value="Full Body" data-price="72">Full Body (Start $72)</option>
-                        <option value="Scene" data-price="160">Scene (Start $160)</option>
-                        <option value="Basic Ref Sheet" data-price="160">Basic Ref Sheet ($160)</option>
-                        <option value="Standard Ref Sheet" data-price="220">Standard Ref Sheet ($220)</option>
-                        <option value="Deluxe Ref Sheet" data-price="280">Deluxe Ref Sheet (Start $280)</option>
+                        <option value="Icon" data-price="${pricing.art.types.Icon.flat}">Icon (Start $${pricing.art.types.Icon.flat})</option>
+                        <option value="Headshot" data-price="${pricing.art.types.Headshot.flat}">Headshot (Start $${pricing.art.types.Headshot.flat})</option>
+                        <option value="Bust" data-price="${pricing.art.types.Bust.flat}">Bust (Start $${pricing.art.types.Bust.flat})</option>
+                        <option value="Half Body" data-price="${pricing.art.types['Half Body'].flat}">Half Body (Start $${pricing.art.types['Half Body'].flat})</option>
+                        <option value="Full Body" data-price="${pricing.art.types['Full Body'].flat}">Full Body (Start $${pricing.art.types['Full Body'].flat})</option>
+                        <option value="Scene" data-price="${pricing.art.types.Scene.flat}">Scene (Start $${pricing.art.types.Scene.flat})</option>
+                        <option value="Basic Ref Sheet" data-price="${pricing.art.types['Basic Ref Sheet'].flat}">Basic Ref Sheet ($${pricing.art.types['Basic Ref Sheet'].flat})</option>
+                        <option value="Standard Ref Sheet" data-price="${pricing.art.types['Standard Ref Sheet'].flat}">Standard Ref Sheet ($${pricing.art.types['Standard Ref Sheet'].flat})</option>
+                        <option value="Deluxe Ref Sheet" data-price="${pricing.art.types['Deluxe Ref Sheet'].flat}">Deluxe Ref Sheet (Start $${pricing.art.types['Deluxe Ref Sheet'].flat})</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -5210,12 +5434,12 @@ function loadHuskyArtForm() {
                 <div class="form-group">
                     <label>Add-ons (Optional)</label>
                     <div style="display:flex; flex-direction:column; gap:10px; margin-top:5px;">
-                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Extra Character"> Extra Character (+80%)</label>
-                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Detailed Background"> Detailed Background (Start +$40)</label>
-                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Extra Outfit"> Extra Outfit (+$24)</label>
-                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Prop"> Prop (+$16)</label>
-                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Commercial License"> Commercial License (+100%)</label>
-                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Rush Order"> Rush Order (+50%)</label>
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Extra Character"> Extra Character (+${pricing.art.addOns.extraCharacterPercent}%)</label>
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Detailed Background"> Detailed Background (Start +$${pricing.art.addOns.detailedBackgroundMin})</label>
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Extra Outfit"> Extra Outfit (+$${pricing.art.addOns.extraOutfit})</label>
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Prop"> Prop (+$${pricing.art.addOns.prop})</label>
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Commercial License"> Commercial License (+${pricing.art.addOns.commercialLicensePercent}%)</label>
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Rush Order"> Rush Order (+${pricing.art.addOns.rushPercent}%)</label>
                     </div>
                 </div>
                 <div class="form-group"><label>Pose / Expression Idea</label><textarea name="pose" class="form-textarea" rows="2" maxlength="300"></textarea></div>
@@ -5318,6 +5542,7 @@ function loadHuskyArtForm() {
 }
 
 function loadFursuitForm() {
+    const pricing = getPricingConfig();
     clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'fursuit-form'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="form-card">
@@ -5338,15 +5563,15 @@ function loadFursuitForm() {
                 <div class="form-group">
                     <label>What are you interested in? <span>*</span></label>
                     <select name="partType" id="suitTypeSelect" class="form-select" required>
-                        <option value="Tail" data-price="100">Tail (Start $100)</option>
-                        <option value="Paws" data-price="170">Paws (Start $170)</option>
-                        <option value="Paws & Tail" data-price="260">Paws and Tail Set (Start $260)</option>
-                        <option value="Feet Paws" data-price="270">Feet Paws (Start $270)</option>
-                        <option value="Trio Set" data-price="530">Trio Set (Start $530)</option>
-                        <option value="Head" data-price="1100">Head (Start $1100)</option>
-                        <option value="Mini Partial" data-price="1350">Mini Partial (Start $1350)</option>
-                        <option value="Full Partial" data-price="1620">Full Partial (Start $1620)</option>
-                        <option value="Accessories" data-price="50">Accessories</option>
+                        <option value="Tail" data-price="${pricing.fursuits.parts.Tail}">Tail (Start $${pricing.fursuits.parts.Tail})</option>
+                        <option value="Paws" data-price="${pricing.fursuits.parts.Paws}">Paws (Start $${pricing.fursuits.parts.Paws})</option>
+                        <option value="Paws & Tail" data-price="${pricing.fursuits.parts['Paws & Tail']}">Paws and Tail Set (Start $${pricing.fursuits.parts['Paws & Tail']})</option>
+                        <option value="Feet Paws" data-price="${pricing.fursuits.parts['Feet Paws']}">Feet Paws (Start $${pricing.fursuits.parts['Feet Paws']})</option>
+                        <option value="Trio Set" data-price="${pricing.fursuits.parts['Trio Set']}">Trio Set (Start $${pricing.fursuits.parts['Trio Set']})</option>
+                        <option value="Head" data-price="${pricing.fursuits.parts.Head}">Head (Start $${pricing.fursuits.parts.Head})</option>
+                        <option value="Mini Partial" data-price="${pricing.fursuits.parts['Mini Partial']}">Mini Partial (Start $${pricing.fursuits.parts['Mini Partial']})</option>
+                        <option value="Full Partial" data-price="${pricing.fursuits.parts['Full Partial']}">Full Partial (Start $${pricing.fursuits.parts['Full Partial']})</option>
+                        <option value="Accessories" data-price="${pricing.fursuits.parts.Accessories}">Accessories</option>
                         <option value="Other" data-price="0">Other (Describe in notes)</option>
                     </select>
                 </div>
@@ -5358,7 +5583,7 @@ function loadFursuitForm() {
                 <div class="form-group">
                     <label>Add-ons (Optional)</label>
                     <div style="display:flex; flex-direction:column; gap:10px; margin-top:5px;">
-                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Rush Order"> Rush Order (+$100)</label>
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Rush Order"> Rush Order (+$${pricing.fursuits.rushOrderFlat})</label>
                     </div>
                 </div>
                 <div class="form-group"><label>Deadline (if any)</label><input type="text" name="deadline" class="form-input" maxlength="100"></div>
@@ -5452,6 +5677,7 @@ function loadFursuitForm() {
 }
 
 function loadCustomKeychainsForm() {
+    const pricing = getPricingConfig();
     clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'custom-keychain-form'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="form-card" id="customKFormWrap">
@@ -5473,10 +5699,10 @@ function loadCustomKeychainsForm() {
                 <div class="form-group">
                     <label>Keychain Type <span>*</span></label>
                     <select name="keychainType" id="kTypeSelect" class="form-select" required>
-                        <option value="Chibi/Icon" data-price="56">Chibi/Icon (2-4 in) - Start $56</option>
-                        <option value="Half Body" data-price="72">Half Body (2-4 in) - Start $72</option>
-                        <option value="Full Body" data-price="92">Full Body (2-4 in) - Start $92</option>
-                        <option value="Complex Character" data-price="120">Complex Character (2-4 in) - Start $120</option>
+                        <option value="Chibi/Icon" data-price="${pricing.keychains.custom['Chibi/Icon']}">Chibi/Icon (2-4 in) - Start $${pricing.keychains.custom['Chibi/Icon']}</option>
+                        <option value="Half Body" data-price="${pricing.keychains.custom['Half Body']}">Half Body (2-4 in) - Start $${pricing.keychains.custom['Half Body']}</option>
+                        <option value="Full Body" data-price="${pricing.keychains.custom['Full Body']}">Full Body (2-4 in) - Start $${pricing.keychains.custom['Full Body']}</option>
+                        <option value="Complex Character" data-price="${pricing.keychains.custom['Complex Character']}">Complex Character (2-4 in) - Start $${pricing.keychains.custom['Complex Character']}</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -5596,6 +5822,7 @@ function loadCustomKeychainsForm() {
 }
 
 function loadCustomStickersForm() {
+    const pricing = getPricingConfig();
     clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'stickers-form'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="form-card">
@@ -5614,14 +5841,14 @@ function loadCustomStickersForm() {
                 <div class="form-group">
                     <label>Sticker Type <span>*</span></label>
                     <select name="stickerType" class="form-select" required>
-                        <option value="Single Sticker" data-price="20">Single Sticker ($20)</option>
-                        <option value="Matching Pair" data-price="36">Matching Pair ($36)</option>
-                        <option value="Sticker Sheet" data-price="80">Sticker Sheet - 4 unique designs (Start $80)</option>
-                        <option value="Small Batch" data-price="100">Small Batch - 6 unique designs (Start $100)</option>
+                        <option value="Single Sticker" data-price="${pricing.stickers.types['Single Sticker']}">Single Sticker ($${pricing.stickers.types['Single Sticker']})</option>
+                        <option value="Matching Pair" data-price="${pricing.stickers.types['Matching Pair']}">Matching Pair ($${pricing.stickers.types['Matching Pair']})</option>
+                        <option value="Sticker Sheet" data-price="${pricing.stickers.types['Sticker Sheet']}">Sticker Sheet - 4 unique designs (Start $${pricing.stickers.types['Sticker Sheet']})</option>
+                        <option value="Small Batch" data-price="${pricing.stickers.types['Small Batch']}">Small Batch - 6 unique designs (Start $${pricing.stickers.types['Small Batch']})</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="stickerPrintingAddon" value="Printed Add-On"> Add Sticker Printing (+$6 first print/design, +$3 each extra copy/design)</label>
+                    <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="stickerPrintingAddon" value="Printed Add-On"> Add Sticker Printing (+$${pricing.stickers.printingAddon.first} first print/design, +$${pricing.stickers.printingAddon.additional} each extra copy/design)</label>
                 </div>
                 <div class="form-group">
                     <label>Printed Copies Per Design (if print add-on selected)</label>
@@ -5745,6 +5972,7 @@ function loadCustomStickersForm() {
 }
 
 function loadPremadeKeychainsForm() {
+    const pricing = getPricingConfig();
     clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'premade-form'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="preorder-card menu-large" style="margin-bottom: 25px;">
@@ -5773,13 +6001,13 @@ function loadPremadeKeychainsForm() {
                     <label>Preferred Finish (if available)</label>
                     <select name="finish" class="form-select">
                         <option value="Any">Any / Default</option>
-                        <option value="Clear Acrylic">Clear Acrylic</option>
-                        <option value="Epoxy">Epoxy</option>
-                        <option value="Colored Acrylic">Colored Acrylic</option>
-                        <option value="Rainbow Acrylic">Rainbow Acrylic</option>
-                        <option value="Translucent Acrylic">Translucent Acrylic</option>
-                        <option value="Holographic">Holographic</option>
-                        <option value="Glow in the Dark">Glow in the Dark</option>
+                        <option value="Clear Acrylic">Clear Acrylic ($${pricing.keychains.premade['Clear Acrylic']})</option>
+                        <option value="Epoxy">Epoxy ($${pricing.keychains.premade.Epoxy})</option>
+                        <option value="Colored Acrylic">Colored Acrylic ($${pricing.keychains.premade['Colored Acrylic']})</option>
+                        <option value="Rainbow Acrylic">Rainbow Acrylic ($${pricing.keychains.premade['Rainbow Acrylic']})</option>
+                        <option value="Translucent Acrylic">Translucent Acrylic ($${pricing.keychains.premade['Translucent Acrylic']})</option>
+                        <option value="Holographic">Holographic ($${pricing.keychains.premade.Holographic})</option>
+                        <option value="Glow in the Dark">Glow in the Dark ($${pricing.keychains.premade['Glow in the Dark']})</option>
                     </select>
                 </div>
                 <div class="form-group"><label>Shipping Name <span>*</span></label><input type="text" name="shippingName" class="form-input" maxlength="100" required></div>
@@ -8841,6 +9069,7 @@ function isRevenueEligible(order) {
 }
 
 function estimateOrderRevenue(order) {
+    const pricing = getPricingConfig();
     const quantity = Math.max(1, Number(order?.quantity) || 1);
     const serviceType = getOrderServiceType(order || {});
 
@@ -8855,43 +9084,28 @@ function estimateOrderRevenue(order) {
         const styleKey = shading.includes('render')
             ? 'rendered'
             : (shading.includes('cel') ? 'cel' : 'flat');
-        const table = {
-            'Icon': { flat: 24, cel: 36, rendered: 52 },
-            'Headshot': { flat: 32, cel: 44, rendered: 60 },
-            'Bust': { flat: 44, cel: 60, rendered: 80 },
-            'Half Body': { flat: 56, cel: 72, rendered: 96 },
-            'Full Body': { flat: 72, cel: 96, rendered: 128 },
-            'Scene': { flat: 160, cel: 200, rendered: 240 },
-            'Basic Ref Sheet': { flat: 160, cel: 160, rendered: 160 },
-            'Standard Ref Sheet': { flat: 220, cel: 220, rendered: 220 },
-            'Deluxe Ref Sheet': { flat: 280, cel: 280, rendered: 280 }
-        };
+        const table = pricing.art.types;
         const styleTable = table[artType] || table['Headshot'];
         let estimate = Number(styleTable?.[styleKey] || styleTable?.flat || 32);
 
         const characterCount = Math.max(1, Number(order?.characterCount) || 1);
         if (characterCount > 1) {
-            estimate *= (1 + (0.8 * (characterCount - 1)));
+            estimate *= (1 + ((pricing.art.addOns.extraCharacterPercent / 100) * (characterCount - 1)));
         }
 
-        if (includesAddon('extra character') && characterCount <= 1) estimate *= 1.8;
-        if (includesAddon('extra outfit')) estimate += 24;
-        if (includesAddon('prop')) estimate += 16;
-        if (includesAddon('detailed background')) estimate += 40;
-        if (includesAddon('rush order')) estimate *= 1.5;
-        if (includesAddon('commercial license')) estimate *= 2;
+        if (includesAddon('extra character') && characterCount <= 1) estimate *= (1 + (pricing.art.addOns.extraCharacterPercent / 100));
+        if (includesAddon('extra outfit')) estimate += pricing.art.addOns.extraOutfit;
+        if (includesAddon('prop')) estimate += pricing.art.addOns.prop;
+        if (includesAddon('detailed background')) estimate += pricing.art.addOns.detailedBackgroundMin;
+        if (includesAddon('rush order')) estimate *= (1 + (pricing.art.addOns.rushPercent / 100));
+        if (includesAddon('commercial license')) estimate *= (1 + (pricing.art.addOns.commercialLicensePercent / 100));
 
         return Math.round(estimate * quantity);
     }
 
     if (serviceType === 'stickers') {
         const stickerType = String(order?.stickerType || '').trim();
-        const stickerBase = {
-            'Single Sticker': 20,
-            'Matching Pair': 36,
-            'Sticker Sheet': 80,
-            'Small Batch': 100
-        };
+        const stickerBase = pricing.stickers.types;
         const base = Number(stickerBase[stickerType] || 20);
         return Math.round(base * quantity);
     }
@@ -8900,43 +9114,20 @@ function estimateOrderRevenue(order) {
         const itemType = String(order?.itemType || order?.orderType || '').toLowerCase();
         if (itemType.includes('premade')) {
             const finish = String(order?.finish || '').trim();
-            const finishPrice = {
-                'Clear Acrylic': 22,
-                'Epoxy': 24,
-                'Colored Acrylic': 24,
-                'Rainbow Acrylic': 26,
-                'Translucent Acrylic': 26,
-                'Holographic': 26,
-                'Glow in the Dark': 28
-            };
+            const finishPrice = pricing.keychains.premade;
             const premade = Number(finishPrice[finish] || 24);
             return Math.round(premade * quantity);
         }
 
         const keychainTier = String(order?.keychainType || '').trim();
-        const keychainBase = {
-            'Chibi/Icon': 56,
-            'Half Body': 72,
-            'Full Body': 92,
-            'Complex Character': 120
-        };
+        const keychainBase = pricing.keychains.custom;
         const base = Number(keychainBase[keychainTier] || 56);
         return Math.round(base * quantity);
     }
 
     if (serviceType === 'fursuits') {
         const part = String(order?.partType || '').trim();
-        const partBase = {
-            'Tail': 100,
-            'Paws': 170,
-            'Paws & Tail': 260,
-            'Feet Paws': 270,
-            'Trio Set': 530,
-            'Head': 1100,
-            'Mini Partial': 1350,
-            'Full Partial': 1620,
-            'Accessories': 50
-        };
+        const partBase = pricing.fursuits.parts;
         const base = Number(partBase[part] || 530);
         return Math.round(base * quantity);
     }
@@ -8949,6 +9140,7 @@ function estimateOrderRevenue(order) {
 }
 
 function getMinimumSustainableQuote(order) {
+    const pricing = getPricingConfig();
     const serviceType = getOrderServiceType(order || {});
     const hardFloorByType = {
         art: 40,
@@ -8960,7 +9152,7 @@ function getMinimumSustainableQuote(order) {
     };
 
     const baselineEstimate = estimateOrderRevenue(order || {});
-    const growthFriendlyFloor = Math.round(baselineEstimate * 0.85);
+    const growthFriendlyFloor = Math.round(baselineEstimate * pricing.sustainableFloorMultiplier);
     return Math.max(hardFloorByType[serviceType] || hardFloorByType.other, growthFriendlyFloor);
 }
 
@@ -12215,6 +12407,12 @@ function loadAdminDashboard() {
                                     ${getTemplateHTML('adminDiscountManagerTemplate')}
                                 </div>
                             </details>
+                            <details class="admin-collapsible admin-collapsible--sub" id="adminPricingSettingsSection">
+                                <summary><span class="admin-summary-label">Pricing Settings</span></summary>
+                                <div class="admin-collapsible-body">
+                                    ${getTemplateHTML('adminPricingSettingsTemplate')}
+                                </div>
+                            </details>
                             <details class="admin-collapsible admin-collapsible--sub" id="adminAnnouncementsSection">
                                 <summary><span class="admin-summary-label">Announcements</span></summary>
                                 <div class="admin-collapsible-body">
@@ -12358,6 +12556,7 @@ function loadAdminDashboard() {
     
     renderActiveDiscountsList();
     renderAdminAvailabilitySettings();
+    renderAdminPricingSettings();
     renderAdminPremadeKeychainManager();
     setAdminPremadeDesignEditState(null);
     setupQueueManagerTabs();
@@ -12443,6 +12642,14 @@ function loadAdminDashboard() {
             btn.innerText = "Add Discount";
             btn.disabled = false;
         }
+    });
+
+    document.getElementById('btnSavePricingConfig')?.addEventListener('click', async () => {
+        await saveAdminPricingSettingsFromEditor();
+    });
+
+    document.getElementById('btnResetPricingConfig')?.addEventListener('click', () => {
+        resetAdminPricingSettingsEditor();
     });
 
     document.getElementById('adminResetDiscountEditorBtn')?.addEventListener('click', () => {
