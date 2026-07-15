@@ -8948,6 +8948,34 @@ function estimateOrderRevenue(order) {
     return Math.round(60 * quantity);
 }
 
+function getMinimumSustainableQuote(order) {
+    const serviceType = getOrderServiceType(order || {});
+    const hardFloorByType = {
+        art: 40,
+        animation: 140,
+        fursuits: 300,
+        keychains: 56,
+        stickers: 20,
+        other: 50
+    };
+
+    const baselineEstimate = estimateOrderRevenue(order || {});
+    const growthFriendlyFloor = Math.round(baselineEstimate * 0.85);
+    return Math.max(hardFloorByType[serviceType] || hardFloorByType.other, growthFriendlyFloor);
+}
+
+function confirmSustainableFloorOverride(order, candidatePrice, contextLabel) {
+    const parsed = parseAdminPriceInput(candidatePrice);
+    if (parsed == null) return true;
+
+    const floor = getMinimumSustainableQuote(order);
+    if (parsed >= floor) return true;
+
+    return confirm(
+        `${contextLabel} is below your sustainable floor.\n\nEntered: ${formatMoney(parsed)}\nSuggested floor: ${formatMoney(floor)}\n\nSave anyway?`
+    );
+}
+
 function parseAdminPriceInput(value) {
     const normalized = String(value || '').replace(/[^0-9.\-]/g, '').trim();
     if (!normalized) return null;
@@ -11318,6 +11346,11 @@ function setupAdminDashboardDelegation() {
                 return;
             }
 
+            if (!confirmSustainableFloorOverride(order, parsedFinalPrice, 'Final price')) {
+                showAdminToast('Final price save canceled.', true);
+                return;
+            }
+
             button.disabled = true;
             try {
                 await updateDoc(doc(db, 'preorders', orderId), {
@@ -11349,6 +11382,11 @@ function setupAdminDashboardDelegation() {
 
             if (!isCurrentlyPublished && finalPriceToUse == null) {
                 showAdminToast('Set a final price before publishing.', true);
+                return;
+            }
+
+            if (!isCurrentlyPublished && finalPriceToUse != null && !confirmSustainableFloorOverride(order, finalPriceToUse, 'Final price')) {
+                showAdminToast('Publishing canceled due to low final price.', true);
                 return;
             }
 
@@ -11409,6 +11447,11 @@ function setupAdminDashboardDelegation() {
 
             if (quoteAmount != null && amountPaid > quoteAmount) {
                 showAdminToast('Paid amount cannot exceed total quote.', true);
+                return;
+            }
+
+            if (quoteAmount != null && !confirmSustainableFloorOverride(order, quoteAmount, 'Quote amount')) {
+                showAdminToast('Quote save canceled.', true);
                 return;
             }
 
@@ -14170,6 +14213,10 @@ function renderAdminOrders(ordersArr) {
         const quoteAmount = getOrderQuoteAmount(order);
         const paidAmount = getOrderPaidAmount(order);
         const remainingBalance = getOrderRemainingBalance(order);
+        const sustainableFloor = getMinimumSustainableQuote(order);
+        const sustainableFloorLabel = formatMoney(sustainableFloor);
+        const finalBelowFloor = rawFinalPrice != null && rawFinalPrice < sustainableFloor;
+        const quoteBelowFloor = quoteAmount != null && quoteAmount < sustainableFloor;
         const showLopsideDepositControls = isLopsideFursuitOrder(order);
         const lopsideDepositTarget = getOrderLopsideDepositTarget(order);
         const lopsideDepositCollected = getOrderLopsideDepositCollected(order);
@@ -14253,6 +14300,12 @@ function renderAdminOrders(ordersArr) {
             </div>
 
             ${submittedEstimateDiscount ? `<div class="admin-detail" style="margin-bottom: 10px; color: #cdeafe;"><strong>Estimate Discount:</strong> ${escapeHTML(submittedEstimateDiscount)}</div>` : ''}
+            <div class="admin-detail" style="margin-bottom: 10px; color: ${(finalBelowFloor || quoteBelowFloor) ? '#fca5a5' : '#86efac'};">
+                <strong>${(finalBelowFloor || quoteBelowFloor) ? 'Budget Alert:' : 'Sustainable Floor:'}</strong>
+                ${(finalBelowFloor || quoteBelowFloor)
+                    ? `Current quote/final is below ${escapeHTML(sustainableFloorLabel)} for this order.`
+                    : `${escapeHTML(sustainableFloorLabel)} target met.`}
+            </div>
 
             <div class="admin-order-finance-shell">
                 <div class="admin-order-finance-block">
