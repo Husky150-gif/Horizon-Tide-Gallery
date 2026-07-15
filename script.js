@@ -3034,6 +3034,65 @@ function resetAdminPricingSettingsEditor() {
     }
 }
 
+function applyAdminPremiumMarginPreset(percentIncrease = 10) {
+    const textarea = document.getElementById('adminPricingConfigJson');
+    const hint = document.getElementById('adminPricingConfigHint');
+    if (!(textarea instanceof HTMLTextAreaElement)) return;
+
+    const numericIncrease = Number(percentIncrease);
+    const safeIncrease = Number.isFinite(numericIncrease) ? Math.max(1, numericIncrease) : 10;
+    const factor = 1 + (safeIncrease / 100);
+    const scaleAmount = (value) => Math.round(Number(value) * factor * 100) / 100;
+
+    let baseConfig;
+    try {
+        baseConfig = normalizePricingConfig(JSON.parse(textarea.value || '{}'));
+    } catch {
+        baseConfig = getPricingConfig();
+    }
+
+    const nextConfig = JSON.parse(JSON.stringify(baseConfig));
+
+    Object.values(nextConfig.art.types).forEach((entry) => {
+        entry.flat = scaleAmount(entry.flat);
+        entry.cel = scaleAmount(entry.cel);
+        entry.rendered = scaleAmount(entry.rendered);
+    });
+
+    nextConfig.art.addOns.extraOutfit = scaleAmount(nextConfig.art.addOns.extraOutfit);
+    nextConfig.art.addOns.prop = scaleAmount(nextConfig.art.addOns.prop);
+    nextConfig.art.addOns.detailedBackgroundMin = scaleAmount(nextConfig.art.addOns.detailedBackgroundMin);
+    nextConfig.art.addOns.detailedBackgroundMax = scaleAmount(nextConfig.art.addOns.detailedBackgroundMax);
+
+    Object.keys(nextConfig.stickers.types).forEach((type) => {
+        nextConfig.stickers.types[type] = scaleAmount(nextConfig.stickers.types[type]);
+    });
+    nextConfig.stickers.printingAddon.first = scaleAmount(nextConfig.stickers.printingAddon.first);
+    nextConfig.stickers.printingAddon.additional = scaleAmount(nextConfig.stickers.printingAddon.additional);
+
+    Object.keys(nextConfig.keychains.custom).forEach((type) => {
+        nextConfig.keychains.custom[type] = scaleAmount(nextConfig.keychains.custom[type]);
+    });
+    Object.keys(nextConfig.keychains.premade).forEach((type) => {
+        nextConfig.keychains.premade[type] = scaleAmount(nextConfig.keychains.premade[type]);
+    });
+
+    Object.keys(nextConfig.fursuits.parts).forEach((type) => {
+        nextConfig.fursuits.parts[type] = scaleAmount(nextConfig.fursuits.parts[type]);
+    });
+    nextConfig.fursuits.rushOrderFlat = scaleAmount(nextConfig.fursuits.rushOrderFlat);
+
+    nextConfig.sustainableFloorMultiplier = Math.min(
+        1.5,
+        Math.round((Number(nextConfig.sustainableFloorMultiplier || 0.9) + 0.03) * 100) / 100
+    );
+
+    textarea.value = JSON.stringify(normalizePricingConfig(nextConfig), null, 2);
+    if (hint) {
+        hint.textContent = `Premium preset applied (+${safeIncrease}%). Review values, then click Save Pricing to publish.`;
+    }
+}
+
 function refreshPricingDrivenViews() {
     const currentHash = String(window.location.hash || '#home').toLowerCase();
     const root = document.getElementById('adminDashboardView');
@@ -12650,6 +12709,10 @@ function loadAdminDashboard() {
 
     document.getElementById('btnSavePricingConfig')?.addEventListener('click', async () => {
         await saveAdminPricingSettingsFromEditor();
+    });
+
+    document.getElementById('btnApplyPremiumPricingPreset')?.addEventListener('click', () => {
+        applyAdminPremiumMarginPreset(10);
     });
 
     document.getElementById('btnResetPricingConfig')?.addEventListener('click', () => {
