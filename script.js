@@ -8038,6 +8038,20 @@ async function submitPreorder(event, orderType) {
         orderType,
         itemType: orderType,
         notes: compiledNotes,
+        description: (orderData.description || '').trim(),
+        materials: (orderData.materials || '').trim(),
+        pose: (orderData.pose || '').trim(),
+        species: (orderData.species || '').trim(),
+        deadline: (orderData.deadline || '').trim(),
+        quantity: String(orderData.quantity || '').trim(),
+        artType: (orderData.artType || '').trim(),
+        shadingStyle: (orderData.shadingStyle || '').trim(),
+        characterCount: String(orderData.characterCount || '').trim(),
+        selectedAddons: (orderData.selectedAddons || '').trim(),
+        partType: (orderData.partType || '').trim(),
+        keychainType: (orderData.keychainType || '').trim(),
+        stickerType: (orderData.stickerType || '').trim(),
+        needsMeasurements: orderData.needsMeasurements ? 'Yes' : '',
         refLink: (orderData.refLink || '').trim(),
         referenceImageUrls: uploadedImageUrls,
         status: 'Pending Review'
@@ -8827,19 +8841,111 @@ function isRevenueEligible(order) {
 }
 
 function estimateOrderRevenue(order) {
-    const quantity = Math.max(1, Number(order.quantity) || 1);
-    const serviceType = getOrderServiceType(order);
-    const baseByType = {
-        art: 85,
-        animation: 140,
-        fursuits: 530,
-        keychains: 15,
-        stickers: 20,
-        other: 45
+    const quantity = Math.max(1, Number(order?.quantity) || 1);
+    const serviceType = getOrderServiceType(order || {});
+
+    const includesAddon = (needle) => {
+        const selected = String(order?.selectedAddons || '').toLowerCase();
+        return selected.includes(String(needle || '').toLowerCase());
     };
 
-    const base = baseByType[serviceType] || baseByType.other;
-    return Math.round(base * quantity);
+    if (serviceType === 'art') {
+        const artType = String(order?.artType || '').trim();
+        const shading = String(order?.shadingStyle || '').toLowerCase();
+        const styleKey = shading.includes('render')
+            ? 'rendered'
+            : (shading.includes('cel') ? 'cel' : 'flat');
+        const table = {
+            'Icon': { flat: 24, cel: 36, rendered: 52 },
+            'Headshot': { flat: 32, cel: 44, rendered: 60 },
+            'Bust': { flat: 44, cel: 60, rendered: 80 },
+            'Half Body': { flat: 56, cel: 72, rendered: 96 },
+            'Full Body': { flat: 72, cel: 96, rendered: 128 },
+            'Scene': { flat: 160, cel: 200, rendered: 240 },
+            'Basic Ref Sheet': { flat: 160, cel: 160, rendered: 160 },
+            'Standard Ref Sheet': { flat: 220, cel: 220, rendered: 220 },
+            'Deluxe Ref Sheet': { flat: 280, cel: 280, rendered: 280 }
+        };
+        const styleTable = table[artType] || table['Headshot'];
+        let estimate = Number(styleTable?.[styleKey] || styleTable?.flat || 32);
+
+        const characterCount = Math.max(1, Number(order?.characterCount) || 1);
+        if (characterCount > 1) {
+            estimate *= (1 + (0.8 * (characterCount - 1)));
+        }
+
+        if (includesAddon('extra character') && characterCount <= 1) estimate *= 1.8;
+        if (includesAddon('extra outfit')) estimate += 24;
+        if (includesAddon('prop')) estimate += 16;
+        if (includesAddon('detailed background')) estimate += 40;
+        if (includesAddon('rush order')) estimate *= 1.5;
+        if (includesAddon('commercial license')) estimate *= 2;
+
+        return Math.round(estimate * quantity);
+    }
+
+    if (serviceType === 'stickers') {
+        const stickerType = String(order?.stickerType || '').trim();
+        const stickerBase = {
+            'Single Sticker': 20,
+            'Matching Pair': 36,
+            'Sticker Sheet': 80,
+            'Small Batch': 100
+        };
+        const base = Number(stickerBase[stickerType] || 20);
+        return Math.round(base * quantity);
+    }
+
+    if (serviceType === 'keychains') {
+        const itemType = String(order?.itemType || order?.orderType || '').toLowerCase();
+        if (itemType.includes('premade')) {
+            const finish = String(order?.finish || '').trim();
+            const finishPrice = {
+                'Clear Acrylic': 22,
+                'Epoxy': 24,
+                'Colored Acrylic': 24,
+                'Rainbow Acrylic': 26,
+                'Translucent Acrylic': 26,
+                'Holographic': 26,
+                'Glow in the Dark': 28
+            };
+            const premade = Number(finishPrice[finish] || 24);
+            return Math.round(premade * quantity);
+        }
+
+        const keychainTier = String(order?.keychainType || '').trim();
+        const keychainBase = {
+            'Chibi/Icon': 56,
+            'Half Body': 72,
+            'Full Body': 92,
+            'Complex Character': 120
+        };
+        const base = Number(keychainBase[keychainTier] || 56);
+        return Math.round(base * quantity);
+    }
+
+    if (serviceType === 'fursuits') {
+        const part = String(order?.partType || '').trim();
+        const partBase = {
+            'Tail': 100,
+            'Paws': 170,
+            'Paws & Tail': 260,
+            'Feet Paws': 270,
+            'Trio Set': 530,
+            'Head': 1100,
+            'Mini Partial': 1350,
+            'Full Partial': 1620,
+            'Accessories': 50
+        };
+        const base = Number(partBase[part] || 530);
+        return Math.round(base * quantity);
+    }
+
+    if (serviceType === 'animation') {
+        return Math.round(180 * quantity);
+    }
+
+    return Math.round(60 * quantity);
 }
 
 function parseAdminPriceInput(value) {
