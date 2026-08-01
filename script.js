@@ -259,7 +259,8 @@ const IS_HARD_RELOAD = NAVIGATION_ENTRY?.type === 'reload';
 
 window.adminOrderFilterState = {
     status: 'All',
-    search: ''
+    search: '',
+    archiveView: 'active'
 };
 window.adminReviewFilterState = {
     status: 'all'
@@ -359,17 +360,17 @@ let isGlobalScrollAttached = false;
 let globalQuoteIndex = 0;
 let globalQuoteInterval = null;
 
-const SITE_BASE_URL = 'https://the-horizon-8f72f.web.app/';
+const SITE_BASE_URL = 'https://horizontidegallery.com/';
 const DEFAULT_SOCIAL_IMAGE = `${SITE_BASE_URL}${encodeURI('Images/banner 1.jpg')}`;
 
 const PUBLIC_HEAD_METADATA = {
     title: 'The Horizon | Horizon Tide Gallery',
-    description: 'Horizon Tide Gallery - Custom 2D animation, illustration, and premium handmade fursuits.',
+    description: 'Horizon Tide Gallery by Husky and Lopside for custom art commissions, animation, fursuits, and handmade creations.',
     ogTitle: 'Horizon Tide Gallery',
-    ogDescription: 'Explore custom artwork, animation portfolios, and high-end creative commissions.',
+    ogDescription: 'Explore custom artwork, animation portfolios, fursuit builds, and handmade commissions by Husky and Lopside.',
     ogUrl: SITE_BASE_URL,
     twitterTitle: 'The Horizon | Horizon Tide Gallery',
-    twitterDescription: 'Commission art, fursuits, keychains, and stickers with clear communication and queue transparency.',
+    twitterDescription: 'Commission art, fursuits, keychains, and stickers from Husky and Lopside with clear communication and queue transparency.',
     ogType: 'website',
     robots: 'index, follow',
     ogImage: DEFAULT_SOCIAL_IMAGE,
@@ -380,8 +381,8 @@ const PUBLIC_HEAD_METADATA = {
 const ROUTE_HEAD_METADATA = {
     '#home': {
         title: 'The Horizon | Art, Fursuits, and Handmade Creations',
-        description: 'Start your commission with clear steps, artist availability, reviews, and a transparent queue at Horizon Tide Gallery.',
-        ogDescription: 'Custom art, fursuits, merch, and step-by-step commission guidance from Horizon Tide Gallery.'
+        description: 'Start your commission with Husky and Lopside at Horizon Tide Gallery: clear steps, artist availability, reviews, and a transparent queue.',
+        ogDescription: 'Custom art, fursuits, merch, and step-by-step commission guidance from Husky and Lopside at Horizon Tide Gallery.'
     },
     '#gallery': {
         title: 'Gallery | The Horizon',
@@ -420,7 +421,7 @@ const ROUTE_HEAD_METADATA = {
     },
     '#socials': {
         title: 'Artists, FAQ, and Socials | The Horizon',
-        description: 'Meet the artists, find ordering answers, and visit Horizon Tide Gallery social links.',
+        description: 'Meet Husky and Lopside, get ordering answers, and find official Horizon Tide Gallery social links.',
         ogTitle: 'Artists, FAQ, and Socials | Horizon Tide Gallery'
     },
     '#discord': {
@@ -435,7 +436,7 @@ const ROUTE_HEAD_METADATA = {
     },
     '#whatwedo': {
         title: 'What We Do | The Horizon',
-        description: 'See the services, specialties, and creative offerings available from Horizon Tide Gallery.',
+        description: 'See Husky and Lopside services, specialties, and creative offerings across art, animation, fursuits, and handmade commissions.',
         ogTitle: 'What We Do | Horizon Tide Gallery'
     },
     '#horizon-queue': {
@@ -528,8 +529,10 @@ function applyHeadMetadataForRoute(routeOrAdmin) {
     upsertMetaTag(robotsSelector, { name: 'robots', content: metadata.robots });
     upsertCanonicalLink(metadata.canonicalUrl);
 }
-let lastCursorSparkleTime = 0;
-let activeCursorSparkles = 0;
+let lastCursorTrailEmitTime = 0;
+let cursorTrailPool = [];
+let cursorTrailPoolIndex = 0;
+let cursorTrailContainer = null;
 let stickyPreorderCtaBound = false;
 let stickyPreorderScrollBound = false;
 let stickyPreorderRafPending = false;
@@ -887,6 +890,15 @@ function bindSiteGuideTriggers(root = document) {
             siteGuide.start(0);
         });
     });
+}
+
+function updateSiteGuideLauncherCopy() {
+    const launcher = document.getElementById('siteGuideLauncher');
+    if (!(launcher instanceof HTMLButtonElement)) return;
+
+    const isCompactMobile = window.matchMedia('(max-width: 768px)').matches;
+    launcher.textContent = isCompactMobile ? 'Start Guide' : 'Start / Restart Guide';
+    launcher.setAttribute('aria-label', 'Start or restart site guide');
 }
 
 // === CENTRALIZED TOS CONTENT ===
@@ -2040,7 +2052,14 @@ async function saveGalleryCatalogSnapshot(previousCatalogInput, reason = 'galler
             createdAt: serverTimestamp(),
             catalog: previousCatalog
         });
-        const prunedCount = await pruneGalleryCatalogSnapshots();
+
+        let prunedCount = 0;
+        try {
+            prunedCount = await pruneGalleryCatalogSnapshots();
+        } catch (pruneError) {
+            console.warn('Gallery snapshot prune skipped after successful backup write.', pruneError);
+        }
+
         return { saved: true, prunedCount };
     } catch (error) {
         console.error('Failed to save gallery snapshot backup.', error);
@@ -2317,6 +2336,32 @@ function getGalleryFilterOptions(galleryItems) {
     ];
 }
 
+function buildGalleryImageAltText(item, index) {
+    const fallbackTitle = `Gallery Item ${index + 1}`;
+    const title = String(item?.title || fallbackTitle).trim() || fallbackTitle;
+    const rawCreator = String(item?.creator || 'Horizon Tide Gallery').trim() || 'Horizon Tide Gallery';
+    const normalizedCreator = rawCreator.toLowerCase();
+    let creatorLabel = rawCreator;
+
+    if (normalizedCreator === 'husky') {
+        creatorLabel = 'Husky (The Horizon)';
+    } else if (normalizedCreator === 'lopside') {
+        creatorLabel = 'Lopside (The Horizon)';
+    }
+
+    const categorySnippet = Array.isArray(item?.categories)
+        ? item.categories
+            .slice(0, 2)
+            .map((category) => formatGalleryCategoryLabel(category))
+            .filter(Boolean)
+            .join(', ')
+        : '';
+
+    return categorySnippet
+        ? `${title} by ${creatorLabel} at Horizon Tide Gallery, ${categorySnippet}.`
+        : `${title} by ${creatorLabel} at Horizon Tide Gallery.`;
+}
+
 function normalizeGalleryCatalog(raw) {
     const fallback = JSON.parse(JSON.stringify(DEFAULT_GALLERY_CATALOG));
     const hasExplicitItems = Array.isArray(raw?.items);
@@ -2591,12 +2636,9 @@ async function updateOrderStatusWithInventoryAtomic(orderId, nextStatus) {
                 itemType: liveOrder.itemType || liveOrder.orderType || 'Unknown',
                 status: resolvedNextStatus,
                 publicReferenceImageUrls,
-                estimatedPrice: estimateOrderRevenue(liveOrder),
                 finalPricePublished: liveOrder.finalPricePublished === true,
-                finalPrice: publishedFinalPrice != null ? publishedFinalPrice : null,
-                updatedAt: serverTimestamp()
+                finalPrice: publishedFinalPrice != null ? publishedFinalPrice : null
             };
-
             if (liveOrder.createdAt) publicStatusPayload.createdAt = liveOrder.createdAt;
             transaction.set(doc(db, 'preorderStatusPublic', liveOrder.orderId), publicStatusPayload, { merge: true });
         }
@@ -3254,12 +3296,127 @@ function renderAdminGallerySummary(catalogInput = window.galleryCatalog, visible
     renderAdminGalleryLastSavedMeta();
 }
 
+function focusAdminGalleryEditor(fieldName = 'title') {
+    const galleryCard = document.querySelector('.gallery-manager-card');
+    const focusTarget = fieldName === 'categories'
+        ? document.getElementById('adminGalleryCategories')
+        : document.getElementById('adminGalleryTitle');
+
+    if (galleryCard instanceof HTMLElement) {
+        galleryCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    if (focusTarget instanceof HTMLInputElement) {
+        window.setTimeout(() => {
+            focusTarget.focus({ preventScroll: true });
+            focusTarget.select();
+        }, 180);
+    }
+}
+
+function bindAdminGalleryListActions() {
+    const listEl = document.getElementById('adminGalleryItemsList');
+    if (!(listEl instanceof HTMLElement) || listEl.dataset.bound === 'true') return;
+
+    listEl.addEventListener('click', async (event) => {
+        const target = event.target instanceof HTMLElement ? event.target.closest('button') : null;
+        if (!(target instanceof HTMLButtonElement) || target.disabled) return;
+
+        if (target.matches('.admin-edit-gallery-item')) {
+            const item = getGalleryItemById(target.getAttribute('data-id'));
+            if (item) {
+                setAdminGalleryEditState(item);
+                focusAdminGalleryEditor('categories');
+            }
+            return;
+        }
+
+        if (target.matches('.admin-gallery-move-btn')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before reordering gallery items.')) return;
+            if (String(window.adminGalleryGroupFilter || 'all') !== 'all') {
+                showAdminToast('Set Manage View Category to All Categories before reordering.', true);
+                return;
+            }
+
+            const itemId = target.getAttribute('data-id');
+            const direction = target.getAttribute('data-direction');
+            if (!itemId || !direction) return;
+
+            const catalogState = normalizeGalleryCatalog(window.galleryCatalog);
+            const sourceIndex = catalogState.items.findIndex((item) => item.id === itemId);
+            if (sourceIndex < 0) return;
+
+            const targetIndex = direction === 'up' ? sourceIndex - 1 : sourceIndex + 1;
+            if (targetIndex < 0 || targetIndex >= catalogState.items.length) return;
+
+            const reordered = [...catalogState.items];
+            const [moved] = reordered.splice(sourceIndex, 1);
+            reordered.splice(targetIndex, 0, moved);
+            const nextCatalog = normalizeGalleryCatalog({ items: reordered.map((item, index) => ({ ...item, sortOrder: index + 1 })) });
+
+            target.disabled = true;
+            try {
+                const result = await persistGalleryCatalog(nextCatalog, {
+                    previousCatalog: catalogState,
+                    reason: 'reorder'
+                });
+                window.galleryCatalog = result.nextCatalog;
+                applyGalleryCatalogToCurrentDOM();
+                showAdminToast('Gallery item order updated.');
+                if (!result.backupResult.saved) {
+                    showAdminToast('Saved, but backup snapshot could not be stored.', true);
+                }
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to reorder gallery items.', true);
+            } finally {
+                target.disabled = false;
+            }
+            return;
+        }
+
+        if (target.matches('.admin-delete-gallery-item')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before deleting gallery items.')) return;
+            const itemId = target.getAttribute('data-id');
+            if (!itemId) return;
+
+            const catalogState = normalizeGalleryCatalog(window.galleryCatalog);
+            const itemToDelete = catalogState.items.find((item) => item.id === itemId);
+            if (!itemToDelete || !confirm(`Delete \"${itemToDelete.title}\" from the gallery?`)) return;
+
+            target.disabled = true;
+            try {
+                const nextCatalog = normalizeGalleryCatalog({ items: catalogState.items.filter((item) => item.id !== itemId) });
+                const result = await persistGalleryCatalog(nextCatalog, {
+                    previousCatalog: catalogState,
+                    reason: 'delete-item'
+                });
+                window.galleryCatalog = result.nextCatalog;
+                if (window.currentEditingGalleryItemId === itemId) setAdminGalleryEditState(null);
+                applyGalleryCatalogToCurrentDOM();
+                showAdminToast('Gallery item deleted.');
+                if (!result.backupResult.saved) {
+                    showAdminToast('Deleted item, but backup snapshot could not be stored.', true);
+                }
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to delete gallery item.', true);
+            } finally {
+                target.disabled = false;
+            }
+        }
+    });
+
+    listEl.dataset.bound = 'true';
+}
+
 function renderAdminGalleryManager() {
     const listEl = document.getElementById('adminGalleryItemsList');
     if (!(listEl instanceof HTMLElement)) return;
 
     const catalog = normalizeGalleryCatalog(window.galleryCatalog);
     bindAdminGalleryPresetButtons();
+    bindAdminGalleryListActions();
     renderAdminGalleryLastSavedMeta();
     const activeCategory = syncAdminGalleryGroupFilter(catalog);
     const selectedCategoriesRaw = window.currentEditingGalleryItemId
@@ -3307,89 +3464,6 @@ function renderAdminGalleryManager() {
     `;
     }).join('');
 
-    listEl.querySelectorAll('.admin-edit-gallery-item').forEach((button) => {
-        button.addEventListener('click', () => {
-            const item = getGalleryItemById(button.getAttribute('data-id'));
-            if (item) setAdminGalleryEditState(item);
-        });
-    });
-
-    listEl.querySelectorAll('.admin-gallery-move-btn').forEach((button) => {
-        button.addEventListener('click', async () => {
-            if (!requireAdminSession('Please sign in with an authorized admin account before reordering gallery items.')) return;
-            if (String(window.adminGalleryGroupFilter || 'all') !== 'all') {
-                showAdminToast('Set Manage View Category to All Categories before reordering.', true);
-                return;
-            }
-            const itemId = button.getAttribute('data-id');
-            const direction = button.getAttribute('data-direction');
-            if (!itemId || !direction) return;
-
-            const catalogState = normalizeGalleryCatalog(window.galleryCatalog);
-            const sourceIndex = catalogState.items.findIndex((item) => item.id === itemId);
-            if (sourceIndex < 0) return;
-
-            const targetIndex = direction === 'up' ? sourceIndex - 1 : sourceIndex + 1;
-            if (targetIndex < 0 || targetIndex >= catalogState.items.length) return;
-
-            const reordered = [...catalogState.items];
-            const [moved] = reordered.splice(sourceIndex, 1);
-            reordered.splice(targetIndex, 0, moved);
-            const nextCatalog = normalizeGalleryCatalog({ items: reordered.map((item, index) => ({ ...item, sortOrder: index + 1 })) });
-
-            button.disabled = true;
-            try {
-                const result = await persistGalleryCatalog(nextCatalog, {
-                    previousCatalog: catalogState,
-                    reason: 'reorder'
-                });
-                window.galleryCatalog = result.nextCatalog;
-                applyGalleryCatalogToCurrentDOM();
-                showAdminToast('Gallery item order updated.');
-                if (!result.backupResult.saved) {
-                    showAdminToast('Saved, but backup snapshot could not be stored.', true);
-                }
-            } catch (error) {
-                console.error(error);
-                showAdminToast('Failed to reorder gallery items.', true);
-            } finally {
-                button.disabled = false;
-            }
-        });
-    });
-
-    listEl.querySelectorAll('.admin-delete-gallery-item').forEach((button) => {
-        button.addEventListener('click', async () => {
-            if (!requireAdminSession('Please sign in with an authorized admin account before deleting gallery items.')) return;
-            const itemId = button.getAttribute('data-id');
-            if (!itemId) return;
-
-            const catalogState = normalizeGalleryCatalog(window.galleryCatalog);
-            const target = catalogState.items.find((item) => item.id === itemId);
-            if (!target || !confirm(`Delete \"${target.title}\" from the gallery?`)) return;
-
-            button.disabled = true;
-            try {
-                const nextCatalog = normalizeGalleryCatalog({ items: catalogState.items.filter((item) => item.id !== itemId) });
-                const result = await persistGalleryCatalog(nextCatalog, {
-                    previousCatalog: catalogState,
-                    reason: 'delete-item'
-                });
-                window.galleryCatalog = result.nextCatalog;
-                if (window.currentEditingGalleryItemId === itemId) setAdminGalleryEditState(null);
-                applyGalleryCatalogToCurrentDOM();
-                showAdminToast('Gallery item deleted.');
-                if (!result.backupResult.saved) {
-                    showAdminToast('Deleted item, but backup snapshot could not be stored.', true);
-                }
-            } catch (error) {
-                console.error(error);
-                showAdminToast('Failed to delete gallery item.', true);
-            } finally {
-                button.disabled = false;
-            }
-        });
-    });
 }
 
 function applyGalleryCatalogToCurrentDOM() {
@@ -4075,6 +4149,16 @@ function getPricingEditorFieldDefinitions() {
     ];
 }
 
+function getAdminPricingGroupTone(title) {
+    const normalized = String(title || '').trim().toLowerCase();
+    if (normalized === 'art') return 'art';
+    if (normalized === 'animation') return 'animation';
+    if (normalized === 'stickers') return 'stickers';
+    if (normalized === 'fursuits') return 'fursuits';
+    if (normalized === 'keychains') return 'keychains';
+    return 'meta';
+}
+
 function renderPricingFieldCard(fieldGroup, config) {
     const readConfigValue = (source, path) => {
         const parts = String(path || '').split('.').filter(Boolean);
@@ -4099,13 +4183,79 @@ function renderPricingFieldCard(fieldGroup, config) {
         `;
     }).join('');
 
+    const numericValues = fieldGroup.fields
+        .map((field) => readConfigValue(config, field.path))
+        .filter((value) => Number.isFinite(value));
+    const formatPricingValue = (value) => `$${Math.round(value).toLocaleString()}`;
+    let pricingRangeLabel = '';
+    if (numericValues.length === 1) {
+        pricingRangeLabel = formatPricingValue(numericValues[0]);
+    } else if (numericValues.length > 1) {
+        const minValue = Math.min(...numericValues);
+        const maxValue = Math.max(...numericValues);
+        pricingRangeLabel = minValue === maxValue
+            ? formatPricingValue(minValue)
+            : `${formatPricingValue(minValue)} - ${formatPricingValue(maxValue)}`;
+    }
+    const groupMetaLabel = pricingRangeLabel
+        ? `${fieldGroup.fields.length} fields - ${pricingRangeLabel}`
+        : `${fieldGroup.fields.length} fields`;
+
+    const tone = getAdminPricingGroupTone(fieldGroup.title);
+    const anchorId = `adminPricingGroup-${String(fieldGroup.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+    const shouldOpen = fieldGroup.title === 'Art' || fieldGroup.title === 'Animation';
+
     return `
-        <div class="admin-pricing-group">
-            <h4>${escapeHTML(fieldGroup.title)}</h4>
-            <p>${escapeHTML(fieldGroup.description)}</p>
-            <div class="admin-pricing-group-grid">${fieldsHTML}</div>
-        </div>
+        <details class="admin-pricing-group admin-pricing-group--${escapeHTML(tone)}" id="${escapeHTML(anchorId)}" ${shouldOpen ? 'open' : ''}>
+            <summary class="admin-pricing-group-summary">
+                <span class="admin-pricing-group-summary__copy">
+                    <strong>${escapeHTML(fieldGroup.title)}</strong>
+                    <small>${escapeHTML(fieldGroup.description)}</small>
+                </span>
+                <span class="admin-pricing-group-summary__meta">${escapeHTML(groupMetaLabel)}</span>
+            </summary>
+            <div class="admin-pricing-group-body">
+                <div class="admin-pricing-group-grid">${fieldsHTML}</div>
+            </div>
+        </details>
     `;
+}
+
+function renderAdminPricingJumpNav() {
+    const wrap = document.getElementById('adminPricingJumpNav');
+    if (!(wrap instanceof HTMLElement)) return;
+
+    const groups = getPricingEditorFieldDefinitions();
+    wrap.innerHTML = groups.map((group) => {
+        const targetId = `adminPricingGroup-${String(group.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+        return `<button type="button" class="admin-pricing-jump-chip" data-pricing-jump="${escapeHTML(targetId)}">${escapeHTML(group.title)}</button>`;
+    }).join('');
+
+    const setActiveJumpChip = (targetId) => {
+        wrap.querySelectorAll('.admin-pricing-jump-chip').forEach((chip) => {
+            if (!(chip instanceof HTMLButtonElement)) return;
+            const isActive = chip.getAttribute('data-pricing-jump') === targetId;
+            chip.classList.toggle('is-active', isActive);
+            chip.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+    };
+
+    const defaultTargetId = `adminPricingGroup-${String(groups[0]?.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+    if (defaultTargetId) setActiveJumpChip(defaultTargetId);
+
+    if (wrap.dataset.bound !== 'true') {
+        wrap.addEventListener('click', (event) => {
+            const button = event.target instanceof HTMLElement ? event.target.closest('.admin-pricing-jump-chip') : null;
+            if (!(button instanceof HTMLButtonElement)) return;
+            const targetId = button.getAttribute('data-pricing-jump');
+            const target = targetId ? document.getElementById(targetId) : null;
+            if (!(target instanceof HTMLDetailsElement)) return;
+            target.open = true;
+            setActiveJumpChip(targetId);
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        wrap.dataset.bound = 'true';
+    }
 }
 
 function collectPricingConfigFromEditor() {
@@ -4273,6 +4423,8 @@ function renderAdminPricingSettings() {
     const grid = document.getElementById('adminPricingFieldGrid');
     const config = normalizePricingConfig(window.adminPricingDraftConfig || window.pricingConfig || null);
     window.adminPricingDraftConfig = normalizePricingConfig(config);
+
+    renderAdminPricingJumpNav();
 
     if (grid instanceof HTMLElement) {
         grid.innerHTML = getPricingEditorFieldDefinitions().map((group) => renderPricingFieldCard(group, config)).join('');
@@ -5153,22 +5305,42 @@ document.addEventListener('mousemove', (e) => {
     if (bodyElement.getAttribute('data-page') === 'admin') return;
 
     const now = performance.now();
-    if (now - lastCursorSparkleTime < 180) return;
-    if (activeCursorSparkles >= 3) return;
-    if (Math.random() > 0.12) return;
+    if (now - lastCursorTrailEmitTime < 42) return;
 
-    lastCursorSparkleTime = now;
-    activeCursorSparkles++;
-    
-    const sparkle = document.createElement('div');
-    sparkle.className = 'cursor-sparkle';
-    sparkle.style.left = e.clientX + 'px';
-    sparkle.style.top = e.clientY + 'px';
-    document.body.appendChild(sparkle);
-    setTimeout(() => {
-        sparkle.remove();
-        activeCursorSparkles = Math.max(0, activeCursorSparkles - 1);
-    }, 600);
+    if (!cursorTrailContainer) {
+        cursorTrailContainer = document.createElement('div');
+        cursorTrailContainer.className = 'cursor-trail-layer';
+        document.body.appendChild(cursorTrailContainer);
+    }
+
+    if (cursorTrailPool.length === 0) {
+        const poolSize = window.innerWidth <= 1200 ? 10 : 14;
+        for (let index = 0; index < poolSize; index += 1) {
+            const star = document.createElement('div');
+            star.className = 'cursor-star-trail';
+            cursorTrailContainer.appendChild(star);
+            cursorTrailPool.push(star);
+        }
+    }
+
+    lastCursorTrailEmitTime = now;
+
+    const star = cursorTrailPool[cursorTrailPoolIndex % cursorTrailPool.length];
+    cursorTrailPoolIndex += 1;
+    const size = 7 + Math.round(Math.random() * 6);
+    const driftX = Math.round((Math.random() - 0.5) * 18);
+    const driftY = 10 + Math.round(Math.random() * 14);
+
+    star.classList.remove('is-live');
+    void star.offsetWidth;
+    star.style.left = `${e.clientX}px`;
+    star.style.top = `${e.clientY}px`;
+    star.style.width = `${size}px`;
+    star.style.height = `${size}px`;
+    star.style.setProperty('--trail-drift-x', `${driftX}px`);
+    star.style.setProperty('--trail-drift-y', `${driftY}px`);
+    star.style.animationDuration = `${560 + Math.round(Math.random() * 180)}ms`;
+    star.classList.add('is-live');
 }, { passive: true });
 // ==========================================
 // PART 2 of 4: PAGE LOADERS & PRICING
@@ -5257,6 +5429,14 @@ function cinematicTransition(event, targetPageFunction, hashTarget = '') {
     }, transitionEndDelay); 
 }
 
+function cinematicNavigateToUrl(event, targetUrl) {
+    const destination = String(targetUrl || '').trim();
+    if (!destination) return;
+    cinematicTransition(event, () => {
+        window.location.href = destination;
+    });
+}
+
 function triggerConfetti() {
     const colors = ['#ec4899', '#00f2fe', '#22c55e', '#a855f7', '#f1c40f'];
     const confettiCount = getAdaptiveCount(18, 10);
@@ -5282,6 +5462,9 @@ function bindCoreMenuControls() {
     document.getElementById('reviewsBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadReviewsPage, '#reviews'));
     document.getElementById('tosBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadTOSPage, '#tos'));
     document.getElementById('socialsBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadSocialsPage, '#socials'));
+    document.getElementById('huskyCreatorBtn')?.addEventListener('click', () => {
+        window.location.href = 'husky.html';
+    });
     
     document.getElementById('btnGalleryHome')?.addEventListener('click', (e) => cinematicTransition(e, loadGalleryPage, '#gallery'));
     document.getElementById('btnDiscordHome')?.addEventListener('click', (e) => {
@@ -5996,6 +6179,7 @@ function loadHomePage() {
                 <button type="button" class="nav-btn home-top-link nav-pill" id="tosBtn">Our TOS</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="whatWeDoBtn">What we do</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="socialsBtn">Meet the Artists + FAQ + How to Order</button>
+                <button type="button" class="nav-btn home-top-link nav-pill" id="huskyCreatorBtn">Husky Creator Page</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="reviewsBtn">Reviews</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="contactBtn">Contact us 💬</button>
             </nav>
@@ -6208,11 +6392,12 @@ function loadGalleryPage() {
         const mediaClass = item.videoLink ? 'gallery-video-thumb' : '';
         const cardTag = item.videoLink ? 'Animation Clip • Click to play' : item.creator;
         const gallerySrc = /^https?:\/\//i.test(item.url) ? item.url : encodeURI(item.url);
+        const galleryAltText = buildGalleryImageAltText(item, i);
         galleryHTML += `
             <div class="gallery-card filter-item" data-categories="${item.categories.join(' ')}">
-                <img src="${gallerySrc}" class="gallery-img ${mediaClass}" alt="${item.title || `Gallery Item ${i + 1}`}" loading="lazy" onerror="handleImageError(this)" ${item.videoLink ? `data-video-link="${item.videoLink}"` : ''}>
-                <p style="color: #ec4899; font-weight: 600;">${cardTag}</p>
-                <p class="gallery-card-title">${item.title || `Gallery Item ${i + 1}`}</p>
+                <img src="${gallerySrc}" class="gallery-img ${mediaClass}" alt="${escapeHTML(galleryAltText)}" loading="lazy" onerror="handleImageError(this)" ${item.videoLink ? `data-video-link="${item.videoLink}"` : ''}>
+                <p style="color: #ec4899; font-weight: 600;">${escapeHTML(cardTag)}</p>
+                <p class="gallery-card-title">${escapeHTML(item.title || `Gallery Item ${i + 1}`)}</p>
                 <div class="gallery-card-cats">${categoryBadges}</div>
             </div>
         `;
@@ -6681,6 +6866,8 @@ function loadPricingPage() {
         const jumpSections = jumpButtons
             .map((button) => String(button.getAttribute('data-pricing-target') || '').trim())
             .filter(Boolean);
+        const jumpNav = document.querySelector('.pricing-jump-nav');
+        const pricingContainer = document.querySelector('.pricing-container');
 
         const setActivePricingJump = (targetId) => {
             jumpButtons.forEach((jumpButton) => {
@@ -6694,6 +6881,12 @@ function loadPricingPage() {
             });
         };
 
+        const updatePricingJumpDockState = () => {
+            if (!(jumpNav instanceof HTMLElement) || !(pricingContainer instanceof HTMLElement)) return;
+            const scrolled = pricingContainer.scrollTop > 120 || window.scrollY > 120;
+            jumpNav.classList.toggle('is-dimmed', scrolled);
+        };
+
         document.querySelectorAll('[data-pricing-target]').forEach((button) => {
             if (!(button instanceof HTMLButtonElement)) return;
             button.addEventListener('click', () => {
@@ -6703,6 +6896,12 @@ function loadPricingPage() {
                 document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
         });
+
+        if (pricingContainer instanceof HTMLElement) {
+            pricingContainer.addEventListener('scroll', updatePricingJumpDockState, { passive: true });
+        }
+        window.addEventListener('scroll', updatePricingJumpDockState, { passive: true });
+        updatePricingJumpDockState();
 
         if ('IntersectionObserver' in window && jumpSections.length > 0) {
             const sectionObserver = new IntersectionObserver((entries) => {
@@ -7507,7 +7706,7 @@ function loadSocialsPage() {
         <section class="meet-artists-heading">
             <p class="meet-artists-kicker">Horizon Tide Studio</p>
             <h1 class="meet-artists-title">Meet the Artists & Socials</h1>
-            <p class="meet-artists-subtitle">A warm hello from the two creators behind Horizon Tide. We blend dreamy digital storytelling with handmade physical craftsmanship.</p>
+            <p class="meet-artists-subtitle">A warm hello from the two creators behind Horizon Tide. Meet Husky, our digital artist and animator, and Lopside, our handmade and fursuit maker.</p>
         </section>
         <section class="meet-info-signpost" aria-label="Meet page quick links">
             <p class="meet-info-signpost-label">Need quick info?</p>
@@ -7519,19 +7718,21 @@ function loadSocialsPage() {
         <div class="socials-container">
             <article class="profile-card card-pink">
                 <img src="https://img.pokemondb.net/sprites/black-white/anim/normal/espeon.gif" alt="Espeon" class="card-espeon" style="filter: drop-shadow(0 0 8px rgba(236, 72, 153, 0.5));">
-                <img src="Husky our socials/IMG_6379.jpg" alt="Husky" class="profile-img" style="object-fit: cover; object-position: center;" onerror="handleImageError(this)">
+                <img src="Husky our socials/IMG_6379.jpg" alt="Husky (The Horizon) digital artist profile photo" class="profile-img" style="object-fit: cover; object-position: center;" onerror="handleImageError(this)">
                 <h2 class="starborn-name">Husky</h2>
                 <p class="artist-role">Digital Artist • Animator • Website Creator</p>
                 <p class="artist-blurb">Husky handles digital art, animation, character artwork, and website building. Her style leans warm, emotional, and dreamy, with a focus on storytelling and personality.</p>
+                <a href="husky.html" id="huskyCreatorProfileLink" class="social-link-btn">Official Husky Creator Page</a>
                 <a href="https://www.instagram.com/miraculously_cringe?igsh=Y3NoNjlydmxoZW1x&utm_source=qr" target="_blank" class="social-link-btn">Instagram</a>
                 <a href="https://www.tiktok.com/@sugarmew_2?_r=1&_t=ZT-96gjOKaomdh" target="_blank" class="social-link-btn">TikTok</a>
             </article>
             <article class="profile-card card-green">
                 <img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/espeon.gif" alt="Shiny Espeon" class="card-espeon" style="filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.5));">
-                <img src="Lopside Our Socials/IMG_0721.jpg" alt="Lopside" class="profile-img" style="object-fit: cover; object-position: center;" onerror="handleImageError(this)">
+                <img src="Lopside Our Socials/IMG_0721.jpg" alt="Lopside handmade artist and fursuit maker profile photo" class="profile-img" style="object-fit: cover; object-position: center;" onerror="handleImageError(this)">
                 <h2 class="starborn-name">Lopside</h2>
                 <p class="artist-role">Fursuit Maker • Handmade Creator</p>
                 <p class="artist-blurb">Lopside handles fursuit creations, suit parts, and handmade physical commissions. Her approach is friendly, detail-focused, and deeply craft-driven.</p>
+                <a href="lopside.html" id="lopsideCreatorProfileLink" class="social-link-btn">Official Lopside Creator Page</a>
                 <a href="https://www.instagram.com/littlelopsidestudio?igsh=MW00OGFkbW13Zm5iOQ==" target="_blank" class="social-link-btn">Instagram</a>
                 <a href="https://www.tiktok.com/@little_lopside_studio?_r=1&_t=ZT-96eI2PAh4kn" target="_blank" class="social-link-btn">TikTok</a>
                 <a href="https://x.com/littlelopside?s=21" target="_blank" class="social-link-btn">X / Twitter</a>
@@ -7611,6 +7812,14 @@ function loadSocialsPage() {
 
     document.getElementById('jumpToOrderGuideBtn')?.addEventListener('click', () => {
         document.getElementById('meetOrderingSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    document.getElementById('huskyCreatorProfileLink')?.addEventListener('click', (event) => {
+        cinematicNavigateToUrl(event, 'husky.html');
+    });
+
+    document.getElementById('lopsideCreatorProfileLink')?.addEventListener('click', (event) => {
+        cinematicNavigateToUrl(event, 'lopside.html');
     });
 
     document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
@@ -8824,6 +9033,22 @@ function loadStatusCheckPage() {
     `;
     document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
     bindAdminReturnButtons(appViewport);
+
+    const statusForm = document.getElementById('statusCheckForm');
+    const statusQueryField = document.getElementById('searchQuery');
+    if (statusForm instanceof HTMLFormElement && statusQueryField instanceof HTMLInputElement) {
+        const params = new URLSearchParams(window.location.search || '');
+        const querySeed = String(params.get('order') || params.get('q') || '').trim();
+        if (querySeed) {
+            statusQueryField.value = querySeed.slice(0, 36);
+            // Auto-run for deep links coming from search engines/search action templates.
+            window.setTimeout(() => {
+                if (statusQueryField.value.trim()) {
+                    statusForm.requestSubmit();
+                }
+            }, 120);
+        }
+    }
 
     document.getElementById('statusCheckForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -12357,6 +12582,12 @@ function setupAdminDashboardDelegation() {
             return;
         }
 
+        if (button.matches('.admin-archive-chip')) {
+            const view = String(button.getAttribute('data-archive-filter') || 'active');
+            filterOrdersByArchiveView(view);
+            return;
+        }
+
         if (button.id === 'adminSelectVisibleOrdersBtn') {
             setVisibleAdminOrderSelection(true);
             return;
@@ -12951,6 +13182,36 @@ function setupAdminDashboardDelegation() {
             return;
         }
 
+        if (button.matches('.admin-order-archive-btn')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before archiving orders.')) return;
+            const orderId = button.getAttribute('data-order-id');
+            const isArchived = button.getAttribute('data-archived') === 'true';
+            if (!orderId) return;
+
+            button.disabled = true;
+            try {
+                if (isArchived) {
+                    await updateDoc(doc(db, 'preorders', orderId), {
+                        archivedAt: deleteField(),
+                        archivedBy: deleteField()
+                    });
+                    showAdminToast('Order restored to active view.');
+                } else {
+                    await updateDoc(doc(db, 'preorders', orderId), {
+                        archivedAt: serverTimestamp(),
+                        archivedBy: auth.currentUser?.email || 'admin'
+                    });
+                    showAdminToast('Order archived.');
+                }
+            } catch (error) {
+                console.error(error);
+                showAdminToast(`Failed to ${isArchived ? 'restore' : 'archive'} order.`, true);
+            } finally {
+                button.disabled = false;
+            }
+            return;
+        }
+
         if (button.matches('.admin-save-final-price-btn')) {
             if (!requireAdminSession('Please sign in with an authorized admin account before saving final prices.')) return;
             const orderId = button.getAttribute('data-order-id');
@@ -13424,10 +13685,13 @@ async function syncOrderQueueFallbackFromAdmin(order, status) {
 
 function applyAdminOrderFilters() {
     const allOrders = Array.isArray(window.allOrders) ? window.allOrders : [];
-    const state = window.adminOrderFilterState || { status: 'All', search: '' };
+    const state = window.adminOrderFilterState || { status: 'All', search: '', archiveView: 'active' };
     const search = String(state.search || '').trim().toLowerCase();
 
     const filtered = allOrders.filter((order) => {
+        const isArchived = Boolean(order?.archivedAt);
+        if (state.archiveView === 'active' && isArchived) return false;
+        if (state.archiveView === 'archived' && !isArchived) return false;
         if (state.status !== 'All' && String(order.status || 'Pending Review') !== state.status) return false;
         if (!search) return true;
 
@@ -13451,6 +13715,39 @@ function applyAdminOrderFilters() {
     });
 
     renderAdminOrders(filtered);
+
+    document.querySelectorAll('.admin-status-chip').forEach((chip) => {
+        if (!(chip instanceof HTMLButtonElement)) return;
+        const chipStatus = String(chip.getAttribute('data-status-filter') || 'All');
+        const isActive = chipStatus === state.status;
+        chip.classList.toggle('is-active', isActive);
+        chip.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+
+    document.querySelectorAll('.admin-archive-chip').forEach((chip) => {
+        if (!(chip instanceof HTMLButtonElement)) return;
+        const chipView = String(chip.getAttribute('data-archive-filter') || 'active');
+        const isActive = chipView === state.archiveView;
+        chip.classList.toggle('is-active', isActive);
+        chip.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+
+    const activeCount = allOrders.filter((order) => !Boolean(order?.archivedAt)).length;
+    const archivedCount = allOrders.filter((order) => Boolean(order?.archivedAt)).length;
+    const summary = document.getElementById('adminOrdersSnapshot');
+    if (summary instanceof HTMLElement) {
+        const archiveLabel = state.archiveView === 'active'
+            ? 'Active only'
+            : state.archiveView === 'archived'
+                ? 'Archived only'
+                : 'All orders';
+        summary.innerHTML = `
+            <span class="admin-orders-snapshot-pill"><strong>Showing:</strong> ${filtered.length}</span>
+            <span class="admin-orders-snapshot-pill"><strong>Active:</strong> ${activeCount}</span>
+            <span class="admin-orders-snapshot-pill"><strong>Archived:</strong> ${archivedCount}</span>
+            <span class="admin-orders-snapshot-pill admin-orders-snapshot-pill--mode">${escapeHTML(archiveLabel)}</span>
+        `;
+    }
 }
 
 function loadAdminDashboard() {
@@ -13598,6 +13895,11 @@ function loadAdminDashboard() {
                     <summary><span class="admin-summary-label">Orders <span class="admin-panel-badge" id="adminOrdersCountBadge" data-tone="amber">0</span></span></summary>
                     <div class="admin-collapsible-body">
                         <div class="admin-orders-toolbar">
+                            <div class="admin-filters admin-filters--chips admin-filters--archive">
+                                <button type="button" class="nav-btn admin-archive-chip" data-archive-filter="active">Active</button>
+                                <button type="button" class="nav-btn admin-archive-chip" data-archive-filter="archived">Archived</button>
+                                <button type="button" class="nav-btn admin-archive-chip" data-archive-filter="all">All</button>
+                            </div>
                             <div class="admin-filters admin-filters--chips">
                                 <button type="button" class="nav-btn admin-status-chip" data-status-filter="All">All</button>
                                 <button type="button" class="nav-btn admin-status-chip" data-status-filter="Pending Review">Pending</button>
@@ -13605,6 +13907,7 @@ function loadAdminDashboard() {
                                 <button type="button" class="nav-btn admin-status-chip" data-status-filter="In Progress">In Progress</button>
                                 <button type="button" class="nav-btn admin-status-chip" data-status-filter="Finished">Finished</button>
                             </div>
+                            <div id="adminOrdersSnapshot" class="admin-orders-snapshot" aria-live="polite"></div>
                             <div class="admin-bulk-actions" aria-label="Bulk order actions">
                                 <span class="admin-list-count-badge" id="adminBulkSelectionCount">0 selected</span>
                                 <button type="button" class="admin-btn-edit" id="adminSelectVisibleOrdersBtn">Select Visible</button>
@@ -14006,7 +14309,7 @@ function loadAdminDashboard() {
     renderAdminDiagnosticsPanel();
     attachAdminDiagnosticsListeners();
 
-    window.adminOrderFilterState = { status: 'All', search: '' };
+    window.adminOrderFilterState = { status: 'All', search: '', archiveView: 'active' };
 
     const quickSearchInput = document.getElementById('adminQuickSearch');
     const premadeImageInput = document.getElementById('adminPremadeDesignImage');
@@ -16077,6 +16380,11 @@ function renderAdminOrders(ordersArr) {
         const notesPreview = getPreviewText(notes, 150);
         const attentionBadge = getOrderAttentionBadge(order);
         const currentStatus = order.status || 'Pending Review';
+        const isArchived = Boolean(order.archivedAt);
+        card.classList.toggle('is-archived', isArchived);
+        const archivedAtLabel = getComparableTimestampMs(order.archivedAt)
+            ? new Date(getComparableTimestampMs(order.archivedAt)).toLocaleDateString()
+            : '';
         const submittedEstimate = extractSubmittedEstimateFromNotes(order.notes);
         const submittedEstimateDiscount = extractSubmittedEstimateDiscountFromNotes(order.notes);
         const publicStatusDoc = window.adminPublicStatusByOrderId[String(order.orderId || '').trim()] || null;
@@ -16112,6 +16420,7 @@ function renderAdminOrders(ordersArr) {
                     <span>Select</span>
                 </label>
                 <h3>${escapeHTML(order.orderType || order.itemType || 'Order')}</h3>
+                ${isArchived ? '<span class="admin-order-archived-tag">Archived</span>' : ''}
                 <span class="admin-order-badge ${badgeToneClass}">${escapeHTML(attentionBadge)}</span>
             </div>
 
@@ -16123,6 +16432,7 @@ function renderAdminOrders(ordersArr) {
                 <span class="admin-order-meta-pill"><strong>Final:</strong> ${escapeHTML(finalMetaValue)}</span>
                 ${submittedEstimate ? `<span class="admin-order-meta-pill"><strong>Submitted Est:</strong> ${escapeHTML(submittedEstimate)}</span>` : ''}
                 <span class="admin-order-meta-pill"><strong>Status:</strong> ${escapeHTML(currentStatus)}</span>
+                ${isArchived ? `<span class="admin-order-meta-pill admin-order-meta-pill--archived"><strong>Archive:</strong> ${escapeHTML(archivedAtLabel || 'Archived')}</span>` : ''}
                 <span class="admin-order-meta-pill"><strong>Public Uploads:</strong> <span class="admin-order-public-refs-flag ${refsPublished ? 'is-published' : 'is-hidden'}">${refsPublished ? `${publishedRefsCount} Published` : 'Hidden'}</span></span>
             </div>
 
@@ -16206,6 +16516,7 @@ function renderAdminOrders(ordersArr) {
                     <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
                     <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
                 </select>
+                <button type="button" class="admin-order-action-btn admin-order-archive-btn" data-order-id="${order.id}" data-archived="${isArchived ? 'true' : 'false'}">${isArchived ? 'Restore' : 'Archive'}</button>
                 <button type="button" id="msg-${order.id}" class="copy-template-btn admin-order-action-btn" data-order-id="${order.id}">Copy Msg</button>
                 <button type="button" id="copy-${order.id}" class="admin-order-action-btn" data-copy-email="${escapeHTML(email)}">Copy Email</button>
                 <button type="button" id="delete-${order.id}" class="admin-order-action-btn admin-order-delete-btn" data-order-id="${order.id}">Delete</button>
@@ -16249,9 +16560,17 @@ function showAdminToast(msg, isError = false) {
 
 function filterOrders(status) {
     if (!window.adminOrderFilterState) {
-        window.adminOrderFilterState = { status: 'All', search: '' };
+        window.adminOrderFilterState = { status: 'All', search: '', archiveView: 'active' };
     }
     window.adminOrderFilterState.status = status || 'All';
+    applyAdminOrderFilters();
+}
+
+function filterOrdersByArchiveView(view) {
+    if (!window.adminOrderFilterState) {
+        window.adminOrderFilterState = { status: 'All', search: '', archiveView: 'active' };
+    }
+    window.adminOrderFilterState.archiveView = ['active', 'archived', 'all'].includes(view) ? view : 'active';
     applyAdminOrderFilters();
 }
 
@@ -16379,17 +16698,28 @@ function exportCommissionsCSV() {
 // =====================================
 let bgMusic = null;
 const MUSIC_SRC = 'sonican-lo-fi-music-loop-sentimental-jazzy-love-473154.mp3';
-const MUSIC_LABELS = {
+const MUSIC_LABELS_DESKTOP = {
     play: '♪ Play Music',
     pause: '♪ Pause Music',
     tap: '♪ Tap To Play',
     unavailable: '♪ Unavailable'
 };
 
+const MUSIC_LABELS_MOBILE = {
+    play: '♪ Play',
+    pause: '♪ Pause',
+    tap: '♪ Play',
+    unavailable: '♪ Unavailable'
+};
+
+function getMusicLabels() {
+    return window.matchMedia('(max-width: 768px)').matches ? MUSIC_LABELS_MOBILE : MUSIC_LABELS_DESKTOP;
+}
+
 const musicBtn = document.createElement('button');
 musicBtn.type = 'button';
 musicBtn.id = 'globalMusicBtn';
-musicBtn.textContent = window.matchMedia('(pointer: coarse)').matches ? MUSIC_LABELS.tap : MUSIC_LABELS.play;
+musicBtn.textContent = window.matchMedia('(pointer: coarse)').matches ? getMusicLabels().tap : getMusicLabels().play;
 musicBtn.setAttribute('aria-label', 'Toggle background music');
 
 function setMusicButtonLabel(label) {
@@ -16419,12 +16749,12 @@ function ensureBgMusic() {
     audioEl.setAttribute('aria-hidden', 'true');
     audioEl.style.display = 'none';
 
-    audioEl.addEventListener('play', () => setMusicButtonLabel(MUSIC_LABELS.pause));
+    audioEl.addEventListener('play', () => setMusicButtonLabel(getMusicLabels().pause));
     audioEl.addEventListener('pause', () => {
         if (audioEl.ended) return;
-        setMusicButtonLabel(MUSIC_LABELS.play);
+        setMusicButtonLabel(getMusicLabels().play);
     });
-    audioEl.addEventListener('error', () => setMusicButtonLabel(MUSIC_LABELS.unavailable));
+    audioEl.addEventListener('error', () => setMusicButtonLabel(getMusicLabels().unavailable));
 
     document.body.appendChild(audioEl);
     bgMusic = audioEl;
@@ -16447,10 +16777,14 @@ const applyResponsiveMusicPlacement = () => {
     const bannerHeight = getActiveSaleBannerHeight();
     const topOffset = bannerHeight + 14;
 
+    if (!bgMusic || bgMusic.paused) {
+        setMusicButtonLabel(window.matchMedia('(pointer: coarse)').matches ? getMusicLabels().tap : getMusicLabels().play);
+    }
+
     musicBtn.style.cssText = `
         position: fixed; 
         z-index: 9999;
-        padding: 12px 18px; 
+        padding: ${isMobile ? '10px 12px' : '12px 18px'}; 
         border-radius: 12px; 
         background: rgba(10, 18, 38, 0.8);
         border: 1px solid #00f2fe; 
@@ -16458,7 +16792,9 @@ const applyResponsiveMusicPlacement = () => {
         cursor: pointer;
         backdrop-filter: blur(5px); 
         font-family: inherit; 
-        font-size: 1rem;
+        font-size: ${isMobile ? '0.88rem' : '1rem'};
+        line-height: 1.15;
+        max-width: ${isMobile ? '128px' : 'none'};
         box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2); 
         transition: all 0.3s ease;
         ${isMobile ? `top: ${topOffset}px; right: 14px; bottom: auto;` : 'bottom: var(--floating-bottom-clearance, 20px); right: 20px; top: auto;'}
@@ -16483,7 +16819,7 @@ document.body.appendChild(musicBtn);
 
 musicBtn.addEventListener('click', async () => {
     if (!MUSIC_SRC || !String(MUSIC_SRC).trim()) {
-        setMusicButtonLabel(MUSIC_LABELS.unavailable);
+        setMusicButtonLabel(getMusicLabels().unavailable);
         return;
     }
 
@@ -16492,15 +16828,15 @@ musicBtn.addEventListener('click', async () => {
     if (audioEl.paused) {
         try {
             await audioEl.play();
-            setMusicButtonLabel(MUSIC_LABELS.pause);
+            setMusicButtonLabel(getMusicLabels().pause);
         } catch (err) {
             if (isAutoplayBlockedError(err)) {
-                setMusicButtonLabel(MUSIC_LABELS.tap);
+                setMusicButtonLabel(getMusicLabels().tap);
                 return;
             }
 
             const failedToLoad = audioEl.error || err?.name === 'NotSupportedError';
-            setMusicButtonLabel(failedToLoad ? MUSIC_LABELS.unavailable : MUSIC_LABELS.tap);
+            setMusicButtonLabel(failedToLoad ? getMusicLabels().unavailable : getMusicLabels().tap);
             if (failedToLoad) {
                 console.warn('Music file failed to load:', err);
             }
@@ -16509,7 +16845,7 @@ musicBtn.addEventListener('click', async () => {
     }
 
     audioEl.pause();
-    setMusicButtonLabel(MUSIC_LABELS.play);
+    setMusicButtonLabel(getMusicLabels().play);
 });
 
 let isEvolving = false;
@@ -16797,5 +17133,7 @@ clearReloadedAdminSession().finally(() => {
     initializeMoonClockSync();
     bindStickyPreorderCta();
     bindSiteGuideTriggers(document);
+    updateSiteGuideLauncherCopy();
+    window.addEventListener('resize', updateSiteGuideLauncherCopy, { passive: true });
     initRouter();
 });

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lopside (The Horizon) | Fursuit Maker and Handmade Creator</title>
+    <meta name="description" content="Official creator page for Lopside (The Horizon), fursuit maker and handmade creator at Horizon Tide Gallery. View commissions, socials, and portfolio routes.">
+    <meta property="og:title" content="Lopside (The Horizon) | Official Creator Page">
+    <meta property="og:description" content="Meet Lopside from Horizon Tide Gallery: fursuit maker and handmade commission creator.">
+    <meta property="og:type" content="profile">
+    <meta property="og:url" content="https://horizontidegallery.com/lopside.html">
+    <meta property="og:image" content="https://horizontidegallery.com/Lopside%20Our%20Socials/IMG_0721.jpg">
+    <meta name="robots" content="index, follow">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Lopside (The Horizon) | Fursuit Maker and Handmade Creator">
+    <meta name="twitter:description" content="Official Lopside creator profile from Horizon Tide Gallery.">
+    <meta name="twitter:image" content="https://horizontidegallery.com/Lopside%20Our%20Socials/IMG_0721.jpg">
+    <meta name="theme-color" content="#081f17">
+    <link rel="canonical" href="https://horizontidegallery.com/lopside.html">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-top: #071a17;
+            --bg-bottom: #12352d;
+            --ink: #ecfff9;
+            --muted: #b9dfd4;
+            --green: #22c55e;
+            --seafoam: #67f7c7;
+            --panel: rgba(7, 30, 24, 0.78);
+            --line: rgba(88, 232, 168, 0.3);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Fredoka', sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 18% 16%, rgba(34, 197, 94, 0.2), transparent 42%),
+                radial-gradient(circle at 82% 8%, rgba(103, 247, 199, 0.18), transparent 46%),
+                linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+            display: grid;
+            place-items: center;
+            padding: 26px;
+        }
+
+        .shell {
+            width: min(860px, 100%);
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 22px;
+            backdrop-filter: blur(9px);
+            box-shadow: 0 20px 42px rgba(0, 0, 0, 0.35);
+            overflow: hidden;
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: 180px 1fr;
+            gap: 22px;
+            padding: 28px;
+            align-items: center;
+        }
+
+        .avatar {
+            width: 180px;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 20px;
+            border: 2px solid rgba(34, 197, 94, 0.65);
+            box-shadow: 0 0 28px rgba(34, 197, 94, 0.35);
+        }
+
+        .kicker {
+            margin: 0 0 8px;
+            color: var(--seafoam);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-size: 0.86rem;
+            font-weight: 600;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(1.5rem, 5vw, 2.4rem);
+            line-height: 1.14;
+        }
+
+        .subtitle {
+            margin: 12px 0 0;
+            color: var(--muted);
+            font-size: 1.02rem;
+            line-height: 1.45;
+        }
+
+        .content {
+            padding: 0 28px 28px;
+        }
+
+        .pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 0 0 20px;
+        }
+
+        .pill {
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 0.92rem;
+            color: #dcfff4;
+            background: rgba(48, 136, 103, 0.3);
+            border: 1px solid rgba(88, 232, 168, 0.35);
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: #ffffff;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            background: rgba(255, 255, 255, 0.12);
+            transition: transform 150ms ease, background 150ms ease;
+        }
+
+        .btn:hover,
+        .btn:focus-visible {
+            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #22c55e, #0ea5a1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .fine {
+            margin-top: 20px;
+            color: #a6d8cb;
+            font-size: 0.88rem;
+        }
+
+        @media (max-width: 720px) {
+            body { padding: 14px; }
+            .hero {
+                grid-template-columns: 1fr;
+                text-align: center;
+                justify-items: center;
+            }
+            .actions { justify-content: center; }
+            .pill-row { justify-content: center; }
+        }
+    </style>
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "ProfilePage",
+                    "@id": "https://horizontidegallery.com/lopside.html#page",
+                    "url": "https://horizontidegallery.com/lopside.html",
+                    "name": "Lopside (The Horizon) | Fursuit Maker and Handmade Creator",
+                    "isPartOf": { "@id": "https://horizontidegallery.com/#website" },
+                    "mainEntity": { "@id": "https://horizontidegallery.com/#lopside" }
+                },
+                {
+                    "@type": "Person",
+                    "@id": "https://horizontidegallery.com/#lopside",
+                    "name": "Lopside",
+                    "alternateName": ["Little Lopside", "Lopside (The Horizon)"],
+                    "description": "Fursuit maker and handmade creator at Horizon Tide Gallery focused on suit parts, physical commissions, and craft detail.",
+                    "jobTitle": "Fursuit Maker and Handmade Artist",
+                    "url": "https://horizontidegallery.com/lopside.html",
+                    "image": "https://horizontidegallery.com/Lopside%20Our%20Socials/IMG_0721.jpg",
+                    "worksFor": { "@id": "https://horizontidegallery.com/#organization" },
+                    "sameAs": [
+                        "https://www.instagram.com/littlelopsidestudio/",
+                        "https://www.tiktok.com/@little_lopside_studio",
+                        "https://x.com/littlelopside"
+                    ],
+                    "knowsAbout": [
+                        "Fursuit Craft",
+                        "Handmade Commissions",
+                        "Sewing",
+                        "Patterning",
+                        "Physical Merch"
+                    ]
+                },
+                {
+                    "@type": "Organization",
+                    "@id": "https://horizontidegallery.com/#organization",
+                    "name": "Horizon Tide Gallery",
+                    "url": "https://horizontidegallery.com/"
+                }
+            ]
+        }
+    </script>
+</head>
+<body>
+    <main class="shell">
+        <section class="content" style="padding-bottom: 0; padding-top: 20px;">
+            <a class="btn" href="index.html#socials" aria-label="Back to Meet the Artists">← Back to Meet the Artists</a>
+        </section>
+        <section class="hero">
+            <img src="Lopside Our Socials/IMG_0721.jpg" alt="Lopside handmade artist and fursuit maker profile photo" class="avatar">
+            <div>
+                <p class="kicker">Official Creator Profile</p>
+                <h1>Lopside (The Horizon)</h1>
+                <p class="subtitle">Fursuit maker and handmade creator at Horizon Tide Gallery. I build wearable pieces, suit parts, and physical commissions with careful craftsmanship and detail.</p>
+            </div>
+        </section>
+
+        <section class="content" aria-label="Lopside creator details">
+            <div class="pill-row">
+                <span class="pill">Fursuit builds</span>
+                <span class="pill">Handmade commissions</span>
+                <span class="pill">Suit parts and repairs</span>
+                <span class="pill">Craft-focused workflow</span>
+            </div>
+
+            <p>Looking for Lopside commissions? Use the preorder flow from Horizon Tide, or message through official socials listed below.</p>
+
+            <div class="actions">
+                <a class="btn btn-primary" href="index.html#fursuits">Start Fursuit Request</a>
+                <a class="btn" href="index.html#gallery">View Gallery</a>
+                <a class="btn" href="index.html#socials">Artist + FAQ Page</a>
+                <a class="btn" href="husky.html">Meet Husky's Creator Profile</a>
+                <a class="btn" href="https://www.instagram.com/littlelopsidestudio/" rel="noopener" target="_blank">Instagram</a>
+                <a class="btn" href="https://www.tiktok.com/@little_lopside_studio" rel="noopener" target="_blank">TikTok</a>
+                <a class="btn" href="https://x.com/littlelopside" rel="noopener" target="_blank">X / Twitter</a>
+            </div>
+
+            <p class="fine">Entity note: Lopside in this context refers to the Horizon Tide Gallery creator profile.</p>
+        </section>
+    </main>
+</body>
+</html>
