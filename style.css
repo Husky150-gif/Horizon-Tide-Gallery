@@ -3426,41 +3426,93 @@ body.admin-login-modal-open {
 
 .pricing-jump-nav {
     position: sticky;
-    top: 12px;
-    z-index: 5;
+    top: 10px;
+    z-index: 7;
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 10px;
     margin: 0 0 22px;
-    padding: 10px 12px;
-    border-radius: 18px;
-    background: linear-gradient(145deg, rgba(10, 16, 34, 0.92), rgba(9, 12, 26, 0.88));
-    border: 1px solid rgba(125, 211, 252, 0.14);
-    box-shadow: 0 10px 20px rgba(2, 8, 23, 0.18);
-    backdrop-filter: blur(14px);
+    padding: 10px 14px;
+    border-radius: 999px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    background:
+        linear-gradient(145deg, rgba(9, 16, 34, 0.94), rgba(14, 24, 46, 0.9)),
+        radial-gradient(circle at 18% -30%, rgba(34, 211, 238, 0.18), transparent 52%);
+    border: 1px solid rgba(103, 232, 249, 0.24);
+    box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.08), 0 10px 24px rgba(3, 10, 28, 0.35);
+    backdrop-filter: blur(16px) saturate(1.14);
+}
+
+.pricing-jump-nav::-webkit-scrollbar {
+    display: none;
 }
 
 .pricing-jump-btn,
 .pricing-start-btn {
-    border: 1px solid rgba(125, 211, 252, 0.2);
-    background: rgba(14, 26, 50, 0.52);
-    color: #eaf6ff;
+    border: 1px solid rgba(125, 211, 252, 0.26);
+    background: linear-gradient(180deg, rgba(16, 30, 58, 0.7), rgba(11, 20, 40, 0.58));
+    color: #deefff;
     border-radius: 999px;
-    padding: 7px 11px;
+    padding: 8px 15px;
+    flex: 0 0 auto;
     font-family: 'Fredoka', sans-serif;
-    font-size: 0.79rem;
+    font-size: 0.83rem;
+    font-weight: 540;
+    letter-spacing: 0.01em;
     cursor: pointer;
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
+
+.pricing-jump-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.pricing-jump-label-short {
+    display: none;
+}
+
+.pricing-jump-btn::before {
+    content: '•';
+    font-size: 0.82rem;
+    line-height: 1;
+    color: rgba(125, 211, 252, 0.86);
+    text-shadow: 0 0 8px rgba(34, 211, 238, 0.38);
+}
+
+.pricing-jump-btn[data-pricing-target="pricing-art"]::before { content: '✦'; }
+.pricing-jump-btn[data-pricing-target="pricing-animation"]::before { content: '▶'; }
+.pricing-jump-btn[data-pricing-target="pricing-stickers"]::before { content: '✶'; }
+.pricing-jump-btn[data-pricing-target="pricing-fursuits"]::before { content: '◈'; }
+.pricing-jump-btn[data-pricing-target="pricing-keychains"]::before { content: '⬡'; }
+.pricing-jump-btn[data-pricing-target="pricing-calculator"]::before { content: '∑'; }
 
 .pricing-jump-btn:hover,
 .pricing-jump-btn:focus-visible,
 .pricing-start-btn:hover,
 .pricing-start-btn:focus-visible {
     transform: translateY(-1px);
-    border-color: rgba(103, 232, 249, 0.62);
-    box-shadow: 0 0 14px rgba(34, 211, 238, 0.14);
+    border-color: rgba(103, 232, 249, 0.76);
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.24);
+    color: #f8fdff;
+}
+
+.pricing-jump-btn.is-active,
+.pricing-jump-btn[aria-current="true"] {
+    border-color: rgba(45, 212, 191, 0.75);
+    color: #bffdf2;
+    background: linear-gradient(180deg, rgba(20, 78, 102, 0.68), rgba(11, 56, 73, 0.65));
+    box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.25), 0 0 18px rgba(45, 212, 191, 0.24);
+}
+
+.pricing-jump-btn.is-active::before,
+.pricing-jump-btn[aria-current="true"]::before {
+    color: #7af5dd;
+    text-shadow: 0 0 10px rgba(45, 212, 191, 0.5);
 }
 
 .pricing-jump-btn:focus-visible,
@@ -3567,6 +3619,11 @@ body.admin-login-modal-open {
     border: 1px solid rgba(125, 211, 252, 0.12);
     border-left: 5px solid #ec4899;
     box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+}
+
+#pricing-calculator,
+.pricing-section {
+    scroll-margin-top: 112px;
 }
 
 .pricing-section-head {
@@ -3891,11 +3948,29 @@ body.admin-login-modal-open {
 
 @media (max-width: 900px) {
     [data-theme="pricing"] .pricing-jump-nav {
-        top: 8px;
+        top: 6px;
+        margin-bottom: 16px;
+        border-radius: 18px;
     }
 
     [data-theme="pricing"] .pricing-container {
         padding-top: 30px !important;
+    }
+}
+
+@media (max-width: 680px) {
+    [data-theme="pricing"] .pricing-jump-btn {
+        padding: 7px 12px;
+        font-size: 0.78rem;
+        gap: 6px;
+    }
+
+    [data-theme="pricing"] .pricing-jump-label-full {
+        display: none;
+    }
+
+    [data-theme="pricing"] .pricing-jump-label-short {
+        display: inline;
     }
 }
 

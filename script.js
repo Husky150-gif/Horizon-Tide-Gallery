@@ -6392,12 +6392,12 @@ function loadPricingPage() {
             <p class="subtitle">Starting prices are listed below so clients can budget fast, compare services easily, and decide where to start.</p>
 
             <div class="pricing-jump-nav" role="navigation" aria-label="Pricing section jump links">
-                <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-art">Art</button>
-                <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-animation">Animation</button>
-                <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-stickers">Stickers</button>
-                <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-fursuits">Fursuits</button>
-                <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-keychains">Keychains</button>
-                <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-calculator">Calculator</button>
+                <button type="button" class="pricing-jump-btn is-active" data-pricing-target="pricing-art" aria-current="true" aria-label="Art"><span class="pricing-jump-label-full">Art</span><span class="pricing-jump-label-short" aria-hidden="true">Art</span></button>
+                <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-animation" aria-label="Animation"><span class="pricing-jump-label-full">Animation</span><span class="pricing-jump-label-short" aria-hidden="true">Motion</span></button>
+                <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-stickers" aria-label="Stickers"><span class="pricing-jump-label-full">Stickers</span><span class="pricing-jump-label-short" aria-hidden="true">Stkrs</span></button>
+                <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-fursuits" aria-label="Fursuits"><span class="pricing-jump-label-full">Fursuits</span><span class="pricing-jump-label-short" aria-hidden="true">Suits</span></button>
+                <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-keychains" aria-label="Keychains"><span class="pricing-jump-label-full">Keychains</span><span class="pricing-jump-label-short" aria-hidden="true">Keys</span></button>
+                <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-calculator" aria-label="Calculator"><span class="pricing-jump-label-full">Calculator</span><span class="pricing-jump-label-short" aria-hidden="true">Start</span></button>
             </div>
 
             <section class="pricing-start-shell" id="pricing-calculator" aria-label="Pricing quick guide">
@@ -6677,14 +6677,53 @@ function loadPricingPage() {
     `;
 
     const bindPricingJumpButtons = () => {
+        const jumpButtons = Array.from(document.querySelectorAll('.pricing-jump-btn')).filter((button) => button instanceof HTMLButtonElement);
+        const jumpSections = jumpButtons
+            .map((button) => String(button.getAttribute('data-pricing-target') || '').trim())
+            .filter(Boolean);
+
+        const setActivePricingJump = (targetId) => {
+            jumpButtons.forEach((jumpButton) => {
+                const isActive = jumpButton.getAttribute('data-pricing-target') === targetId;
+                jumpButton.classList.toggle('is-active', isActive);
+                if (isActive) {
+                    jumpButton.setAttribute('aria-current', 'true');
+                } else {
+                    jumpButton.removeAttribute('aria-current');
+                }
+            });
+        };
+
         document.querySelectorAll('[data-pricing-target]').forEach((button) => {
             if (!(button instanceof HTMLButtonElement)) return;
             button.addEventListener('click', () => {
                 const targetId = button.getAttribute('data-pricing-target');
                 if (!targetId) return;
+                setActivePricingJump(targetId);
                 document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
         });
+
+        if ('IntersectionObserver' in window && jumpSections.length > 0) {
+            const sectionObserver = new IntersectionObserver((entries) => {
+                const mostVisible = entries
+                    .filter((entry) => entry.isIntersecting)
+                    .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+                if (!mostVisible?.target?.id) return;
+                setActivePricingJump(mostVisible.target.id);
+            }, {
+                root: appViewport,
+                threshold: [0.35, 0.5, 0.75],
+                rootMargin: '-90px 0px -45% 0px'
+            });
+
+            jumpSections.forEach((sectionId) => {
+                const target = document.getElementById(sectionId);
+                if (target instanceof HTMLElement) {
+                    sectionObserver.observe(target);
+                }
+            });
+        }
     };
 
     bindPricingJumpButtons();
