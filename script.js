@@ -3,7 +3,7 @@
 // ==========================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-import { initializeFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp, doc, updateDoc, deleteDoc, where, getDoc, setDoc, runTransaction, deleteField } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import { initializeFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp, doc, updateDoc, deleteDoc, where, getDoc, getDocs, setDoc, runTransaction, deleteField, startAfter } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
 import { getAuth, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence, inMemoryPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 import { detectLiteVisualMode, adaptiveCount, attachVisibilityAnimationPause } from "./modules/visualRuntime.js";
@@ -48,7 +48,7 @@ let globalHomeReviewListener = null;
 let globalHomeRefundFreshnessListener = null;
 let globalHomeCommissionFreshnessListener = null;
 let globalPremadeKeychainCatalogListener = null;
-let globalPricingSettingsListener = null;
+let globalGalleryCatalogListener = null;
 
 const DEFAULT_HOME_AVAILABILITY = {
     artists: {
@@ -94,145 +94,101 @@ const DEFAULT_PREMADE_KEYCHAIN_CATALOG = {
     ]
 };
 
+const DEFAULT_GALLERY_CATALOG = {
+    items: [
+        { id: 'gallery-art-fight', url: 'Images/Art fight.png', title: 'Art Fight', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { id: 'gallery-banner-concept', url: 'Images/banner 1.jpg', title: 'Banner Concept', creator: 'Husky', categories: ['digital-art'] },
+        { id: 'gallery-candelle-icon', url: 'Images/Candelle_icon.png', title: 'Candelle Icon', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { id: 'gallery-commission-1', url: 'Images/Com_1.png', title: 'Commission 1', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { id: 'gallery-commission-2', url: 'Images/Comm_2.png', title: 'Commission 2', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { id: 'gallery-commission-3', url: 'Images/Commmmmm.png', title: 'Commission 3', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { id: 'gallery-fancy-clown', url: 'Images/Fancy clown lol v.03.png', title: 'Fancy Clown', creator: 'Husky', categories: ['digital-art'] },
+        { id: 'gallery-illustration-15', url: 'Images/Illustration15.png', title: 'Illustration 15', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { id: 'gallery-illustration-7', url: 'Images/Illustration7.png', title: 'Illustration 7', creator: 'Husky', categories: ['digital-art'] },
+        { id: 'gallery-illustration-2', url: 'Images/Illustration_2.0.png', title: 'Illustration 2.0', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { id: 'gallery-lamb-concept', url: 'Images/Lambbbbbb_no_shade.png', title: 'Lamb Concept', creator: 'Husky', categories: ['digital-art'] },
+        { id: 'gallery-meow-portrait', url: 'Images/Meow.jpg', title: 'Meow Portrait', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { id: 'gallery-my-pride', url: 'Images/My pride.png', title: 'My Pride', creator: 'Husky', categories: ['digital-art'] },
+        { id: 'gallery-pounkkayk-icon', url: 'Images/Pounkkayk Icon for artfight 2025.png', title: 'Pounkkayk Icon', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { id: 'gallery-ship-commission', url: 'Images/Com_1.png', title: 'Shipppp Commission', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { id: 'gallery-spinel-glitchy', url: 'Images/Spinel but glitchy.png', title: 'Spinel Glitchy', creator: 'Husky', categories: ['digital-art'] },
+        { id: 'gallery-sticker-design', url: 'Images/Sticker 2.png', title: 'Sticker Design', creator: 'Husky', categories: ['stickers', 'finished-commissions'] },
+        { id: 'gallery-what-safety-cost-me', url: 'Images/What_safety_cost_me.png', title: 'What Safety Cost Me', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
+        { id: 'gallery-premade-keychain', url: 'Premade keychains/Absol_keycahin_watermark.png', title: 'Premade Keychain', creator: 'Horizon Tide', categories: ['keychains', 'finished-commissions'] },
+        { id: 'gallery-keychain-sample', url: 'Premade keychains/bleh1.png', title: 'Keychain Sample', creator: 'Horizon Tide', categories: ['keychains'] },
+        { id: 'gallery-keychain-illustration', url: 'Premade keychains/Illustration13_2.png', title: 'Keychain Illustration', creator: 'Horizon Tide', categories: ['keychains'] },
+        { id: 'gallery-fursuit-build', url: "Lopside's art images/03F50406-DA67-44D8-8E51-DB337E650157.jpg", title: 'Fursuit Build', creator: 'Lopside', categories: ['fursuits', 'finished-commissions'] },
+        { id: 'gallery-fursuit-detail', url: "Lopside's art images/BD466073-9A75-4F99-A7E3-45BBF7A3DCAE.jpg", title: 'Fursuit Detail', creator: 'Lopside', categories: ['fursuits'] },
+        { id: 'gallery-suit-progress-1', url: "Lopside's art images/IMG_1464.jpg", title: 'Suit Progress', creator: 'Lopside', categories: ['fursuits', 'finished-commissions'] },
+        { id: 'gallery-suit-progress-2', url: "Lopside's art images/IMG_2276.jpg", title: 'Suit Progress 2', creator: 'Lopside', categories: ['fursuits'] },
+        { id: 'gallery-suit-progress-3', url: "Lopside's art images/IMG_2309.jpg", title: 'Suit Progress 3', creator: 'Lopside', categories: ['fursuits'] },
+        { id: 'gallery-suit-progress-4', url: "Lopside's art images/IMG_2557.jpg", title: 'Suit Progress 4', creator: 'Lopside', categories: ['fursuits', 'finished-commissions'] },
+        { id: 'gallery-suit-progress-5', url: "Lopside's art images/IMG_5188.jpg", title: 'Suit Progress 5', creator: 'Lopside', categories: ['fursuits'] },
+        { id: 'gallery-suit-progress-6', url: "Lopside's art images/IMG_5784.jpg", title: 'Suit Progress 6', creator: 'Lopside', categories: ['fursuits', 'finished-commissions'] },
+        {
+            id: 'gallery-animation-preview',
+            url: 'https://img.youtube.com/vi/jnh7WgHTO6w/hqdefault.jpg',
+            title: 'Animation Preview',
+            creator: 'Husky',
+            categories: ['animation', 'finished-commissions'],
+            videoLink: 'https://youtu.be/jnh7WgHTO6w?si=lB-yZ1W5KB42W1g4'
+        }
+    ]
+};
+
+const DEFAULT_GALLERY_CATEGORY_OPTIONS = [
+    { value: 'digital-art', label: 'Digital Art' },
+    { value: 'fursuits', label: 'Fursuits' },
+    { value: 'keychains', label: 'Keychains' },
+    { value: 'stickers', label: 'Stickers' },
+    { value: 'animation', label: 'Animation' },
+    { value: 'finished-commissions', label: 'Finished Commissions' }
+];
+
+const GALLERY_CATEGORY_PRESETS = [
+    { id: 'husky-art', categories: ['digital-art', 'finished-commissions'] },
+    { id: 'lopside-fursuit', categories: ['fursuits', 'finished-commissions'] },
+    { id: 'merch', categories: ['keychains', 'stickers', 'finished-commissions'] },
+    { id: 'animation', categories: ['animation', 'finished-commissions'] }
+];
+
+const GALLERY_SNAPSHOT_RETENTION_MAX = 30;
+const GALLERY_SNAPSHOT_QUERY_PAGE_SIZE = 40;
+const DEFAULT_GALLERY_CATALOG_META = {
+    lastSavedAtMs: 0,
+    lastSavedBy: '',
+    lastSavedReason: ''
+};
+
+const GALLERY_CATEGORY_ALIAS_MAP = new Map([
+    ['art', 'digital-art'],
+    ['digitalart', 'digital-art'],
+    ['digital-arts', 'digital-art'],
+    ['fursuit', 'fursuits'],
+    ['fur-suit', 'fursuits'],
+    ['fur-suits', 'fursuits'],
+    ['suit', 'fursuits'],
+    ['suits', 'fursuits'],
+    ['keychain', 'keychains'],
+    ['key-chain', 'keychains'],
+    ['key-chains', 'keychains'],
+    ['sticker', 'stickers'],
+    ['animations', 'animation'],
+    ['animated', 'animation'],
+    ['finished-commission', 'finished-commissions'],
+    ['finished-commissions', 'finished-commissions'],
+    ['completed-commission', 'finished-commissions'],
+    ['completed-commissions', 'finished-commissions']
+]);
+
 const PREMADE_LOW_STOCK_THRESHOLD = 5;
 const PREMADE_CRITICAL_STOCK_THRESHOLD = 2;
 
-const DEFAULT_PRICING_CONFIG = {
-    art: {
-        types: {
-            Icon: { flat: 30, cel: 44, rendered: 64 },
-            Headshot: { flat: 40, cel: 56, rendered: 76 },
-            Bust: { flat: 54, cel: 74, rendered: 98 },
-            'Half Body': { flat: 68, cel: 88, rendered: 116 },
-            'Full Body': { flat: 88, cel: 116, rendered: 154 },
-            Scene: { flat: 190, cel: 238, rendered: 286 },
-            'Basic Ref Sheet': { flat: 190, cel: 190, rendered: 190 },
-            'Standard Ref Sheet': { flat: 260, cel: 260, rendered: 260 },
-            'Deluxe Ref Sheet': { flat: 330, cel: 330, rendered: 330 }
-        },
-        addOns: {
-            extraCharacterPercent: 80,
-            extraOutfit: 32,
-            prop: 24,
-            detailedBackgroundMin: 56,
-            detailedBackgroundMax: 96,
-            rushPercent: 60,
-            commercialLicensePercent: 100
-        }
-    },
-    stickers: {
-        types: {
-            'Single Sticker': 24,
-            'Matching Pair': 42,
-            'Sticker Sheet': 96,
-            'Small Batch': 124
-        },
-        printingAddon: {
-            first: 8,
-            additional: 4
-        }
-    },
-    keychains: {
-        custom: {
-            'Chibi/Icon': 68,
-            'Half Body': 86,
-            'Full Body': 110,
-            'Complex Character': 142
-        },
-        premade: {
-            'Clear Acrylic': 26,
-            Epoxy: 29,
-            'Colored Acrylic': 29,
-            'Rainbow Acrylic': 32,
-            'Translucent Acrylic': 32,
-            Holographic: 32,
-            'Glow in the Dark': 36
-        }
-    },
-    fursuits: {
-        parts: {
-            Tail: 130,
-            Paws: 220,
-            'Paws & Tail': 330,
-            'Feet Paws': 350,
-            'Trio Set': 680,
-            Head: 1400,
-            'Mini Partial': 1720,
-            'Full Partial': 2060,
-            Accessories: 70
-        },
-        rushOrderFlat: 160
-    },
-    sustainableFloorMultiplier: 0.9
-};
-
-function toPricingAmount(value, fallback) {
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed) || parsed < 0) return fallback;
-    return Math.round(parsed * 100) / 100;
-}
-
-function toPricingAmountWithMin(value, fallback, minValue = fallback) {
-    return Math.max(toPricingAmount(value, fallback), toPricingAmount(minValue, fallback));
-}
-
-function cloneDefaultPricingConfig() {
-    return JSON.parse(JSON.stringify(DEFAULT_PRICING_CONFIG));
-}
-
-function normalizePricingConfig(raw) {
-    const fallback = cloneDefaultPricingConfig();
-    const source = raw && typeof raw === 'object' ? raw : {};
-
-    Object.entries(fallback.art.types).forEach(([type, values]) => {
-        const incoming = source?.art?.types?.[type] || {};
-        values.flat = toPricingAmountWithMin(incoming.flat, values.flat, values.flat);
-        values.cel = toPricingAmountWithMin(incoming.cel, values.cel, values.cel);
-        values.rendered = toPricingAmountWithMin(incoming.rendered, values.rendered, values.rendered);
-    });
-
-    Object.entries(fallback.stickers.types).forEach(([type, value]) => {
-        fallback.stickers.types[type] = toPricingAmountWithMin(source?.stickers?.types?.[type], value, value);
-    });
-
-    Object.entries(fallback.keychains.custom).forEach(([type, value]) => {
-        fallback.keychains.custom[type] = toPricingAmountWithMin(source?.keychains?.custom?.[type], value, value);
-    });
-
-    Object.entries(fallback.keychains.premade).forEach(([type, value]) => {
-        fallback.keychains.premade[type] = toPricingAmountWithMin(source?.keychains?.premade?.[type], value, value);
-    });
-
-    Object.entries(fallback.fursuits.parts).forEach(([type, value]) => {
-        fallback.fursuits.parts[type] = toPricingAmountWithMin(source?.fursuits?.parts?.[type], value, value);
-    });
-
-    fallback.fursuits.rushOrderFlat = toPricingAmountWithMin(source?.fursuits?.rushOrderFlat, fallback.fursuits.rushOrderFlat, fallback.fursuits.rushOrderFlat);
-    fallback.art.addOns.extraCharacterPercent = toPricingAmountWithMin(source?.art?.addOns?.extraCharacterPercent, fallback.art.addOns.extraCharacterPercent, fallback.art.addOns.extraCharacterPercent);
-    fallback.art.addOns.extraOutfit = toPricingAmountWithMin(source?.art?.addOns?.extraOutfit, fallback.art.addOns.extraOutfit, fallback.art.addOns.extraOutfit);
-    fallback.art.addOns.prop = toPricingAmountWithMin(source?.art?.addOns?.prop, fallback.art.addOns.prop, fallback.art.addOns.prop);
-    fallback.art.addOns.detailedBackgroundMin = toPricingAmountWithMin(source?.art?.addOns?.detailedBackgroundMin, fallback.art.addOns.detailedBackgroundMin, fallback.art.addOns.detailedBackgroundMin);
-    fallback.art.addOns.detailedBackgroundMax = toPricingAmountWithMin(source?.art?.addOns?.detailedBackgroundMax, fallback.art.addOns.detailedBackgroundMax, fallback.art.addOns.detailedBackgroundMax);
-    fallback.art.addOns.rushPercent = toPricingAmountWithMin(source?.art?.addOns?.rushPercent, fallback.art.addOns.rushPercent, fallback.art.addOns.rushPercent);
-    fallback.art.addOns.commercialLicensePercent = toPricingAmountWithMin(source?.art?.addOns?.commercialLicensePercent, fallback.art.addOns.commercialLicensePercent, fallback.art.addOns.commercialLicensePercent);
-    fallback.stickers.printingAddon.first = toPricingAmountWithMin(source?.stickers?.printingAddon?.first, fallback.stickers.printingAddon.first, fallback.stickers.printingAddon.first);
-    fallback.stickers.printingAddon.additional = toPricingAmountWithMin(source?.stickers?.printingAddon?.additional, fallback.stickers.printingAddon.additional, fallback.stickers.printingAddon.additional);
-
-    const floorMultiplier = Number(source?.sustainableFloorMultiplier);
-    fallback.sustainableFloorMultiplier = Number.isFinite(floorMultiplier) && floorMultiplier > 0.3 && floorMultiplier <= 1.5
-        ? Math.round(floorMultiplier * 100) / 100
-        : fallback.sustainableFloorMultiplier;
-
-    return fallback;
-}
-
-function getPricingConfig() {
-    return normalizePricingConfig(window.pricingConfig);
-}
-
 window.homeAvailability = JSON.parse(JSON.stringify(DEFAULT_HOME_AVAILABILITY));
 window.premadeKeychainCatalog = JSON.parse(JSON.stringify(DEFAULT_PREMADE_KEYCHAIN_CATALOG));
-window.pricingConfig = cloneDefaultPricingConfig();
+window.galleryCatalog = JSON.parse(JSON.stringify(DEFAULT_GALLERY_CATALOG));
+window.galleryCatalogMeta = { ...DEFAULT_GALLERY_CATALOG_META };
+window.pricingConfig = null;
 window.homeReviewSummary = {
     approvedCount: 0,
     featured: null
@@ -266,10 +222,10 @@ window.currentEditingDiscountId = null;
 window.currentEditingRefundId = null;
 window.currentEditingCommissionId = null;
 window.currentEditingPremadeDesignId = null;
+window.currentEditingGalleryItemId = null;
 window.adminRefundEntries = [];
 window.adminCommissionEntries = [];
 window.adminDiagnosticsState = {
-    lastInventoryEvent: null,
     lastPublicStatusSyncAtMs: 0,
     lastPublicStatusOrderId: '',
     lastPreorderSubmitFailure: null,
@@ -311,6 +267,7 @@ window.adminReviewFilterState = {
 window.adminCommentFilterState = {
     status: 'all'
 };
+window.adminGalleryGroupFilter = 'all';
 window.adminAnnouncementsEntries = [];
 window.adminCommentsEntries = [];
 window.adminCommentsUnsub = null;
@@ -1908,6 +1865,480 @@ function normalizePremadeKeychainCatalog(raw) {
     };
 }
 
+function sanitizeGallerySortOrder(value, fallback = 1) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return Math.max(1, Math.floor(fallback));
+    return Math.max(1, Math.floor(parsed));
+}
+
+function sanitizeGalleryCategoryValue(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+function normalizeGalleryCategoryAlias(value) {
+    const sanitized = sanitizeGalleryCategoryValue(value);
+    if (!sanitized) return '';
+    return GALLERY_CATEGORY_ALIAS_MAP.get(sanitized) || sanitized;
+}
+
+function normalizeGalleryCategories(input, fallback = ['digital-art']) {
+    const source = Array.isArray(input)
+        ? input
+        : String(input || '')
+            .split(',')
+            .map((value) => value.trim())
+            .filter(Boolean);
+
+    const normalized = source
+        .map((value) => normalizeGalleryCategoryAlias(value))
+        .filter(Boolean);
+
+    const deduped = Array.from(new Set(normalized));
+    return deduped.length > 0 ? deduped : fallback;
+}
+
+function formatGalleryCategoryLabel(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (!normalized) return 'Category';
+    return normalized
+        .split('-')
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+}
+
+function getGalleryCategoryTone(categoryValue) {
+    const normalized = String(categoryValue || '').trim().toLowerCase();
+    const knownPalette = {
+        'digital-art': { bg: 'rgba(34, 197, 94, 0.2)', border: 'rgba(34, 197, 94, 0.45)', text: '#dcfce7' },
+        fursuits: { bg: 'rgba(14, 165, 233, 0.2)', border: 'rgba(56, 189, 248, 0.45)', text: '#dbeafe' },
+        keychains: { bg: 'rgba(245, 158, 11, 0.2)', border: 'rgba(245, 158, 11, 0.45)', text: '#ffedd5' },
+        stickers: { bg: 'rgba(236, 72, 153, 0.2)', border: 'rgba(236, 72, 153, 0.45)', text: '#fce7f3' },
+        animation: { bg: 'rgba(99, 102, 241, 0.2)', border: 'rgba(129, 140, 248, 0.45)', text: '#e0e7ff' },
+        'finished-commissions': { bg: 'rgba(168, 85, 247, 0.2)', border: 'rgba(168, 85, 247, 0.45)', text: '#f3e8ff' }
+    };
+    if (knownPalette[normalized]) return knownPalette[normalized];
+
+    const hueSeed = normalized.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const hue = hueSeed % 360;
+    return {
+        bg: `hsla(${hue}, 76%, 52%, 0.18)`,
+        border: `hsla(${hue}, 82%, 62%, 0.45)`,
+        text: `hsla(${hue}, 100%, 94%, 1)`
+    };
+}
+
+function renderGalleryCategoryBadgeMarkup(categoryValue, className = '') {
+    const label = formatGalleryCategoryLabel(categoryValue);
+    const tone = getGalleryCategoryTone(categoryValue);
+    const extraClass = String(className || '').trim();
+    const classAttr = ['gallery-category-badge', extraClass].filter(Boolean).join(' ');
+    return `<span class="${classAttr}" style="--cat-bg:${tone.bg};--cat-border:${tone.border};--cat-text:${tone.text};">${escapeHTML(label)}</span>`;
+}
+
+function getGalleryCategoryOptions(catalogInput = window.galleryCatalog) {
+    const catalog = normalizeGalleryCatalog(catalogInput);
+    const defaults = DEFAULT_GALLERY_CATEGORY_OPTIONS.map((option) => ({
+        value: option.value,
+        label: option.label
+    }));
+    const defaultValues = new Set(defaults.map((option) => option.value));
+    const extras = new Set();
+
+    catalog.items.forEach((item) => {
+        item.categories.forEach((category) => {
+            if (!defaultValues.has(category)) extras.add(category);
+        });
+    });
+
+    const sortedExtras = Array.from(extras).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    const extraOptions = sortedExtras.map((value) => ({
+        value,
+        label: formatGalleryCategoryLabel(value)
+    }));
+
+    return [...defaults, ...extraOptions];
+}
+
+function renderAdminGalleryCategoryChecklist(selectedCategories = ['digital-art'], catalogInput = window.galleryCatalog) {
+    const checklist = document.getElementById('adminGalleryCategoryChecklist');
+    if (!(checklist instanceof HTMLElement)) return;
+
+    const selectedSet = new Set(normalizeGalleryCategories(selectedCategories, []));
+    const options = getGalleryCategoryOptions(catalogInput);
+
+    checklist.innerHTML = options.map((option) => `
+        <label class="admin-gallery-category-option">
+            <input type="checkbox" name="adminGalleryCategory" value="${escapeHTML(option.value)}" ${selectedSet.has(option.value) ? 'checked' : ''}>
+            <span>${escapeHTML(option.label)}</span>
+        </label>
+    `).join('');
+}
+
+function getAdminGalleryFormCategories() {
+    const customInput = document.getElementById('adminGalleryCategories');
+    const picked = Array.from(document.querySelectorAll('#adminGalleryCategoryChecklist input[name="adminGalleryCategory"]:checked'))
+        .map((input) => String(input.getAttribute('value') || '').trim())
+        .filter(Boolean);
+    const custom = normalizeGalleryCategories(customInput instanceof HTMLInputElement ? customInput.value : '', []);
+    return normalizeGalleryCategories([...picked, ...custom], []);
+}
+
+function setAdminGalleryCategoryValidationState(isInvalid, message = 'Select at least one category before saving.') {
+    const checklist = document.getElementById('adminGalleryCategoryChecklist');
+    const validationMessage = document.getElementById('adminGalleryCategoryValidation');
+    const invalid = Boolean(isInvalid);
+
+    if (checklist instanceof HTMLElement) {
+        checklist.classList.toggle('is-invalid', invalid);
+    }
+
+    if (validationMessage instanceof HTMLElement) {
+        validationMessage.hidden = !invalid;
+        validationMessage.textContent = invalid ? message : '';
+    }
+}
+
+function bindAdminGalleryCategoryValidationHandlers() {
+    const checklist = document.getElementById('adminGalleryCategoryChecklist');
+    if (checklist instanceof HTMLElement && checklist.dataset.validationBound !== 'true') {
+        checklist.addEventListener('change', () => {
+            if (getAdminGalleryFormCategories().length > 0) {
+                setAdminGalleryCategoryValidationState(false);
+            }
+        });
+        checklist.dataset.validationBound = 'true';
+    }
+
+    const customInput = document.getElementById('adminGalleryCategories');
+    if (customInput instanceof HTMLInputElement && customInput.dataset.validationBound !== 'true') {
+        customInput.addEventListener('input', () => {
+            if (getAdminGalleryFormCategories().length > 0) {
+                setAdminGalleryCategoryValidationState(false);
+            }
+        });
+        customInput.dataset.validationBound = 'true';
+    }
+}
+
+async function saveGalleryCatalogSnapshot(previousCatalogInput, reason = 'gallery-update') {
+    const previousCatalog = normalizeGalleryCatalog(previousCatalogInput);
+    const snapshotId = `gallery_backup_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+    try {
+        await setDoc(doc(db, 'settings', snapshotId), {
+            type: 'gallery-catalog-snapshot',
+            reason: String(reason || 'gallery-update').trim().toLowerCase(),
+            itemCount: previousCatalog.items.length,
+            createdBy: auth.currentUser?.email || 'admin',
+            createdAt: serverTimestamp(),
+            catalog: previousCatalog
+        });
+        const prunedCount = await pruneGalleryCatalogSnapshots();
+        return { saved: true, prunedCount };
+    } catch (error) {
+        console.error('Failed to save gallery snapshot backup.', error);
+        return { saved: false, prunedCount: 0 };
+    }
+}
+
+async function pruneGalleryCatalogSnapshots(maxKeep = GALLERY_SNAPSHOT_RETENTION_MAX) {
+    let cursor = null;
+    let seen = 0;
+    let deleted = 0;
+
+    while (true) {
+        const constraints = [
+            where('type', '==', 'gallery-catalog-snapshot'),
+            orderBy('createdAt', 'desc'),
+            limit(GALLERY_SNAPSHOT_QUERY_PAGE_SIZE)
+        ];
+        if (cursor) {
+            constraints.splice(2, 0, startAfter(cursor));
+        }
+
+        const page = await getDocs(query(collection(db, 'settings'), ...constraints));
+        if (page.empty) break;
+
+        const deletions = [];
+        page.docs.forEach((entry) => {
+            seen += 1;
+            if (seen > maxKeep) {
+                deletions.push(deleteDoc(doc(db, 'settings', entry.id)));
+            }
+        });
+
+        if (deletions.length > 0) {
+            await Promise.allSettled(deletions);
+            deleted += deletions.length;
+        }
+
+        if (page.size < GALLERY_SNAPSHOT_QUERY_PAGE_SIZE) break;
+        cursor = page.docs[page.docs.length - 1];
+    }
+
+    return deleted;
+}
+
+function getNormalizedGallerySaveReason(reason = 'gallery-update') {
+    return String(reason || 'gallery-update').trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '') || 'gallery-update';
+}
+
+function extractGalleryCatalogMeta(raw) {
+    return {
+        lastSavedAtMs: getComparableTimestampMs(raw?.lastSavedAt),
+        lastSavedBy: String(raw?.lastSavedBy || '').trim(),
+        lastSavedReason: getNormalizedGallerySaveReason(raw?.lastSavedReason || 'gallery-update')
+    };
+}
+
+function formatGallerySaveReasonLabel(reason) {
+    return String(reason || '')
+        .split('-')
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+}
+
+function renderAdminGalleryLastSavedMeta() {
+    const metaEl = document.getElementById('adminGalleryLastSavedMeta');
+    if (!(metaEl instanceof HTMLElement)) return;
+
+    const meta = window.galleryCatalogMeta || DEFAULT_GALLERY_CATALOG_META;
+    const lastSavedAtMs = Number(meta.lastSavedAtMs) || 0;
+    if (!lastSavedAtMs) {
+        metaEl.textContent = 'Last saved: awaiting first synced update.';
+        return;
+    }
+
+    const savedBy = meta.lastSavedBy || 'Unknown admin';
+    const reasonLabel = formatGallerySaveReasonLabel(meta.lastSavedReason || 'gallery-update');
+    metaEl.textContent = `Last saved by ${savedBy} on ${new Date(lastSavedAtMs).toLocaleString()} (${reasonLabel}).`;
+}
+
+async function persistGalleryCatalog(nextCatalogInput, options = {}) {
+    const nextCatalog = normalizeGalleryCatalog(nextCatalogInput);
+    const previousCatalog = normalizeGalleryCatalog(options?.previousCatalog || window.galleryCatalog);
+    const reason = getNormalizedGallerySaveReason(options?.reason || 'gallery-update');
+    const backupResult = options?.skipSnapshot
+        ? { saved: true, prunedCount: 0 }
+        : await saveGalleryCatalogSnapshot(previousCatalog, reason);
+
+    await setDoc(doc(db, 'settings', 'gallery'), {
+        ...nextCatalog,
+        lastSavedAt: serverTimestamp(),
+        lastSavedBy: auth.currentUser?.email || 'admin',
+        lastSavedReason: reason
+    }, { merge: true });
+
+    window.galleryCatalogMeta = {
+        lastSavedAtMs: Date.now(),
+        lastSavedBy: auth.currentUser?.email || 'admin',
+        lastSavedReason: reason
+    };
+    renderAdminGalleryLastSavedMeta();
+
+    return { nextCatalog, backupResult };
+}
+
+async function getLatestGalleryCatalogSnapshot() {
+    const snapshotQuery = query(
+        collection(db, 'settings'),
+        where('type', '==', 'gallery-catalog-snapshot'),
+        orderBy('createdAt', 'desc'),
+        limit(1)
+    );
+    const snapshot = await getDocs(snapshotQuery);
+    if (snapshot.empty) return null;
+
+    const top = snapshot.docs[0];
+    return {
+        id: top.id,
+        data: top.data()
+    };
+}
+
+async function restoreLatestGalleryCatalogSnapshot() {
+    const latest = await getLatestGalleryCatalogSnapshot();
+    if (!latest?.data?.catalog) {
+        throw new Error('No gallery backup snapshot found yet.');
+    }
+
+    const restoredCatalog = normalizeGalleryCatalog(latest.data.catalog);
+    const previousCatalog = normalizeGalleryCatalog(window.galleryCatalog);
+    const persistResult = await persistGalleryCatalog(restoredCatalog, {
+        previousCatalog,
+        reason: 'restore-latest-backup'
+    });
+
+    return {
+        snapshotId: latest.id,
+        itemCount: restoredCatalog.items.length,
+        nextCatalog: persistResult.nextCatalog,
+        backupResult: persistResult.backupResult
+    };
+}
+
+function applyAdminGalleryCategoryPreset(presetId) {
+    const preset = GALLERY_CATEGORY_PRESETS.find((entry) => entry.id === String(presetId || '').trim().toLowerCase());
+    if (!preset) return;
+
+    const selectedSet = new Set(normalizeGalleryCategories(preset.categories, []));
+    document.querySelectorAll('#adminGalleryCategoryChecklist input[name="adminGalleryCategory"]').forEach((input) => {
+        if (!(input instanceof HTMLInputElement)) return;
+        input.checked = selectedSet.has(String(input.value || '').trim().toLowerCase());
+    });
+
+    if (selectedSet.size > 0) {
+        setAdminGalleryCategoryValidationState(false);
+    }
+}
+
+function bindAdminGalleryPresetButtons() {
+    const wrap = document.getElementById('adminGalleryPresetButtons');
+    if (!(wrap instanceof HTMLElement) || wrap.dataset.bound === 'true') return;
+
+    wrap.addEventListener('click', (event) => {
+        const button = event.target instanceof HTMLElement ? event.target.closest('.admin-gallery-preset-btn') : null;
+        if (!(button instanceof HTMLButtonElement)) return;
+        const presetId = button.getAttribute('data-preset');
+        if (!presetId) return;
+        applyAdminGalleryCategoryPreset(presetId);
+        showAdminToast('Category preset applied. You can still add custom tags.');
+    });
+
+    wrap.dataset.bound = 'true';
+}
+
+function syncAdminGalleryGroupFilter(catalogInput = window.galleryCatalog) {
+    const selectEl = document.getElementById('adminGalleryGroupFilter');
+    if (!(selectEl instanceof HTMLSelectElement)) return 'all';
+
+    const options = [
+        { value: 'all', label: 'All Categories' },
+        ...getGalleryCategoryOptions(catalogInput)
+    ];
+    selectEl.innerHTML = options.map((option) => `<option value="${escapeHTML(option.value)}">${escapeHTML(option.label)}</option>`).join('');
+
+    const selected = String(window.adminGalleryGroupFilter || 'all').toLowerCase();
+    const validValues = new Set(options.map((option) => option.value));
+    window.adminGalleryGroupFilter = validValues.has(selected) ? selected : 'all';
+    selectEl.value = window.adminGalleryGroupFilter;
+
+    if (selectEl.dataset.bound !== 'true') {
+        selectEl.addEventListener('change', () => {
+            window.adminGalleryGroupFilter = String(selectEl.value || 'all').toLowerCase();
+            renderAdminGalleryManager();
+        });
+        selectEl.dataset.bound = 'true';
+    }
+
+    return window.adminGalleryGroupFilter;
+}
+
+function splitGalleryCategoriesForAdmin(categories, catalogInput = window.galleryCatalog) {
+    const normalized = normalizeGalleryCategories(categories, []);
+    const knownValues = new Set(getGalleryCategoryOptions(catalogInput).map((option) => option.value));
+    const selected = [];
+    const custom = [];
+
+    normalized.forEach((category) => {
+        if (knownValues.has(category)) {
+            selected.push(category);
+        } else {
+            custom.push(category);
+        }
+    });
+
+    return { selected, custom };
+}
+
+function getGalleryFilterOptions(galleryItems) {
+    const counts = new Map();
+    galleryItems.forEach((item) => {
+        item.categories.forEach((category) => {
+            counts.set(category, (counts.get(category) || 0) + 1);
+        });
+    });
+
+    const defaultOrder = DEFAULT_GALLERY_CATEGORY_OPTIONS
+        .map((option) => option.value)
+        .filter((category) => counts.has(category));
+    const extras = Array.from(counts.keys())
+        .filter((category) => !defaultOrder.includes(category))
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
+    const ordered = [...defaultOrder, ...extras];
+    return [
+        { value: 'all', label: 'All' },
+        ...ordered.map((category) => {
+            const matchedDefault = DEFAULT_GALLERY_CATEGORY_OPTIONS.find((option) => option.value === category);
+            return {
+                value: category,
+                label: matchedDefault?.label || formatGalleryCategoryLabel(category)
+            };
+        })
+    ];
+}
+
+function normalizeGalleryCatalog(raw) {
+    const fallback = JSON.parse(JSON.stringify(DEFAULT_GALLERY_CATALOG));
+    const hasExplicitItems = Array.isArray(raw?.items);
+    const sourceItems = hasExplicitItems ? raw.items : fallback.items;
+
+    const normalizedItems = sourceItems.map((entry, index) => {
+        const fallbackEntry = fallback.items[index] || {};
+        const fallbackTitle = fallbackEntry.title || `Gallery Item ${index + 1}`;
+        const title = String(entry?.title || fallbackTitle).trim() || fallbackTitle;
+        const creator = String(entry?.creator || fallbackEntry.creator || 'Horizon Tide').trim() || 'Horizon Tide';
+        const url = String(entry?.url || fallbackEntry.url || '').trim();
+        const videoLink = String(entry?.videoLink || fallbackEntry.videoLink || '').trim();
+        const categories = normalizeGalleryCategories(entry?.categories, normalizeGalleryCategories(fallbackEntry.categories));
+        const id = String(entry?.id || title)
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || `gallery-item-${index + 1}`;
+
+        return {
+            id,
+            title,
+            creator,
+            url,
+            videoLink,
+            categories,
+            sortOrder: sanitizeGallerySortOrder(entry?.sortOrder, index + 1)
+        };
+    }).filter((item) => Boolean(item.url));
+
+    normalizedItems.sort((a, b) => {
+        const orderDelta = sanitizeGallerySortOrder(a.sortOrder, 1) - sanitizeGallerySortOrder(b.sortOrder, 1);
+        if (orderDelta !== 0) return orderDelta;
+        return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+    });
+
+    normalizedItems.forEach((item, index) => {
+        item.sortOrder = index + 1;
+    });
+
+    return {
+        items: normalizedItems
+    };
+}
+
+function getGalleryItemById(itemId, catalogInput = window.galleryCatalog) {
+    const targetId = String(itemId || '').trim().toLowerCase();
+    if (!targetId) return null;
+    const catalog = normalizeGalleryCatalog(catalogInput);
+    return catalog.items.find((item) => item.id === targetId) || null;
+}
+
 function buildAlphabeticalPremadeCatalog(catalogInput = window.premadeKeychainCatalog) {
     const catalog = normalizePremadeKeychainCatalog(catalogInput);
     const byPinned = {
@@ -2706,6 +3137,239 @@ function renderAdminPremadeKeychainManager() {
     });
 }
 
+function updateAdminGalleryImagePreview(imageValue, hintText = '') {
+    const previewWrap = document.getElementById('adminGalleryPreview');
+    const previewImg = document.getElementById('adminGalleryPreviewImg');
+    const hintEl = document.getElementById('adminGalleryImageHint');
+    const value = String(imageValue || '').trim();
+
+    if (!(previewWrap instanceof HTMLElement) || !(previewImg instanceof HTMLImageElement)) return;
+
+    if (value) {
+        previewWrap.hidden = false;
+        previewImg.src = value;
+    } else {
+        previewWrap.hidden = true;
+        previewImg.src = LIGHTBOX_PLACEHOLDER_SRC;
+    }
+
+    if (hintEl instanceof HTMLElement) {
+        hintEl.textContent = hintText || (value ? 'Preview of selected gallery image.' : 'Paste an image URL or upload an image file.');
+    }
+}
+
+function setAdminGalleryEditState(item = null) {
+    const titleInput = document.getElementById('adminGalleryTitle');
+    const creatorInput = document.getElementById('adminGalleryCreator');
+    const categoriesInput = document.getElementById('adminGalleryCategories');
+    const imageUrlInput = document.getElementById('adminGalleryImageUrl');
+    const imageUploadInput = document.getElementById('adminGalleryImageUpload');
+    const videoInput = document.getElementById('adminGalleryVideoLink');
+    const saveBtn = document.getElementById('btnSaveGalleryItem');
+
+    if (!(titleInput instanceof HTMLInputElement) || !(creatorInput instanceof HTMLInputElement) || !(categoriesInput instanceof HTMLInputElement) || !(imageUrlInput instanceof HTMLInputElement) || !(videoInput instanceof HTMLInputElement) || !(saveBtn instanceof HTMLButtonElement)) {
+        return;
+    }
+
+    if (!item) {
+        window.currentEditingGalleryItemId = null;
+        titleInput.value = '';
+        creatorInput.value = 'Horizon Tide';
+        categoriesInput.value = '';
+        renderAdminGalleryCategoryChecklist(['digital-art']);
+        imageUrlInput.value = '';
+        videoInput.value = '';
+        if (imageUploadInput instanceof HTMLInputElement) imageUploadInput.value = '';
+        saveBtn.dataset.currentImage = '';
+        saveBtn.textContent = 'Add Gallery Item';
+        updateAdminGalleryImagePreview('', 'Paste an image URL or upload an image file.');
+        setAdminGalleryCategoryValidationState(false);
+        return;
+    }
+
+    window.currentEditingGalleryItemId = item.id;
+    const categorySelection = splitGalleryCategoriesForAdmin(item.categories);
+    titleInput.value = item.title;
+    creatorInput.value = item.creator;
+    categoriesInput.value = categorySelection.custom.join(', ');
+    renderAdminGalleryCategoryChecklist(categorySelection.selected);
+    imageUrlInput.value = item.url;
+    videoInput.value = item.videoLink || '';
+    if (imageUploadInput instanceof HTMLInputElement) imageUploadInput.value = '';
+    saveBtn.dataset.currentImage = item.url;
+    saveBtn.textContent = 'Save Gallery Item';
+    updateAdminGalleryImagePreview(item.url, 'Current image will be kept unless you upload a new one.');
+    setAdminGalleryCategoryValidationState(false);
+}
+
+function renderAdminGallerySummary(catalogInput = window.galleryCatalog, visibleCount = null, activeCategory = 'all') {
+    const summaryEl = document.getElementById('adminGallerySummary');
+    if (!(summaryEl instanceof HTMLElement)) return;
+
+    const catalog = normalizeGalleryCatalog(catalogInput);
+    const total = catalog.items.length;
+    const videoCount = catalog.items.filter((item) => String(item.videoLink || '').trim()).length;
+    const creators = Array.from(new Set(catalog.items.map((item) => item.creator))).length;
+    const shown = Number.isFinite(visibleCount) ? Math.max(0, Math.floor(visibleCount)) : total;
+    const filterLabel = activeCategory === 'all' ? 'All Categories' : formatGalleryCategoryLabel(activeCategory);
+
+    summaryEl.innerHTML = `
+        <span class="admin-premade-summary-pill">Items: <strong>${total}</strong></span>
+        <span class="admin-premade-summary-pill">Visible: <strong>${shown}</strong></span>
+        <span class="admin-premade-summary-pill">View: <strong>${escapeHTML(filterLabel)}</strong></span>
+        <span class="admin-premade-summary-pill">Creators: <strong>${creators}</strong></span>
+        <span class="admin-premade-summary-pill">Video links: <strong>${videoCount}</strong></span>
+    `;
+
+    renderAdminGalleryLastSavedMeta();
+}
+
+function renderAdminGalleryManager() {
+    const listEl = document.getElementById('adminGalleryItemsList');
+    if (!(listEl instanceof HTMLElement)) return;
+
+    const catalog = normalizeGalleryCatalog(window.galleryCatalog);
+    bindAdminGalleryPresetButtons();
+    renderAdminGalleryLastSavedMeta();
+    const activeCategory = syncAdminGalleryGroupFilter(catalog);
+    const selectedCategoriesRaw = window.currentEditingGalleryItemId
+        ? getGalleryItemById(window.currentEditingGalleryItemId, catalog)?.categories || ['digital-art']
+        : getAdminGalleryFormCategories();
+    const selectedCategories = selectedCategoriesRaw.length > 0 ? selectedCategoriesRaw : ['digital-art'];
+    renderAdminGalleryCategoryChecklist(selectedCategories, catalog);
+    bindAdminGalleryCategoryValidationHandlers();
+    const visibleItems = activeCategory === 'all'
+        ? catalog.items
+        : catalog.items.filter((item) => item.categories.includes(activeCategory));
+    renderAdminGallerySummary(catalog, visibleItems.length, activeCategory);
+
+    if (catalog.items.length === 0) {
+        listEl.innerHTML = '<p class="admin-detail">No gallery items yet. Add one above.</p>';
+        return;
+    }
+
+    if (visibleItems.length === 0) {
+        listEl.innerHTML = '<p class="admin-detail">No gallery items match this category view yet.</p>';
+        return;
+    }
+
+    listEl.innerHTML = visibleItems.map((item) => {
+        const sourceIndex = catalog.items.findIndex((entry) => entry.id === item.id);
+        const moveLocked = activeCategory !== 'all';
+        const upDisabled = moveLocked || sourceIndex <= 0;
+        const downDisabled = moveLocked || sourceIndex >= (catalog.items.length - 1);
+        return `
+        <article class="admin-gallery-item" data-id="${escapeHTML(item.id)}">
+            <img src="${escapeHTML(encodeURI(item.url))}" alt="${escapeHTML(item.title)}" class="admin-gallery-item__thumb" loading="lazy" onerror="handleImageError(this)">
+            <div class="admin-gallery-item__info">
+                <strong>${escapeHTML(item.title)}</strong>
+                <span>${escapeHTML(item.creator)}</span>
+                <div class="admin-gallery-item__chips">${item.categories.map((category) => renderGalleryCategoryBadgeMarkup(category, 'admin-gallery-category-chip')).join('')}</div>
+                ${item.videoLink ? `<small>Video: ${escapeHTML(item.videoLink)}</small>` : ''}
+            </div>
+            <div class="announce-item-actions admin-gallery-item__actions">
+                <button type="button" class="admin-btn-edit admin-gallery-move-btn" data-id="${escapeHTML(item.id)}" data-direction="up" ${upDisabled ? 'disabled' : ''}>Up</button>
+                <button type="button" class="admin-btn-edit admin-gallery-move-btn" data-id="${escapeHTML(item.id)}" data-direction="down" ${downDisabled ? 'disabled' : ''}>Down</button>
+                <button type="button" class="admin-btn-edit admin-edit-gallery-item" data-id="${escapeHTML(item.id)}">Edit</button>
+                <button type="button" class="admin-btn-delete admin-delete-gallery-item" data-id="${escapeHTML(item.id)}">Delete</button>
+            </div>
+        </article>
+    `;
+    }).join('');
+
+    listEl.querySelectorAll('.admin-edit-gallery-item').forEach((button) => {
+        button.addEventListener('click', () => {
+            const item = getGalleryItemById(button.getAttribute('data-id'));
+            if (item) setAdminGalleryEditState(item);
+        });
+    });
+
+    listEl.querySelectorAll('.admin-gallery-move-btn').forEach((button) => {
+        button.addEventListener('click', async () => {
+            if (!requireAdminSession('Please sign in with an authorized admin account before reordering gallery items.')) return;
+            if (String(window.adminGalleryGroupFilter || 'all') !== 'all') {
+                showAdminToast('Set Manage View Category to All Categories before reordering.', true);
+                return;
+            }
+            const itemId = button.getAttribute('data-id');
+            const direction = button.getAttribute('data-direction');
+            if (!itemId || !direction) return;
+
+            const catalogState = normalizeGalleryCatalog(window.galleryCatalog);
+            const sourceIndex = catalogState.items.findIndex((item) => item.id === itemId);
+            if (sourceIndex < 0) return;
+
+            const targetIndex = direction === 'up' ? sourceIndex - 1 : sourceIndex + 1;
+            if (targetIndex < 0 || targetIndex >= catalogState.items.length) return;
+
+            const reordered = [...catalogState.items];
+            const [moved] = reordered.splice(sourceIndex, 1);
+            reordered.splice(targetIndex, 0, moved);
+            const nextCatalog = normalizeGalleryCatalog({ items: reordered.map((item, index) => ({ ...item, sortOrder: index + 1 })) });
+
+            button.disabled = true;
+            try {
+                const result = await persistGalleryCatalog(nextCatalog, {
+                    previousCatalog: catalogState,
+                    reason: 'reorder'
+                });
+                window.galleryCatalog = result.nextCatalog;
+                applyGalleryCatalogToCurrentDOM();
+                showAdminToast('Gallery item order updated.');
+                if (!result.backupResult.saved) {
+                    showAdminToast('Saved, but backup snapshot could not be stored.', true);
+                }
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to reorder gallery items.', true);
+            } finally {
+                button.disabled = false;
+            }
+        });
+    });
+
+    listEl.querySelectorAll('.admin-delete-gallery-item').forEach((button) => {
+        button.addEventListener('click', async () => {
+            if (!requireAdminSession('Please sign in with an authorized admin account before deleting gallery items.')) return;
+            const itemId = button.getAttribute('data-id');
+            if (!itemId) return;
+
+            const catalogState = normalizeGalleryCatalog(window.galleryCatalog);
+            const target = catalogState.items.find((item) => item.id === itemId);
+            if (!target || !confirm(`Delete \"${target.title}\" from the gallery?`)) return;
+
+            button.disabled = true;
+            try {
+                const nextCatalog = normalizeGalleryCatalog({ items: catalogState.items.filter((item) => item.id !== itemId) });
+                const result = await persistGalleryCatalog(nextCatalog, {
+                    previousCatalog: catalogState,
+                    reason: 'delete-item'
+                });
+                window.galleryCatalog = result.nextCatalog;
+                if (window.currentEditingGalleryItemId === itemId) setAdminGalleryEditState(null);
+                applyGalleryCatalogToCurrentDOM();
+                showAdminToast('Gallery item deleted.');
+                if (!result.backupResult.saved) {
+                    showAdminToast('Deleted item, but backup snapshot could not be stored.', true);
+                }
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to delete gallery item.', true);
+            } finally {
+                button.disabled = false;
+            }
+        });
+    });
+}
+
+function applyGalleryCatalogToCurrentDOM() {
+    if (bodyElement.getAttribute('data-page') === 'gallery') {
+        loadGalleryPage();
+        return;
+    }
+    renderAdminGalleryManager();
+}
+
 function applyPremadeKeychainCatalogToCurrentDOM() {
     const galleryWrap = document.getElementById('premadeKeychainGalleryWrap');
     if (galleryWrap) {
@@ -2943,6 +3607,7 @@ function attachGlobalSettingsListener() {
     });
 }
 attachGlobalSettingsListener();
+attachPricingSettingsListener();
 
 function attachHomeAvailabilityListener() {
     if (globalHomeAvailabilityListener) globalHomeAvailabilityListener();
@@ -2968,172 +3633,20 @@ function attachPremadeKeychainCatalogListener() {
 }
 attachPremadeKeychainCatalogListener();
 
-function renderAdminPricingSettings() {
-    const textarea = document.getElementById('adminPricingConfigJson');
-    const hint = document.getElementById('adminPricingConfigHint');
-    if (!(textarea instanceof HTMLTextAreaElement)) return;
-
-    const normalized = getPricingConfig();
-    textarea.value = JSON.stringify(normalized, null, 2);
-    if (hint) {
-        hint.textContent = 'Tip: keep key names unchanged. You can adjust numbers only.';
-    }
-}
-
-async function saveAdminPricingSettingsFromEditor() {
-    if (!requireAdminSession('Please sign in with an authorized admin account before editing pricing settings.')) return;
-
-    const textarea = document.getElementById('adminPricingConfigJson');
-    const hint = document.getElementById('adminPricingConfigHint');
-    const saveBtn = document.getElementById('btnSavePricingConfig');
-    if (!(textarea instanceof HTMLTextAreaElement)) return;
-
-    let parsed;
-    try {
-        parsed = JSON.parse(textarea.value || '{}');
-    } catch {
-        if (hint) hint.textContent = 'Invalid JSON. Fix formatting and try again.';
-        showAdminToast('Pricing JSON is invalid.', true);
-        return;
-    }
-
-    const payload = normalizePricingConfig(parsed);
-    if (saveBtn instanceof HTMLButtonElement) {
-        saveBtn.disabled = true;
-        saveBtn.textContent = 'Saving...';
-    }
-
-    try {
-        await setDoc(doc(db, 'settings', 'pricing'), payload, { merge: true });
-        window.pricingConfig = payload;
-        textarea.value = JSON.stringify(payload, null, 2);
-        if (hint) hint.textContent = 'Saved. Public calculators and forms now use this pricing.';
-        showAdminToast('Pricing settings saved.');
-        refreshPricingDrivenViews();
-    } catch (error) {
-        console.error(error);
-        if (hint) hint.textContent = 'Save failed. Try again.';
-        showAdminToast('Failed to save pricing settings.', true);
-    } finally {
-        if (saveBtn instanceof HTMLButtonElement) {
-            saveBtn.disabled = false;
-            saveBtn.textContent = 'Save Pricing';
-        }
-    }
-}
-
-function resetAdminPricingSettingsEditor() {
-    const textarea = document.getElementById('adminPricingConfigJson');
-    const hint = document.getElementById('adminPricingConfigHint');
-    if (!(textarea instanceof HTMLTextAreaElement)) return;
-
-    const defaults = cloneDefaultPricingConfig();
-    textarea.value = JSON.stringify(defaults, null, 2);
-    if (hint) {
-        hint.textContent = 'Defaults loaded in editor. Click Save Pricing to publish.';
-    }
-}
-
-function applyAdminPremiumMarginPreset(percentIncrease = 10) {
-    const textarea = document.getElementById('adminPricingConfigJson');
-    const hint = document.getElementById('adminPricingConfigHint');
-    if (!(textarea instanceof HTMLTextAreaElement)) return;
-
-    const numericIncrease = Number(percentIncrease);
-    const safeIncrease = Number.isFinite(numericIncrease) ? Math.max(1, numericIncrease) : 10;
-    const factor = 1 + (safeIncrease / 100);
-    const scaleAmount = (value) => Math.round(Number(value) * factor * 100) / 100;
-
-    let baseConfig;
-    try {
-        baseConfig = normalizePricingConfig(JSON.parse(textarea.value || '{}'));
-    } catch {
-        baseConfig = getPricingConfig();
-    }
-
-    const nextConfig = JSON.parse(JSON.stringify(baseConfig));
-
-    Object.values(nextConfig.art.types).forEach((entry) => {
-        entry.flat = scaleAmount(entry.flat);
-        entry.cel = scaleAmount(entry.cel);
-        entry.rendered = scaleAmount(entry.rendered);
-    });
-
-    nextConfig.art.addOns.extraOutfit = scaleAmount(nextConfig.art.addOns.extraOutfit);
-    nextConfig.art.addOns.prop = scaleAmount(nextConfig.art.addOns.prop);
-    nextConfig.art.addOns.detailedBackgroundMin = scaleAmount(nextConfig.art.addOns.detailedBackgroundMin);
-    nextConfig.art.addOns.detailedBackgroundMax = scaleAmount(nextConfig.art.addOns.detailedBackgroundMax);
-
-    Object.keys(nextConfig.stickers.types).forEach((type) => {
-        nextConfig.stickers.types[type] = scaleAmount(nextConfig.stickers.types[type]);
-    });
-    nextConfig.stickers.printingAddon.first = scaleAmount(nextConfig.stickers.printingAddon.first);
-    nextConfig.stickers.printingAddon.additional = scaleAmount(nextConfig.stickers.printingAddon.additional);
-
-    Object.keys(nextConfig.keychains.custom).forEach((type) => {
-        nextConfig.keychains.custom[type] = scaleAmount(nextConfig.keychains.custom[type]);
-    });
-    Object.keys(nextConfig.keychains.premade).forEach((type) => {
-        nextConfig.keychains.premade[type] = scaleAmount(nextConfig.keychains.premade[type]);
-    });
-
-    Object.keys(nextConfig.fursuits.parts).forEach((type) => {
-        nextConfig.fursuits.parts[type] = scaleAmount(nextConfig.fursuits.parts[type]);
-    });
-    nextConfig.fursuits.rushOrderFlat = scaleAmount(nextConfig.fursuits.rushOrderFlat);
-
-    nextConfig.sustainableFloorMultiplier = Math.min(
-        1.5,
-        Math.round((Number(nextConfig.sustainableFloorMultiplier || 0.9) + 0.03) * 100) / 100
-    );
-
-    textarea.value = JSON.stringify(normalizePricingConfig(nextConfig), null, 2);
-    if (hint) {
-        hint.textContent = `Premium preset applied (+${safeIncrease}%). Review values, then click Save Pricing to publish.`;
-    }
-}
-
-function refreshPricingDrivenViews() {
-    const currentHash = String(window.location.hash || '#home').toLowerCase();
-    const root = document.getElementById('adminDashboardView');
-    if (root) renderAdminPricingSettings();
-
-    if (currentHash === '#pricing') {
-        loadPricingPage();
-        return;
-    }
-    if (currentHash === '#art') {
-        loadHuskyArtForm();
-        return;
-    }
-    if (currentHash === '#custom-keychain') {
-        loadCustomKeychainsForm();
-        return;
-    }
-    if (currentHash === '#stickers') {
-        loadCustomStickersForm();
-        return;
-    }
-    if (currentHash === '#premade') {
-        loadPremadeKeychainsForm();
-        return;
-    }
-    if (currentHash === '#fursuits') {
-        loadFursuitForm();
-    }
-}
-
-function attachPricingSettingsListener() {
-    if (globalPricingSettingsListener) globalPricingSettingsListener();
-    globalPricingSettingsListener = onSnapshot(doc(db, 'settings', 'pricing'), (docSnap) => {
-        window.pricingConfig = normalizePricingConfig(docSnap.exists() ? docSnap.data() : null);
-        refreshPricingDrivenViews();
+function attachGalleryCatalogListener() {
+    if (globalGalleryCatalogListener) globalGalleryCatalogListener();
+    globalGalleryCatalogListener = onSnapshot(doc(db, 'settings', 'gallery'), (docSnap) => {
+        const raw = docSnap.exists() ? docSnap.data() : null;
+        window.galleryCatalog = normalizeGalleryCatalog(raw);
+        window.galleryCatalogMeta = extractGalleryCatalogMeta(raw);
+        applyGalleryCatalogToCurrentDOM();
     }, () => {
-        window.pricingConfig = cloneDefaultPricingConfig();
-        refreshPricingDrivenViews();
+        window.galleryCatalog = normalizeGalleryCatalog(null);
+        window.galleryCatalogMeta = { ...DEFAULT_GALLERY_CATALOG_META };
+        applyGalleryCatalogToCurrentDOM();
     });
 }
-attachPricingSettingsListener();
+attachGalleryCatalogListener();
 
 function getBestDiscount(type) {
     if (!window.activeSales || window.activeSales.length === 0) return 0;
@@ -3207,6 +3720,739 @@ function renderPriceRange(min, max, type, isPlus = false) {
         return `<span style="text-decoration: line-through; color: #a2b7cc; font-size: 0.9em; margin-right: 8px;">$${min}–$${max}${isPlus ? '+' : ''}</span><span style="color: #22c55e; font-weight: bold;">$${newMin}–$${newMax}${isPlus ? '+' : ''} <span class="announcement-badge" style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; vertical-align: middle; margin-left: 5px; border-color: #ef4444;">${pct}% OFF</span></span>`;
     }
     return `$${min}–$${max}${isPlus ? '+' : ''}`;
+}
+
+function getDefaultPricingConfig() {
+    return {
+        art: {
+            icon: { flat: 24, cel: 36, rendered: 52 },
+            headshot: { flat: 32, cel: 44, rendered: 60 },
+            bust: { flat: 44, cel: 60, rendered: 80 },
+            halfBody: { flat: 56, cel: 72, rendered: 96 },
+            fullBody: { flat: 72, cel: 96, rendered: 128 },
+            scene: { flat: 160, cel: 200, rendered: 240 },
+            refSheets: { basic: 160, standard: 220, deluxe: 280 },
+            addOns: { extraOutfit: 24, prop: 16, detailedBackground: 40, stickerPack: 75 }
+        },
+        animation: {
+            loop: { min: 20, max: 60 },
+            simple: { min: 60, max: 140 },
+            fullCharacter: { min: 140, max: 300 },
+            complexScene: 300,
+            extraCharacter: { min: 40, max: 120 },
+            simpleBackground: { min: 20, max: 60 },
+            detailedBackground: { min: 60, max: 120 },
+            complexMotion: { min: 20, max: 80 },
+            lipSync: 30
+        },
+        stickers: {
+            single: 20,
+            pair: 36,
+            sheet: 80,
+            smallBatch: 100,
+            printing: { firstCopy: 6, additionalCopy: 3 }
+        },
+        fursuits: {
+            tail: 100,
+            paws: 170,
+            pawsTailSet: 260,
+            feetPaws: 270,
+            trioSet: 530,
+            head: 1100,
+            miniPartial: 1350,
+            fullPartial: 1620
+        },
+        keychains: {
+            premade: {
+                clearAcrylic: 22,
+                epoxy: 24,
+                coloredAcrylic: 24,
+                rainbowAcrylic: 26,
+                translucentAcrylic: 26,
+                holographic: 26,
+                glowInDark: 28
+            },
+            custom: {
+                chibiIcon: 56,
+                halfBody: 72,
+                fullBody: 92,
+                complexCharacter: 120
+            }
+        },
+        meta: {
+            premiumMarginPercent: 10
+        }
+    };
+}
+
+function normalizePricingNumber(value, fallback) {
+    const nextValue = Number(value);
+    return Number.isFinite(nextValue) ? Math.max(0, nextValue) : fallback;
+}
+
+function normalizePricingConfig(rawConfig) {
+    const defaults = getDefaultPricingConfig();
+    const raw = rawConfig && typeof rawConfig === 'object' ? rawConfig : {};
+
+    return {
+        art: {
+            icon: {
+                flat: normalizePricingNumber(raw?.art?.icon?.flat, defaults.art.icon.flat),
+                cel: normalizePricingNumber(raw?.art?.icon?.cel, defaults.art.icon.cel),
+                rendered: normalizePricingNumber(raw?.art?.icon?.rendered, defaults.art.icon.rendered)
+            },
+            headshot: {
+                flat: normalizePricingNumber(raw?.art?.headshot?.flat, defaults.art.headshot.flat),
+                cel: normalizePricingNumber(raw?.art?.headshot?.cel, defaults.art.headshot.cel),
+                rendered: normalizePricingNumber(raw?.art?.headshot?.rendered, defaults.art.headshot.rendered)
+            },
+            bust: {
+                flat: normalizePricingNumber(raw?.art?.bust?.flat, defaults.art.bust.flat),
+                cel: normalizePricingNumber(raw?.art?.bust?.cel, defaults.art.bust.cel),
+                rendered: normalizePricingNumber(raw?.art?.bust?.rendered, defaults.art.bust.rendered)
+            },
+            halfBody: {
+                flat: normalizePricingNumber(raw?.art?.halfBody?.flat, defaults.art.halfBody.flat),
+                cel: normalizePricingNumber(raw?.art?.halfBody?.cel, defaults.art.halfBody.cel),
+                rendered: normalizePricingNumber(raw?.art?.halfBody?.rendered, defaults.art.halfBody.rendered)
+            },
+            fullBody: {
+                flat: normalizePricingNumber(raw?.art?.fullBody?.flat, defaults.art.fullBody.flat),
+                cel: normalizePricingNumber(raw?.art?.fullBody?.cel, defaults.art.fullBody.cel),
+                rendered: normalizePricingNumber(raw?.art?.fullBody?.rendered, defaults.art.fullBody.rendered)
+            },
+            scene: {
+                flat: normalizePricingNumber(raw?.art?.scene?.flat, defaults.art.scene.flat),
+                cel: normalizePricingNumber(raw?.art?.scene?.cel, defaults.art.scene.cel),
+                rendered: normalizePricingNumber(raw?.art?.scene?.rendered, defaults.art.scene.rendered)
+            },
+            refSheets: {
+                basic: normalizePricingNumber(raw?.art?.refSheets?.basic, defaults.art.refSheets.basic),
+                standard: normalizePricingNumber(raw?.art?.refSheets?.standard, defaults.art.refSheets.standard),
+                deluxe: normalizePricingNumber(raw?.art?.refSheets?.deluxe, defaults.art.refSheets.deluxe)
+            },
+            addOns: {
+                extraOutfit: normalizePricingNumber(raw?.art?.addOns?.extraOutfit, defaults.art.addOns.extraOutfit),
+                prop: normalizePricingNumber(raw?.art?.addOns?.prop, defaults.art.addOns.prop),
+                detailedBackground: normalizePricingNumber(raw?.art?.addOns?.detailedBackground, defaults.art.addOns.detailedBackground),
+                stickerPack: normalizePricingNumber(raw?.art?.addOns?.stickerPack, defaults.art.addOns.stickerPack)
+            }
+        },
+        animation: {
+            loop: {
+                min: normalizePricingNumber(raw?.animation?.loop?.min, defaults.animation.loop.min),
+                max: normalizePricingNumber(raw?.animation?.loop?.max, defaults.animation.loop.max)
+            },
+            simple: {
+                min: normalizePricingNumber(raw?.animation?.simple?.min, defaults.animation.simple.min),
+                max: normalizePricingNumber(raw?.animation?.simple?.max, defaults.animation.simple.max)
+            },
+            fullCharacter: {
+                min: normalizePricingNumber(raw?.animation?.fullCharacter?.min, defaults.animation.fullCharacter.min),
+                max: normalizePricingNumber(raw?.animation?.fullCharacter?.max, defaults.animation.fullCharacter.max)
+            },
+            complexScene: normalizePricingNumber(raw?.animation?.complexScene, defaults.animation.complexScene),
+            extraCharacter: {
+                min: normalizePricingNumber(raw?.animation?.extraCharacter?.min, defaults.animation.extraCharacter.min),
+                max: normalizePricingNumber(raw?.animation?.extraCharacter?.max, defaults.animation.extraCharacter.max)
+            },
+            simpleBackground: {
+                min: normalizePricingNumber(raw?.animation?.simpleBackground?.min, defaults.animation.simpleBackground.min),
+                max: normalizePricingNumber(raw?.animation?.simpleBackground?.max, defaults.animation.simpleBackground.max)
+            },
+            detailedBackground: {
+                min: normalizePricingNumber(raw?.animation?.detailedBackground?.min, defaults.animation.detailedBackground.min),
+                max: normalizePricingNumber(raw?.animation?.detailedBackground?.max, defaults.animation.detailedBackground.max)
+            },
+            complexMotion: {
+                min: normalizePricingNumber(raw?.animation?.complexMotion?.min, defaults.animation.complexMotion.min),
+                max: normalizePricingNumber(raw?.animation?.complexMotion?.max, defaults.animation.complexMotion.max)
+            },
+            lipSync: normalizePricingNumber(raw?.animation?.lipSync, defaults.animation.lipSync)
+        },
+        stickers: {
+            single: normalizePricingNumber(raw?.stickers?.single, defaults.stickers.single),
+            pair: normalizePricingNumber(raw?.stickers?.pair, defaults.stickers.pair),
+            sheet: normalizePricingNumber(raw?.stickers?.sheet, defaults.stickers.sheet),
+            smallBatch: normalizePricingNumber(raw?.stickers?.smallBatch, defaults.stickers.smallBatch),
+            printing: {
+                firstCopy: normalizePricingNumber(raw?.stickers?.printing?.firstCopy, defaults.stickers.printing.firstCopy),
+                additionalCopy: normalizePricingNumber(raw?.stickers?.printing?.additionalCopy, defaults.stickers.printing.additionalCopy)
+            }
+        },
+        fursuits: {
+            tail: normalizePricingNumber(raw?.fursuits?.tail, defaults.fursuits.tail),
+            paws: normalizePricingNumber(raw?.fursuits?.paws, defaults.fursuits.paws),
+            pawsTailSet: normalizePricingNumber(raw?.fursuits?.pawsTailSet, defaults.fursuits.pawsTailSet),
+            feetPaws: normalizePricingNumber(raw?.fursuits?.feetPaws, defaults.fursuits.feetPaws),
+            trioSet: normalizePricingNumber(raw?.fursuits?.trioSet, defaults.fursuits.trioSet),
+            head: normalizePricingNumber(raw?.fursuits?.head, defaults.fursuits.head),
+            miniPartial: normalizePricingNumber(raw?.fursuits?.miniPartial, defaults.fursuits.miniPartial),
+            fullPartial: normalizePricingNumber(raw?.fursuits?.fullPartial, defaults.fursuits.fullPartial)
+        },
+        keychains: {
+            premade: {
+                clearAcrylic: normalizePricingNumber(raw?.keychains?.premade?.clearAcrylic, defaults.keychains.premade.clearAcrylic),
+                epoxy: normalizePricingNumber(raw?.keychains?.premade?.epoxy, defaults.keychains.premade.epoxy),
+                coloredAcrylic: normalizePricingNumber(raw?.keychains?.premade?.coloredAcrylic, defaults.keychains.premade.coloredAcrylic),
+                rainbowAcrylic: normalizePricingNumber(raw?.keychains?.premade?.rainbowAcrylic, defaults.keychains.premade.rainbowAcrylic),
+                translucentAcrylic: normalizePricingNumber(raw?.keychains?.premade?.translucentAcrylic, defaults.keychains.premade.translucentAcrylic),
+                holographic: normalizePricingNumber(raw?.keychains?.premade?.holographic, defaults.keychains.premade.holographic),
+                glowInDark: normalizePricingNumber(raw?.keychains?.premade?.glowInDark, defaults.keychains.premade.glowInDark)
+            },
+            custom: {
+                chibiIcon: normalizePricingNumber(raw?.keychains?.custom?.chibiIcon, defaults.keychains.custom.chibiIcon),
+                halfBody: normalizePricingNumber(raw?.keychains?.custom?.halfBody, defaults.keychains.custom.halfBody),
+                fullBody: normalizePricingNumber(raw?.keychains?.custom?.fullBody, defaults.keychains.custom.fullBody),
+                complexCharacter: normalizePricingNumber(raw?.keychains?.custom?.complexCharacter, defaults.keychains.custom.complexCharacter)
+            }
+        },
+        meta: {
+            premiumMarginPercent: normalizePricingNumber(raw?.meta?.premiumMarginPercent, defaults.meta.premiumMarginPercent)
+        }
+    };
+}
+
+function getPricingConfig() {
+    if (!window.pricingConfig) {
+        window.pricingConfig = normalizePricingConfig(null);
+    }
+    return window.pricingConfig;
+}
+
+function getPricingConfigValue(path, fallback) {
+    const parts = String(path || '').split('.').filter(Boolean);
+    let current = getPricingConfig();
+    for (const part of parts) {
+        if (current && typeof current === 'object' && part in current) {
+            current = current[part];
+        } else {
+            return fallback;
+        }
+    }
+    return normalizePricingNumber(current, fallback);
+}
+
+function serializePricingConfig(config) {
+    return JSON.stringify(normalizePricingConfig(config), null, 2);
+}
+
+function getPricingEditorFieldDefinitions() {
+    return [
+        {
+            title: 'Art',
+            description: 'Digital art starting prices and add-ons.',
+            fields: [
+                { label: 'Icon Flat', path: 'art.icon.flat' },
+                { label: 'Icon Cel', path: 'art.icon.cel' },
+                { label: 'Icon Rendered', path: 'art.icon.rendered' },
+                { label: 'Headshot Flat', path: 'art.headshot.flat' },
+                { label: 'Headshot Cel', path: 'art.headshot.cel' },
+                { label: 'Headshot Rendered', path: 'art.headshot.rendered' },
+                { label: 'Bust Flat', path: 'art.bust.flat' },
+                { label: 'Bust Cel', path: 'art.bust.cel' },
+                { label: 'Bust Rendered', path: 'art.bust.rendered' },
+                { label: 'Half Body Flat', path: 'art.halfBody.flat' },
+                { label: 'Half Body Cel', path: 'art.halfBody.cel' },
+                { label: 'Half Body Rendered', path: 'art.halfBody.rendered' },
+                { label: 'Full Body Flat', path: 'art.fullBody.flat' },
+                { label: 'Full Body Cel', path: 'art.fullBody.cel' },
+                { label: 'Full Body Rendered', path: 'art.fullBody.rendered' },
+                { label: 'Scene Flat', path: 'art.scene.flat' },
+                { label: 'Scene Cel', path: 'art.scene.cel' },
+                { label: 'Scene Rendered', path: 'art.scene.rendered' },
+                { label: 'Reference Sheet Basic', path: 'art.refSheets.basic' },
+                { label: 'Reference Sheet Standard', path: 'art.refSheets.standard' },
+                { label: 'Reference Sheet Deluxe', path: 'art.refSheets.deluxe' },
+                { label: 'Extra Outfit', path: 'art.addOns.extraOutfit' },
+                { label: 'Prop', path: 'art.addOns.prop' },
+                { label: 'Detailed Background', path: 'art.addOns.detailedBackground' },
+                { label: 'Sticker Pack', path: 'art.addOns.stickerPack' }
+            ]
+        },
+        {
+            title: 'Animation',
+            description: 'Loop and scene pricing ranges.',
+            fields: [
+                { label: 'Loop Min', path: 'animation.loop.min' },
+                { label: 'Loop Max', path: 'animation.loop.max' },
+                { label: 'Simple Min', path: 'animation.simple.min' },
+                { label: 'Simple Max', path: 'animation.simple.max' },
+                { label: 'Full Character Min', path: 'animation.fullCharacter.min' },
+                { label: 'Full Character Max', path: 'animation.fullCharacter.max' },
+                { label: 'Long Scene', path: 'animation.complexScene' },
+                { label: 'Extra Character Min', path: 'animation.extraCharacter.min' },
+                { label: 'Extra Character Max', path: 'animation.extraCharacter.max' },
+                { label: 'Simple BG Min', path: 'animation.simpleBackground.min' },
+                { label: 'Simple BG Max', path: 'animation.simpleBackground.max' },
+                { label: 'Detailed BG Min', path: 'animation.detailedBackground.min' },
+                { label: 'Detailed BG Max', path: 'animation.detailedBackground.max' },
+                { label: 'Complex Motion Min', path: 'animation.complexMotion.min' },
+                { label: 'Complex Motion Max', path: 'animation.complexMotion.max' },
+                { label: 'Lip Sync Add-on', path: 'animation.lipSync' }
+            ]
+        },
+        {
+            title: 'Stickers',
+            description: 'Sticker sheet and print add-on pricing.',
+            fields: [
+                { label: 'Single Sticker', path: 'stickers.single' },
+                { label: 'Matching Pair', path: 'stickers.pair' },
+                { label: 'Sticker Sheet', path: 'stickers.sheet' },
+                { label: 'Small Batch', path: 'stickers.smallBatch' },
+                { label: 'Print Add-on First Copy', path: 'stickers.printing.firstCopy' },
+                { label: 'Print Add-on Extra Copy', path: 'stickers.printing.additionalCopy' }
+            ]
+        },
+        {
+            title: 'Fursuits',
+            description: 'Wearable build starting prices.',
+            fields: [
+                { label: 'Tail', path: 'fursuits.tail' },
+                { label: 'Paws', path: 'fursuits.paws' },
+                { label: 'Paws and Tail Set', path: 'fursuits.pawsTailSet' },
+                { label: 'Feet Paws', path: 'fursuits.feetPaws' },
+                { label: 'Trio Set', path: 'fursuits.trioSet' },
+                { label: 'Head', path: 'fursuits.head' },
+                { label: 'Mini Partial', path: 'fursuits.miniPartial' },
+                { label: 'Full Partial', path: 'fursuits.fullPartial' }
+            ]
+        },
+        {
+            title: 'Keychains',
+            description: 'Premade finish costs and custom charm starts.',
+            fields: [
+                { label: 'Clear Acrylic', path: 'keychains.premade.clearAcrylic' },
+                { label: 'Epoxy', path: 'keychains.premade.epoxy' },
+                { label: 'Colored Acrylic', path: 'keychains.premade.coloredAcrylic' },
+                { label: 'Rainbow Acrylic', path: 'keychains.premade.rainbowAcrylic' },
+                { label: 'Translucent Acrylic', path: 'keychains.premade.translucentAcrylic' },
+                { label: 'Holographic', path: 'keychains.premade.holographic' },
+                { label: 'Glow in the Dark', path: 'keychains.premade.glowInDark' },
+                { label: 'Chibi/Icon', path: 'keychains.custom.chibiIcon' },
+                { label: 'Half Body', path: 'keychains.custom.halfBody' },
+                { label: 'Full Body', path: 'keychains.custom.fullBody' },
+                { label: 'Complex Character', path: 'keychains.custom.complexCharacter' }
+            ]
+        },
+        {
+            title: 'Meta',
+            description: 'Editor-wide defaults.',
+            fields: [
+                { label: 'Premium Margin Percent', path: 'meta.premiumMarginPercent' }
+            ]
+        }
+    ];
+}
+
+function renderPricingFieldCard(fieldGroup, config) {
+    const readConfigValue = (source, path) => {
+        const parts = String(path || '').split('.').filter(Boolean);
+        let current = source;
+        for (const part of parts) {
+            if (current && typeof current === 'object' && part in current) {
+                current = current[part];
+            } else {
+                return 0;
+            }
+        }
+        return normalizePricingNumber(current, 0);
+    };
+
+    const fieldsHTML = fieldGroup.fields.map((field) => {
+        const value = readConfigValue(config, field.path);
+        return `
+            <label class="admin-label admin-pricing-field">
+                <span>${escapeHTML(field.label)}</span>
+                <input type="number" class="admin-input" data-pricing-path="${escapeHTML(field.path)}" min="0" step="1" value="${escapeHTML(String(value))}">
+            </label>
+        `;
+    }).join('');
+
+    return `
+        <div class="admin-pricing-group">
+            <h4>${escapeHTML(fieldGroup.title)}</h4>
+            <p>${escapeHTML(fieldGroup.description)}</p>
+            <div class="admin-pricing-group-grid">${fieldsHTML}</div>
+        </div>
+    `;
+}
+
+function collectPricingConfigFromEditor() {
+    const config = getDefaultPricingConfig();
+    const fields = document.querySelectorAll('[data-pricing-path]');
+
+    fields.forEach((field) => {
+        if (!(field instanceof HTMLInputElement)) return;
+        const path = field.getAttribute('data-pricing-path');
+        if (!path) return;
+        const value = normalizePricingNumber(field.value, getPricingConfigValue(path, 0));
+        const parts = path.split('.');
+        let current = config;
+        for (let index = 0; index < parts.length - 1; index += 1) {
+            const part = parts[index];
+            if (!(part in current) || typeof current[part] !== 'object') {
+                current[part] = {};
+            }
+            current = current[part];
+        }
+        current[parts[parts.length - 1]] = value;
+    });
+
+    return normalizePricingConfig(config);
+}
+
+function syncPricingJsonEditor(config = getPricingConfig()) {
+    const jsonField = document.getElementById('adminPricingConfigJson');
+    if (!(jsonField instanceof HTMLTextAreaElement)) return;
+    const serialized = serializePricingConfig(config);
+    jsonField.value = serialized;
+    jsonField.dataset.serialized = serialized;
+}
+
+function syncPricingFormSelectPrices(form, baseType) {
+    if (!(form instanceof HTMLFormElement)) return;
+    const config = getPricingConfig();
+
+    if (baseType === 'art') {
+        const artSelect = form.querySelector('[name="artType"]');
+        if (artSelect instanceof HTMLSelectElement) {
+            const artOptionMap = {
+                Icon: config.art.icon.flat,
+                Headshot: config.art.headshot.flat,
+                Bust: config.art.bust.flat,
+                'Half Body': config.art.halfBody.flat,
+                'Full Body': config.art.fullBody.flat,
+                Scene: config.art.scene.flat,
+                'Basic Ref Sheet': config.art.refSheets.basic,
+                'Standard Ref Sheet': config.art.refSheets.standard,
+                'Deluxe Ref Sheet': config.art.refSheets.deluxe
+            };
+            Array.from(artSelect.options).forEach((option) => {
+                const price = artOptionMap[option.value];
+                if (price == null) return;
+                option.dataset.price = String(price);
+                option.textContent = option.textContent.replace(/\$\d+(?:\.\d+)?/, `$${price}`);
+            });
+        }
+    }
+
+    if (baseType === 'fursuit') {
+        const suitSelect = form.querySelector('[name="partType"]');
+        if (suitSelect instanceof HTMLSelectElement) {
+            const suitOptionMap = {
+                Tail: config.fursuits.tail,
+                Paws: config.fursuits.paws,
+                'Paws & Tail': config.fursuits.pawsTailSet,
+                'Feet Paws': config.fursuits.feetPaws,
+                'Trio Set': config.fursuits.trioSet,
+                Head: config.fursuits.head,
+                'Mini Partial': config.fursuits.miniPartial,
+                'Full Partial': config.fursuits.fullPartial
+            };
+            Array.from(suitSelect.options).forEach((option) => {
+                const price = suitOptionMap[option.value];
+                if (price == null) return;
+                option.dataset.price = String(price);
+                option.textContent = option.textContent.replace(/\$\d+(?:\.\d+)?/, `$${price}`);
+            });
+        }
+    }
+
+    if (baseType === 'keychain') {
+        const keychainSelect = form.querySelector('[name="keychainType"]');
+        if (keychainSelect instanceof HTMLSelectElement) {
+            const keychainOptionMap = {
+                'Chibi/Icon': config.keychains.custom.chibiIcon,
+                'Half Body': config.keychains.custom.halfBody,
+                'Full Body': config.keychains.custom.fullBody,
+                'Complex Character': config.keychains.custom.complexCharacter
+            };
+            Array.from(keychainSelect.options).forEach((option) => {
+                const price = keychainOptionMap[option.value];
+                if (price == null) return;
+                option.dataset.price = String(price);
+                option.textContent = option.textContent.replace(/\$\d+(?:\.\d+)?/, `$${price}`);
+            });
+        }
+    }
+
+    if (baseType === 'sticker') {
+        const stickerSelect = form.querySelector('[name="stickerType"]');
+        if (stickerSelect instanceof HTMLSelectElement) {
+            const stickerOptionMap = {
+                'Single Sticker': config.stickers.single,
+                'Matching Pair': config.stickers.pair,
+                'Sticker Sheet': config.stickers.sheet,
+                'Small Batch': config.stickers.smallBatch
+            };
+            Array.from(stickerSelect.options).forEach((option) => {
+                const price = stickerOptionMap[option.value];
+                if (price == null) return;
+                option.dataset.price = String(price);
+                option.textContent = option.textContent.replace(/\$\d+(?:\.\d+)?/, `$${price}`);
+            });
+        }
+    }
+
+    const finishSelect = form.querySelector('[name="finish"]');
+    if (finishSelect instanceof HTMLSelectElement && form.id === 'premadeKeychainForm') {
+        const finishOptionMap = {
+            'Clear Acrylic': config.keychains.premade.clearAcrylic,
+            Epoxy: config.keychains.premade.epoxy,
+            'Colored Acrylic': config.keychains.premade.coloredAcrylic,
+            'Rainbow Acrylic': config.keychains.premade.rainbowAcrylic,
+            'Translucent Acrylic': config.keychains.premade.translucentAcrylic,
+            Holographic: config.keychains.premade.holographic,
+            'Glow in the Dark': config.keychains.premade.glowInDark
+        };
+        Array.from(finishSelect.options).forEach((option) => {
+            const price = finishOptionMap[option.value];
+            if (price == null) return;
+            option.dataset.price = String(price);
+        });
+    }
+}
+
+function refreshPricingDependentViews() {
+    if (bodyElement.getAttribute('data-page') === 'pricing') {
+        loadPricingPage();
+        return;
+    }
+
+    document.querySelectorAll('form').forEach((form) => {
+        if (!(form instanceof HTMLFormElement)) return;
+        if (form.querySelector('#liveEstimate')) {
+            const baseTypeByFormId = {
+                artForm: 'art',
+                fursuitForm: 'fursuit',
+                customKeychainForm: 'keychain',
+                stickerForm: 'sticker',
+                premadeKeychainForm: 'keychain'
+            };
+            const baseType = baseTypeByFormId[form.id];
+            if (baseType) {
+                syncPricingFormSelectPrices(form, baseType);
+            }
+            form.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    });
+}
+
+function renderAdminPricingSettings() {
+    const grid = document.getElementById('adminPricingFieldGrid');
+    const config = normalizePricingConfig(window.adminPricingDraftConfig || window.pricingConfig || null);
+    window.adminPricingDraftConfig = normalizePricingConfig(config);
+
+    if (grid instanceof HTMLElement) {
+        grid.innerHTML = getPricingEditorFieldDefinitions().map((group) => renderPricingFieldCard(group, config)).join('');
+    }
+
+    const jsonField = document.getElementById('adminPricingConfigJson');
+    if (jsonField instanceof HTMLTextAreaElement) {
+        jsonField.value = serializePricingConfig(config);
+        jsonField.dataset.serialized = jsonField.value;
+    }
+}
+
+function applyPremiumPricingMargin(config, percent) {
+    const source = normalizePricingConfig(config);
+    const factor = 1 + (Math.max(0, Number(percent) || 0) / 100);
+    const scale = (value) => Math.round(normalizePricingNumber(value, 0) * factor);
+
+    return {
+        art: {
+            icon: { flat: scale(source.art.icon.flat), cel: scale(source.art.icon.cel), rendered: scale(source.art.icon.rendered) },
+            headshot: { flat: scale(source.art.headshot.flat), cel: scale(source.art.headshot.cel), rendered: scale(source.art.headshot.rendered) },
+            bust: { flat: scale(source.art.bust.flat), cel: scale(source.art.bust.cel), rendered: scale(source.art.bust.rendered) },
+            halfBody: { flat: scale(source.art.halfBody.flat), cel: scale(source.art.halfBody.cel), rendered: scale(source.art.halfBody.rendered) },
+            fullBody: { flat: scale(source.art.fullBody.flat), cel: scale(source.art.fullBody.cel), rendered: scale(source.art.fullBody.rendered) },
+            scene: { flat: scale(source.art.scene.flat), cel: scale(source.art.scene.cel), rendered: scale(source.art.scene.rendered) },
+            refSheets: { basic: scale(source.art.refSheets.basic), standard: scale(source.art.refSheets.standard), deluxe: scale(source.art.refSheets.deluxe) },
+            addOns: {
+                extraOutfit: scale(source.art.addOns.extraOutfit),
+                prop: scale(source.art.addOns.prop),
+                detailedBackground: scale(source.art.addOns.detailedBackground),
+                stickerPack: scale(source.art.addOns.stickerPack)
+            }
+        },
+        animation: {
+            loop: { min: scale(source.animation.loop.min), max: scale(source.animation.loop.max) },
+            simple: { min: scale(source.animation.simple.min), max: scale(source.animation.simple.max) },
+            fullCharacter: { min: scale(source.animation.fullCharacter.min), max: scale(source.animation.fullCharacter.max) },
+            complexScene: scale(source.animation.complexScene),
+            extraCharacter: { min: scale(source.animation.extraCharacter.min), max: scale(source.animation.extraCharacter.max) },
+            simpleBackground: { min: scale(source.animation.simpleBackground.min), max: scale(source.animation.simpleBackground.max) },
+            detailedBackground: { min: scale(source.animation.detailedBackground.min), max: scale(source.animation.detailedBackground.max) },
+            complexMotion: { min: scale(source.animation.complexMotion.min), max: scale(source.animation.complexMotion.max) },
+            lipSync: scale(source.animation.lipSync)
+        },
+        stickers: {
+            single: scale(source.stickers.single),
+            pair: scale(source.stickers.pair),
+            sheet: scale(source.stickers.sheet),
+            smallBatch: scale(source.stickers.smallBatch),
+            printing: {
+                firstCopy: scale(source.stickers.printing.firstCopy),
+                additionalCopy: scale(source.stickers.printing.additionalCopy)
+            }
+        },
+        fursuits: {
+            tail: scale(source.fursuits.tail),
+            paws: scale(source.fursuits.paws),
+            pawsTailSet: scale(source.fursuits.pawsTailSet),
+            feetPaws: scale(source.fursuits.feetPaws),
+            trioSet: scale(source.fursuits.trioSet),
+            head: scale(source.fursuits.head),
+            miniPartial: scale(source.fursuits.miniPartial),
+            fullPartial: scale(source.fursuits.fullPartial)
+        },
+        keychains: {
+            premade: {
+                clearAcrylic: scale(source.keychains.premade.clearAcrylic),
+                epoxy: scale(source.keychains.premade.epoxy),
+                coloredAcrylic: scale(source.keychains.premade.coloredAcrylic),
+                rainbowAcrylic: scale(source.keychains.premade.rainbowAcrylic),
+                translucentAcrylic: scale(source.keychains.premade.translucentAcrylic),
+                holographic: scale(source.keychains.premade.holographic),
+                glowInDark: scale(source.keychains.premade.glowInDark)
+            },
+            custom: {
+                chibiIcon: scale(source.keychains.custom.chibiIcon),
+                halfBody: scale(source.keychains.custom.halfBody),
+                fullBody: scale(source.keychains.custom.fullBody),
+                complexCharacter: scale(source.keychains.custom.complexCharacter)
+            }
+        },
+        meta: {
+            premiumMarginPercent: Math.max(0, Number(percent) || 0)
+        }
+    };
+}
+
+function readPricingConfigFromEditor() {
+    const jsonField = document.getElementById('adminPricingConfigJson');
+    const currentSerialized = jsonField instanceof HTMLTextAreaElement ? jsonField.dataset.serialized || '' : '';
+    const currentText = jsonField instanceof HTMLTextAreaElement ? jsonField.value.trim() : '';
+
+    if (jsonField instanceof HTMLTextAreaElement && currentText && currentText !== currentSerialized) {
+        try {
+            return normalizePricingConfig(JSON.parse(currentText));
+        } catch (error) {
+            throw new Error('Pricing JSON is invalid. Fix the JSON before saving.');
+        }
+    }
+
+    return normalizePricingConfig(window.adminPricingDraftConfig || collectPricingConfigFromEditor());
+}
+
+function setPricingEditorConfig(nextConfig) {
+    window.adminPricingDraftConfig = normalizePricingConfig(nextConfig);
+    renderAdminPricingSettings();
+}
+
+function bindAdminPricingSettingsControls() {
+    const grid = document.getElementById('adminPricingFieldGrid');
+    const jsonField = document.getElementById('adminPricingConfigJson');
+    const saveBtn = document.getElementById('btnSavePricingConfig');
+    const presetBtn = document.getElementById('btnApplyPremiumPricingPreset');
+    const resetBtn = document.getElementById('btnResetPricingConfig');
+
+    if (grid instanceof HTMLElement && grid.dataset.pricingBound !== 'true') {
+        grid.addEventListener('input', () => {
+            window.adminPricingDraftConfig = collectPricingConfigFromEditor();
+            syncPricingJsonEditor(window.adminPricingDraftConfig);
+        });
+        grid.dataset.pricingBound = 'true';
+    }
+
+    if (jsonField instanceof HTMLTextAreaElement && jsonField.dataset.pricingBound !== 'true') {
+        jsonField.addEventListener('input', () => {
+            jsonField.dataset.serialized = '';
+        });
+        jsonField.dataset.pricingBound = 'true';
+    }
+
+    if (saveBtn instanceof HTMLButtonElement && saveBtn.dataset.pricingBound !== 'true') {
+        saveBtn.addEventListener('click', async () => {
+            if (!requireAdminSession('Please sign in with an authorized admin account before saving pricing.')) return;
+
+            const button = saveBtn;
+            const jsonFieldEl = document.getElementById('adminPricingConfigJson');
+            let nextConfig;
+
+            try {
+                nextConfig = readPricingConfigFromEditor();
+            } catch (error) {
+                showAdminToast(error instanceof Error ? error.message : 'Pricing JSON could not be parsed.', true);
+                return;
+            }
+
+            const normalized = normalizePricingConfig(nextConfig);
+            button.disabled = true;
+            button.textContent = 'Saving...';
+
+            try {
+                await setDoc(doc(db, 'settings', 'pricing'), normalized, { merge: true });
+                window.pricingConfig = normalized;
+                window.adminPricingDraftConfig = normalizePricingConfig(normalized);
+                renderAdminPricingSettings();
+                refreshPricingDependentViews();
+                showAdminToast('Pricing settings saved.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast('Failed to save pricing settings.', true);
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Save Pricing';
+                if (jsonFieldEl instanceof HTMLTextAreaElement) {
+                    jsonFieldEl.dataset.serialized = jsonFieldEl.value;
+                }
+            }
+        });
+        saveBtn.dataset.pricingBound = 'true';
+    }
+
+    if (presetBtn instanceof HTMLButtonElement && presetBtn.dataset.pricingBound !== 'true') {
+        presetBtn.addEventListener('click', () => {
+            const currentConfig = normalizePricingConfig(window.adminPricingDraftConfig || window.pricingConfig || null);
+            const margin = normalizePricingNumber(currentConfig?.meta?.premiumMarginPercent, 10);
+            setPricingEditorConfig(applyPremiumPricingMargin(currentConfig, margin));
+            showAdminToast('Premium pricing preset applied to the editor. Save to publish.');
+        });
+        presetBtn.dataset.pricingBound = 'true';
+    }
+
+    if (resetBtn instanceof HTMLButtonElement && resetBtn.dataset.pricingBound !== 'true') {
+        resetBtn.addEventListener('click', () => {
+            setPricingEditorConfig(getDefaultPricingConfig());
+            showAdminToast('Default pricing loaded into the editor. Save to publish.');
+        });
+        resetBtn.dataset.pricingBound = 'true';
+    }
+}
+
+function attachPricingSettingsListener() {
+    if (window.pricingSettingsUnsub) {
+        window.pricingSettingsUnsub();
+        window.pricingSettingsUnsub = null;
+    }
+
+    window.pricingSettingsUnsub = onSnapshot(doc(db, 'settings', 'pricing'), (docSnap) => {
+        window.pricingConfig = normalizePricingConfig(docSnap.exists() ? docSnap.data() : null);
+        window.adminPricingDraftConfig = normalizePricingConfig(window.pricingConfig);
+        if (bodyElement.getAttribute('data-page') === 'admin') {
+            renderAdminPricingSettings();
+        }
+        refreshPricingDependentViews();
+    }, () => {
+        window.pricingConfig = normalizePricingConfig(null);
+        window.adminPricingDraftConfig = normalizePricingConfig(window.pricingConfig);
+        if (bodyElement.getAttribute('data-page') === 'admin') {
+            renderAdminPricingSettings();
+        }
+        refreshPricingDependentViews();
+    });
 }
 
 // === ANIMATIONS & VISUAL SYSTEMS ===
@@ -4241,9 +5487,9 @@ function attachDynamicEstimator(formId, baseType) {
     if(!form) return;
     const estDisplay = form.querySelector('#liveEstimate');
     if(!estDisplay) return;
+    syncPricingFormSelectPrices(form, baseType);
 
     function updateEstimate() {
-        const pricing = getPricingConfig();
         let min = 0;
         let max = 0;
         let isPlus = false;
@@ -4254,7 +5500,18 @@ function attachDynamicEstimator(formId, baseType) {
             const charCountInput = form.querySelector('[name="characterCount"]');
             const addons = form.querySelectorAll('[name="addon"]:checked');
 
-            const artPricingTable = pricing.art.types;
+            const pricingConfig = getPricingConfig();
+            const artPricingTable = {
+                'Icon': { flat: pricingConfig.art.icon.flat, cel: pricingConfig.art.icon.cel, rendered: pricingConfig.art.icon.rendered },
+                'Headshot': { flat: pricingConfig.art.headshot.flat, cel: pricingConfig.art.headshot.cel, rendered: pricingConfig.art.headshot.rendered },
+                'Bust': { flat: pricingConfig.art.bust.flat, cel: pricingConfig.art.bust.cel, rendered: pricingConfig.art.bust.rendered },
+                'Half Body': { flat: pricingConfig.art.halfBody.flat, cel: pricingConfig.art.halfBody.cel, rendered: pricingConfig.art.halfBody.rendered },
+                'Full Body': { flat: pricingConfig.art.fullBody.flat, cel: pricingConfig.art.fullBody.cel, rendered: pricingConfig.art.fullBody.rendered },
+                'Scene': { flat: pricingConfig.art.scene.flat, cel: pricingConfig.art.scene.cel, rendered: pricingConfig.art.scene.rendered },
+                'Basic Ref Sheet': { flat: pricingConfig.art.refSheets.basic, cel: pricingConfig.art.refSheets.basic, rendered: pricingConfig.art.refSheets.basic },
+                'Standard Ref Sheet': { flat: pricingConfig.art.refSheets.standard, cel: pricingConfig.art.refSheets.standard, rendered: pricingConfig.art.refSheets.standard },
+                'Deluxe Ref Sheet': { flat: pricingConfig.art.refSheets.deluxe, cel: pricingConfig.art.refSheets.deluxe, rendered: pricingConfig.art.refSheets.deluxe }
+            };
 
             const artType = String(typeSel?.value || 'Headshot');
             const finishRaw = String(finishSel?.value || 'Flat Color').toLowerCase();
@@ -4269,52 +5526,52 @@ function attachDynamicEstimator(formId, baseType) {
 
             const characterCount = Math.max(1, parseInt(charCountInput ? charCountInput.value : '1', 10) || 1);
             if (characterCount > 1) {
-                const charMultiplier = 1 + ((pricing.art.addOns.extraCharacterPercent / 100) * (characterCount - 1));
+                const charMultiplier = 1 + (0.8 * (characterCount - 1));
                 min = Math.round(min * charMultiplier);
                 max = Math.round(max * charMultiplier);
             }
 
             addons.forEach(box => {
                 if (box.value === "Extra Character" && characterCount <= 1) {
-                    min = Math.round(min * (1 + (pricing.art.addOns.extraCharacterPercent / 100)));
-                    max = Math.round(max * (1 + (pricing.art.addOns.extraCharacterPercent / 100)));
+                    min = Math.round(min * 1.8);
+                    max = Math.round(max * 1.8);
                 }
                 if (box.value === "Detailed Background") {
-                    min += pricing.art.addOns.detailedBackgroundMin;
-                    max += pricing.art.addOns.detailedBackgroundMax;
+                    min += 40;
+                    max += 80;
                 }
                 if (box.value === "Extra Outfit") {
-                    min += pricing.art.addOns.extraOutfit;
-                    max += pricing.art.addOns.extraOutfit;
+                    min += 24;
+                    max += 24;
                 }
                 if (box.value === "Prop") {
-                    min += pricing.art.addOns.prop;
-                    max += pricing.art.addOns.prop;
+                    min += 16;
+                    max += 16;
                 }
             });
 
             const hasRushAddon = Array.from(addons).some((box) => box.value === 'Rush Order');
             const hasCommercialAddon = Array.from(addons).some((box) => box.value === 'Commercial License');
             if (hasRushAddon) {
-                min = Math.round(min * (1 + (pricing.art.addOns.rushPercent / 100)));
-                max = Math.round(max * (1 + (pricing.art.addOns.rushPercent / 100)));
+                min = Math.round(min * 1.5);
+                max = Math.round(max * 1.5);
             }
             if (hasCommercialAddon) {
-                min = Math.round(min * (1 + (pricing.art.addOns.commercialLicensePercent / 100)));
-                max = Math.round(max * (1 + (pricing.art.addOns.commercialLicensePercent / 100)));
+                min = Math.round(min * 2);
+                max = Math.round(max * 2);
             }
             isPlus = true;
 
         } else if (baseType === 'fursuit') {
             const typeSel = form.querySelector('[name="partType"]');
             const addons = form.querySelectorAll('[name="addon"]:checked');
-            if(typeSel) min = parseInt(typeSel.options[typeSel.selectedIndex].dataset.price || 0);
+            if(typeSel) min = parseInt(typeSel.options[typeSel.selectedIndex].dataset.price || 0, 10) || 0;
             max = min + (min * 0.5); 
 
             addons.forEach(box => {
                 if (box.value === 'Rush Order') {
-                    min += pricing.fursuits.rushOrderFlat;
-                    max += pricing.fursuits.rushOrderFlat;
+                    min += 100;
+                    max += 100;
                 }
             });
 
@@ -4325,10 +5582,19 @@ function attachDynamicEstimator(formId, baseType) {
             const qtyInput = form.querySelector('[name="quantity"]');
             const doubleSel = form.querySelector('[name="doubleSided"]');
             
-            let base = 22;
+            const pricingConfig = getPricingConfig();
+            let base = baseType === 'sticker' ? pricingConfig.stickers.single : pricingConfig.keychains.custom.chibiIcon;
             if (formId === 'premadeKeychainForm') {
                 const finish = String(form.querySelector('[name="finish"]')?.value || 'Any');
-                const premadeFinishPrices = pricing.keychains.premade;
+                const premadeFinishPrices = {
+                    'Clear Acrylic': pricingConfig.keychains.premade.clearAcrylic,
+                    'Epoxy': pricingConfig.keychains.premade.epoxy,
+                    'Colored Acrylic': pricingConfig.keychains.premade.coloredAcrylic,
+                    'Rainbow Acrylic': pricingConfig.keychains.premade.rainbowAcrylic,
+                    'Translucent Acrylic': pricingConfig.keychains.premade.translucentAcrylic,
+                    'Holographic': pricingConfig.keychains.premade.holographic,
+                    'Glow in the Dark': pricingConfig.keychains.premade.glowInDark
+                };
                 if (finish === 'Any' || !premadeFinishPrices[finish]) {
                     const all = Object.values(premadeFinishPrices);
                     const qty = parseInt(qtyInput ? qtyInput.value : 1, 10) || 1;
@@ -4339,7 +5605,7 @@ function attachDynamicEstimator(formId, baseType) {
                     base = premadeFinishPrices[finish];
                 }
             } else if (typeSel) {
-                base = parseInt(typeSel.options[typeSel.selectedIndex].dataset.price || 12);
+                base = parseInt(typeSel.options[typeSel.selectedIndex].dataset.price || 12, 10) || 12;
             }
             
             let mult = 1;
@@ -4368,7 +5634,7 @@ function attachDynamicEstimator(formId, baseType) {
                         'Small Batch': 6
                     };
                     const designCount = designCountMap[stickerType] || 1;
-                    const addOnPerDesign = pricing.stickers.printingAddon.first + (Math.max(0, copies - 1) * pricing.stickers.printingAddon.additional);
+                    const addOnPerDesign = 6 + (Math.max(0, copies - 1) * 3);
                     const printAddOnTotal = designCount * addOnPerDesign * qty;
                     min += printAddOnTotal;
                     max += printAddOnTotal;
@@ -4894,63 +6160,21 @@ function loadGalleryPage() {
     renderDynamicMoon();
     createBubbles();
 
-    const galleryItems = [
-        { url: 'Images/Art fight.png', title: 'Art Fight', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
-        { url: 'Images/banner 1.jpg', title: 'Banner Concept', creator: 'Husky', categories: ['digital-art'] },
-        { url: 'Images/Candelle_icon.png', title: 'Candelle Icon', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
-        { url: 'Images/Com_1.png', title: 'Commission 1', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
-        { url: 'Images/Comm_2.png', title: 'Commission 2', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
-        { url: 'Images/Commmmmm.png', title: 'Commission 3', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
-        { url: 'Images/Fancy clown lol v.03.png', title: 'Fancy Clown', creator: 'Husky', categories: ['digital-art'] },
-        { url: 'Images/Illustration15.png', title: 'Illustration 15', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
-        { url: 'Images/Illustration7.png', title: 'Illustration 7', creator: 'Husky', categories: ['digital-art'] },
-        { url: 'Images/Illustration_2.0.png', title: 'Illustration 2.0', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
-        { url: 'Images/Lambbbbbb_no_shade.png', title: 'Lamb Concept', creator: 'Husky', categories: ['digital-art'] },
-        { url: 'Images/Meow.jpg', title: 'Meow Portrait', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
-        { url: 'Images/My pride.png', title: 'My Pride', creator: 'Husky', categories: ['digital-art'] },
-        { url: 'Images/Pounkkayk Icon for artfight 2025.png', title: 'Pounkkayk Icon', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
-        { url: 'Images/Com_1.png', title: 'Shipppp Commission', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
-        { url: 'Images/Spinel but glitchy.png', title: 'Spinel Glitchy', creator: 'Husky', categories: ['digital-art'] },
-        { url: 'Images/Sticker 2.png', title: 'Sticker Design', creator: 'Husky', categories: ['stickers', 'finished-commissions'] },
-        { url: 'Images/What_safety_cost_me.png', title: 'What Safety Cost Me', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
-        { url: 'Premade keychains/Absol_keycahin_watermark.png', title: 'Premade Keychain', creator: 'Horizon Tide', categories: ['keychains', 'finished-commissions'] },
-        { url: 'Premade keychains/bleh1.png', title: 'Keychain Sample', creator: 'Horizon Tide', categories: ['keychains'] },
-        { url: 'Premade keychains/Illustration13_2.png', title: 'Keychain Illustration', creator: 'Horizon Tide', categories: ['keychains'] },
-        { url: "Lopside's art images/03F50406-DA67-44D8-8E51-DB337E650157.jpg", title: 'Fursuit Build', creator: 'Lopside', categories: ['fursuits', 'finished-commissions'] },
-        { url: "Lopside's art images/BD466073-9A75-4F99-A7E3-45BBF7A3DCAE.jpg", title: 'Fursuit Detail', creator: 'Lopside', categories: ['fursuits'] },
-        { url: "Lopside's art images/IMG_1464.jpg", title: 'Suit Progress', creator: 'Lopside', categories: ['fursuits', 'finished-commissions'] },
-        { url: "Lopside's art images/IMG_2276.jpg", title: 'Suit Progress 2', creator: 'Lopside', categories: ['fursuits'] },
-        { url: "Lopside's art images/IMG_2309.jpg", title: 'Suit Progress 3', creator: 'Lopside', categories: ['fursuits'] },
-        { url: "Lopside's art images/IMG_2557.jpg", title: 'Suit Progress 4', creator: 'Lopside', categories: ['fursuits', 'finished-commissions'] },
-        { url: "Lopside's art images/IMG_5188.jpg", title: 'Suit Progress 5', creator: 'Lopside', categories: ['fursuits'] },
-        { url: "Lopside's art images/IMG_5784.jpg", title: 'Suit Progress 6', creator: 'Lopside', categories: ['fursuits', 'finished-commissions'] },
-        {
-            url: 'https://img.youtube.com/vi/jnh7WgHTO6w/hqdefault.jpg',
-            title: 'Animation Preview',
-            creator: 'Husky',
-            categories: ['animation', 'finished-commissions'],
-            videoLink: 'https://youtu.be/jnh7WgHTO6w?si=lB-yZ1W5KB42W1g4'
-        }
-    ];
+    const galleryItems = normalizeGalleryCatalog(window.galleryCatalog).items;
+    const galleryFilters = getGalleryFilterOptions(galleryItems);
 
     let galleryHTML = `
         <div class="preorder-card menu-large">
             <h1 style="color: #ffffff; text-shadow: 0 0 15px #ec4899; font-size: 2.5rem;">Horizon Tide Gallery</h1>
             <p style="color: #e2e8f0; margin-bottom: 20px;">Explore past commissions, creations, and concepts.</p>
             <div class="filter-btn-group">
-                <button type="button" class="filter-btn active" data-filter="all">All</button>
-                <button type="button" class="filter-btn" data-filter="digital-art">Digital Art</button>
-                <button type="button" class="filter-btn" data-filter="fursuits">Fursuits</button>
-                <button type="button" class="filter-btn" data-filter="keychains">Keychains</button>
-                <button type="button" class="filter-btn" data-filter="stickers">Stickers</button>
-                <button type="button" class="filter-btn" data-filter="animation">Animation</button>
-                <button type="button" class="filter-btn" data-filter="finished-commissions">Finished Commissions</button>
+                ${galleryFilters.map((filter, index) => `<button type="button" class="filter-btn ${index === 0 ? 'active' : ''}" data-filter="${escapeHTML(filter.value)}">${escapeHTML(filter.label)}</button>`).join('')}
             </div>
             <div class="gallery-grid" id="mainGalleryGrid">
     `;
 
     galleryItems.forEach((item, i) => {
-        const categoryBadges = item.categories.map(cat => `<span class="gallery-category-badge">${cat.replace('-', ' ')}</span>`).join('');
+        const categoryBadges = item.categories.map((cat) => renderGalleryCategoryBadgeMarkup(cat)).join('');
         const mediaClass = item.videoLink ? 'gallery-video-thumb' : '';
         const cardTag = item.videoLink ? 'Animation Clip • Click to play' : item.creator;
         const gallerySrc = /^https?:\/\//i.test(item.url) ? item.url : encodeURI(item.url);
@@ -5111,7 +6335,6 @@ function loadPreorderPage() {
 }
 
 function loadPricingPage() {
-    const pricing = getPricingConfig();
     clearBubbles();
     bodyElement.setAttribute('data-theme', 'pricing');
     bodyElement.setAttribute('data-page', 'pricing');
@@ -5126,6 +6349,12 @@ function loadPricingPage() {
         <div class="pricing-meta-pills">${items.map((item) => `<span class="pricing-meta-pill">${item}</span>`).join('')}</div>
     `;
     const pricingSectionCta = (buttonId, label) => `<button type="button" class="nav-btn pricing-inline-cta" id="${buttonId}">${label}</button>`;
+    const artPrice = (path, fallback, isPlus = false) => renderPrice(getPricingConfigValue(path, fallback), 'art', isPlus);
+    const animationPrice = (path, fallback, isPlus = false) => renderPrice(getPricingConfigValue(path, fallback), 'animations', isPlus);
+    const animationRange = (minPath, maxPath, fallbackMin, fallbackMax, isPlus = false) => renderPriceRange(getPricingConfigValue(minPath, fallbackMin), getPricingConfigValue(maxPath, fallbackMax), 'animations', isPlus);
+    const stickerPrice = (path, fallback, isPlus = false) => renderPrice(getPricingConfigValue(path, fallback), 'stickers', isPlus);
+    const fursuitPrice = (path, fallback, isPlus = false) => renderPrice(getPricingConfigValue(path, fallback), 'fursuits', isPlus);
+    const keychainPrice = (path, fallback, isPlus = false) => renderPrice(getPricingConfigValue(path, fallback), 'keychains', isPlus);
 
     appViewport.innerHTML = `
         <div class="pricing-container">
@@ -5232,64 +6461,64 @@ function loadPricingPage() {
             <div class="pricing-section" id="pricing-art">
                 <div class="pricing-section-head">
                     <h2>Husky's Art Commissions</h2>
-                    ${pricingMetaPills(['Best for icons, refs, and character scenes', 'Turnaround: 1-6 months', 'Payment: upfront'])}
+                    ${pricingMetaPills(['Best for icons, refs, and character scenes', 'Turnaround: 2 weeks to 1 month', 'Payment: upfront'])}
                 </div>
                 <p class="pricing-section-intro">Best for character art, references, scenes, and polished illustration work.</p>
                 <p style="color: #ef4444; font-size: 0.9rem; margin-top: -5px;">*Animation memes are currently closed due to workload.</p>
                 <h3>Icons</h3>
                 <div class="price-grid">
-                    <div class="price-item price-item-popular"><span>Flat Color <em class="price-item-flag">Popular start</em></span> <span>${renderPrice(pricing.art.types.Icon.flat, 'art')}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(pricing.art.types.Icon.cel, 'art')}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${renderPrice(pricing.art.types.Icon.rendered, 'art')}</span></div>
+                    <div class="price-item price-item-popular"><span>Flat Color <em class="price-item-flag">Popular start</em></span> <span>${artPrice('art.icon.flat', 24)}</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.icon.cel', 36)}</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.icon.rendered', 52)}</span></div>
                 </div>
                 <h3>Headshots</h3>
                 <div class="price-grid">
-                    <div class="price-item price-item-popular"><span>Flat Color <em class="price-item-flag">Most common</em></span> <span>${renderPrice(pricing.art.types.Headshot.flat, 'art')}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(pricing.art.types.Headshot.cel, 'art')}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${renderPrice(pricing.art.types.Headshot.rendered, 'art')}</span></div>
+                    <div class="price-item price-item-popular"><span>Flat Color <em class="price-item-flag">Most common</em></span> <span>${artPrice('art.headshot.flat', 32)}</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.headshot.cel', 44)}</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.headshot.rendered', 60)}</span></div>
                 </div>
                 <h3>Busts</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Flat Color</span> <span>${renderPrice(pricing.art.types.Bust.flat, 'art')}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(pricing.art.types.Bust.cel, 'art')}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${renderPrice(pricing.art.types.Bust.rendered, 'art')}</span></div>
+                    <div class="price-item"><span>Flat Color</span> <span>${artPrice('art.bust.flat', 44)}</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.bust.cel', 60)}</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.bust.rendered', 80)}</span></div>
                 </div>
                 <h3>Half Bodies</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Flat Color</span> <span>${renderPrice(pricing.art.types['Half Body'].flat, 'art')}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(pricing.art.types['Half Body'].cel, 'art')}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${renderPrice(pricing.art.types['Half Body'].rendered, 'art')}</span></div>
+                    <div class="price-item"><span>Flat Color</span> <span>${artPrice('art.halfBody.flat', 56)}</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.halfBody.cel', 72)}</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.halfBody.rendered', 96)}</span></div>
                 </div>
                 <h3>Full Bodies</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Flat Color</span> <span>${renderPrice(pricing.art.types['Full Body'].flat, 'art')}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(pricing.art.types['Full Body'].cel, 'art')}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${renderPrice(pricing.art.types['Full Body'].rendered, 'art')}</span></div>
+                    <div class="price-item"><span>Flat Color</span> <span>${artPrice('art.fullBody.flat', 72)}</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.fullBody.cel', 96)}</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.fullBody.rendered', 128)}</span></div>
                 </div>
                 <h3>Scenes</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Flat Color</span> <span>${renderPrice(pricing.art.types.Scene.flat, 'art')}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${renderPrice(pricing.art.types.Scene.cel, 'art')}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${renderPrice(pricing.art.types.Scene.rendered, 'art')}</span></div>
+                    <div class="price-item"><span>Flat Color</span> <span>${artPrice('art.scene.flat', 160)}</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.scene.cel', 200)}</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.scene.rendered', 240)}</span></div>
                 </div>
                 <h3>Reference Sheets</h3>
                 <ul>
-                    <li><strong>Basic: ${renderPrice(pricing.art.types['Basic Ref Sheet'].flat, 'art')}</strong><br>Includes front view, color palette, and basic info.</li>
-                    <li><strong>Standard: ${renderPrice(pricing.art.types['Standard Ref Sheet'].flat, 'art')}</strong><br>Includes front & back views, palette, and detail notes.</li>
-                    <li><strong>Deluxe: ${renderPrice(pricing.art.types['Deluxe Ref Sheet'].flat, 'art', true)}</strong><br>Includes front & back views, expressions, outfit variations, props, and detail panels.</li>
+                    <li><strong>Basic: ${artPrice('art.refSheets.basic', 160)}</strong><br>Includes front view, color palette, and basic info.</li>
+                    <li><strong>Standard: ${artPrice('art.refSheets.standard', 220)}</strong><br>Includes front & back views, palette, and detail notes.</li>
+                    <li><strong>Deluxe: ${artPrice('art.refSheets.deluxe', 280, true)}</strong><br>Includes front & back views, expressions, outfit variations, props, and detail panels.</li>
                 </ul>
                 <h3>Discord Stickers</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>6 Pack</span> <span>${renderPrice(75, 'stickers')}</span></div>
+                    <div class="price-item"><span>6 Pack</span> <span>${stickerPrice('art.addOns.stickerPack', 75)}</span></div>
                 </div>
                 <h3>Add-ons</h3>
                 <div class="pricing-chip-grid">
-                    <div class="pricing-chip"><strong>Extra Character</strong><span>+${pricing.art.addOns.extraCharacterPercent}%</span></div>
-                    <div class="pricing-chip"><strong>Extra Outfit</strong><span>+${renderPrice(pricing.art.addOns.extraOutfit, 'art')}</span></div>
-                    <div class="pricing-chip"><strong>Prop</strong><span>+${renderPrice(pricing.art.addOns.prop, 'art')}</span></div>
-                    <div class="pricing-chip"><strong>Detailed Background</strong><span>+${renderPrice(pricing.art.addOns.detailedBackgroundMin, 'art', true)}</span></div>
-                    <div class="pricing-chip"><strong>Commercial License</strong><span>+${pricing.art.addOns.commercialLicensePercent}%</span></div>
-                    <div class="pricing-chip"><strong>Rush Order</strong><span>+${pricing.art.addOns.rushPercent}%</span></div>
+                    <div class="pricing-chip"><strong>Extra Character</strong><span>+80%</span></div>
+                    <div class="pricing-chip"><strong>Extra Outfit</strong><span>+${artPrice('art.addOns.extraOutfit', 24)}</span></div>
+                    <div class="pricing-chip"><strong>Prop</strong><span>+${artPrice('art.addOns.prop', 16)}</span></div>
+                    <div class="pricing-chip"><strong>Detailed Background</strong><span>+${artPrice('art.addOns.detailedBackground', 40, true)}</span></div>
+                    <div class="pricing-chip"><strong>Commercial License</strong><span>+100%</span></div>
+                    <div class="pricing-chip"><strong>Rush Order</strong><span>+50%</span></div>
                 </div>
                 <div class="pricing-section-actions">${pricingSectionCta('pricingArtCtaBtn', 'Start Art Request')}</div>
             </div>
@@ -5297,12 +6526,12 @@ function loadPricingPage() {
             <div class="pricing-section" id="pricing-animation" style="border-left-color: #f59e0b;">
                 <div class="pricing-section-head">
                     <h2 style="color: #f59e0b; border-left-color: #f59e0b;">Husky's Animation Commissions</h2>
-                    ${pricingMetaPills(['Best for loops, acting shots, and custom motion', 'Turnaround: 2 weeks to 6+ months', 'Payment: quote-based'])}
+                    ${pricingMetaPills(['Best for loops, acting shots, and custom motion', 'Turnaround: 1 month to 6 months', 'Payment: quote-based'])}
                 </div>
                 <p class="pricing-section-intro">Best for looping motion, short scenes, and more custom animated ideas.</p>
                 <h3>Loop Animations</h3>
                 <div class="price-grid">
-                    <div class="price-item price-item-popular"><span>1–5 seconds <em class="price-item-flag">Best starting point</em></span> <span>${renderPriceRange(20, 60, 'animations')}</span></div>
+                    <div class="price-item price-item-popular"><span>1–5 seconds <em class="price-item-flag">Best starting point</em></span> <span>${animationRange('animation.loop.min', 'animation.loop.max', 20, 60)}</span></div>
                 </div>
                 <ul style="margin-top: 5px;">
                     <li>Simple looping motion like breathing, blinking, slight movement</li>
@@ -5310,7 +6539,7 @@ function loadPricingPage() {
                 </ul>
                 <h3>Simple Animations</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>3–8 seconds</span> <span>${renderPriceRange(60, 140, 'animations')}</span></div>
+                    <div class="price-item"><span>3–8 seconds</span> <span>${animationRange('animation.simple.min', 'animation.simple.max', 60, 140)}</span></div>
                 </div>
                 <ul style="margin-top: 5px;">
                     <li>Basic character motion like head turns or arm movement</li>
@@ -5318,7 +6547,7 @@ function loadPricingPage() {
                 </ul>
                 <h3>Full Character Animation</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>5–12 seconds</span> <span>${renderPriceRange(140, 300, 'animations')}</span></div>
+                    <div class="price-item"><span>5–12 seconds</span> <span>${animationRange('animation.fullCharacter.min', 'animation.fullCharacter.max', 140, 300)}</span></div>
                 </div>
                 <ul style="margin-top: 5px;">
                     <li>Full body movement with strong expressions and acting</li>
@@ -5326,18 +6555,18 @@ function loadPricingPage() {
                 </ul>
                 <h3>Complex / Custom Animation</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Longer/Detailed Scenes</span> <span>${renderPrice(300, 'animations', true)}</span></div>
+                    <div class="price-item"><span>Longer/Detailed Scenes</span> <span>${animationPrice('animation.complexScene', 300, true)}</span></div>
                 </div>
                 <ul style="margin-top: 5px;">
                     <li>Multiple actions or higher polish</li>
                 </ul>
                 <h3>Animation Add-ons</h3>
                 <div class="pricing-chip-grid">
-                    <div class="pricing-chip"><strong>Extra character</strong><span>+${renderPriceRange(40, 120, 'animations')}</span></div>
-                    <div class="pricing-chip"><strong>Simple background</strong><span>+${renderPriceRange(20, 60, 'animations')}</span></div>
-                    <div class="pricing-chip"><strong>Detailed background</strong><span>+${renderPriceRange(60, 120, 'animations')}</span></div>
-                    <div class="pricing-chip"><strong>Complex motion/effects</strong><span>+${renderPriceRange(20, 80, 'animations')}</span></div>
-                    <div class="pricing-chip"><strong>Lip sync / dialogue</strong><span>+${renderPrice(30, 'animations', true)}</span></div>
+                    <div class="pricing-chip"><strong>Extra character</strong><span>+${animationRange('animation.extraCharacter.min', 'animation.extraCharacter.max', 40, 120)}</span></div>
+                    <div class="pricing-chip"><strong>Simple background</strong><span>+${animationRange('animation.simpleBackground.min', 'animation.simpleBackground.max', 20, 60)}</span></div>
+                    <div class="pricing-chip"><strong>Detailed background</strong><span>+${animationRange('animation.detailedBackground.min', 'animation.detailedBackground.max', 60, 120)}</span></div>
+                    <div class="pricing-chip"><strong>Complex motion/effects</strong><span>+${animationRange('animation.complexMotion.min', 'animation.complexMotion.max', 20, 80)}</span></div>
+                    <div class="pricing-chip"><strong>Lip sync / dialogue</strong><span>+${animationPrice('animation.lipSync', 30, true)}</span></div>
                     <div class="pricing-chip"><strong>Commercial use</strong><span>+50%-100%</span></div>
                 </div>
             </div>
@@ -5349,12 +6578,12 @@ function loadPricingPage() {
                 </div>
                 <p class="pricing-section-intro">Best for small merch art, emotes, logos, and simple printable designs.</p>
                 <div class="price-grid">
-                    <div class="price-item price-item-popular"><span>Single Sticker <em class="price-item-flag">Most common</em></span> <span>${renderPrice(pricing.stickers.types['Single Sticker'], 'stickers')}</span></div>
-                    <div class="price-item"><span>Matching Pair</span> <span>${renderPrice(pricing.stickers.types['Matching Pair'], 'stickers')}</span></div>
-                    <div class="price-item"><span>Sticker Sheet (4 unique designs)</span> <span>${renderPrice(pricing.stickers.types['Sticker Sheet'], 'stickers', true)}</span></div>
-                    <div class="price-item"><span>Small Batch (6 unique designs)</span> <span>${renderPrice(pricing.stickers.types['Small Batch'], 'stickers', true)}</span></div>
+                    <div class="price-item price-item-popular"><span>Single Sticker <em class="price-item-flag">Most common</em></span> <span>${stickerPrice('stickers.single', 20)}</span></div>
+                    <div class="price-item"><span>Matching Pair</span> <span>${stickerPrice('stickers.pair', 36)}</span></div>
+                    <div class="price-item"><span>Sticker Sheet (4 unique designs)</span> <span>${stickerPrice('stickers.sheet', 80, true)}</span></div>
+                    <div class="price-item"><span>Small Batch (6 unique designs)</span> <span>${stickerPrice('stickers.smallBatch', 100, true)}</span></div>
                 </div>
-                <p style="color: #eab308; font-size: 0.95rem; margin-top: 10px;">*Sticker Printing Add-On: +$${pricing.stickers.printingAddon.first} for the first printed sticker of each design, +$${pricing.stickers.printingAddon.additional} for each additional copy of that design.</p>
+                <p style="color: #eab308; font-size: 0.95rem; margin-top: 10px;">*Sticker Printing Add-On: +$6 for the first printed sticker of each design, +$3 for each additional copy of that design.</p>
                 <div class="pricing-section-actions">${pricingSectionCta('pricingStickerCtaBtn', 'Start Sticker Request')}</div>
             </div>
 
@@ -5365,14 +6594,14 @@ function loadPricingPage() {
                 </div>
                 <p class="pricing-section-intro">Best for tails, paws, heads, partials, and other handmade wearable work.</p>
                 <div class="price-grid">
-                    <div class="price-item price-item-popular"><span>Tails <em class="price-item-flag">Entry option</em></span> <span>${renderPrice(pricing.fursuits.parts.Tail, 'fursuits')}</span></div>
-                    <div class="price-item price-item-popular"><span>Paws <em class="price-item-flag">Popular build</em></span> <span>${renderPrice(pricing.fursuits.parts.Paws, 'fursuits')}</span></div>
-                    <div class="price-item"><span>Paws and Tail Set</span> <span>${renderPrice(pricing.fursuits.parts['Paws & Tail'], 'fursuits')}</span></div>
-                    <div class="price-item"><span>Feet Paws</span> <span>${renderPrice(pricing.fursuits.parts['Feet Paws'], 'fursuits')}</span></div>
-                    <div class="price-item"><span>Trio Set (Feet, Paws, Tail)</span> <span>${renderPrice(pricing.fursuits.parts['Trio Set'], 'fursuits')}</span></div>
-                    <div class="price-item"><span>Heads (Artistic Liberty Only)</span> <span>${renderPrice(pricing.fursuits.parts.Head, 'fursuits')}</span></div>
-                    <div class="price-item"><span>Mini Partial</span> <span>${renderPrice(pricing.fursuits.parts['Mini Partial'], 'fursuits')}</span></div>
-                    <div class="price-item"><span>Full Partial</span> <span>${renderPrice(pricing.fursuits.parts['Full Partial'], 'fursuits')}</span></div>
+                    <div class="price-item price-item-popular"><span>Tails <em class="price-item-flag">Entry option</em></span> <span>${fursuitPrice('fursuits.tail', 100)}</span></div>
+                    <div class="price-item price-item-popular"><span>Paws <em class="price-item-flag">Popular build</em></span> <span>${fursuitPrice('fursuits.paws', 170)}</span></div>
+                    <div class="price-item"><span>Paws and Tail Set</span> <span>${fursuitPrice('fursuits.pawsTailSet', 260)}</span></div>
+                    <div class="price-item"><span>Feet Paws</span> <span>${fursuitPrice('fursuits.feetPaws', 270)}</span></div>
+                    <div class="price-item"><span>Trio Set (Feet, Paws, Tail)</span> <span>${fursuitPrice('fursuits.trioSet', 530)}</span></div>
+                    <div class="price-item"><span>Heads (Artistic Liberty Only)</span> <span>${fursuitPrice('fursuits.head', 1100)}</span></div>
+                    <div class="price-item"><span>Mini Partial</span> <span>${fursuitPrice('fursuits.miniPartial', 1350)}</span></div>
+                    <div class="price-item"><span>Full Partial</span> <span>${fursuitPrice('fursuits.fullPartial', 1620)}</span></div>
                 </div>
                 <p style="color: #eab308; font-size: 0.95rem; margin-top: 10px;">*Important note: Heads are artistic liberty only.</p>
                 <div class="pricing-section-actions">${pricingSectionCta('pricingFursuitCtaBtn', 'Start Fursuit Request')}</div>
@@ -5386,21 +6615,21 @@ function loadPricingPage() {
                 <p class="pricing-section-intro">Best for acrylic merch, premade charms, and custom small goods with finish options.</p>
                 <h3>Premade Keychains (2.5 inches)</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Clear Acrylic</span> <span>${renderPrice(pricing.keychains.premade['Clear Acrylic'], 'keychains')}</span></div>
-                    <div class="price-item"><span>Epoxy</span> <span>${renderPrice(pricing.keychains.premade.Epoxy, 'keychains')}</span></div>
-                    <div class="price-item"><span>Colored Acrylic</span> <span>${renderPrice(pricing.keychains.premade['Colored Acrylic'], 'keychains')}</span></div>
-                    <div class="price-item"><span>Rainbow Acrylic</span> <span>${renderPrice(pricing.keychains.premade['Rainbow Acrylic'], 'keychains')}</span></div>
-                    <div class="price-item"><span>Translucent Acrylic</span> <span>${renderPrice(pricing.keychains.premade['Translucent Acrylic'], 'keychains')}</span></div>
-                    <div class="price-item"><span>Holographic</span> <span>${renderPrice(pricing.keychains.premade.Holographic, 'keychains')}</span></div>
-                    <div class="price-item"><span>Glow in the Dark</span> <span>${renderPrice(pricing.keychains.premade['Glow in the Dark'], 'keychains')}</span></div>
+                    <div class="price-item"><span>Clear Acrylic</span> <span>${keychainPrice('keychains.premade.clearAcrylic', 22)}</span></div>
+                    <div class="price-item"><span>Epoxy</span> <span>${keychainPrice('keychains.premade.epoxy', 24)}</span></div>
+                    <div class="price-item"><span>Colored Acrylic</span> <span>${keychainPrice('keychains.premade.coloredAcrylic', 24)}</span></div>
+                    <div class="price-item"><span>Rainbow Acrylic</span> <span>${keychainPrice('keychains.premade.rainbowAcrylic', 26)}</span></div>
+                    <div class="price-item"><span>Translucent Acrylic</span> <span>${keychainPrice('keychains.premade.translucentAcrylic', 26)}</span></div>
+                    <div class="price-item"><span>Holographic</span> <span>${keychainPrice('keychains.premade.holographic', 26)}</span></div>
+                    <div class="price-item"><span>Glow in the Dark</span> <span>${keychainPrice('keychains.premade.glowInDark', 28)}</span></div>
                 </div>
                 <p style="font-size: 0.9rem; margin-top: 5px;">*Final premade total depends on selected design, finish availability, quantity, and shipping.</p>
                 <h3>Custom Keychains (2–4 inches)</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Chibi/Icon (includes 1 custom artwork + 1 clear acrylic keychain)</span> <span>${renderPrice(pricing.keychains.custom['Chibi/Icon'], 'keychains', true)}</span></div>
-                    <div class="price-item"><span>Half Body (includes 1 custom artwork + 1 clear acrylic keychain)</span> <span>${renderPrice(pricing.keychains.custom['Half Body'], 'keychains', true)}</span></div>
-                    <div class="price-item"><span>Full Body (includes 1 custom artwork + 1 clear acrylic keychain)</span> <span>${renderPrice(pricing.keychains.custom['Full Body'], 'keychains', true)}</span></div>
-                    <div class="price-item"><span>Complex Character (includes 1 custom artwork + 1 clear acrylic keychain)</span> <span>${renderPrice(pricing.keychains.custom['Complex Character'], 'keychains', true)}</span></div>
+                    <div class="price-item"><span>Chibi/Icon (includes 1 custom artwork + 1 clear acrylic keychain)</span> <span>${keychainPrice('keychains.custom.chibiIcon', 56, true)}</span></div>
+                    <div class="price-item"><span>Half Body (includes 1 custom artwork + 1 clear acrylic keychain)</span> <span>${keychainPrice('keychains.custom.halfBody', 72, true)}</span></div>
+                    <div class="price-item"><span>Full Body (includes 1 custom artwork + 1 clear acrylic keychain)</span> <span>${keychainPrice('keychains.custom.fullBody', 92, true)}</span></div>
+                    <div class="price-item"><span>Complex Character (includes 1 custom artwork + 1 clear acrylic keychain)</span> <span>${keychainPrice('keychains.custom.complexCharacter', 120, true)}</span></div>
                 </div>
                 <div class="pricing-section-actions">${pricingSectionCta('pricingKeychainCtaBtn', 'Start Keychain Request')}</div>
             </div>
@@ -5443,13 +6672,22 @@ function loadPricingPage() {
 // ==========================================
 
 function loadHuskyArtForm() {
-    const pricing = getPricingConfig();
     clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'art-form'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="form-card">
             <h1>Husky's Art Commissions</h1>
             <p class="form-desc" style="color: #22c55e; font-weight: bold;">Status: Open</p>
             <p class="form-desc">Commission Husky for digital artwork, character art, Pokémon-inspired art, icons, scenes, and illustrations.</p>
+            <div class="form-section-card commission-turnaround-card">
+                <div class="form-section-card__head">
+                    <h3 class="commission-turnaround-heading"><span class="commission-turnaround-moon" aria-hidden="true">☾</span><span>Turnaround windows</span></h3>
+                    <p>Quick reference for Husky commissions. The pricing sheet uses the same timing so clients see the same info everywhere.</p>
+                </div>
+                <div class="commission-turnaround-pills" aria-label="Commission turnaround summary">
+                    <span class="commission-turnaround-pill commission-turnaround-pill--art">Art commissions: 2 weeks to 1 month</span>
+                    <span class="commission-turnaround-pill commission-turnaround-pill--animation">Animation commissions: 1 month to 6 months</span>
+                </div>
+            </div>
             ${getFormDraftBannerHTML()}
 
             <form id="artForm">
@@ -5464,15 +6702,15 @@ function loadHuskyArtForm() {
                 <div class="form-group">
                     <label>Commission Type <span>*</span></label>
                     <select name="artType" id="artTypeSelect" class="form-select" required>
-                        <option value="Icon" data-price="${pricing.art.types.Icon.flat}">Icon (Start $${pricing.art.types.Icon.flat})</option>
-                        <option value="Headshot" data-price="${pricing.art.types.Headshot.flat}">Headshot (Start $${pricing.art.types.Headshot.flat})</option>
-                        <option value="Bust" data-price="${pricing.art.types.Bust.flat}">Bust (Start $${pricing.art.types.Bust.flat})</option>
-                        <option value="Half Body" data-price="${pricing.art.types['Half Body'].flat}">Half Body (Start $${pricing.art.types['Half Body'].flat})</option>
-                        <option value="Full Body" data-price="${pricing.art.types['Full Body'].flat}">Full Body (Start $${pricing.art.types['Full Body'].flat})</option>
-                        <option value="Scene" data-price="${pricing.art.types.Scene.flat}">Scene (Start $${pricing.art.types.Scene.flat})</option>
-                        <option value="Basic Ref Sheet" data-price="${pricing.art.types['Basic Ref Sheet'].flat}">Basic Ref Sheet ($${pricing.art.types['Basic Ref Sheet'].flat})</option>
-                        <option value="Standard Ref Sheet" data-price="${pricing.art.types['Standard Ref Sheet'].flat}">Standard Ref Sheet ($${pricing.art.types['Standard Ref Sheet'].flat})</option>
-                        <option value="Deluxe Ref Sheet" data-price="${pricing.art.types['Deluxe Ref Sheet'].flat}">Deluxe Ref Sheet (Start $${pricing.art.types['Deluxe Ref Sheet'].flat})</option>
+                        <option value="Icon" data-price="24">Icon (Start $24)</option>
+                        <option value="Headshot" data-price="32">Headshot (Start $32)</option>
+                        <option value="Bust" data-price="44">Bust (Start $44)</option>
+                        <option value="Half Body" data-price="56">Half Body (Start $56)</option>
+                        <option value="Full Body" data-price="72">Full Body (Start $72)</option>
+                        <option value="Scene" data-price="160">Scene (Start $160)</option>
+                        <option value="Basic Ref Sheet" data-price="160">Basic Ref Sheet ($160)</option>
+                        <option value="Standard Ref Sheet" data-price="220">Standard Ref Sheet ($220)</option>
+                        <option value="Deluxe Ref Sheet" data-price="280">Deluxe Ref Sheet (Start $280)</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -5497,12 +6735,12 @@ function loadHuskyArtForm() {
                 <div class="form-group">
                     <label>Add-ons (Optional)</label>
                     <div style="display:flex; flex-direction:column; gap:10px; margin-top:5px;">
-                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Extra Character"> Extra Character (+${pricing.art.addOns.extraCharacterPercent}%)</label>
-                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Detailed Background"> Detailed Background (Start +$${pricing.art.addOns.detailedBackgroundMin})</label>
-                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Extra Outfit"> Extra Outfit (+$${pricing.art.addOns.extraOutfit})</label>
-                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Prop"> Prop (+$${pricing.art.addOns.prop})</label>
-                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Commercial License"> Commercial License (+${pricing.art.addOns.commercialLicensePercent}%)</label>
-                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Rush Order"> Rush Order (+${pricing.art.addOns.rushPercent}%)</label>
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Extra Character"> Extra Character (+80%)</label>
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Detailed Background"> Detailed Background (Start +$40)</label>
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Extra Outfit"> Extra Outfit (+$24)</label>
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Prop"> Prop (+$16)</label>
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Commercial License"> Commercial License (+100%)</label>
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Rush Order"> Rush Order (+50%)</label>
                     </div>
                 </div>
                 <div class="form-group"><label>Pose / Expression Idea</label><textarea name="pose" class="form-textarea" rows="2" maxlength="300"></textarea></div>
@@ -5605,7 +6843,6 @@ function loadHuskyArtForm() {
 }
 
 function loadFursuitForm() {
-    const pricing = getPricingConfig();
     clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'fursuit-form'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="form-card">
@@ -5626,15 +6863,15 @@ function loadFursuitForm() {
                 <div class="form-group">
                     <label>What are you interested in? <span>*</span></label>
                     <select name="partType" id="suitTypeSelect" class="form-select" required>
-                        <option value="Tail" data-price="${pricing.fursuits.parts.Tail}">Tail (Start $${pricing.fursuits.parts.Tail})</option>
-                        <option value="Paws" data-price="${pricing.fursuits.parts.Paws}">Paws (Start $${pricing.fursuits.parts.Paws})</option>
-                        <option value="Paws & Tail" data-price="${pricing.fursuits.parts['Paws & Tail']}">Paws and Tail Set (Start $${pricing.fursuits.parts['Paws & Tail']})</option>
-                        <option value="Feet Paws" data-price="${pricing.fursuits.parts['Feet Paws']}">Feet Paws (Start $${pricing.fursuits.parts['Feet Paws']})</option>
-                        <option value="Trio Set" data-price="${pricing.fursuits.parts['Trio Set']}">Trio Set (Start $${pricing.fursuits.parts['Trio Set']})</option>
-                        <option value="Head" data-price="${pricing.fursuits.parts.Head}">Head (Start $${pricing.fursuits.parts.Head})</option>
-                        <option value="Mini Partial" data-price="${pricing.fursuits.parts['Mini Partial']}">Mini Partial (Start $${pricing.fursuits.parts['Mini Partial']})</option>
-                        <option value="Full Partial" data-price="${pricing.fursuits.parts['Full Partial']}">Full Partial (Start $${pricing.fursuits.parts['Full Partial']})</option>
-                        <option value="Accessories" data-price="${pricing.fursuits.parts.Accessories}">Accessories</option>
+                        <option value="Tail" data-price="100">Tail (Start $100)</option>
+                        <option value="Paws" data-price="170">Paws (Start $170)</option>
+                        <option value="Paws & Tail" data-price="260">Paws and Tail Set (Start $260)</option>
+                        <option value="Feet Paws" data-price="270">Feet Paws (Start $270)</option>
+                        <option value="Trio Set" data-price="530">Trio Set (Start $530)</option>
+                        <option value="Head" data-price="1100">Head (Start $1100)</option>
+                        <option value="Mini Partial" data-price="1350">Mini Partial (Start $1350)</option>
+                        <option value="Full Partial" data-price="1620">Full Partial (Start $1620)</option>
+                        <option value="Accessories" data-price="50">Accessories</option>
                         <option value="Other" data-price="0">Other (Describe in notes)</option>
                     </select>
                 </div>
@@ -5646,7 +6883,7 @@ function loadFursuitForm() {
                 <div class="form-group">
                     <label>Add-ons (Optional)</label>
                     <div style="display:flex; flex-direction:column; gap:10px; margin-top:5px;">
-                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Rush Order"> Rush Order (+$${pricing.fursuits.rushOrderFlat})</label>
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Rush Order"> Rush Order (+$100)</label>
                     </div>
                 </div>
                 <div class="form-group"><label>Deadline (if any)</label><input type="text" name="deadline" class="form-input" maxlength="100"></div>
@@ -5740,7 +6977,6 @@ function loadFursuitForm() {
 }
 
 function loadCustomKeychainsForm() {
-    const pricing = getPricingConfig();
     clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'custom-keychain-form'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="form-card" id="customKFormWrap">
@@ -5762,10 +6998,10 @@ function loadCustomKeychainsForm() {
                 <div class="form-group">
                     <label>Keychain Type <span>*</span></label>
                     <select name="keychainType" id="kTypeSelect" class="form-select" required>
-                        <option value="Chibi/Icon" data-price="${pricing.keychains.custom['Chibi/Icon']}">Chibi/Icon (2-4 in) - Start $${pricing.keychains.custom['Chibi/Icon']}</option>
-                        <option value="Half Body" data-price="${pricing.keychains.custom['Half Body']}">Half Body (2-4 in) - Start $${pricing.keychains.custom['Half Body']}</option>
-                        <option value="Full Body" data-price="${pricing.keychains.custom['Full Body']}">Full Body (2-4 in) - Start $${pricing.keychains.custom['Full Body']}</option>
-                        <option value="Complex Character" data-price="${pricing.keychains.custom['Complex Character']}">Complex Character (2-4 in) - Start $${pricing.keychains.custom['Complex Character']}</option>
+                        <option value="Chibi/Icon" data-price="56">Chibi/Icon (2-4 in) - Start $56</option>
+                        <option value="Half Body" data-price="72">Half Body (2-4 in) - Start $72</option>
+                        <option value="Full Body" data-price="92">Full Body (2-4 in) - Start $92</option>
+                        <option value="Complex Character" data-price="120">Complex Character (2-4 in) - Start $120</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -5885,7 +7121,6 @@ function loadCustomKeychainsForm() {
 }
 
 function loadCustomStickersForm() {
-    const pricing = getPricingConfig();
     clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'stickers-form'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="form-card">
@@ -5904,14 +7139,14 @@ function loadCustomStickersForm() {
                 <div class="form-group">
                     <label>Sticker Type <span>*</span></label>
                     <select name="stickerType" class="form-select" required>
-                        <option value="Single Sticker" data-price="${pricing.stickers.types['Single Sticker']}">Single Sticker ($${pricing.stickers.types['Single Sticker']})</option>
-                        <option value="Matching Pair" data-price="${pricing.stickers.types['Matching Pair']}">Matching Pair ($${pricing.stickers.types['Matching Pair']})</option>
-                        <option value="Sticker Sheet" data-price="${pricing.stickers.types['Sticker Sheet']}">Sticker Sheet - 4 unique designs (Start $${pricing.stickers.types['Sticker Sheet']})</option>
-                        <option value="Small Batch" data-price="${pricing.stickers.types['Small Batch']}">Small Batch - 6 unique designs (Start $${pricing.stickers.types['Small Batch']})</option>
+                        <option value="Single Sticker" data-price="20">Single Sticker ($20)</option>
+                        <option value="Matching Pair" data-price="36">Matching Pair ($36)</option>
+                        <option value="Sticker Sheet" data-price="80">Sticker Sheet - 4 unique designs (Start $80)</option>
+                        <option value="Small Batch" data-price="100">Small Batch - 6 unique designs (Start $100)</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="stickerPrintingAddon" value="Printed Add-On"> Add Sticker Printing (+$${pricing.stickers.printingAddon.first} first print/design, +$${pricing.stickers.printingAddon.additional} each extra copy/design)</label>
+                    <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="stickerPrintingAddon" value="Printed Add-On"> Add Sticker Printing (+$6 first print/design, +$3 each extra copy/design)</label>
                 </div>
                 <div class="form-group">
                     <label>Printed Copies Per Design (if print add-on selected)</label>
@@ -6035,7 +7270,6 @@ function loadCustomStickersForm() {
 }
 
 function loadPremadeKeychainsForm() {
-    const pricing = getPricingConfig();
     clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'premade-form'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="preorder-card menu-large" style="margin-bottom: 25px;">
@@ -6064,13 +7298,13 @@ function loadPremadeKeychainsForm() {
                     <label>Preferred Finish (if available)</label>
                     <select name="finish" class="form-select">
                         <option value="Any">Any / Default</option>
-                        <option value="Clear Acrylic">Clear Acrylic ($${pricing.keychains.premade['Clear Acrylic']})</option>
-                        <option value="Epoxy">Epoxy ($${pricing.keychains.premade.Epoxy})</option>
-                        <option value="Colored Acrylic">Colored Acrylic ($${pricing.keychains.premade['Colored Acrylic']})</option>
-                        <option value="Rainbow Acrylic">Rainbow Acrylic ($${pricing.keychains.premade['Rainbow Acrylic']})</option>
-                        <option value="Translucent Acrylic">Translucent Acrylic ($${pricing.keychains.premade['Translucent Acrylic']})</option>
-                        <option value="Holographic">Holographic ($${pricing.keychains.premade.Holographic})</option>
-                        <option value="Glow in the Dark">Glow in the Dark ($${pricing.keychains.premade['Glow in the Dark']})</option>
+                        <option value="Clear Acrylic">Clear Acrylic</option>
+                        <option value="Epoxy">Epoxy</option>
+                        <option value="Colored Acrylic">Colored Acrylic</option>
+                        <option value="Rainbow Acrylic">Rainbow Acrylic</option>
+                        <option value="Translucent Acrylic">Translucent Acrylic</option>
+                        <option value="Holographic">Holographic</option>
+                        <option value="Glow in the Dark">Glow in the Dark</option>
                     </select>
                 </div>
                 <div class="form-group"><label>Shipping Name <span>*</span></label><input type="text" name="shippingName" class="form-input" maxlength="100" required></div>
@@ -8142,23 +9376,47 @@ async function uploadFileAndResolveUrl(file, storagePath) {
     if (!(file instanceof File)) throw new Error('A valid file is required for upload.');
     if (!path) throw new Error('Missing storage path for upload.');
 
-    const token = createStorageDownloadToken();
-    const metadata = {
-        contentType: String(file.type || 'application/octet-stream').trim(),
-        customMetadata: {
-            firebaseStorageDownloadTokens: token
+    const shouldRetryUpload = (error) => {
+        const code = String(error?.code || '').toLowerCase();
+        const message = String(error?.message || '').toLowerCase();
+        const serverResponse = String(error?.serverResponse || '').toLowerCase();
+        return code === 'storage/unknown'
+            || message.includes('status of 400')
+            || message.includes('bad request')
+            || serverResponse.includes('400');
+    };
+
+    const tryUploadAndResolve = async (storageRef, uploadMetadata = null, tokenHint = '') => {
+        if (uploadMetadata) {
+            await uploadBytes(storageRef, file, uploadMetadata);
+        } else {
+            await uploadBytes(storageRef, file);
+        }
+
+        try {
+            return await getDownloadURL(storageRef);
+        } catch (_downloadUrlError) {
+            const fallbackUrl = buildStoragePublicDownloadUrl(storageRef, tokenHint);
+            if (fallbackUrl) return fallbackUrl;
+            throw new Error('Upload succeeded, but download URL could not be generated.');
         }
     };
 
-    const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, file, metadata);
+    const contentTypeMetadata = {
+        contentType: String(file.type || 'application/octet-stream').trim()
+    };
 
+    const storageRef = ref(storage, path);
     try {
-        return await getDownloadURL(storageRef);
-    } catch (_downloadUrlError) {
-        const fallbackUrl = buildStoragePublicDownloadUrl(storageRef, token);
-        if (fallbackUrl) return fallbackUrl;
-        throw new Error('Upload succeeded, but download URL could not be generated.');
+        return await tryUploadAndResolve(storageRef, contentTypeMetadata, '');
+    } catch (primaryError) {
+        if (!shouldRetryUpload(primaryError)) throw primaryError;
+
+        // Bucket aliases can differ by project setup; retry against appspot bucket.
+        const fallbackBucketUrl = `gs://${String(firebaseConfig.projectId || '').trim()}.appspot.com`;
+        const fallbackStorage = getStorage(app, fallbackBucketUrl);
+        const fallbackRef = ref(fallbackStorage, path);
+        return await tryUploadAndResolve(fallbackRef, contentTypeMetadata, '');
     }
 }
 
@@ -9132,7 +10390,6 @@ function isRevenueEligible(order) {
 }
 
 function estimateOrderRevenue(order) {
-    const pricing = getPricingConfig();
     const quantity = Math.max(1, Number(order?.quantity) || 1);
     const serviceType = getOrderServiceType(order || {});
 
@@ -9147,28 +10404,43 @@ function estimateOrderRevenue(order) {
         const styleKey = shading.includes('render')
             ? 'rendered'
             : (shading.includes('cel') ? 'cel' : 'flat');
-        const table = pricing.art.types;
+        const table = {
+            'Icon': { flat: 24, cel: 36, rendered: 52 },
+            'Headshot': { flat: 32, cel: 44, rendered: 60 },
+            'Bust': { flat: 44, cel: 60, rendered: 80 },
+            'Half Body': { flat: 56, cel: 72, rendered: 96 },
+            'Full Body': { flat: 72, cel: 96, rendered: 128 },
+            'Scene': { flat: 160, cel: 200, rendered: 240 },
+            'Basic Ref Sheet': { flat: 160, cel: 160, rendered: 160 },
+            'Standard Ref Sheet': { flat: 220, cel: 220, rendered: 220 },
+            'Deluxe Ref Sheet': { flat: 280, cel: 280, rendered: 280 }
+        };
         const styleTable = table[artType] || table['Headshot'];
         let estimate = Number(styleTable?.[styleKey] || styleTable?.flat || 32);
 
         const characterCount = Math.max(1, Number(order?.characterCount) || 1);
         if (characterCount > 1) {
-            estimate *= (1 + ((pricing.art.addOns.extraCharacterPercent / 100) * (characterCount - 1)));
+            estimate *= (1 + (0.8 * (characterCount - 1)));
         }
 
-        if (includesAddon('extra character') && characterCount <= 1) estimate *= (1 + (pricing.art.addOns.extraCharacterPercent / 100));
-        if (includesAddon('extra outfit')) estimate += pricing.art.addOns.extraOutfit;
-        if (includesAddon('prop')) estimate += pricing.art.addOns.prop;
-        if (includesAddon('detailed background')) estimate += pricing.art.addOns.detailedBackgroundMin;
-        if (includesAddon('rush order')) estimate *= (1 + (pricing.art.addOns.rushPercent / 100));
-        if (includesAddon('commercial license')) estimate *= (1 + (pricing.art.addOns.commercialLicensePercent / 100));
+        if (includesAddon('extra character') && characterCount <= 1) estimate *= 1.8;
+        if (includesAddon('extra outfit')) estimate += 24;
+        if (includesAddon('prop')) estimate += 16;
+        if (includesAddon('detailed background')) estimate += 40;
+        if (includesAddon('rush order')) estimate *= 1.5;
+        if (includesAddon('commercial license')) estimate *= 2;
 
         return Math.round(estimate * quantity);
     }
 
     if (serviceType === 'stickers') {
         const stickerType = String(order?.stickerType || '').trim();
-        const stickerBase = pricing.stickers.types;
+        const stickerBase = {
+            'Single Sticker': 20,
+            'Matching Pair': 36,
+            'Sticker Sheet': 80,
+            'Small Batch': 100
+        };
         const base = Number(stickerBase[stickerType] || 20);
         return Math.round(base * quantity);
     }
@@ -9177,20 +10449,43 @@ function estimateOrderRevenue(order) {
         const itemType = String(order?.itemType || order?.orderType || '').toLowerCase();
         if (itemType.includes('premade')) {
             const finish = String(order?.finish || '').trim();
-            const finishPrice = pricing.keychains.premade;
+            const finishPrice = {
+                'Clear Acrylic': 22,
+                'Epoxy': 24,
+                'Colored Acrylic': 24,
+                'Rainbow Acrylic': 26,
+                'Translucent Acrylic': 26,
+                'Holographic': 26,
+                'Glow in the Dark': 28
+            };
             const premade = Number(finishPrice[finish] || 24);
             return Math.round(premade * quantity);
         }
 
         const keychainTier = String(order?.keychainType || '').trim();
-        const keychainBase = pricing.keychains.custom;
+        const keychainBase = {
+            'Chibi/Icon': 56,
+            'Half Body': 72,
+            'Full Body': 92,
+            'Complex Character': 120
+        };
         const base = Number(keychainBase[keychainTier] || 56);
         return Math.round(base * quantity);
     }
 
     if (serviceType === 'fursuits') {
         const part = String(order?.partType || '').trim();
-        const partBase = pricing.fursuits.parts;
+        const partBase = {
+            'Tail': 100,
+            'Paws': 170,
+            'Paws & Tail': 260,
+            'Feet Paws': 270,
+            'Trio Set': 530,
+            'Head': 1100,
+            'Mini Partial': 1350,
+            'Full Partial': 1620,
+            'Accessories': 50
+        };
         const base = Number(partBase[part] || 530);
         return Math.round(base * quantity);
     }
@@ -9203,19 +10498,18 @@ function estimateOrderRevenue(order) {
 }
 
 function getMinimumSustainableQuote(order) {
-    const pricing = getPricingConfig();
     const serviceType = getOrderServiceType(order || {});
     const hardFloorByType = {
-        art: 55,
-        animation: 180,
-        fursuits: 420,
-        keychains: 68,
-        stickers: 24,
-        other: 70
+        art: 40,
+        animation: 140,
+        fursuits: 300,
+        keychains: 56,
+        stickers: 20,
+        other: 50
     };
 
     const baselineEstimate = estimateOrderRevenue(order || {});
-    const growthFriendlyFloor = Math.round(baselineEstimate * pricing.sustainableFloorMultiplier);
+    const growthFriendlyFloor = Math.round(baselineEstimate * 0.85);
     return Math.max(hardFloorByType[serviceType] || hardFloorByType.other, growthFriendlyFloor);
 }
 
@@ -12135,7 +13429,9 @@ function loadAdminDashboard() {
                     <div class="admin-sidebar-group">
                         <p class="admin-sidebar-group-title">Business</p>
                         <button type="button" id="adminNavDiscounts" class="admin-side-link" data-admin-scroll="adminDiscountManagerSection">Discounts</button>
+                        <button type="button" id="adminNavPricing" class="admin-side-link" data-admin-scroll="adminPricingSettingsSection">Pricing</button>
                         <button type="button" id="adminNavAvailability" class="admin-side-link" data-admin-scroll="adminAvailabilitySection">Availability</button>
+                        <button type="button" id="adminNavGalleryManager" class="admin-side-link" data-admin-scroll="adminGalleryManagerSection">Gallery Manager</button>
                         <button type="button" id="adminNavPremadeKeychains" class="admin-side-link" data-admin-scroll="adminPremadeKeychainsSection">Premade Keychains</button>
                         <button type="button" id="adminNavAnnouncements" class="admin-side-link" data-admin-scroll="adminAnnouncementsSection">Announcements</button>
                     </div>
@@ -12464,6 +13760,12 @@ function loadAdminDashboard() {
                                     ${getTemplateHTML('adminPremadeKeychainsManagerTemplate')}
                                 </div>
                             </details>
+                            <details class="admin-collapsible admin-collapsible--sub" id="adminGalleryManagerSection">
+                                <summary><span class="admin-summary-label">Gallery Manager</span></summary>
+                                <div class="admin-collapsible-body">
+                                    ${getTemplateHTML('adminGalleryManagerTemplate')}
+                                </div>
+                            </details>
                             <details class="admin-collapsible admin-collapsible--sub" id="adminDiscountManagerSection">
                                 <summary><span class="admin-summary-label">Discounts</span></summary>
                                 <div class="admin-collapsible-body">
@@ -12618,10 +13920,13 @@ function loadAdminDashboard() {
     bindAdminRevenueCalculatorControls();
     
     renderActiveDiscountsList();
-    renderAdminAvailabilitySettings();
     renderAdminPricingSettings();
+    bindAdminPricingSettingsControls();
+    renderAdminAvailabilitySettings();
     renderAdminPremadeKeychainManager();
+    renderAdminGalleryManager();
     setAdminPremadeDesignEditState(null);
+    setAdminGalleryEditState(null);
     setupQueueManagerTabs();
     setupAdminRefundManager();
     setupAdminCommissionManager();
@@ -12705,18 +14010,6 @@ function loadAdminDashboard() {
             btn.innerText = "Add Discount";
             btn.disabled = false;
         }
-    });
-
-    document.getElementById('btnSavePricingConfig')?.addEventListener('click', async () => {
-        await saveAdminPricingSettingsFromEditor();
-    });
-
-    document.getElementById('btnApplyPremiumPricingPreset')?.addEventListener('click', () => {
-        applyAdminPremiumMarginPreset(10);
-    });
-
-    document.getElementById('btnResetPricingConfig')?.addEventListener('click', () => {
-        resetAdminPricingSettingsEditor();
     });
 
     document.getElementById('adminResetDiscountEditorBtn')?.addEventListener('click', () => {
@@ -12903,6 +14196,166 @@ function loadAdminDashboard() {
         } catch (error) {
             console.error(error);
             showAdminToast('Failed to reset premade order.', true);
+        }
+    });
+
+    const adminGalleryImageUpload = document.getElementById('adminGalleryImageUpload');
+    const adminGalleryImageUrl = document.getElementById('adminGalleryImageUrl');
+
+    if (adminGalleryImageUpload instanceof HTMLInputElement) {
+        adminGalleryImageUpload.addEventListener('change', () => {
+            const selectedFile = adminGalleryImageUpload.files?.[0];
+            if (!selectedFile) {
+                const currentImage = document.getElementById('btnSaveGalleryItem')?.dataset.currentImage || adminGalleryImageUrl?.value || '';
+                updateAdminGalleryImagePreview(currentImage, currentImage ? 'Current image will be kept unless you upload a new one.' : 'Paste an image URL or upload an image file.');
+                return;
+            }
+
+            if (!/^image\//i.test(selectedFile.type || '')) {
+                showAdminToast('Selected gallery file must be an image.', true);
+                adminGalleryImageUpload.value = '';
+                return;
+            }
+
+            const previewUrl = URL.createObjectURL(selectedFile);
+            updateAdminGalleryImagePreview(previewUrl, `Selected file: ${selectedFile.name}`);
+        });
+    }
+
+    if (adminGalleryImageUrl instanceof HTMLInputElement) {
+        adminGalleryImageUrl.addEventListener('input', () => {
+            if (adminGalleryImageUpload instanceof HTMLInputElement && adminGalleryImageUpload.files?.length) return;
+            const nextUrl = adminGalleryImageUrl.value.trim();
+            updateAdminGalleryImagePreview(nextUrl, nextUrl ? 'Preview of image URL.' : 'Paste an image URL or upload an image file.');
+        });
+    }
+
+    document.getElementById('btnSaveGalleryItem')?.addEventListener('click', async (event) => {
+        if (!requireAdminSession('Please sign in with an authorized admin account before saving gallery items.')) return;
+
+        const triggerBtn = event.target;
+        const titleField = document.getElementById('adminGalleryTitle');
+        const creatorField = document.getElementById('adminGalleryCreator');
+        const categoriesField = document.getElementById('adminGalleryCategories');
+        const imageField = document.getElementById('adminGalleryImageUrl');
+        const videoField = document.getElementById('adminGalleryVideoLink');
+        const uploadField = document.getElementById('adminGalleryImageUpload');
+
+        if (!(titleField instanceof HTMLInputElement) || !(creatorField instanceof HTMLInputElement) || !(categoriesField instanceof HTMLInputElement) || !(imageField instanceof HTMLInputElement) || !(videoField instanceof HTMLInputElement) || !(uploadField instanceof HTMLInputElement) || !(triggerBtn instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        const title = titleField.value.trim();
+        const creator = creatorField.value.trim() || 'Horizon Tide';
+        const categories = getAdminGalleryFormCategories();
+        const selectedFile = uploadField.files?.[0] || null;
+        const currentImage = triggerBtn.dataset.currentImage || '';
+        const isEditing = Boolean(window.currentEditingGalleryItemId);
+
+        let imageUrl = imageField.value.trim() || currentImage;
+        const videoLink = videoField.value.trim();
+
+        if (!title) {
+            showAdminToast('Add a gallery title before saving.', true);
+            return;
+        }
+
+        if (categories.length === 0) {
+            setAdminGalleryCategoryValidationState(true);
+            showAdminToast('Select at least one category before saving.', true);
+            return;
+        }
+
+        setAdminGalleryCategoryValidationState(false);
+
+        if (!imageUrl && !selectedFile) {
+            showAdminToast('Add an image URL or upload an image file.', true);
+            return;
+        }
+
+        triggerBtn.disabled = true;
+        triggerBtn.textContent = isEditing ? 'Saving...' : 'Adding...';
+        let saveCompleted = false;
+
+        try {
+            if (selectedFile) {
+                const safeName = selectedFile.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
+                imageUrl = await uploadFileAndResolveUrl(selectedFile, `gallery/${Date.now()}_${safeName}`);
+            }
+
+            const catalog = normalizeGalleryCatalog(window.galleryCatalog);
+            const existing = catalog.items.find((item) => item.id === window.currentEditingGalleryItemId) || null;
+            const nextItem = {
+                id: existing?.id || `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'gallery-item'}-${Date.now()}`,
+                title,
+                creator,
+                categories,
+                url: imageUrl,
+                videoLink,
+                sortOrder: existing?.sortOrder ?? (catalog.items.length + 1)
+            };
+
+            const nextCatalog = normalizeGalleryCatalog({
+                items: window.currentEditingGalleryItemId
+                    ? catalog.items.map((item) => item.id === window.currentEditingGalleryItemId ? nextItem : item)
+                    : [...catalog.items, nextItem]
+            });
+
+            const result = await persistGalleryCatalog(nextCatalog, {
+                previousCatalog: catalog,
+                reason: isEditing ? 'edit-item' : 'add-item'
+            });
+            window.galleryCatalog = result.nextCatalog;
+            applyGalleryCatalogToCurrentDOM();
+            setAdminGalleryEditState(null);
+            showAdminToast(isEditing ? 'Gallery item updated.' : 'Gallery item added.');
+            if (!result.backupResult.saved) {
+                showAdminToast('Saved item, but backup snapshot could not be stored.', true);
+            }
+            saveCompleted = true;
+        } catch (error) {
+            console.error(error);
+            showAdminToast('Failed to save gallery item.', true);
+        } finally {
+            triggerBtn.disabled = false;
+            if (!saveCompleted) {
+                triggerBtn.textContent = isEditing ? 'Save Gallery Item' : 'Add Gallery Item';
+            }
+        }
+    });
+
+    document.getElementById('btnResetGalleryItemForm')?.addEventListener('click', () => {
+        setAdminGalleryEditState(null);
+    });
+
+    document.getElementById('btnRestoreLatestGalleryBackup')?.addEventListener('click', async (event) => {
+        if (!requireAdminSession('Please sign in with an authorized admin account before restoring gallery backups.')) return;
+        if (!confirm('Restore the latest gallery backup? Current gallery state will be snapshotted first.')) return;
+
+        const trigger = event.target;
+        if (!(trigger instanceof HTMLButtonElement)) return;
+        const originalLabel = trigger.textContent || 'Restore Latest Backup';
+
+        trigger.disabled = true;
+        trigger.textContent = 'Restoring...';
+        try {
+            const restoreResult = await restoreLatestGalleryCatalogSnapshot();
+            window.galleryCatalog = restoreResult.nextCatalog;
+            applyGalleryCatalogToCurrentDOM();
+            setAdminGalleryEditState(null);
+            showAdminToast(`Gallery restored from latest backup (${restoreResult.itemCount} items).`);
+            if (!restoreResult.backupResult.saved) {
+                showAdminToast('Restored, but current-state backup could not be stored.', true);
+            }
+        } catch (error) {
+            console.error(error);
+            const message = error instanceof Error && error.message
+                ? error.message
+                : 'Failed to restore latest gallery backup.';
+            showAdminToast(message, true);
+        } finally {
+            trigger.disabled = false;
+            trigger.textContent = originalLabel;
         }
     });
 

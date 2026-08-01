@@ -35,7 +35,7 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=99">
+    <link rel="stylesheet" href="style.css?v=105">
     
     <script defer type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
@@ -228,12 +228,17 @@
     <template id="adminPricingSettingsTemplate">
         <div class="admin-card pricing-settings-card">
             <h3 class="admin-card-title pricing-settings-title">Pricing Settings</h3>
-            <p class="admin-card-subtitle">Edit pricing once here. Forms, calculators, and pricing sheet update automatically.</p>
+            <p class="admin-card-subtitle">Use the visual controls below to update pricing. Forms, calculators, and the pricing sheet update automatically after save.</p>
 
-            <label class="admin-label">
-                Pricing JSON
-                <textarea id="adminPricingConfigJson" class="admin-input admin-textarea" rows="16" spellcheck="false" placeholder="Pricing config will load here..."></textarea>
-            </label>
+            <div id="adminPricingFieldGrid" class="admin-pricing-field-grid" aria-live="polite"></div>
+
+            <details class="admin-pricing-advanced-json">
+                <summary>Advanced: Edit raw pricing JSON</summary>
+                <label class="admin-label">
+                    Pricing JSON
+                    <textarea id="adminPricingConfigJson" class="admin-input admin-textarea" rows="14" spellcheck="false" placeholder="Pricing config will load here..."></textarea>
+                </label>
+            </details>
 
             <div class="admin-actions discount-actions">
                 <button type="button" id="btnSavePricingConfig" class="admin-btn-save">Save Pricing</button>
@@ -241,7 +246,7 @@
                 <button type="button" id="btnResetPricingConfig" class="admin-btn-publish">Reset to Defaults</button>
             </div>
 
-            <p class="admin-detail" id="adminPricingConfigHint">Tip: keep key names unchanged. You can adjust numbers only.</p>
+            <p class="admin-detail" id="adminPricingConfigHint">Tip: update values in the visual editor, then click Save Pricing to publish.</p>
         </div>
     </template>
 
@@ -475,6 +480,87 @@
         </div>
     </template>
 
+    <template id="adminGalleryManagerTemplate">
+        <div class="admin-card gallery-manager-card">
+            <h3 class="admin-card-title gallery-manager-title">Gallery Manager</h3>
+            <p class="admin-card-subtitle">Add and manage gallery images here instead of editing code manually.</p>
+
+            <div class="admin-form-row">
+                <label class="admin-label admin-label-medium">
+                    Title
+                    <input type="text" id="adminGalleryTitle" class="admin-input" placeholder="Example: Sunset Portrait">
+                </label>
+                <label class="admin-label admin-label-medium">
+                    Creator
+                    <input type="text" id="adminGalleryCreator" class="admin-input" placeholder="Husky, Lopside, Horizon Tide">
+                </label>
+                <label class="admin-label admin-label-wide">
+                    Category Placement
+                    <div id="adminGalleryCategoryChecklist" class="admin-gallery-category-checklist" role="group" aria-label="Gallery categories"></div>
+                    <p id="adminGalleryCategoryValidation" class="admin-gallery-category-validation" hidden>Select at least one category before saving.</p>
+                </label>
+                <div class="admin-label admin-label-wide admin-gallery-presets-wrap">
+                    <span>Quick Presets</span>
+                    <div id="adminGalleryPresetButtons" class="admin-gallery-preset-buttons" role="group" aria-label="Gallery category presets">
+                        <button type="button" class="admin-btn-edit admin-gallery-preset-btn" data-preset="husky-art">Husky Art</button>
+                        <button type="button" class="admin-btn-edit admin-gallery-preset-btn" data-preset="lopside-fursuit">Lopside Fursuit</button>
+                        <button type="button" class="admin-btn-edit admin-gallery-preset-btn" data-preset="merch">Merch</button>
+                        <button type="button" class="admin-btn-edit admin-gallery-preset-btn" data-preset="animation">Animation</button>
+                    </div>
+                </div>
+                <label class="admin-label admin-label-wide">
+                    Extra Categories (optional, comma separated)
+                    <input type="text" id="adminGalleryCategories" class="admin-input" placeholder="Use only for new custom tags">
+                </label>
+            </div>
+
+            <div class="admin-form-row">
+                <label class="admin-label admin-label-wide">
+                    Image URL
+                    <input type="url" id="adminGalleryImageUrl" class="admin-input" placeholder="https://... or local relative path">
+                </label>
+                <label class="admin-label admin-label-wide">
+                    Optional YouTube / Video Link
+                    <input type="url" id="adminGalleryVideoLink" class="admin-input" placeholder="https://youtu.be/...">
+                </label>
+            </div>
+
+            <div class="admin-form-row">
+                <label class="admin-label admin-label-wide">
+                    Upload New Image
+                    <input type="file" id="adminGalleryImageUpload" class="admin-input" accept="image/*">
+                </label>
+            </div>
+
+            <div class="admin-form-row">
+                <div class="admin-gallery-preview" id="adminGalleryPreview" hidden>
+                    <img id="adminGalleryPreviewImg" class="admin-gallery-preview__img" alt="Gallery preview" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==">
+                </div>
+                <div class="admin-gallery-meta">
+                    <p id="adminGalleryImageHint" class="admin-detail">Paste an image URL or upload an image file.</p>
+                </div>
+            </div>
+
+            <div class="admin-actions discount-actions">
+                <button type="button" id="btnSaveGalleryItem" class="admin-btn-save">Add Gallery Item</button>
+                <button type="button" id="btnResetGalleryItemForm" class="admin-btn-publish">Reset Form</button>
+                <button type="button" id="btnRestoreLatestGalleryBackup" class="admin-btn-edit">Restore Latest Backup</button>
+            </div>
+
+            <label class="admin-label admin-label-medium">
+                Manage View Category
+                <select id="adminGalleryGroupFilter" class="admin-input"></select>
+            </label>
+
+            <div id="adminGallerySummary" class="admin-gallery-summary" aria-live="polite"></div>
+            <p id="adminGalleryLastSavedMeta" class="admin-gallery-last-saved">Last saved: awaiting first synced update.</p>
+
+            <div id="adminGalleryItemsList" class="admin-gallery-list">
+                <p class="admin-detail">Gallery items will appear here after loading.</p>
+            </div>
+        </div>
+    </template>
+
     <div id="care-modal" aria-hidden="true">
         <div class="care-modal-card" role="dialog" aria-modal="true" aria-labelledby="careModalTitle">
             <button type="button" id="careModalClose" class="care-modal-close" aria-label="Close care guide">&times;</button>
@@ -483,7 +569,7 @@
         </div>
     </div>
 
-    <script type="module" src="script.js?v=106"></script>
+    <script type="module" src="script.js?v=119"></script>
     <script defer src="loader.js?v=3"></script>
 </body>
 </html>
