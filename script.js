@@ -5463,9 +5463,6 @@ function bindCoreMenuControls() {
     document.getElementById('reviewsBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadReviewsPage, '#reviews'));
     document.getElementById('tosBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadTOSPage, '#tos'));
     document.getElementById('socialsBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadSocialsPage, '#socials'));
-    document.getElementById('huskyCreatorBtn')?.addEventListener('click', () => {
-        window.location.href = 'husky.html';
-    });
     
     document.getElementById('btnGalleryHome')?.addEventListener('click', (e) => cinematicTransition(e, loadGalleryPage, '#gallery'));
     document.getElementById('btnDiscordHome')?.addEventListener('click', (e) => {
@@ -6180,7 +6177,6 @@ function loadHomePage() {
                 <button type="button" class="nav-btn home-top-link nav-pill" id="tosBtn">Our TOS</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="whatWeDoBtn">What we do</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="socialsBtn">Meet the Artists + FAQ + How to Order</button>
-                <button type="button" class="nav-btn home-top-link nav-pill" id="huskyCreatorBtn">Husky Creator Page</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="reviewsBtn">Reviews</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="contactBtn">Contact us 💬</button>
             </nav>

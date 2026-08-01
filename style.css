@@ -15650,3 +15650,70 @@ body[data-page="socials"] .meet-ordering-shell {
         font-size: 1rem;
     }
 }
+
+/* Socials mobile overflow hardening: keep profile cards and inner text fully inside viewport. */
+body[data-page="socials"] .socials-container,
+body[data-page="socials"] .profile-card,
+body[data-page="socials"] .social-link-btn,
+body[data-page="socials"] .socials-bio,
+body[data-page="socials"] .meet-faq-shell,
+body[data-page="socials"] .meet-ordering-shell {
+    box-sizing: border-box;
+}
+
+body[data-page="socials"] .socials-container {
+    min-width: 0;
+}
+
+body[data-page="socials"] .profile-card {
+    min-width: 0;
+    overflow: hidden;
+}
+
+body[data-page="socials"] .artist-blurb,
+body[data-page="socials"] .socials-bio,
+body[data-page="socials"] .faq-item p,
+body[data-page="socials"] .meet-ordering-shell li {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+    body[data-page="socials"] .socials-container {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    body[data-page="socials"] #siteGuideLauncher,
+    body[data-page="socials"] .site-guide-launcher,
+    body[data-page="socials"] #globalMusicBtn {
+        display: none !important;
+    }
+
+    body[data-page="socials"] .profile-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 18px 14px !important;
+    }
+
+    body[data-page="socials"] .profile-img {
+        width: clamp(130px, 38vw, 164px);
+        height: clamp(130px, 38vw, 164px);
+    }
+
+    body[data-page="socials"] .starborn-name {
+        font-size: clamp(1.7rem, 7.4vw, 2rem);
+        line-height: 1.08;
+        margin-bottom: 14px;
+    }
+
+    body[data-page="socials"] .card-espeon {
+        margin-bottom: 2px;
+    }
+
+    body[data-page="socials"] .social-link-btn {
+        width: 100%;
+        max-width: 100%;
+        padding: 10px 12px;
+        font-size: 0.96rem;
+        line-height: 1.24;
+    }
+}
