@@ -2148,20 +2148,29 @@ async function persistGalleryCatalog(nextCatalogInput, options = {}) {
 }
 
 async function getLatestGalleryCatalogSnapshot() {
+    const snapshots = await getGalleryCatalogSnapshots(1);
+    return snapshots[0] || null;
+}
+
+async function getGalleryCatalogSnapshots(maxCount = 2) {
     const snapshotQuery = query(
         collection(db, 'settings'),
         where('type', '==', 'gallery-catalog-snapshot'),
         orderBy('createdAt', 'desc'),
-        limit(1)
+        limit(Math.max(1, Math.floor(maxCount)))
     );
     const snapshot = await getDocs(snapshotQuery);
-    if (snapshot.empty) return null;
+    if (snapshot.empty) return [];
 
-    const top = snapshot.docs[0];
-    return {
-        id: top.id,
-        data: top.data()
-    };
+    return snapshot.docs.map((entry) => ({
+        id: entry.id,
+        data: entry.data()
+    }));
+}
+
+async function getPreviousGalleryCatalogSnapshot() {
+    const snapshots = await getGalleryCatalogSnapshots(2);
+    return snapshots[1] || null;
 }
 
 async function restoreLatestGalleryCatalogSnapshot() {
@@ -2179,6 +2188,27 @@ async function restoreLatestGalleryCatalogSnapshot() {
 
     return {
         snapshotId: latest.id,
+        itemCount: restoredCatalog.items.length,
+        nextCatalog: persistResult.nextCatalog,
+        backupResult: persistResult.backupResult
+    };
+}
+
+async function restorePreviousGalleryCatalogSnapshot() {
+    const previous = await getPreviousGalleryCatalogSnapshot();
+    if (!previous?.data?.catalog) {
+        throw new Error('No previous gallery backup found yet.');
+    }
+
+    const restoredCatalog = normalizeGalleryCatalog(previous.data.catalog);
+    const previousCatalog = normalizeGalleryCatalog(window.galleryCatalog);
+    const persistResult = await persistGalleryCatalog(restoredCatalog, {
+        previousCatalog,
+        reason: 'restore-previous-backup'
+    });
+
+    return {
+        snapshotId: previous.id,
         itemCount: restoredCatalog.items.length,
         nextCatalog: persistResult.nextCatalog,
         backupResult: persistResult.backupResult
@@ -14352,6 +14382,37 @@ function loadAdminDashboard() {
             const message = error instanceof Error && error.message
                 ? error.message
                 : 'Failed to restore latest gallery backup.';
+            showAdminToast(message, true);
+        } finally {
+            trigger.disabled = false;
+            trigger.textContent = originalLabel;
+        }
+    });
+
+    document.getElementById('btnRestorePreviousGalleryBackup')?.addEventListener('click', async (event) => {
+        if (!requireAdminSession('Please sign in with an authorized admin account before restoring gallery backups.')) return;
+        if (!confirm('Restore the previous gallery backup? Current gallery state will be snapshotted first.')) return;
+
+        const trigger = event.target;
+        if (!(trigger instanceof HTMLButtonElement)) return;
+        const originalLabel = trigger.textContent || 'Restore Previous Backup';
+
+        trigger.disabled = true;
+        trigger.textContent = 'Restoring...';
+        try {
+            const restoreResult = await restorePreviousGalleryCatalogSnapshot();
+            window.galleryCatalog = restoreResult.nextCatalog;
+            applyGalleryCatalogToCurrentDOM();
+            setAdminGalleryEditState(null);
+            showAdminToast(`Gallery restored from previous backup (${restoreResult.itemCount} items).`);
+            if (!restoreResult.backupResult.saved) {
+                showAdminToast('Restored, but current-state backup could not be stored.', true);
+            }
+        } catch (error) {
+            console.error(error);
+            const message = error instanceof Error && error.message
+                ? error.message
+                : 'Failed to restore previous gallery backup.';
             showAdminToast(message, true);
         } finally {
             trigger.disabled = false;
