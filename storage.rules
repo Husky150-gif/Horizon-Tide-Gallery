@@ -16,7 +16,9 @@ service firebase.storage {
         && request.resource.size <= 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
 
-      allow read, delete: if isAdmin();
+      allow get: if true;
+      allow list: if false;
+      allow delete: if isAdmin();
     }
 
     // Premade catalog images are admin-managed content.

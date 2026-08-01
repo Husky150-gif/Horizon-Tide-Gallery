@@ -99,6 +99,22 @@ export function installSiteFeedback(options = {}) {
     const recentlyReportedIssues = new Map();
     const REPORT_COOLDOWN_MS = 45_000;
 
+    function isIgnorableTransientErrorMessage(rawMessage = '', rawSource = '') {
+        const message = String(rawMessage || '').toLowerCase();
+        const source = String(rawSource || '').toLowerCase();
+        const combined = `${message} ${source}`;
+
+        // Firestore long-polling and network channels can abort/reconnect during normal operation.
+        // Avoid showing scary user toasts for these transient transport events.
+        return combined.includes('firestore.googleapis.com')
+            || combined.includes('google.firestore')
+            || combined.includes('write/channel')
+            || combined.includes('listen/channel')
+            || combined.includes('net::err_aborted')
+            || combined.includes('err_connection_reset')
+            || combined.includes('failed to fetch dynamically imported module');
+    }
+
     const safeReportIssue = (kind, detail = {}) => {
         if (!reportIssue) return;
 
@@ -161,6 +177,9 @@ export function installSiteFeedback(options = {}) {
     };
 
     window.addEventListener('error', (event) => {
+        if (isIgnorableTransientErrorMessage(event?.message, event?.filename)) {
+            return;
+        }
         const message = event?.message ? `Site error: ${event.message}` : 'A site error occurred.';
         reportUnhandled(message);
         safeReportIssue('client_error', {
@@ -171,12 +190,18 @@ export function installSiteFeedback(options = {}) {
 
     window.addEventListener('unhandledrejection', (event) => {
         const reason = event?.reason;
+        const reasonMessage = reason instanceof Error && reason.message
+            ? reason.message
+            : String(reason || 'Unhandled promise rejection');
+        if (isIgnorableTransientErrorMessage(reasonMessage, 'window.unhandledrejection')) {
+            return;
+        }
         const message = reason instanceof Error && reason.message
             ? `Something failed to load: ${reason.message}`
             : 'Something failed to load. Please try again.';
         reportUnhandled(message);
         safeReportIssue('unhandled_rejection', {
-            message: reason instanceof Error && reason.message ? reason.message : 'Unhandled promise rejection',
+            message: reasonMessage,
             source: 'window.unhandledrejection'
         });
     });

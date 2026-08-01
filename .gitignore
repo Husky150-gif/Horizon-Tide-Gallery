@@ -6,3 +6,6 @@ public/
 processCustomerReminderDeploy.log
 firebase-debug.log
 deploy-netlify*.zip
+
+# Local Netlify folder
+.netlify
