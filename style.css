@@ -10075,7 +10075,8 @@ body[data-page="admin"] .global-sale-banner {
 }
 
 .admin-archive-chip.is-active,
-.admin-status-chip.is-active {
+.admin-status-chip.is-active,
+.admin-creator-chip.is-active {
     border-color: rgba(74, 222, 128, 0.68);
     background: rgba(6, 78, 59, 0.62);
     color: #dcfce7;

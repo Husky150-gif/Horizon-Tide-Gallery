@@ -260,7 +260,8 @@ const IS_HARD_RELOAD = NAVIGATION_ENTRY?.type === 'reload';
 window.adminOrderFilterState = {
     status: 'All',
     search: '',
-    archiveView: 'active'
+    archiveView: 'active',
+    creator: 'all'
 };
 window.adminReviewFilterState = {
     status: 'all'
@@ -12588,6 +12589,12 @@ function setupAdminDashboardDelegation() {
             return;
         }
 
+        if (button.matches('.admin-creator-chip')) {
+            const creator = String(button.getAttribute('data-creator-filter') || 'all');
+            filterOrdersByCreator(creator);
+            return;
+        }
+
         if (button.id === 'adminSelectVisibleOrdersBtn') {
             setVisibleAdminOrderSelection(true);
             return;
@@ -13685,14 +13692,20 @@ async function syncOrderQueueFallbackFromAdmin(order, status) {
 
 function applyAdminOrderFilters() {
     const allOrders = Array.isArray(window.allOrders) ? window.allOrders : [];
-    const state = window.adminOrderFilterState || { status: 'All', search: '', archiveView: 'active' };
+    const state = window.adminOrderFilterState || { status: 'All', search: '', archiveView: 'active', creator: 'all' };
     const search = String(state.search || '').trim().toLowerCase();
+    const creatorFilter = String(state.creator || 'all').toLowerCase();
 
     const filtered = allOrders.filter((order) => {
         const isArchived = Boolean(order?.archivedAt);
         if (state.archiveView === 'active' && isArchived) return false;
         if (state.archiveView === 'archived' && !isArchived) return false;
         if (state.status !== 'All' && String(order.status || 'Pending Review') !== state.status) return false;
+        if (creatorFilter !== 'all') {
+            const serviceType = getOrderServiceType(order || {});
+            const creator = getOrderCreator(serviceType);
+            if (creator !== creatorFilter) return false;
+        }
         if (!search) return true;
 
         const haystack = [
@@ -13732,6 +13745,14 @@ function applyAdminOrderFilters() {
         chip.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     });
 
+    document.querySelectorAll('.admin-creator-chip').forEach((chip) => {
+        if (!(chip instanceof HTMLButtonElement)) return;
+        const chipCreator = String(chip.getAttribute('data-creator-filter') || 'all').toLowerCase();
+        const isActive = chipCreator === creatorFilter;
+        chip.classList.toggle('is-active', isActive);
+        chip.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+
     const activeCount = allOrders.filter((order) => !Boolean(order?.archivedAt)).length;
     const archivedCount = allOrders.filter((order) => Boolean(order?.archivedAt)).length;
     const summary = document.getElementById('adminOrdersSnapshot');
@@ -13741,10 +13762,16 @@ function applyAdminOrderFilters() {
             : state.archiveView === 'archived'
                 ? 'Archived only'
                 : 'All orders';
+        const creatorLabel = creatorFilter === 'husky'
+            ? 'Husky only'
+            : creatorFilter === 'lopside'
+                ? 'Lopside only'
+                : 'All creators';
         summary.innerHTML = `
             <span class="admin-orders-snapshot-pill"><strong>Showing:</strong> ${filtered.length}</span>
             <span class="admin-orders-snapshot-pill"><strong>Active:</strong> ${activeCount}</span>
             <span class="admin-orders-snapshot-pill"><strong>Archived:</strong> ${archivedCount}</span>
+            <span class="admin-orders-snapshot-pill"><strong>Creator:</strong> ${escapeHTML(creatorLabel)}</span>
             <span class="admin-orders-snapshot-pill admin-orders-snapshot-pill--mode">${escapeHTML(archiveLabel)}</span>
         `;
     }
@@ -13906,6 +13933,11 @@ function loadAdminDashboard() {
                                 <button type="button" class="nav-btn admin-status-chip" data-status-filter="Accepted">Accepted</button>
                                 <button type="button" class="nav-btn admin-status-chip" data-status-filter="In Progress">In Progress</button>
                                 <button type="button" class="nav-btn admin-status-chip" data-status-filter="Finished">Finished</button>
+                            </div>
+                            <div class="admin-filters admin-filters--chips">
+                                <button type="button" class="nav-btn admin-creator-chip" data-creator-filter="all">All Creators</button>
+                                <button type="button" class="nav-btn admin-creator-chip" data-creator-filter="husky">Husky Orders</button>
+                                <button type="button" class="nav-btn admin-creator-chip" data-creator-filter="lopside">Lopside Orders</button>
                             </div>
                             <div id="adminOrdersSnapshot" class="admin-orders-snapshot" aria-live="polite"></div>
                             <div class="admin-bulk-actions" aria-label="Bulk order actions">
@@ -14309,7 +14341,7 @@ function loadAdminDashboard() {
     renderAdminDiagnosticsPanel();
     attachAdminDiagnosticsListeners();
 
-    window.adminOrderFilterState = { status: 'All', search: '', archiveView: 'active' };
+    window.adminOrderFilterState = { status: 'All', search: '', archiveView: 'active', creator: 'all' };
 
     const quickSearchInput = document.getElementById('adminQuickSearch');
     const premadeImageInput = document.getElementById('adminPremadeDesignImage');
@@ -16560,7 +16592,7 @@ function showAdminToast(msg, isError = false) {
 
 function filterOrders(status) {
     if (!window.adminOrderFilterState) {
-        window.adminOrderFilterState = { status: 'All', search: '', archiveView: 'active' };
+        window.adminOrderFilterState = { status: 'All', search: '', archiveView: 'active', creator: 'all' };
     }
     window.adminOrderFilterState.status = status || 'All';
     applyAdminOrderFilters();
@@ -16568,9 +16600,19 @@ function filterOrders(status) {
 
 function filterOrdersByArchiveView(view) {
     if (!window.adminOrderFilterState) {
-        window.adminOrderFilterState = { status: 'All', search: '', archiveView: 'active' };
+        window.adminOrderFilterState = { status: 'All', search: '', archiveView: 'active', creator: 'all' };
     }
     window.adminOrderFilterState.archiveView = ['active', 'archived', 'all'].includes(view) ? view : 'active';
+    applyAdminOrderFilters();
+}
+
+function filterOrdersByCreator(creator) {
+    if (!window.adminOrderFilterState) {
+        window.adminOrderFilterState = { status: 'All', search: '', archiveView: 'active', creator: 'all' };
+    }
+
+    const normalized = String(creator || 'all').toLowerCase();
+    window.adminOrderFilterState.creator = ['all', 'husky', 'lopside'].includes(normalized) ? normalized : 'all';
     applyAdminOrderFilters();
 }
 
