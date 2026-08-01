@@ -15,21 +15,22 @@
     <meta name="twitter:title" content="Husky (The Horizon) | Digital Artist and Animator">
     <meta name="twitter:description" content="Official Husky creator profile from Horizon Tide Gallery.">
     <meta name="twitter:image" content="https://horizontidegallery.com/Husky%20our%20socials/IMG_6379.jpg">
-    <meta name="theme-color" content="#080d1f">
+    <meta name="theme-color" content="#38122f">
     <link rel="canonical" href="https://horizontidegallery.com/husky.html">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-top: #081127;
-            --bg-bottom: #101f3d;
-            --ink: #ecf4ff;
-            --muted: #b6c7e5;
-            --pink: #ec4899;
-            --cyan: #32e4ff;
-            --panel: rgba(10, 21, 44, 0.78);
-            --line: rgba(80, 170, 255, 0.32);
+            --bg-top: #2c0d2f;
+            --bg-bottom: #4b1450;
+            --ink: #fff2fb;
+            --muted: #f1c3df;
+            --accent: #ec4899;
+            --accent-soft: #ff9dd1;
+            --accent-strong: #c61f74;
+            --panel: rgba(40, 10, 38, 0.82);
+            --line: rgba(255, 129, 201, 0.42);
         }
 
         * { box-sizing: border-box; }
@@ -39,8 +40,8 @@
             font-family: 'Fredoka', sans-serif;
             color: var(--ink);
             background:
-                radial-gradient(circle at 20% 20%, rgba(236, 72, 153, 0.2), transparent 40%),
-                radial-gradient(circle at 80% 10%, rgba(50, 228, 255, 0.18), transparent 45%),
+                radial-gradient(circle at 20% 20%, rgba(236, 72, 153, 0.34), transparent 42%),
+                radial-gradient(circle at 80% 10%, rgba(255, 141, 196, 0.26), transparent 48%),
                 linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
             display: grid;
             place-items: center;
@@ -49,11 +50,11 @@
 
         .shell {
             width: min(860px, 100%);
-            background: var(--panel);
+            background: linear-gradient(165deg, rgba(52, 14, 49, 0.92), rgba(32, 8, 30, 0.86));
             border: 1px solid var(--line);
             border-radius: 22px;
             backdrop-filter: blur(9px);
-            box-shadow: 0 20px 42px rgba(0, 0, 0, 0.35);
+            box-shadow: 0 20px 42px rgba(32, 4, 29, 0.46);
             overflow: hidden;
         }
 
@@ -70,17 +71,28 @@
             height: 180px;
             object-fit: cover;
             border-radius: 20px;
-            border: 2px solid rgba(236, 72, 153, 0.65);
-            box-shadow: 0 0 28px rgba(236, 72, 153, 0.38);
+            border: 2px solid rgba(236, 72, 153, 0.72);
+            box-shadow: 0 0 28px rgba(236, 72, 153, 0.42);
         }
 
         .kicker {
             margin: 0 0 8px;
-            color: var(--cyan);
+            color: var(--accent-soft);
             letter-spacing: 0.08em;
             text-transform: uppercase;
             font-size: 0.86rem;
             font-weight: 600;
+        }
+
+        .duo-note {
+            margin: 12px 0 0;
+            color: #ffdff1;
+            font-size: 0.92rem;
+            line-height: 1.45;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 141, 196, 0.38);
+            background: rgba(236, 72, 153, 0.14);
         }
 
         h1 {
@@ -111,9 +123,9 @@
             padding: 8px 12px;
             border-radius: 999px;
             font-size: 0.92rem;
-            color: #d9edff;
-            background: rgba(49, 98, 170, 0.32);
-            border: 1px solid rgba(82, 146, 230, 0.35);
+            color: #ffe8f8;
+            background: rgba(236, 72, 153, 0.2);
+            border: 1px solid rgba(255, 141, 196, 0.45);
         }
 
         .actions {
@@ -145,13 +157,13 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #ec4899, #a855f7);
+            background: linear-gradient(135deg, var(--accent), #b332cb);
             border-color: rgba(255, 255, 255, 0.2);
         }
 
         .fine {
             margin-top: 20px;
-            color: #9eb5da;
+            color: #e8bdd8;
             font-size: 0.88rem;
         }
 
@@ -221,6 +233,7 @@
                 <p class="kicker">Official Creator Profile</p>
                 <h1>Husky (The Horizon)</h1>
                 <p class="subtitle">Digital artist, animator, and visual storyteller at Horizon Tide Gallery. I create custom character art, emotional scenes, and commission-based project work.</p>
+                <p class="duo-note">Creator duo: Husky (digital + animation) and Lopside (handmade + fursuit craft), building Horizon Tide together.</p>
             </div>
         </section>
 
