@@ -1760,12 +1760,18 @@ function normalizeHomeAvailability(raw) {
     fallback.artists.husky.name = String(huskyRaw.name || fallback.artists.husky.name).trim() || fallback.artists.husky.name;
     fallback.artists.husky.service = String(huskyRaw.service || fallback.artists.husky.service).trim() || fallback.artists.husky.service;
     fallback.artists.husky.status = sanitizeAvailabilityStatus(huskyRaw.status);
-    fallback.artists.husky.slots = Math.max(0, Number(huskyRaw.slots) || fallback.artists.husky.slots);
+    const huskySlots = Number(huskyRaw.slots);
+    fallback.artists.husky.slots = Number.isFinite(huskySlots)
+        ? Math.max(0, Math.floor(huskySlots))
+        : fallback.artists.husky.slots;
 
     fallback.artists.lopside.name = String(lopsideRaw.name || fallback.artists.lopside.name).trim() || fallback.artists.lopside.name;
     fallback.artists.lopside.service = String(lopsideRaw.service || fallback.artists.lopside.service).trim() || fallback.artists.lopside.service;
     fallback.artists.lopside.status = sanitizeAvailabilityStatus(lopsideRaw.status);
-    fallback.artists.lopside.slots = Math.max(0, Number(lopsideRaw.slots) || fallback.artists.lopside.slots);
+    const lopsideSlots = Number(lopsideRaw.slots);
+    fallback.artists.lopside.slots = Number.isFinite(lopsideSlots)
+        ? Math.max(0, Math.floor(lopsideSlots))
+        : fallback.artists.lopside.slots;
 
     fallback.weeklySnapshot = normalizeWeeklySnapshot(raw.weeklySnapshot, fallback);
     fallback.lastSavedAt = typeof raw.lastSavedAt === 'string' ? raw.lastSavedAt : fallback.lastSavedAt;

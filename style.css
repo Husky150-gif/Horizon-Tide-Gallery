@@ -3966,9 +3966,9 @@ body.admin-login-modal-open {
 
 @media (max-width: 900px) {
     [data-theme="pricing"] .pricing-jump-nav {
-        margin-top: calc(44px + env(safe-area-inset-top, 0px));
+        margin-top: 8px;
         top: 6px;
-        padding-top: calc(132px + env(safe-area-inset-top, 0px)) !important;
+        padding-top: 10px !important;
         border-radius: 18px;
         max-width: 100%;
         justify-content: flex-start;
@@ -3981,9 +3981,9 @@ body.admin-login-modal-open {
 
 @media (max-width: 680px) {
     [data-theme="pricing"] .pricing-jump-btn {
-        margin-top: calc(34px + env(safe-area-inset-top, 0px));
+        margin-top: 0;
         padding: 7px 12px;
-        padding-top: calc(118px + env(safe-area-inset-top, 0px)) !important;
+        padding-top: 7px !important;
         font-size: 0.78rem;
         gap: 6px;
     }
@@ -3994,6 +3994,12 @@ body.admin-login-modal-open {
 
     [data-theme="pricing"] .pricing-jump-label-short {
         display: inline;
+    }
+
+    body[data-page="pricing"] #siteGuideLauncher,
+    body[data-page="pricing"] .site-guide-launcher,
+    body[data-page="pricing"] #globalMusicBtn {
+        display: none !important;
     }
 }
 
