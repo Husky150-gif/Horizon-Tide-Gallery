@@ -3757,6 +3757,12 @@ window.handleImageError = function(img) {
 };
 
 // === GLOBAL DISCOUNT SYSTEM ===
+function sanitizeSalePercentage(rawValue) {
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed)) return 0;
+    return Math.max(0, Math.round(parsed));
+}
+
 function attachGlobalSettingsListener() {
     if (globalDiscountListener) globalDiscountListener();
     globalDiscountListener = onSnapshot(doc(db, "settings", "discount"), (docSnap) => {
@@ -3770,6 +3776,7 @@ function attachGlobalSettingsListener() {
                 window.activeSales = data.activeSales.map((sale, index) => ({
                     ...sale,
                     id: sale.id || `sale_${index}`,
+                    percentage: sanitizeSalePercentage(sale.percentage),
                     enabled: sale.enabled !== false
                 }));
             }
@@ -3781,7 +3788,7 @@ function attachGlobalSettingsListener() {
                     window.activeSales.push({
                         id: 'legacy_sale',
                         target: data.target || 'all',
-                        percentage: data.percentage,
+                        percentage: sanitizeSalePercentage(data.percentage),
                         message: data.message || "Sale Event",
                         enabled: true
                     });
@@ -3839,8 +3846,10 @@ function getBestDiscount(type) {
     let bestPct = 0;
     window.activeSales.forEach(sale => {
         if (sale.enabled === false) return;
+        const pct = sanitizeSalePercentage(sale.percentage);
+        if (pct <= 0) return;
         if (sale.target === 'all' || sale.target === type) {
-            if (sale.percentage > bestPct) bestPct = sale.percentage;
+            if (pct > bestPct) bestPct = pct;
         }
     });
     return bestPct;
@@ -3849,7 +3858,7 @@ function getBestDiscount(type) {
 function updateDiscountUI() {
     const banner = document.getElementById('globalSaleBanner');
     const activeVisibleSales = Array.isArray(window.activeSales)
-        ? window.activeSales.filter((sale) => sale.enabled !== false)
+        ? window.activeSales.filter((sale) => sale.enabled !== false && sanitizeSalePercentage(sale.percentage) > 0)
         : [];
     const currentPage = bodyElement.getAttribute('data-page');
     const currentHash = window.location.hash || '#home';
@@ -3863,11 +3872,12 @@ function updateDiscountUI() {
             // Display the highest value discount globally
             let displaySale = activeVisibleSales[0];
             activeVisibleSales.forEach(sale => {
-                if (sale.percentage > displaySale.percentage) displaySale = sale;
+                if (sanitizeSalePercentage(sale.percentage) > sanitizeSalePercentage(displaySale.percentage)) displaySale = sale;
             });
+            const displayPct = sanitizeSalePercentage(displaySale.percentage);
             
             let msg = displaySale.message && displaySale.message.trim() !== '' ? escapeHTML(displaySale.message) : "Sale Event";
-            banner.innerHTML = `🌙✨ <span id="bannerSaleMessage">${msg}</span> — Save <span id="bannerDiscountAmt">${displaySale.percentage}</span>%! ✨🌙`;
+            banner.innerHTML = `🌙✨ <span id="bannerSaleMessage">${msg}</span> — Save <span id="bannerDiscountAmt">${displayPct}</span>%! ✨🌙`;
             banner.style.display = 'block';
             document.body.style.paddingTop = `${Math.max(40, banner.offsetHeight)}px`;
         } else {
