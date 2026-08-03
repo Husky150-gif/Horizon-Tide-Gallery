@@ -2375,6 +2375,12 @@ function buildGalleryImageAltText(item, index) {
         : `${title} by ${creatorLabel} at Horizon Tide Gallery.`;
 }
 
+function getSafeMediaUrl(rawUrl) {
+    const value = String(rawUrl || '').trim();
+    if (!value) return '';
+    return /^https?:\/\//i.test(value) ? value : encodeURI(value);
+}
+
 function normalizeGalleryCatalog(raw) {
     const fallback = JSON.parse(JSON.stringify(DEFAULT_GALLERY_CATALOG));
     const hasExplicitItems = Array.isArray(raw?.items);
@@ -3460,7 +3466,7 @@ function renderAdminGalleryManager() {
         const downDisabled = moveLocked || sourceIndex >= (catalog.items.length - 1);
         return `
         <article class="admin-gallery-item" data-id="${escapeHTML(item.id)}">
-            <img src="${escapeHTML(encodeURI(item.url))}" alt="${escapeHTML(item.title)}" class="admin-gallery-item__thumb" loading="lazy" onerror="handleImageError(this)">
+            <img src="${escapeHTML(getSafeMediaUrl(item.url))}" alt="${escapeHTML(item.title)}" class="admin-gallery-item__thumb" loading="lazy" onerror="handleImageError(this)">
             <div class="admin-gallery-item__info">
                 <strong>${escapeHTML(item.title)}</strong>
                 <span>${escapeHTML(item.creator)}</span>
@@ -6792,7 +6798,7 @@ function loadGalleryPage() {
         const categoryBadges = item.categories.map((cat) => renderGalleryCategoryBadgeMarkup(cat)).join('');
         const mediaClass = item.videoLink ? 'gallery-video-thumb' : '';
         const cardTag = item.videoLink ? 'Animation Clip • Click to play' : item.creator;
-        const gallerySrc = /^https?:\/\//i.test(item.url) ? item.url : encodeURI(item.url);
+        const gallerySrc = getSafeMediaUrl(item.url);
         const galleryAltText = buildGalleryImageAltText(item, i);
         galleryHTML += `
             <div class="gallery-card filter-item" data-categories="${item.categories.join(' ')}">
@@ -9221,7 +9227,7 @@ function loadReviewsPage() {
                     </div>
                     <p class="review-body">${escapeHTML(text || 'No review text provided.')}</p>
                     ${commissionType ? `<p class="review-meta review-commission-pill">${escapeHTML(commissionType)}</p>` : ''}
-                    ${reviewImageUrl ? `<a class="review-image-link" href="${encodeURI(reviewImageUrl)}" target="_blank" rel="noopener noreferrer"><img class="review-image-thumb" src="${encodeURI(reviewImageUrl)}" alt="Finished commission image by ${escapeHTML(displayName)}" loading="lazy"></a>` : ''}
+                    ${reviewImageUrl ? `<a class="review-image-link" href="${getSafeMediaUrl(reviewImageUrl)}" target="_blank" rel="noopener noreferrer"><img class="review-image-thumb" src="${getSafeMediaUrl(reviewImageUrl)}" alt="Finished commission image by ${escapeHTML(displayName)}" loading="lazy"></a>` : ''}
                 </article>
             `;
         }).join('');
@@ -16548,12 +16554,12 @@ function renderAdminCustomerRequestsManager() {
                 ${attachmentUrls.length ? `
                     <div class="admin-customer-request-attachments">
                         ${attachmentUrls.map((url, index) => `
-                            <a class="admin-customer-request-attachment" href="${encodeURI(url)}" target="_blank" rel="noopener noreferrer" aria-label="Open uploaded file ${index + 1}">
-                                <img src="${encodeURI(url)}" alt="Uploaded file ${index + 1}" loading="lazy" onerror="handleImageError(this)">
+                            <a class="admin-customer-request-attachment" href="${getSafeMediaUrl(url)}" target="_blank" rel="noopener noreferrer" aria-label="Open uploaded file ${index + 1}">
+                                <img src="${getSafeMediaUrl(url)}" alt="Uploaded file ${index + 1}" loading="lazy" onerror="handleImageError(this)">
                             </a>
                         `).join('')}
                     </div>
-                    <div class="admin-comment-replies-preview">${attachmentUrls.map((url, index) => `<p><strong>Uploaded file ${index + 1}:</strong> <a href="${encodeURI(url)}" target="_blank" rel="noopener noreferrer">Open file</a></p>`).join('')}</div>
+                    <div class="admin-comment-replies-preview">${attachmentUrls.map((url, index) => `<p><strong>Uploaded file ${index + 1}:</strong> <a href="${getSafeMediaUrl(url)}" target="_blank" rel="noopener noreferrer">Open file</a></p>`).join('')}</div>
                 ` : ''}
                 <div class="admin-comment-row-actions">
                     <button type="button" class="admin-btn-edit admin-btn-neutral" data-copy-email="${escapeHTML(email)}">Copy Email</button>
@@ -16643,7 +16649,7 @@ function renderAdminReviewsManager() {
                     <span class="admin-review-flag ${isSafe ? 'is-on is-success' : 'is-danger'}">Safe For Public Display: ${isSafe ? 'Yes' : 'No'}</span>
                 </div>
                 <p class="admin-review-row-text">${escapeHTML(shortText || 'No text provided')}</p>
-                ${reviewImageUrl ? `<a class="admin-review-image-link" href="${encodeURI(reviewImageUrl)}" target="_blank" rel="noopener noreferrer"><img class="admin-review-image-thumb" src="${encodeURI(reviewImageUrl)}" alt="Review image by ${escapeHTML(displayName)}" loading="lazy"></a>` : ''}
+                ${reviewImageUrl ? `<a class="admin-review-image-link" href="${getSafeMediaUrl(reviewImageUrl)}" target="_blank" rel="noopener noreferrer"><img class="admin-review-image-thumb" src="${getSafeMediaUrl(reviewImageUrl)}" alt="Review image by ${escapeHTML(displayName)}" loading="lazy"></a>` : ''}
                 <div class="admin-review-row-actions">
                     <button type="button" class="admin-btn-edit admin-btn-success admin-toggle-review-approval-btn" data-id="${review.id}" data-approved="${isApproved ? 'true' : 'false'}">${isApproved ? 'Unapprove' : 'Approve'}</button>
                     <button type="button" class="admin-btn-edit admin-btn-success admin-toggle-review-safe-btn" data-id="${review.id}" data-safe="${isSafe ? 'true' : 'false'}">${isSafe ? 'Unset Safe For Public Display' : 'Safe For Public Display'}</button>
