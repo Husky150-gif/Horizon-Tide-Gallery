@@ -395,6 +395,11 @@ const ROUTE_HEAD_METADATA = {
         description: 'Choose the right commission form, check pricing, and prep your request with Horizon Tide Gallery.',
         ogTitle: 'Preorder Menu | Horizon Tide Gallery'
     },
+    '#quick-actor': {
+        title: 'Quick Actor | The Horizon',
+        description: 'Use Quick Actor to choose type, timing, and budget, then preview a planning estimate before submitting your request.',
+        ogTitle: 'Quick Actor | Horizon Tide Gallery'
+    },
     '#pricing': {
         title: 'Pricing Sheet | The Horizon',
         description: 'Review starting prices for art, animation, stickers, keychains, and fursuit work at Horizon Tide Gallery.',
@@ -542,6 +547,7 @@ let stickyPreorderFocusBound = false;
 let stickyPreorderControlOverlapBound = false;
 let stickyPreorderViewportBound = false;
 let stickyPreorderTempHiddenUntil = 0;
+let homeConversionPackCleanup = null;
 const STICKY_PREORDER_BOTTOM_HIDE_PX = 360;
 const STICKY_PREORDER_INPUT_HIDE_GUTTER_PX = 260;
 const STICKY_PREORDER_MOBILE_KEYBOARD_VIEWPORT_RATIO = 0.84;
@@ -1192,7 +1198,7 @@ function getPriceEstimatorHTML() {
                 <button type="button" class="nav-btn draft-clear-btn">Clear saved draft</button>
                 <small class="draft-status-text" aria-live="polite"></small>
             </div>
-            <span>This is an estimate. Final pricing may change depending on complexity, character details, edits, deadline, and add-ons.</span>
+            <span>This is an estimate. Final pricing may change depending on complexity, character details, edits, deadline, and add-ons. If a sale is active, this estimate includes the discount and the savings line shows regular pricing.</span>
         </div>
     `;
 }
@@ -3836,14 +3842,14 @@ function renderPriceRange(min, max, type, isPlus = false) {
 function getDefaultPricingConfig() {
     return {
         art: {
-            icon: { flat: 24, cel: 36, rendered: 52 },
-            headshot: { flat: 32, cel: 44, rendered: 60 },
-            bust: { flat: 44, cel: 60, rendered: 80 },
-            halfBody: { flat: 56, cel: 72, rendered: 96 },
-            fullBody: { flat: 72, cel: 96, rendered: 128 },
-            scene: { flat: 160, cel: 200, rendered: 240 },
-            refSheets: { basic: 160, standard: 220, deluxe: 280 },
-            addOns: { extraOutfit: 24, prop: 16, detailedBackground: 40, stickerPack: 75 }
+            icon: { flat: 26, cel: 38, rendered: 54 },
+            headshot: { flat: 40, cel: 55, rendered: 74 },
+            bust: { flat: 48, cel: 66, rendered: 88 },
+            halfBody: { flat: 68, cel: 90, rendered: 118 },
+            fullBody: { flat: 88, cel: 116, rendered: 152 },
+            scene: { flat: 190, cel: 240, rendered: 300 },
+            refSheets: { basic: 190, standard: 260, deluxe: 330 },
+            addOns: { extraOutfit: 28, prop: 20, detailedBackground: 50, stickerPack: 85 }
         },
         animation: {
             loop: { min: 20, max: 60 },
@@ -5589,6 +5595,286 @@ function bindCoreMenuControls() {
     }
 }
 
+function animateCountValue(element, targetValue, durationMs = 900) {
+    if (!(element instanceof HTMLElement)) return;
+    const target = Math.max(0, Math.floor(Number(targetValue) || 0));
+    const current = Math.max(0, Math.floor(Number(element.textContent || 0) || 0));
+
+    const startTime = performance.now();
+    const tick = (now) => {
+        const progress = Math.min(1, (now - startTime) / durationMs);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const value = Math.round(current + (target - current) * eased);
+        element.textContent = String(value);
+        if (progress < 1) requestAnimationFrame(tick);
+    };
+
+    requestAnimationFrame(tick);
+}
+
+function getHomeIntentRoute(typeValue) {
+    const intent = String(typeValue || '').toLowerCase();
+    if (intent.includes('fursuit')) return { label: 'Start Fursuit Request', action: loadFursuitForm, hash: '#fursuits' };
+    if (intent.includes('merch') || intent.includes('keychain')) return { label: 'Start Merch Request', action: loadCustomKeychainsForm, hash: '#custom-keychain' };
+    if (intent.includes('sticker')) return { label: 'Start Sticker Request', action: loadCustomStickersForm, hash: '#stickers' };
+    if (intent.includes('animation')) return { label: 'Start Animation Request', action: loadHuskyArtForm, hash: '#art' };
+    return { label: 'Start Art Request', action: loadHuskyArtForm, hash: '#art' };
+}
+
+function getHomeIntentMinimum(typeValue, pricingConfig) {
+    const intent = String(typeValue || '').toLowerCase();
+    if (intent.includes('fursuit')) return pricingConfig.fursuits.paws;
+    if (intent.includes('merch') || intent.includes('keychain')) return pricingConfig.keychains.custom.chibiIcon;
+    if (intent.includes('sticker')) return pricingConfig.stickers.single;
+    if (intent.includes('animation')) return pricingConfig.animation.loop.min;
+    return pricingConfig.art.headshot.flat;
+}
+
+function getHomeTeaserSeedRange(typeValue, pricingConfig) {
+    const type = String(typeValue || '').toLowerCase();
+    if (type === 'art-icon') return { min: pricingConfig.art.icon.flat, max: pricingConfig.art.icon.rendered };
+    if (type === 'art-headshot') return { min: pricingConfig.art.headshot.flat, max: pricingConfig.art.headshot.rendered };
+    if (type === 'art-bust') return { min: pricingConfig.art.bust.flat, max: pricingConfig.art.bust.rendered };
+    if (type === 'art-halfbody') return { min: pricingConfig.art.halfBody.flat, max: pricingConfig.art.halfBody.rendered };
+    if (type === 'art-fullbody') return { min: pricingConfig.art.fullBody.flat, max: pricingConfig.art.fullBody.rendered };
+    if (type === 'art-scene') return { min: pricingConfig.art.scene.flat, max: pricingConfig.art.scene.rendered };
+    if (type === 'art-ref-basic') return { min: pricingConfig.art.refSheets.basic, max: pricingConfig.art.refSheets.basic };
+    if (type === 'art-ref-standard') return { min: pricingConfig.art.refSheets.standard, max: pricingConfig.art.refSheets.standard };
+    if (type === 'art-ref-deluxe') return { min: pricingConfig.art.refSheets.deluxe, max: pricingConfig.art.refSheets.deluxe };
+    if (type === 'animation-loop') return { min: pricingConfig.animation.loop.min, max: pricingConfig.animation.loop.max };
+    if (type === 'animation-simple') return { min: pricingConfig.animation.simple.min, max: pricingConfig.animation.simple.max };
+    if (type === 'animation-full-character') return { min: pricingConfig.animation.fullCharacter.min, max: pricingConfig.animation.fullCharacter.max };
+    if (type === 'animation-complex-scene') return { min: pricingConfig.animation.complexScene, max: Math.round(pricingConfig.animation.complexScene * 1.2) };
+    if (type === 'fursuit-tail') return { min: pricingConfig.fursuits.tail, max: Math.round(pricingConfig.fursuits.tail * 1.18) };
+    if (type === 'fursuit-paws') return { min: pricingConfig.fursuits.paws, max: Math.round(pricingConfig.fursuits.paws * 1.2) };
+    if (type === 'fursuit-paws-tail') return { min: pricingConfig.fursuits.pawsTailSet, max: Math.round(pricingConfig.fursuits.pawsTailSet * 1.2) };
+    if (type === 'fursuit-feet-paws') return { min: pricingConfig.fursuits.feetPaws, max: Math.round(pricingConfig.fursuits.feetPaws * 1.2) };
+    if (type === 'fursuit-trio') return { min: pricingConfig.fursuits.trioSet, max: Math.round(pricingConfig.fursuits.trioSet * 1.18) };
+    if (type === 'fursuit-head') return { min: pricingConfig.fursuits.head, max: Math.round(pricingConfig.fursuits.head * 1.2) };
+    if (type === 'fursuit-mini-partial') return { min: pricingConfig.fursuits.miniPartial, max: Math.round(pricingConfig.fursuits.miniPartial * 1.18) };
+    if (type === 'fursuit-full-partial') return { min: pricingConfig.fursuits.fullPartial, max: Math.round(pricingConfig.fursuits.fullPartial * 1.16) };
+    if (type === 'keychain-premade-clear') return { min: pricingConfig.keychains.premade.clearAcrylic, max: pricingConfig.keychains.premade.clearAcrylic };
+    if (type === 'keychain-premade-epoxy') return { min: pricingConfig.keychains.premade.epoxy, max: pricingConfig.keychains.premade.epoxy };
+    if (type === 'keychain-premade-colored') return { min: pricingConfig.keychains.premade.coloredAcrylic, max: pricingConfig.keychains.premade.coloredAcrylic };
+    if (type === 'keychain-premade-rainbow') return { min: pricingConfig.keychains.premade.rainbowAcrylic, max: pricingConfig.keychains.premade.rainbowAcrylic };
+    if (type === 'keychain-premade-translucent') return { min: pricingConfig.keychains.premade.translucentAcrylic, max: pricingConfig.keychains.premade.translucentAcrylic };
+    if (type === 'keychain-premade-holographic') return { min: pricingConfig.keychains.premade.holographic, max: pricingConfig.keychains.premade.holographic };
+    if (type === 'keychain-premade-glow') return { min: pricingConfig.keychains.premade.glowInDark, max: pricingConfig.keychains.premade.glowInDark };
+    if (type === 'keychain-custom-chibi') return { min: pricingConfig.keychains.custom.chibiIcon, max: pricingConfig.keychains.custom.chibiIcon };
+    if (type === 'keychain-custom-half') return { min: pricingConfig.keychains.custom.halfBody, max: pricingConfig.keychains.custom.halfBody };
+    if (type === 'keychain-custom-full') return { min: pricingConfig.keychains.custom.fullBody, max: pricingConfig.keychains.custom.fullBody };
+    if (type === 'keychain-custom-complex') return { min: pricingConfig.keychains.custom.complexCharacter, max: pricingConfig.keychains.custom.complexCharacter };
+    if (type === 'sticker-single') return { min: pricingConfig.stickers.single, max: pricingConfig.stickers.pair };
+    if (type === 'sticker-pair') return { min: pricingConfig.stickers.pair, max: pricingConfig.stickers.pair };
+    if (type === 'sticker-sheet') return { min: pricingConfig.stickers.sheet, max: Math.round(pricingConfig.stickers.sheet * 1.25) };
+    if (type === 'sticker-small-batch') return { min: pricingConfig.stickers.smallBatch, max: Math.round(pricingConfig.stickers.smallBatch * 1.25) };
+    return { min: pricingConfig.art.headshot.flat, max: pricingConfig.art.headshot.rendered };
+}
+
+function getHomeTeaserDiscountTarget(typeValue) {
+    const type = String(typeValue || '').toLowerCase();
+    if (type.startsWith('art-')) return 'art';
+    if (type.startsWith('animation-')) return 'animations';
+    if (type.startsWith('fursuit-')) return 'fursuits';
+    if (type.startsWith('keychain-')) return 'keychains';
+    if (type.startsWith('sticker-')) return 'stickers';
+    return 'all';
+}
+
+function getTeaserComplexityGuide(level) {
+    const clamped = Math.max(0, Math.min(3, Number(level) || 0));
+    if (clamped === 0) return 'Complexity 0: simple design and clean shapes.';
+    if (clamped === 1) return 'Complexity 1: moderate detail, light markings, basic accessories.';
+    if (clamped === 2) return 'Complexity 2: detailed markings, layered outfits, props, or effects.';
+    return 'Complexity 3: heavy detail, multiple elements, or dense design work near the top of this tier.';
+}
+
+function bindHomeConversionPack() {
+    if (typeof homeConversionPackCleanup === 'function') {
+        homeConversionPackCleanup();
+        homeConversionPackCleanup = null;
+    }
+
+    const intentType = document.getElementById('homeIntentType');
+    const intentDeadline = document.getElementById('homeIntentDeadline');
+    const intentBudget = document.getElementById('homeIntentBudget');
+    const intentBudgetAmount = document.getElementById('homeIntentBudgetAmount');
+    const intentBudgetMessage = document.getElementById('homeIntentBudgetMessage');
+    const intentSummary = document.getElementById('homeIntentSummary');
+    const intentPrimaryBtn = document.getElementById('homeIntentPrimaryBtn');
+    const teaserType = document.getElementById('homeTeaserType');
+    const teaserQty = document.getElementById('homeTeaserQty');
+    const teaserComplexity = document.getElementById('homeTeaserComplexity');
+    const teaserRush = document.getElementById('homeTeaserRush');
+    const teaserRange = document.getElementById('homeTeaserRange');
+    const teaserHint = document.getElementById('homeTeaserHint');
+    const teaserComplexityHelp = document.getElementById('homeTeaserComplexityHelp');
+    const teaserPricingBtn = document.getElementById('homeTeaserPricingBtn');
+    const smartBar = document.getElementById('homeSmartActionBar');
+    const smartPrimaryBtn = document.getElementById('homeSmartPrimaryBtn');
+    const smartStatusBtn = document.getElementById('homeSmartStatusBtn');
+    const smartPricingBtn = document.getElementById('homeSmartPricingBtn');
+    const reviewsCounter = document.getElementById('homeApprovedReviewsCount');
+    const slotCounter = document.getElementById('homeOpenSlotsCount');
+    const pricingConfig = getPricingConfig();
+
+    const updateIntentSummary = () => {
+        if (!(intentSummary instanceof HTMLElement) || !(intentType instanceof HTMLSelectElement)) return;
+        const route = getHomeIntentRoute(intentType.value);
+        const deadlineValue = intentDeadline instanceof HTMLSelectElement ? intentDeadline.value : 'flexible';
+        const deadlineText = deadlineValue === 'rush' ? 'deadline-sensitive timing' : deadlineValue === 'soon' ? 'near-term timing' : 'flexible timing';
+        let budgetText = 'a custom budget';
+        if (intentBudget instanceof HTMLSelectElement) {
+            const budgetValue = intentBudget.value;
+            budgetText = budgetValue === 'under-100' ? 'a starter budget under $100' : budgetValue === '100-300' ? 'a $100-$300 budget' : budgetValue === '300-plus' ? 'a $300+ budget' : 'a custom budget';
+        }
+
+        let enteredBudget = NaN;
+        if (intentBudgetAmount instanceof HTMLInputElement) {
+            enteredBudget = Number(intentBudgetAmount.value);
+            if (Number.isFinite(enteredBudget) && enteredBudget > 0) {
+                budgetText = `a budget of $${Math.round(enteredBudget)}`;
+            }
+        }
+
+        intentSummary.textContent = `Best lane: ${route.label}. You selected ${deadlineText} and ${budgetText}.`;
+
+        if (intentBudgetMessage instanceof HTMLElement) {
+            if (Number.isFinite(enteredBudget) && enteredBudget > 0) {
+                const floor = Math.round(getHomeIntentMinimum(intentType.value, pricingConfig));
+                if (enteredBudget < floor) {
+                    intentBudgetMessage.textContent = `Sorry, we cannot go this low for this service. The realistic starting point is around $${floor}.`;
+                    intentBudgetMessage.classList.add('is-low');
+                } else {
+                    intentBudgetMessage.textContent = `Nice. Your budget is within a workable range for this lane.`;
+                    intentBudgetMessage.classList.remove('is-low');
+                }
+            } else {
+                intentBudgetMessage.textContent = 'Enter a target budget and we will instantly tell you if it fits this lane.';
+                intentBudgetMessage.classList.remove('is-low');
+            }
+        }
+
+        if (intentPrimaryBtn instanceof HTMLButtonElement) {
+            intentPrimaryBtn.textContent = route.label;
+            intentPrimaryBtn.dataset.targetHash = route.hash;
+        }
+    };
+
+    const updateTeaserEstimate = () => {
+        if (!(teaserRange instanceof HTMLElement) || !(teaserHint instanceof HTMLElement)) return;
+        const baseType = teaserType instanceof HTMLSelectElement ? teaserType.value : 'art-headshot';
+        const seedRange = getHomeTeaserSeedRange(baseType, pricingConfig);
+        const quantity = Math.max(1, Math.floor(Number(teaserQty instanceof HTMLInputElement ? teaserQty.value : 1) || 1));
+        const complexityRaw = teaserComplexity instanceof HTMLInputElement ? Number(teaserComplexity.value) : 1;
+        const complexity = Math.max(0, Math.min(3, Number.isFinite(complexityRaw) ? complexityRaw : 1));
+        const complexityRatio = complexity / 3;
+        const rushMultiplier = teaserRush instanceof HTMLInputElement && teaserRush.checked ? 1.25 : 1;
+        const baseMin = Math.round(seedRange.min * quantity * rushMultiplier);
+        const baseMax = Math.round(seedRange.max * quantity * rushMultiplier);
+        const spread = Math.max(0, baseMax - baseMin);
+        const complexityMin = Math.round(baseMin + (spread * complexityRatio * 0.45));
+        const complexityMax = Math.round(baseMin + (spread * (0.65 + (complexityRatio * 0.35))));
+        const boundedMin = Math.min(baseMax, Math.max(baseMin, complexityMin));
+        const boundedMax = Math.min(baseMax, Math.max(boundedMin, complexityMax));
+        const discountTarget = getHomeTeaserDiscountTarget(baseType);
+        const pct = getBestDiscount(discountTarget);
+        const min = pct > 0 ? Math.round(boundedMin * (1 - pct / 100)) : boundedMin;
+        const max = pct > 0 ? Math.round(boundedMax * (1 - pct / 100)) : boundedMax;
+
+        teaserRange.textContent = `$${min} - $${max}`;
+        const discountDetail = pct > 0 ? ` Includes active ${pct}% sale pricing.` : '';
+        const complexityDetail = spread > 0
+            ? 'Higher complexity moves your estimate toward the top of this selected tier.'
+            : 'This selection is a fixed-price tier, so complexity has limited effect unless add-ons are included in your final quote.';
+        teaserHint.textContent = `Planning range for ${quantity} item${quantity === 1 ? '' : 's'} at complexity ${complexity}${rushMultiplier > 1 ? ' with rush' : ''}. ${complexityDetail}${discountDetail} Final quote is confirmed after review.`;
+        if (teaserComplexityHelp instanceof HTMLElement) {
+            teaserComplexityHelp.textContent = `${getTeaserComplexityGuide(complexity)} Based on markings, outfits, props, effects, and overall detail.`;
+        }
+    };
+
+    const handleIntentPrimaryClick = (event) => {
+        const route = getHomeIntentRoute(intentType instanceof HTMLSelectElement ? intentType.value : 'art-illustration');
+        cinematicTransition(event, route.action, route.hash);
+    };
+
+    const updateSmartBar = () => {
+        if (!(smartBar instanceof HTMLElement) || !(smartPrimaryBtn instanceof HTMLButtonElement)) return;
+        const isMobile = window.matchMedia('(max-width: 900px)').matches;
+        if (!isMobile) {
+            smartBar.classList.remove('is-visible');
+            return;
+        }
+
+        const y = window.scrollY || window.pageYOffset || 0;
+        smartBar.classList.add('is-visible');
+
+        if (y < 460) {
+            smartPrimaryBtn.textContent = 'Start Request';
+            smartPrimaryBtn.dataset.target = 'preorder';
+        } else if (y < 1200) {
+            smartPrimaryBtn.textContent = 'View Pricing';
+            smartPrimaryBtn.dataset.target = 'pricing';
+        } else {
+            smartPrimaryBtn.textContent = 'Contact Us';
+            smartPrimaryBtn.dataset.target = 'contact';
+        }
+    };
+
+    const handleSmartPrimaryClick = (event) => {
+        if (!(smartPrimaryBtn instanceof HTMLButtonElement)) return;
+        const target = String(smartPrimaryBtn.dataset.target || 'preorder');
+        if (target === 'pricing') {
+            cinematicTransition(event, loadPricingPage, '#pricing');
+            return;
+        }
+        if (target === 'contact') {
+            cinematicTransition(event, loadContactPage, '#contact');
+            return;
+        }
+        cinematicTransition(event, loadPreorderPage, '#preorder');
+    };
+
+    const currentAvailability = normalizeHomeAvailability(window.homeAvailability);
+    animateCountValue(reviewsCounter, window.homeReviewSummary.approvedCount || 0);
+    animateCountValue(slotCounter, (Number(currentAvailability.artists.husky.slots) || 0) + (Number(currentAvailability.artists.lopside.slots) || 0));
+
+    updateIntentSummary();
+    updateTeaserEstimate();
+    updateSmartBar();
+
+    intentType?.addEventListener('change', updateIntentSummary);
+    intentDeadline?.addEventListener('change', updateIntentSummary);
+    intentBudget?.addEventListener('change', updateIntentSummary);
+    intentBudgetAmount?.addEventListener('input', updateIntentSummary);
+    intentPrimaryBtn?.addEventListener('click', handleIntentPrimaryClick);
+    teaserType?.addEventListener('change', updateTeaserEstimate);
+    teaserQty?.addEventListener('input', updateTeaserEstimate);
+    teaserComplexity?.addEventListener('input', updateTeaserEstimate);
+    teaserRush?.addEventListener('change', updateTeaserEstimate);
+    teaserPricingBtn?.addEventListener('click', (event) => cinematicTransition(event, loadPricingPage, '#pricing'));
+    smartPrimaryBtn?.addEventListener('click', handleSmartPrimaryClick);
+    smartStatusBtn?.addEventListener('click', (event) => cinematicTransition(event, loadHuskysListPage, '#horizon-queue'));
+    smartPricingBtn?.addEventListener('click', (event) => cinematicTransition(event, loadPricingPage, '#pricing'));
+    window.addEventListener('scroll', updateSmartBar, { passive: true });
+    window.addEventListener('resize', updateSmartBar, { passive: true });
+
+    homeConversionPackCleanup = () => {
+        intentType?.removeEventListener('change', updateIntentSummary);
+        intentDeadline?.removeEventListener('change', updateIntentSummary);
+        intentBudget?.removeEventListener('change', updateIntentSummary);
+        intentBudgetAmount?.removeEventListener('input', updateIntentSummary);
+        intentPrimaryBtn?.removeEventListener('click', handleIntentPrimaryClick);
+        teaserType?.removeEventListener('change', updateTeaserEstimate);
+        teaserQty?.removeEventListener('input', updateTeaserEstimate);
+        teaserComplexity?.removeEventListener('input', updateTeaserEstimate);
+        teaserRush?.removeEventListener('change', updateTeaserEstimate);
+        smartPrimaryBtn?.removeEventListener('click', handleSmartPrimaryClick);
+        window.removeEventListener('scroll', updateSmartBar);
+        window.removeEventListener('resize', updateSmartBar);
+    };
+}
+
 function shouldShowStickyPreorderCta(pageName) {
     if (!pageName) return false;
     if (pageName === 'admin' || pageName === 'preorder') return false;
@@ -5754,16 +6040,19 @@ function attachDynamicEstimator(formId, baseType) {
                     max = Math.round(max * 1.8);
                 }
                 if (box.value === "Detailed Background") {
-                    min += 40;
-                    max += 80;
+                    const detailedBackgroundAddOn = pricingConfig.art.addOns.detailedBackground;
+                    min += detailedBackgroundAddOn;
+                    max += Math.round(detailedBackgroundAddOn * 2);
                 }
                 if (box.value === "Extra Outfit") {
-                    min += 24;
-                    max += 24;
+                    const extraOutfitAddOn = pricingConfig.art.addOns.extraOutfit;
+                    min += extraOutfitAddOn;
+                    max += extraOutfitAddOn;
                 }
                 if (box.value === "Prop") {
-                    min += 16;
-                    max += 16;
+                    const propAddOn = pricingConfig.art.addOns.prop;
+                    min += propAddOn;
+                    max += propAddOn;
                 }
             });
 
@@ -5782,8 +6071,32 @@ function attachDynamicEstimator(formId, baseType) {
         } else if (baseType === 'fursuit') {
             const typeSel = form.querySelector('[name="partType"]');
             const addons = form.querySelectorAll('[name="addon"]:checked');
-            if(typeSel) min = parseInt(typeSel.options[typeSel.selectedIndex].dataset.price || 0, 10) || 0;
-            max = min + (min * 0.5); 
+            const pricingConfig = getPricingConfig();
+            const fursuitPriceMap = {
+                'Tail': pricingConfig.fursuits.tail,
+                'Paws': pricingConfig.fursuits.paws,
+                'Paws & Tail': pricingConfig.fursuits.pawsTailSet,
+                'Feet Paws': pricingConfig.fursuits.feetPaws,
+                'Trio Set': pricingConfig.fursuits.trioSet,
+                'Head': pricingConfig.fursuits.head,
+                'Mini Partial': pricingConfig.fursuits.miniPartial,
+                'Full Partial': pricingConfig.fursuits.fullPartial,
+                'Accessories': 50,
+                'Other': 50
+            };
+
+            const selectedType = String(typeSel?.value || 'Tail');
+            const selectedBase = Number(fursuitPriceMap[selectedType]);
+            min = Number.isFinite(selectedBase)
+                ? selectedBase
+                : (Number(typeSel?.options?.[typeSel.selectedIndex]?.dataset.price || 0) || 0);
+
+            let variabilityMultiplier = 1;
+            if (selectedType === 'Head') variabilityMultiplier = 1.15;
+            if (selectedType === 'Mini Partial' || selectedType === 'Full Partial') variabilityMultiplier = 1.18;
+            if (selectedType === 'Other') variabilityMultiplier = 1.4;
+
+            max = Math.round(min * variabilityMultiplier);
 
             addons.forEach(box => {
                 if (box.value === 'Rush Order') {
@@ -6202,6 +6515,7 @@ function loadHomePage() {
                 <div class="home-cta-proof-row" aria-label="Conversion trust row">
                     <p class="home-proof-badge" aria-label="Average reply time"><span>Avg reply</span><strong id="homeHeroAvgReply">${escapeHTML(availability.responseTime)}</strong></p>
                     <p class="home-proof-badge" aria-label="Approved reviews"><span>Approved reviews</span><strong id="homeApprovedReviewsCount">${window.homeReviewSummary.approvedCount}</strong></p>
+                    <p class="home-proof-badge" aria-label="Open slots"><span>Open slots</span><strong id="homeOpenSlotsCount">${Math.max(0, Number(husky.slots) || 0) + Math.max(0, Number(lopside.slots) || 0)}</strong></p>
                     <p class="home-proof-badge" aria-label="Queue freshness"><span>Queue updated</span><strong id="homeQueueUpdatedLabel">${escapeHTML(formatQueueFreshnessLabel(window.homeQueueFreshness.latestUpdatedAtMs))}</strong></p>
                 </div>
                 <section class="home-availability-snapshot" aria-label="Weekly availability snapshot">
@@ -6358,6 +6672,12 @@ function loadHomePage() {
             <button type="button" class="home-final-cta-pricing-link" id="homeFinalCtaPricingBtn">Need pricing first? View Pricing Sheet</button>
             <p class="home-final-cta-reassure">No payment needed to submit an inquiry.</p>
         </section>
+
+        <section class="home-smart-action-bar" id="homeSmartActionBar" aria-label="Quick actions">
+            <button type="button" class="nav-btn home-smart-action-primary" id="homeSmartPrimaryBtn" data-target="preorder">Start Request</button>
+            <button type="button" class="nav-btn home-smart-action-secondary" id="homeSmartStatusBtn">Check Status</button>
+            <button type="button" class="nav-btn home-smart-action-secondary" id="homeSmartPricingBtn">Pricing</button>
+        </section>
     `;
     bindCareGuideGridModal();
     bindCoreMenuControls();
@@ -6366,6 +6686,7 @@ function loadHomePage() {
     installSectionRevealAnimations(appViewport);
     applyHomeAvailabilityToCurrentDOM();
     applyHomeTrustSignalsToCurrentDOM();
+    bindHomeConversionPack();
     bootstrapHomeVisuals();
     siteGuide.refresh();
 }
@@ -6490,6 +6811,7 @@ function loadPreorderPage() {
                 <div class="menu-section">
                     <h3>Pricing & Info</h3>
                     <p class="menu-section-subtitle">Check price ranges or track an order before starting a new request.</p>
+                    <button type="button" class="preorder-btn preorder-btn-violet" id="btnQuickActor">Quick Actor</button>
                     <button type="button" class="preorder-btn preorder-btn-violet" id="btnPricing">Pricing Sheet</button>
                     <button type="button" class="preorder-btn preorder-btn-cyan" id="btnStatusCheck">Check Preorder Status</button>
                 </div>
@@ -6515,6 +6837,7 @@ function loadPreorderPage() {
         </div>
     `;
 
+    document.getElementById('btnQuickActor').addEventListener('click', (e) => cinematicTransition(e, loadQuickActorPage, '#quick-actor'));
     document.getElementById('btnPricing').addEventListener('click', (e) => cinematicTransition(e, loadPricingPage, '#pricing'));
     document.getElementById('btnStatusCheck').addEventListener('click', (e) => cinematicTransition(e, loadStatusCheckPage, '#status'));
     document.getElementById('btnHuskysList').addEventListener('click', (e) => cinematicTransition(e, loadHuskysListPage, '#horizon-queue'));
@@ -6547,6 +6870,142 @@ function loadPreorderPage() {
     });
 
     attachInnerScrollListener();
+    bindHomeConversionPack();
+    bindSiteGuideTriggers(appViewport);
+    installSectionRevealAnimations(appViewport);
+    siteGuide.refresh();
+}
+
+function loadQuickActorPage() {
+    clearBubbles();
+    bodyElement.setAttribute('data-theme', 'quick-actor');
+    bodyElement.setAttribute('data-page', 'quick-actor');
+    renderDynamicMoon();
+    renderDashboardStars();
+
+    appViewport.innerHTML = `
+        <div class="quick-actor-page-shell">
+            <div class="quick-actor-galaxy-stars" aria-hidden="true">
+                <span class="quick-actor-star s1"></span><span class="quick-actor-star s2"></span><span class="quick-actor-star s3"></span><span class="quick-actor-star s4"></span>
+                <span class="quick-actor-star s5"></span><span class="quick-actor-star s6"></span><span class="quick-actor-star s7"></span><span class="quick-actor-star s8"></span>
+                <span class="quick-actor-star s9"></span><span class="quick-actor-star s10"></span><span class="quick-actor-star s11"></span><span class="quick-actor-star s12"></span>
+            </div>
+
+            <div class="quick-actor-card-shell">
+                <h1>Quick Actor</h1>
+                <p class="quick-actor-subtitle">Choose type, timing, and budget to get a fast recommendation, then preview a planning range before you submit.</p>
+
+                <section class="preorder-quick-actor-grid" aria-label="Quick Actor tools">
+                    <article class="home-conversion-card home-intent-card">
+                        <p class="home-conversion-kicker">Service Finder</p>
+                        <h4>Not sure where to start?</h4>
+                        <p class="home-conversion-copy">Pick your project type, timing, and budget. We will point you to the best request lane.</p>
+                        <div class="home-conversion-controls">
+                            <select id="homeIntentType" class="form-select">
+                                <option value="art">Digital Art</option>
+                                <option value="fursuit">Fursuit / Handmade</option>
+                                <option value="keychain">Keychains / Merch</option>
+                                <option value="sticker">Stickers</option>
+                                <option value="animation">Animation</option>
+                            </select>
+                            <select id="homeIntentDeadline" class="form-select">
+                                <option value="flexible">Flexible timing</option>
+                                <option value="soon">Needed soon</option>
+                                <option value="rush">Rush timeline</option>
+                            </select>
+                            <label class="home-intent-budget-field">Your budget (USD)
+                                <input id="homeIntentBudgetAmount" class="form-input" type="number" min="1" step="1" placeholder="Example: 150">
+                            </label>
+                        </div>
+                        <p class="home-intent-summary" id="homeIntentSummary">Best lane will appear here.</p>
+                        <p class="home-intent-budget-message" id="homeIntentBudgetMessage">Enter a target budget and we will instantly tell you if it fits this lane.</p>
+                        <button type="button" class="nav-btn home-conversion-btn" id="homeIntentPrimaryBtn">Start Art Request</button>
+                    </article>
+
+                    <article class="home-conversion-card home-estimator-card">
+                        <p class="home-conversion-kicker">Quick Estimator</p>
+                        <h4>Planning range before you order</h4>
+                        <p class="home-conversion-copy">This gives a rough planning range. Final pricing is confirmed after review.</p>
+                        <div class="home-conversion-controls">
+                            <select id="homeTeaserType" class="form-select">
+                                <optgroup label="Digital Art">
+                                    <option value="art-icon">Art: Icon</option>
+                                    <option value="art-headshot">Art: Headshot</option>
+                                    <option value="art-bust">Art: Bust</option>
+                                    <option value="art-halfbody">Art: Half Body</option>
+                                    <option value="art-fullbody">Art: Full Body</option>
+                                    <option value="art-scene">Art: Scene</option>
+                                    <option value="art-ref-basic">Art: Ref Sheet (Basic)</option>
+                                    <option value="art-ref-standard">Art: Ref Sheet (Standard)</option>
+                                    <option value="art-ref-deluxe">Art: Ref Sheet (Deluxe)</option>
+                                </optgroup>
+                                <optgroup label="Animation">
+                                    <option value="animation-loop">Animation: Loop</option>
+                                    <option value="animation-simple">Animation: Simple</option>
+                                    <option value="animation-full-character">Animation: Full Character</option>
+                                    <option value="animation-complex-scene">Animation: Complex Scene</option>
+                                </optgroup>
+                                <optgroup label="Fursuits">
+                                    <option value="fursuit-tail">Fursuit: Tail</option>
+                                    <option value="fursuit-paws">Fursuit: Paws</option>
+                                    <option value="fursuit-paws-tail">Fursuit: Paws + Tail</option>
+                                    <option value="fursuit-feet-paws">Fursuit: Feet Paws</option>
+                                    <option value="fursuit-trio">Fursuit: Trio Set</option>
+                                    <option value="fursuit-head">Fursuit: Head</option>
+                                    <option value="fursuit-mini-partial">Fursuit: Mini Partial</option>
+                                    <option value="fursuit-full-partial">Fursuit: Full Partial</option>
+                                </optgroup>
+                                <optgroup label="Premade Keychains">
+                                    <option value="keychain-premade-clear">Premade Keychain: Clear Acrylic</option>
+                                    <option value="keychain-premade-epoxy">Premade Keychain: Epoxy</option>
+                                    <option value="keychain-premade-colored">Premade Keychain: Colored Acrylic</option>
+                                    <option value="keychain-premade-rainbow">Premade Keychain: Rainbow Acrylic</option>
+                                    <option value="keychain-premade-translucent">Premade Keychain: Translucent Acrylic</option>
+                                    <option value="keychain-premade-holographic">Premade Keychain: Holographic</option>
+                                    <option value="keychain-premade-glow">Premade Keychain: Glow in the Dark</option>
+                                </optgroup>
+                                <optgroup label="Custom Keychains">
+                                    <option value="keychain-custom-chibi">Custom Keychain: Chibi/Icon</option>
+                                    <option value="keychain-custom-half">Custom Keychain: Half Body</option>
+                                    <option value="keychain-custom-full">Custom Keychain: Full Body</option>
+                                    <option value="keychain-custom-complex">Custom Keychain: Complex Character</option>
+                                </optgroup>
+                                <optgroup label="Stickers">
+                                    <option value="sticker-single">Sticker: Single</option>
+                                    <option value="sticker-pair">Sticker: Matching Pair</option>
+                                    <option value="sticker-sheet">Sticker: Sheet</option>
+                                    <option value="sticker-small-batch">Sticker: Small Batch</option>
+                                </optgroup>
+                            </select>
+                            <label class="home-teaser-field">Quantity
+                                <input id="homeTeaserQty" class="form-input" type="number" min="1" max="10" value="1">
+                            </label>
+                            <label class="home-teaser-field">Complexity (0-3)
+                                <input id="homeTeaserComplexity" type="range" min="0" max="3" step="1" value="1">
+                            </label>
+                            <p class="home-teaser-complexity-note" id="homeTeaserComplexityHelp">Complexity 1: moderate detail, light markings, basic accessories. Based on markings, outfits, props, effects, and overall detail.</p>
+                            <label class="home-teaser-toggle"><input id="homeTeaserRush" type="checkbox"> Rush needed</label>
+                        </div>
+                        <p class="home-teaser-range" id="homeTeaserRange">$0 - $0</p>
+                        <p class="home-teaser-hint" id="homeTeaserHint">Set your options to preview a planning range.</p>
+                        <button type="button" class="nav-btn home-conversion-btn" id="homeTeaserPricingBtn">Open Full Pricing</button>
+                    </article>
+                </section>
+
+                <div class="quick-actor-actions">
+                    <button type="button" class="preorder-btn preorder-btn-violet" id="quickActorToPricingBtn">Open Pricing Sheet</button>
+                    <button type="button" class="preorder-btn preorder-back-btn" id="quickActorBackBtn">← Back to Preorder Menu</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('quickActorToPricingBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadPricingPage, '#pricing'));
+    document.getElementById('quickActorBackBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
+    if (siteGuide && typeof siteGuide.dismiss === 'function') {
+        siteGuide.dismiss();
+    }
+    bindHomeConversionPack();
     bindSiteGuideTriggers(appViewport);
     installSectionRevealAnimations(appViewport);
     siteGuide.refresh();
@@ -6685,56 +7144,56 @@ function loadPricingPage() {
                 <p style="color: #ef4444; font-size: 0.9rem; margin-top: -5px;">*Animation memes are currently closed due to workload.</p>
                 <h3>Icons</h3>
                 <div class="price-grid">
-                    <div class="price-item price-item-popular"><span>Flat Color <em class="price-item-flag">Popular start</em></span> <span>${artPrice('art.icon.flat', 24)}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.icon.cel', 36)}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.icon.rendered', 52)}</span></div>
+                    <div class="price-item price-item-popular"><span>Flat Color <em class="price-item-flag">Popular start</em></span> <span>${artPrice('art.icon.flat', 26)}</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.icon.cel', 38)}</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.icon.rendered', 54)}</span></div>
                 </div>
                 <h3>Headshots</h3>
                 <div class="price-grid">
-                    <div class="price-item price-item-popular"><span>Flat Color <em class="price-item-flag">Most common</em></span> <span>${artPrice('art.headshot.flat', 32)}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.headshot.cel', 44)}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.headshot.rendered', 60)}</span></div>
+                    <div class="price-item price-item-popular"><span>Flat Color <em class="price-item-flag">Most common</em></span> <span>${artPrice('art.headshot.flat', 40)}</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.headshot.cel', 55)}</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.headshot.rendered', 74)}</span></div>
                 </div>
                 <h3>Busts</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Flat Color</span> <span>${artPrice('art.bust.flat', 44)}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.bust.cel', 60)}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.bust.rendered', 80)}</span></div>
+                    <div class="price-item"><span>Flat Color</span> <span>${artPrice('art.bust.flat', 48)}</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.bust.cel', 66)}</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.bust.rendered', 88)}</span></div>
                 </div>
                 <h3>Half Bodies</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Flat Color</span> <span>${artPrice('art.halfBody.flat', 56)}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.halfBody.cel', 72)}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.halfBody.rendered', 96)}</span></div>
+                    <div class="price-item"><span>Flat Color</span> <span>${artPrice('art.halfBody.flat', 68)}</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.halfBody.cel', 90)}</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.halfBody.rendered', 118)}</span></div>
                 </div>
                 <h3>Full Bodies</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Flat Color</span> <span>${artPrice('art.fullBody.flat', 72)}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.fullBody.cel', 96)}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.fullBody.rendered', 128)}</span></div>
+                    <div class="price-item"><span>Flat Color</span> <span>${artPrice('art.fullBody.flat', 88)}</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.fullBody.cel', 116)}</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.fullBody.rendered', 152)}</span></div>
                 </div>
                 <h3>Scenes</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Flat Color</span> <span>${artPrice('art.scene.flat', 160)}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.scene.cel', 200)}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.scene.rendered', 240)}</span></div>
+                    <div class="price-item"><span>Flat Color</span> <span>${artPrice('art.scene.flat', 190)}</span></div>
+                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.scene.cel', 240)}</span></div>
+                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.scene.rendered', 300)}</span></div>
                 </div>
                 <h3>Reference Sheets</h3>
                 <ul>
-                    <li><strong>Basic: ${artPrice('art.refSheets.basic', 160)}</strong><br>Includes front view, color palette, and basic info.</li>
-                    <li><strong>Standard: ${artPrice('art.refSheets.standard', 220)}</strong><br>Includes front & back views, palette, and detail notes.</li>
-                    <li><strong>Deluxe: ${artPrice('art.refSheets.deluxe', 280, true)}</strong><br>Includes front & back views, expressions, outfit variations, props, and detail panels.</li>
+                    <li><strong>Basic: ${artPrice('art.refSheets.basic', 190)}</strong><br>Includes front view, color palette, and basic info.</li>
+                    <li><strong>Standard: ${artPrice('art.refSheets.standard', 260)}</strong><br>Includes front & back views, palette, and detail notes.</li>
+                    <li><strong>Deluxe: ${artPrice('art.refSheets.deluxe', 330, true)}</strong><br>Includes front & back views, expressions, outfit variations, props, and detail panels.</li>
                 </ul>
                 <h3>Discord Stickers</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>6 Pack</span> <span>${stickerPrice('art.addOns.stickerPack', 75)}</span></div>
+                    <div class="price-item"><span>6 Pack</span> <span>${stickerPrice('art.addOns.stickerPack', 85)}</span></div>
                 </div>
                 <h3>Add-ons</h3>
                 <div class="pricing-chip-grid">
                     <div class="pricing-chip"><strong>Extra Character</strong><span>+80%</span></div>
-                    <div class="pricing-chip"><strong>Extra Outfit</strong><span>+${artPrice('art.addOns.extraOutfit', 24)}</span></div>
-                    <div class="pricing-chip"><strong>Prop</strong><span>+${artPrice('art.addOns.prop', 16)}</span></div>
-                    <div class="pricing-chip"><strong>Detailed Background</strong><span>+${artPrice('art.addOns.detailedBackground', 40, true)}</span></div>
+                    <div class="pricing-chip"><strong>Extra Outfit</strong><span>+${artPrice('art.addOns.extraOutfit', 28)}</span></div>
+                    <div class="pricing-chip"><strong>Prop</strong><span>+${artPrice('art.addOns.prop', 20)}</span></div>
+                    <div class="pricing-chip"><strong>Detailed Background</strong><span>+${artPrice('art.addOns.detailedBackground', 50, true)}</span></div>
                     <div class="pricing-chip"><strong>Commercial License</strong><span>+100%</span></div>
                     <div class="pricing-chip"><strong>Rush Order</strong><span>+50%</span></div>
                 </div>
@@ -6943,6 +7402,7 @@ function loadPricingPage() {
 // ==========================================
 
 function loadHuskyArtForm() {
+    const artPricing = getPricingConfig().art;
     clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'art-form'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="form-card">
@@ -6973,15 +7433,15 @@ function loadHuskyArtForm() {
                 <div class="form-group">
                     <label>Commission Type <span>*</span></label>
                     <select name="artType" id="artTypeSelect" class="form-select" required>
-                        <option value="Icon" data-price="24">Icon (Start $24)</option>
-                        <option value="Headshot" data-price="32">Headshot (Start $32)</option>
-                        <option value="Bust" data-price="44">Bust (Start $44)</option>
-                        <option value="Half Body" data-price="56">Half Body (Start $56)</option>
-                        <option value="Full Body" data-price="72">Full Body (Start $72)</option>
-                        <option value="Scene" data-price="160">Scene (Start $160)</option>
-                        <option value="Basic Ref Sheet" data-price="160">Basic Ref Sheet ($160)</option>
-                        <option value="Standard Ref Sheet" data-price="220">Standard Ref Sheet ($220)</option>
-                        <option value="Deluxe Ref Sheet" data-price="280">Deluxe Ref Sheet (Start $280)</option>
+                        <option value="Icon" data-price="${artPricing.icon.flat}">Icon (Start $${artPricing.icon.flat})</option>
+                        <option value="Headshot" data-price="${artPricing.headshot.flat}">Headshot (Start $${artPricing.headshot.flat})</option>
+                        <option value="Bust" data-price="${artPricing.bust.flat}">Bust (Start $${artPricing.bust.flat})</option>
+                        <option value="Half Body" data-price="${artPricing.halfBody.flat}">Half Body (Start $${artPricing.halfBody.flat})</option>
+                        <option value="Full Body" data-price="${artPricing.fullBody.flat}">Full Body (Start $${artPricing.fullBody.flat})</option>
+                        <option value="Scene" data-price="${artPricing.scene.flat}">Scene (Start $${artPricing.scene.flat})</option>
+                        <option value="Basic Ref Sheet" data-price="${artPricing.refSheets.basic}">Basic Ref Sheet ($${artPricing.refSheets.basic})</option>
+                        <option value="Standard Ref Sheet" data-price="${artPricing.refSheets.standard}">Standard Ref Sheet ($${artPricing.refSheets.standard})</option>
+                        <option value="Deluxe Ref Sheet" data-price="${artPricing.refSheets.deluxe}">Deluxe Ref Sheet (Start $${artPricing.refSheets.deluxe})</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -7007,9 +7467,9 @@ function loadHuskyArtForm() {
                     <label>Add-ons (Optional)</label>
                     <div style="display:flex; flex-direction:column; gap:10px; margin-top:5px;">
                         <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Extra Character"> Extra Character (+80%)</label>
-                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Detailed Background"> Detailed Background (Start +$40)</label>
-                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Extra Outfit"> Extra Outfit (+$24)</label>
-                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Prop"> Prop (+$16)</label>
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Detailed Background"> Detailed Background (Start +$${artPricing.addOns.detailedBackground})</label>
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Extra Outfit"> Extra Outfit (+$${artPricing.addOns.extraOutfit})</label>
+                        <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Prop"> Prop (+$${artPricing.addOns.prop})</label>
                         <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Commercial License"> Commercial License (+100%)</label>
                         <label style="color:#a2b7cc; font-weight:normal; font-size:0.95rem; cursor:pointer;"><input type="checkbox" name="addon" value="Rush Order"> Rush Order (+50%)</label>
                     </div>
@@ -10696,21 +11156,23 @@ function estimateOrderRevenue(order) {
     };
 
     if (serviceType === 'art') {
+        const pricingConfig = getPricingConfig();
+        const artAddOns = pricingConfig.art.addOns;
         const artType = String(order?.artType || '').trim();
         const shading = String(order?.shadingStyle || '').toLowerCase();
         const styleKey = shading.includes('render')
             ? 'rendered'
             : (shading.includes('cel') ? 'cel' : 'flat');
         const table = {
-            'Icon': { flat: 24, cel: 36, rendered: 52 },
-            'Headshot': { flat: 32, cel: 44, rendered: 60 },
-            'Bust': { flat: 44, cel: 60, rendered: 80 },
-            'Half Body': { flat: 56, cel: 72, rendered: 96 },
-            'Full Body': { flat: 72, cel: 96, rendered: 128 },
-            'Scene': { flat: 160, cel: 200, rendered: 240 },
-            'Basic Ref Sheet': { flat: 160, cel: 160, rendered: 160 },
-            'Standard Ref Sheet': { flat: 220, cel: 220, rendered: 220 },
-            'Deluxe Ref Sheet': { flat: 280, cel: 280, rendered: 280 }
+            'Icon': { flat: 26, cel: 38, rendered: 54 },
+            'Headshot': { flat: 40, cel: 55, rendered: 74 },
+            'Bust': { flat: 48, cel: 66, rendered: 88 },
+            'Half Body': { flat: 68, cel: 90, rendered: 118 },
+            'Full Body': { flat: 88, cel: 116, rendered: 152 },
+            'Scene': { flat: 190, cel: 240, rendered: 300 },
+            'Basic Ref Sheet': { flat: 190, cel: 190, rendered: 190 },
+            'Standard Ref Sheet': { flat: 260, cel: 260, rendered: 260 },
+            'Deluxe Ref Sheet': { flat: 330, cel: 330, rendered: 330 }
         };
         const styleTable = table[artType] || table['Headshot'];
         let estimate = Number(styleTable?.[styleKey] || styleTable?.flat || 32);
@@ -10721,9 +11183,9 @@ function estimateOrderRevenue(order) {
         }
 
         if (includesAddon('extra character') && characterCount <= 1) estimate *= 1.8;
-        if (includesAddon('extra outfit')) estimate += 24;
-        if (includesAddon('prop')) estimate += 16;
-        if (includesAddon('detailed background')) estimate += 40;
+        if (includesAddon('extra outfit')) estimate += artAddOns.extraOutfit;
+        if (includesAddon('prop')) estimate += artAddOns.prop;
+        if (includesAddon('detailed background')) estimate += artAddOns.detailedBackground;
         if (includesAddon('rush order')) estimate *= 1.5;
         if (includesAddon('commercial license')) estimate *= 2;
 
@@ -17023,6 +17485,7 @@ const routes = {
     '#home': loadHomePage,
     '#gallery': loadGalleryPage,
     '#preorder': loadPreorderPage,
+    '#quick-actor': loadQuickActorPage,
     '#pricing': loadPricingPage,
     '#whatwedo': loadWhatWeDoPage,
     '#updates': loadAnnouncementsPage,
