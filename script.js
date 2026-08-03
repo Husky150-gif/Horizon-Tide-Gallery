@@ -1187,7 +1187,7 @@ function getPriceEstimatorHTML() {
     return `
         <div class="price-estimator">
             <p class="price-estimator-title">Estimated Price Range:</p>
-            <h2 id="liveEstimate" class="price-estimator-range">$0.00 - $0.00</h2>
+            <h2 id="liveEstimate" class="price-estimator-range">$0.00</h2>
             <div id="discountSavingsLine" style="color: #ef4444; font-weight: bold; font-size: 0.95rem; text-align: center; display: none; margin-top: 5px;"></div>
             <div class="best-fit-recommendation" aria-live="polite">
                 <p class="best-fit-kicker">Best fit for your request</p>
@@ -1440,7 +1440,7 @@ function renderFormSummary(form, summaryCard, config) {
     });
 
     const estimateEl = form.querySelector('#liveEstimate');
-    const estimateValue = estimateEl instanceof HTMLElement ? estimateEl.textContent?.trim() || '$0.00 - $0.00' : '$0.00 - $0.00';
+    const estimateValue = estimateEl instanceof HTMLElement ? estimateEl.textContent?.trim() || '$0.00' : '$0.00';
     rows.push(`<div class="form-summary-item"><span>Estimate</span><strong>${escapeHTML(estimateValue)}</strong></div>`);
 
     grid.innerHTML = rows.join('');
@@ -3897,14 +3897,27 @@ function renderPrice(base, type, isPlus = false) {
     return `$${base}${isPlus ? '+' : ''}`;
 }
 
+function formatEstimateRange(min, max, options = {}) {
+    const isPlus = Boolean(options?.isPlus);
+    const separator = typeof options?.separator === 'string' ? options.separator : ' - ';
+    const suffix = isPlus ? '+' : '';
+    const safeMin = Number.isFinite(Number(min)) ? Math.round(Number(min)) : 0;
+    const safeMax = Number.isFinite(Number(max)) ? Math.round(Number(max)) : safeMin;
+
+    if (safeMin === safeMax) return `$${safeMin}${suffix}`;
+    return `$${safeMin}${separator}$${safeMax}${suffix}`;
+}
+
 function renderPriceRange(min, max, type, isPlus = false) {
     const pct = getBestDiscount(type);
     if (pct > 0) {
         const newMin = Math.round(min * (1 - pct / 100));
         const newMax = Math.round(max * (1 - pct / 100));
-        return `<span style="text-decoration: line-through; color: #a2b7cc; font-size: 0.9em; margin-right: 8px;">$${min}–$${max}${isPlus ? '+' : ''}</span><span style="color: #22c55e; font-weight: bold;">$${newMin}–$${newMax}${isPlus ? '+' : ''} <span class="announcement-badge" style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; vertical-align: middle; margin-left: 5px; border-color: #ef4444;">${pct}% OFF</span></span>`;
+        const regularRange = formatEstimateRange(min, max, { isPlus, separator: '–' });
+        const saleRange = formatEstimateRange(newMin, newMax, { isPlus, separator: '–' });
+        return `<span style="text-decoration: line-through; color: #a2b7cc; font-size: 0.9em; margin-right: 8px;">${regularRange}</span><span style="color: #22c55e; font-weight: bold;">${saleRange} <span class="announcement-badge" style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; vertical-align: middle; margin-left: 5px; border-color: #ef4444;">${pct}% OFF</span></span>`;
     }
-    return `$${min}–$${max}${isPlus ? '+' : ''}`;
+    return formatEstimateRange(min, max, { isPlus, separator: '–' });
 }
 
 function getDefaultPricingConfig() {
@@ -6035,7 +6048,7 @@ function bindHomeConversionPack() {
         const min = pct > 0 ? Math.round(boundedMin * (1 - pct / 100)) : boundedMin;
         const max = pct > 0 ? Math.round(boundedMax * (1 - pct / 100)) : boundedMax;
 
-        teaserRange.textContent = `$${min} - $${max}`;
+        teaserRange.textContent = formatEstimateRange(min, max);
         const discountDetail = pct > 0 ? ` Includes active ${pct}% sale pricing.` : '';
         const complexityDetail = spread > 0
             ? 'Higher complexity moves your estimate toward the top of this selected tier.'
@@ -6454,8 +6467,8 @@ function attachDynamicEstimator(formId, baseType) {
                 else saveLine.innerText = `Discount Applied: ${pct}% off — You saved $${savedMin} - $${savedMax}`;
             }
 
-            let origText = `$${origMin.toFixed(0)} - $${origMax.toFixed(0)}`;
-            let newText = `$${min.toFixed(0)} - $${max.toFixed(0)}`;
+            let origText = formatEstimateRange(origMin, origMax);
+            let newText = formatEstimateRange(min, max);
 
             estDisplay.innerText = newText;
             applyBestFitRecommendation(form, baseType, min, max);
@@ -6468,7 +6481,7 @@ function attachDynamicEstimator(formId, baseType) {
             if(saveLine) saveLine.style.display = 'none';
         }
 
-        estDisplay.innerText = `$${min.toFixed(0)} - $${max.toFixed(0)}`;
+        estDisplay.innerText = formatEstimateRange(min, max);
         applyBestFitRecommendation(form, baseType, min, max);
     }
 
@@ -7243,7 +7256,7 @@ function loadQuickActorPage() {
                             <p class="home-teaser-complexity-note" id="homeTeaserComplexityHelp">Complexity 1: moderate detail, light markings, basic accessories. Based on markings, outfits, props, effects, and overall detail.</p>
                             <label class="home-teaser-toggle"><input id="homeTeaserRush" type="checkbox"> Rush needed</label>
                         </div>
-                        <p class="home-teaser-range" id="homeTeaserRange">$0 - $0</p>
+                        <p class="home-teaser-range" id="homeTeaserRange">$0</p>
                         <p class="home-teaser-hint" id="homeTeaserHint">Set your options to preview a planning range.</p>
                         <button type="button" class="nav-btn home-conversion-btn" id="homeTeaserPricingBtn">Open Full Pricing</button>
                     </article>
