@@ -252,6 +252,7 @@ const ADMIN_REVENUE_SCOPE_OPTIONS = new Set(['pipeline', 'paid-plus', 'completed
 const ADMIN_IDLE_TIMEOUT_MS = 10 * 60 * 1000;
 const ADMIN_ACCEPTED_STALE_DAYS = 7;
 const ADMIN_REMINDER_COOLDOWN_MS = 18 * 60 * 60 * 1000;
+const QUICK_ACTOR_PREFILL_KEY = 'hz_quick_actor_prefill';
 const NAVIGATION_ENTRY = typeof performance !== 'undefined' && typeof performance.getEntriesByType === 'function'
     ? performance.getEntriesByType('navigation')[0]
     : null;
@@ -5650,6 +5651,73 @@ function getHomeIntentRoute(typeValue) {
     return { label: 'Start Art Request', action: loadHuskyArtForm, hash: '#art' };
 }
 
+function getQuickActorRouteForTeaserType(typeValue) {
+    const type = String(typeValue || '').toLowerCase();
+    if (type.startsWith('fursuit-')) return { action: loadFursuitForm, hash: '#fursuits' };
+    if (type.startsWith('keychain-')) return { action: loadCustomKeychainsForm, hash: '#custom-keychain' };
+    if (type.startsWith('sticker-')) return { action: loadCustomStickersForm, hash: '#stickers' };
+    return { action: loadHuskyArtForm, hash: '#art' };
+}
+
+function normalizeQuickActorDeadline(deadlineValue) {
+    const raw = String(deadlineValue || '').toLowerCase();
+    if (raw === 'rush') return 'Rush timeline requested (Quick Actor)';
+    if (raw === 'soon') return 'Needed soon (Quick Actor)';
+    return '';
+}
+
+function saveQuickActorPrefill(prefill) {
+    try {
+        sessionStorage.setItem(QUICK_ACTOR_PREFILL_KEY, JSON.stringify(prefill || {}));
+    } catch {
+        // Ignore storage failures. Form still opens normally.
+    }
+}
+
+function consumeQuickActorPrefill() {
+    try {
+        const raw = sessionStorage.getItem(QUICK_ACTOR_PREFILL_KEY);
+        if (!raw) return null;
+        sessionStorage.removeItem(QUICK_ACTOR_PREFILL_KEY);
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+        return null;
+    }
+}
+
+function getFriendlyAdminError(error) {
+    const code = String(error?.code || '').toLowerCase();
+    const message = String(error?.message || '').trim();
+
+    if (code === 'storage/unauthorized' || code === 'permission-denied' || code === 'firestore/permission-denied') {
+        return 'Permission denied. Confirm you are signed in to an authorized admin account.';
+    }
+    if (code === 'storage/canceled') {
+        return 'Upload was canceled before completion.';
+    }
+    if (code === 'storage/invalid-checksum') {
+        return 'Upload checksum mismatch. Please retry the upload.';
+    }
+    if (code === 'storage/retry-limit-exceeded' || code === 'deadline-exceeded') {
+        return 'Upload timed out. Check your connection and try again.';
+    }
+    if (code === 'storage/quota-exceeded') {
+        return 'Storage quota exceeded for this project.';
+    }
+    if (code === 'storage/invalid-format' || code === 'storage/invalid-argument') {
+        return 'Invalid file format or upload data.';
+    }
+    if (code === 'unauthenticated' || code === 'firestore/unauthenticated') {
+        return 'Your admin session expired. Sign in again and retry.';
+    }
+    if (code === 'unavailable' || code === 'firestore/unavailable') {
+        return 'Service is temporarily unavailable. Please retry in a moment.';
+    }
+
+    return message || 'Unexpected error. Please retry.';
+}
+
 function getHomeIntentMinimum(typeValue, pricingConfig) {
     const intent = String(typeValue || '').toLowerCase();
     if (intent.includes('fursuit')) return pricingConfig.fursuits.paws;
@@ -5778,6 +5846,7 @@ function bindHomeConversionPack() {
             const pct = getBestDiscount(discountTarget);
             const min = pct > 0 ? Math.round(seedRange.min * (1 - pct / 100)) : Math.round(seedRange.min);
             return {
+                typeValue,
                 label: String(option.textContent || '').trim(),
                 min,
                 pct
@@ -5811,14 +5880,54 @@ function bindHomeConversionPack() {
         }
 
         const hasDiscounted = eligible.some((item) => item.pct > 0);
-        intentEligibleSummary.textContent = `With $${Math.round(enteredBudget)}, you are eligible for ${eligible.length} ${serviceLabel} option${eligible.length === 1 ? '' : 's'}.${hasDiscounted ? ' Active sale pricing is included.' : ''}`;
+        intentEligibleSummary.textContent = `With $${Math.round(enteredBudget)}, you are eligible for ${eligible.length} ${serviceLabel} option${eligible.length === 1 ? '' : 's'}. Top matches are ready below.${hasDiscounted ? ' Active sale pricing is included.' : ''}`;
 
-        eligible.forEach((item) => {
+        eligible.slice(0, 3).forEach((item) => {
             const li = document.createElement('li');
             li.className = 'home-intent-eligible-item';
-            li.textContent = `${item.label} - starts around $${item.min}`;
+            const text = document.createElement('span');
+            text.textContent = `${item.label} - starts around $${item.min}`;
+            const goBtn = document.createElement('button');
+            goBtn.type = 'button';
+            goBtn.className = 'home-intent-eligible-go';
+            goBtn.textContent = 'Start this';
+            goBtn.dataset.itemType = item.typeValue;
+            goBtn.dataset.itemLabel = item.label;
+            goBtn.dataset.itemMin = String(item.min);
+            li.appendChild(text);
+            li.appendChild(goBtn);
             intentEligibleList.appendChild(li);
         });
+
+        if (eligible.length > 3) {
+            const more = document.createElement('li');
+            more.className = 'home-intent-eligible-item home-intent-eligible-item--more';
+            more.textContent = `+${eligible.length - 3} more options fit this budget. Use the estimator dropdown for all matches.`;
+            intentEligibleList.appendChild(more);
+        }
+    };
+
+    const handleEligibleStartClick = (event) => {
+        const trigger = event.target instanceof HTMLElement ? event.target.closest('.home-intent-eligible-go') : null;
+        if (!(trigger instanceof HTMLButtonElement)) return;
+        const itemType = String(trigger.dataset.itemType || '').trim();
+        if (!itemType) return;
+
+        const enteredBudget = Number(intentBudgetAmount instanceof HTMLInputElement ? intentBudgetAmount.value : NaN);
+        const deadlineValue = intentDeadline instanceof HTMLSelectElement ? intentDeadline.value : 'flexible';
+        const route = getQuickActorRouteForTeaserType(itemType);
+
+        saveQuickActorPrefill({
+            source: 'quick-actor',
+            itemType,
+            itemLabel: String(trigger.dataset.itemLabel || ''),
+            itemMin: Number(trigger.dataset.itemMin || 0) || 0,
+            budget: Number.isFinite(enteredBudget) && enteredBudget > 0 ? Math.round(enteredBudget) : null,
+            deadline: normalizeQuickActorDeadline(deadlineValue),
+            atMs: Date.now()
+        });
+
+        cinematicTransition(event, route.action, route.hash);
     };
 
     const updateIntentSummary = () => {
@@ -5953,6 +6062,7 @@ function bindHomeConversionPack() {
     intentDeadline?.addEventListener('change', updateIntentSummary);
     intentBudget?.addEventListener('change', updateIntentSummary);
     intentBudgetAmount?.addEventListener('input', updateIntentSummary);
+    intentEligibleList?.addEventListener('click', handleEligibleStartClick);
     intentPrimaryBtn?.addEventListener('click', handleIntentPrimaryClick);
     teaserType?.addEventListener('change', updateTeaserEstimate);
     teaserQty?.addEventListener('input', updateTeaserEstimate);
@@ -5970,6 +6080,7 @@ function bindHomeConversionPack() {
         intentDeadline?.removeEventListener('change', updateIntentSummary);
         intentBudget?.removeEventListener('change', updateIntentSummary);
         intentBudgetAmount?.removeEventListener('input', updateIntentSummary);
+        intentEligibleList?.removeEventListener('click', handleEligibleStartClick);
         intentPrimaryBtn?.removeEventListener('click', handleIntentPrimaryClick);
         teaserType?.removeEventListener('change', updateTeaserEstimate);
         teaserQty?.removeEventListener('input', updateTeaserEstimate);
@@ -7509,6 +7620,113 @@ function loadPricingPage() {
 // PART 3 of 4: PUBLIC FORMS & INFO PAGES
 // ==========================================
 
+function setFormControlValue(form, name, value) {
+    if (!(form instanceof HTMLFormElement)) return;
+    const control = form.querySelector(`[name="${String(name || '').replace(/"/g, '')}"]`);
+    if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement || control instanceof HTMLSelectElement)) return;
+    control.value = String(value || '');
+    control.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function appendFormNotes(form, text) {
+    if (!(form instanceof HTMLFormElement)) return;
+    const notes = form.querySelector('[name="notes"]');
+    if (!(notes instanceof HTMLTextAreaElement)) return;
+    const clean = String(text || '').trim();
+    if (!clean) return;
+    if (notes.value.includes(clean)) return;
+    notes.value = notes.value.trim() ? `${notes.value.trim()}\n${clean}` : clean;
+}
+
+function applyQuickActorPrefillToForm(formId, formKind) {
+    const prefill = consumeQuickActorPrefill();
+    if (!prefill || prefill.source !== 'quick-actor') return;
+
+    const form = document.getElementById(formId);
+    if (!(form instanceof HTMLFormElement)) return;
+
+    const itemType = String(prefill.itemType || '').toLowerCase();
+    const budget = Number(prefill.budget);
+    const budgetText = Number.isFinite(budget) && budget > 0 ? `$${Math.round(budget)}` : null;
+    const deadlineText = String(prefill.deadline || '').trim();
+    const itemLabel = String(prefill.itemLabel || '').trim();
+
+    if (formKind === 'art') {
+        const map = {
+            'art-icon': 'Icon',
+            'art-headshot': 'Headshot',
+            'art-bust': 'Bust',
+            'art-halfbody': 'Half Body',
+            'art-fullbody': 'Full Body',
+            'art-scene': 'Scene',
+            'art-ref-basic': 'Basic Ref Sheet',
+            'art-ref-standard': 'Standard Ref Sheet',
+            'art-ref-deluxe': 'Deluxe Ref Sheet'
+        };
+        if (map[itemType]) {
+            setFormControlValue(form, 'artType', map[itemType]);
+        }
+    }
+
+    if (formKind === 'fursuit') {
+        const map = {
+            'fursuit-tail': 'Tail',
+            'fursuit-paws': 'Paws',
+            'fursuit-paws-tail': 'Paws & Tail',
+            'fursuit-feet-paws': 'Feet Paws',
+            'fursuit-trio': 'Trio Set',
+            'fursuit-head': 'Head',
+            'fursuit-mini-partial': 'Mini Partial',
+            'fursuit-full-partial': 'Full Partial'
+        };
+        if (map[itemType]) {
+            setFormControlValue(form, 'partType', map[itemType]);
+        }
+    }
+
+    if (formKind === 'keychain') {
+        const map = {
+            'keychain-custom-chibi': 'Chibi/Icon',
+            'keychain-premade-clear': 'Chibi/Icon',
+            'keychain-premade-epoxy': 'Chibi/Icon',
+            'keychain-premade-colored': 'Chibi/Icon',
+            'keychain-premade-rainbow': 'Chibi/Icon',
+            'keychain-premade-translucent': 'Chibi/Icon',
+            'keychain-premade-holographic': 'Chibi/Icon',
+            'keychain-premade-glow': 'Chibi/Icon',
+            'keychain-custom-half': 'Half Body',
+            'keychain-custom-full': 'Full Body',
+            'keychain-custom-complex': 'Complex Character'
+        };
+        if (map[itemType]) {
+            setFormControlValue(form, 'keychainType', map[itemType]);
+        }
+    }
+
+    if (formKind === 'sticker') {
+        const map = {
+            'sticker-single': 'Single Sticker',
+            'sticker-pair': 'Matching Pair',
+            'sticker-sheet': 'Sticker Sheet',
+            'sticker-small-batch': 'Small Batch'
+        };
+        if (map[itemType]) {
+            setFormControlValue(form, 'stickerType', map[itemType]);
+        }
+    }
+
+    if (deadlineText) {
+        setFormControlValue(form, 'deadline', deadlineText);
+    }
+
+    const notesChunks = [];
+    if (itemLabel) notesChunks.push(`Quick Actor pick: ${itemLabel}`);
+    if (budgetText) notesChunks.push(`Quick Actor budget target: ${budgetText}`);
+    if (notesChunks.length > 0) {
+        appendFormNotes(form, notesChunks.join(' | '));
+    }
+}
+
 function loadHuskyArtForm() {
     const artPricing = getPricingConfig().art;
     clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'art-form'); renderDynamicMoon(); renderDashboardStars();
@@ -7601,6 +7819,7 @@ function loadHuskyArtForm() {
     `;
     
     attachCharCounters();
+    applyQuickActorPrefillToForm('artForm', 'art');
     enhancePreorderForm('artForm', {
         sections: [
             {
@@ -7743,6 +7962,7 @@ function loadFursuitForm() {
     `;
     
     attachCharCounters();
+    applyQuickActorPrefillToForm('fursuitForm', 'fursuit');
     enhancePreorderForm('fursuitForm', {
         sections: [
             {
@@ -7889,6 +8109,7 @@ function loadCustomKeychainsForm() {
     `;
     
     attachCharCounters();
+    applyQuickActorPrefillToForm('customKeychainForm', 'keychain');
     enhancePreorderForm('customKeychainForm', {
         sections: [
             {
@@ -8037,6 +8258,7 @@ function loadCustomStickersForm() {
     `;
     
     attachCharCounters();
+    applyQuickActorPrefillToForm('stickerForm', 'sticker');
     enhancePreorderForm('stickerForm', {
         sections: [
             {
@@ -10225,6 +10447,57 @@ function extractSubmittedEstimateDiscountFromNotes(notesValue) {
     if (!text) return '';
     const match = text.match(/^Estimate Discount Snapshot:\s*(.+)$/im);
     return match && match[1] ? String(match[1]).trim() : '';
+}
+
+async function optimizeImageForUpload(file, options = {}) {
+    if (!(file instanceof File)) return file;
+    const mime = String(file.type || '').toLowerCase();
+    if (!mime.startsWith('image/')) return file;
+    if (mime === 'image/gif' || mime === 'image/svg+xml') return file;
+
+    const maxSide = Math.max(512, Math.floor(Number(options.maxSide) || 2000));
+    const quality = Math.max(0.55, Math.min(0.95, Number(options.quality) || 0.86));
+
+    const objectUrl = URL.createObjectURL(file);
+    try {
+        const image = await new Promise((resolve, reject) => {
+            const el = new Image();
+            el.onload = () => resolve(el);
+            el.onerror = () => reject(new Error('Image decode failed.'));
+            el.src = objectUrl;
+        });
+
+        const srcWidth = Math.max(1, Math.floor(image.naturalWidth || image.width || 1));
+        const srcHeight = Math.max(1, Math.floor(image.naturalHeight || image.height || 1));
+        const scale = Math.min(1, maxSide / Math.max(srcWidth, srcHeight));
+        const outWidth = Math.max(1, Math.floor(srcWidth * scale));
+        const outHeight = Math.max(1, Math.floor(srcHeight * scale));
+
+        const canvas = document.createElement('canvas');
+        canvas.width = outWidth;
+        canvas.height = outHeight;
+        const ctx = canvas.getContext('2d', { alpha: true });
+        if (!ctx) return file;
+        ctx.drawImage(image, 0, 0, outWidth, outHeight);
+
+        const webpBlob = await new Promise((resolve) => {
+            canvas.toBlob((blob) => resolve(blob), 'image/webp', quality);
+        });
+
+        if (!(webpBlob instanceof Blob) || webpBlob.size <= 0) return file;
+
+        // Keep original if recompression is not meaningfully smaller and no downscale happened.
+        if (scale >= 0.999 && webpBlob.size >= (file.size * 0.98)) {
+            return file;
+        }
+
+        const baseName = file.name.replace(/\.[^.]+$/, '') || `upload_${Date.now()}`;
+        return new File([webpBlob], `${baseName}.webp`, { type: 'image/webp', lastModified: Date.now() });
+    } catch {
+        return file;
+    } finally {
+        URL.revokeObjectURL(objectUrl);
+    }
 }
 
 function createStorageDownloadToken() {
@@ -15261,8 +15534,15 @@ function loadAdminDashboard() {
 
         try {
             if (selectedFile) {
-                const safeName = selectedFile.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
-                imageUrl = await uploadFileAndResolveUrl(selectedFile, `premade-keychains/gallery/${Date.now()}_${safeName}`);
+                const uploadFile = await optimizeImageForUpload(selectedFile, { maxSide: 2000, quality: 0.86 });
+                const safeName = uploadFile.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
+                imageUrl = await uploadFileAndResolveUrl(uploadFile, `premade-keychains/gallery/${Date.now()}_${safeName}`);
+                if (uploadFile !== selectedFile) {
+                    const savedKb = Math.max(0, Math.round((selectedFile.size - uploadFile.size) / 1024));
+                    if (savedKb > 0) {
+                        showAdminToast(`Image optimized before upload (${savedKb} KB smaller).`);
+                    }
+                }
             }
 
             const catalog = normalizeGalleryCatalog(window.galleryCatalog);
@@ -15297,7 +15577,7 @@ function loadAdminDashboard() {
             saveCompleted = true;
         } catch (error) {
             console.error(error);
-            showAdminToast('Failed to save gallery item.', true);
+            showAdminToast(`Failed to save gallery item. ${getFriendlyAdminError(error)}`, true);
         } finally {
             triggerBtn.disabled = false;
             if (!saveCompleted) {
@@ -15422,7 +15702,7 @@ function loadAdminDashboard() {
             e.target.reset();
         } catch (error) {
             console.error(error);
-            showAdminToast("Failed to save announcement.", true);
+            showAdminToast(`Failed to save announcement. ${getFriendlyAdminError(error)}`, true);
         } finally {
             if(!window.currentEditingAnnounceId) btn.innerText = "Publish Announcement";
             btn.disabled = false;
