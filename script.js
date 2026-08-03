@@ -3866,6 +3866,7 @@ function updateDiscountUI() {
     
     if(banner) {
         if (isAdminView) {
+            banner.innerHTML = '';
             banner.style.display = 'none';
             document.body.style.paddingTop = '0px';
         } else if (activeVisibleSales.length > 0) {
@@ -3881,6 +3882,7 @@ function updateDiscountUI() {
             banner.style.display = 'block';
             document.body.style.paddingTop = `${Math.max(40, banner.offsetHeight)}px`;
         } else {
+            banner.innerHTML = '';
             banner.style.display = 'none';
             document.body.style.paddingTop = '0px';
         }
