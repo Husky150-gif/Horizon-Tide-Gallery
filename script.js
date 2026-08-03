@@ -3941,7 +3941,7 @@ function getDefaultPricingConfig() {
             halfBody: { flat: 68, cel: 90, rendered: 118 },
             fullBody: { flat: 88, cel: 116, rendered: 152 },
             scene: { flat: 190, cel: 240, rendered: 300 },
-            refSheets: { basic: 190, standard: 260, deluxe: 330 },
+            refSheets: { basic: 190, basicMax: 228, standard: 260, standardMax: 317, deluxe: 330, deluxeMax: 413 },
             addOns: { extraOutfit: 28, prop: 20, detailedBackground: 50, stickerPack: 85 }
         },
         animation: {
@@ -4038,8 +4038,11 @@ function normalizePricingConfig(rawConfig) {
             },
             refSheets: {
                 basic: normalizePricingNumber(raw?.art?.refSheets?.basic, defaults.art.refSheets.basic),
+                basicMax: normalizePricingNumber(raw?.art?.refSheets?.basicMax, defaults.art.refSheets.basicMax),
                 standard: normalizePricingNumber(raw?.art?.refSheets?.standard, defaults.art.refSheets.standard),
-                deluxe: normalizePricingNumber(raw?.art?.refSheets?.deluxe, defaults.art.refSheets.deluxe)
+                standardMax: normalizePricingNumber(raw?.art?.refSheets?.standardMax, defaults.art.refSheets.standardMax),
+                deluxe: normalizePricingNumber(raw?.art?.refSheets?.deluxe, defaults.art.refSheets.deluxe),
+                deluxeMax: normalizePricingNumber(raw?.art?.refSheets?.deluxeMax, defaults.art.refSheets.deluxeMax)
             },
             addOns: {
                 extraOutfit: normalizePricingNumber(raw?.art?.addOns?.extraOutfit, defaults.art.addOns.extraOutfit),
@@ -4172,8 +4175,11 @@ function getPricingEditorFieldDefinitions() {
                 { label: 'Scene Cel', path: 'art.scene.cel' },
                 { label: 'Scene Rendered', path: 'art.scene.rendered' },
                 { label: 'Reference Sheet Basic', path: 'art.refSheets.basic' },
+                { label: 'Reference Sheet Basic Max', path: 'art.refSheets.basicMax' },
                 { label: 'Reference Sheet Standard', path: 'art.refSheets.standard' },
+                { label: 'Reference Sheet Standard Max', path: 'art.refSheets.standardMax' },
                 { label: 'Reference Sheet Deluxe', path: 'art.refSheets.deluxe' },
+                { label: 'Reference Sheet Deluxe Max', path: 'art.refSheets.deluxeMax' },
                 { label: 'Extra Outfit', path: 'art.addOns.extraOutfit' },
                 { label: 'Prop', path: 'art.addOns.prop' },
                 { label: 'Detailed Background', path: 'art.addOns.detailedBackground' },
@@ -5815,13 +5821,20 @@ function getArtRefSheetRange(pricingConfig, tier = 'basic') {
         standard: Number(pricingConfig?.art?.refSheets?.standard) || 260,
         deluxe: Number(pricingConfig?.art?.refSheets?.deluxe) || 330
     };
+    const configuredMaxMap = {
+        basic: Number(pricingConfig?.art?.refSheets?.basicMax) || 0,
+        standard: Number(pricingConfig?.art?.refSheets?.standardMax) || 0,
+        deluxe: Number(pricingConfig?.art?.refSheets?.deluxeMax) || 0
+    };
     const multiplierMap = {
         basic: 1.2,
         standard: 1.22,
         deluxe: 1.25
     };
     const min = Math.round(baseMap[safeTier] || baseMap.basic);
-    const max = Math.max(min, Math.round(min * (multiplierMap[safeTier] || multiplierMap.basic)));
+    const derivedMax = Math.round(min * (multiplierMap[safeTier] || multiplierMap.basic));
+    const configuredMax = Math.round(configuredMaxMap[safeTier] || 0);
+    const max = Math.max(min, configuredMax > 0 ? configuredMax : derivedMax);
     return { min, max };
 }
 
@@ -7339,6 +7352,11 @@ function loadPricingPage() {
     `;
     const pricingSectionCta = (buttonId, label) => `<button type="button" class="nav-btn pricing-inline-cta" id="${buttonId}">${label}</button>`;
     const artPrice = (path, fallback, isPlus = false) => renderPrice(getPricingConfigValue(path, fallback), 'art', isPlus);
+    const artTypeRange = (typePath, fallbackMin, fallbackMax) => renderPriceRange(
+        getPricingConfigValue(`${typePath}.flat`, fallbackMin),
+        getPricingConfigValue(`${typePath}.rendered`, fallbackMax),
+        'art'
+    );
     const animationPrice = (path, fallback, isPlus = false) => renderPrice(getPricingConfigValue(path, fallback), 'animations', isPlus);
     const animationRange = (minPath, maxPath, fallbackMin, fallbackMax, isPlus = false) => renderPriceRange(getPricingConfigValue(minPath, fallbackMin), getPricingConfigValue(maxPath, fallbackMax), 'animations', isPlus);
     const stickerPrice = (path, fallback, isPlus = false) => renderPrice(getPricingConfigValue(path, fallback), 'stickers', isPlus);
@@ -7456,39 +7474,27 @@ function loadPricingPage() {
                 <p style="color: #ef4444; font-size: 0.9rem; margin-top: -5px;">*Animation memes are currently closed due to workload.</p>
                 <h3>Icons</h3>
                 <div class="price-grid">
-                    <div class="price-item price-item-popular"><span>Flat Color <em class="price-item-flag">Popular start</em></span> <span>${artPrice('art.icon.flat', 26)}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.icon.cel', 38)}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.icon.rendered', 54)}</span></div>
+                    <div class="price-item price-item-popular"><span>Flat to Rendered <em class="price-item-flag">Popular start</em></span> <span>${artTypeRange('art.icon', 26, 54)}</span></div>
                 </div>
                 <h3>Headshots</h3>
                 <div class="price-grid">
-                    <div class="price-item price-item-popular"><span>Flat Color <em class="price-item-flag">Most common</em></span> <span>${artPrice('art.headshot.flat', 40)}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.headshot.cel', 55)}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.headshot.rendered', 74)}</span></div>
+                    <div class="price-item price-item-popular"><span>Flat to Rendered <em class="price-item-flag">Most common</em></span> <span>${artTypeRange('art.headshot', 40, 74)}</span></div>
                 </div>
                 <h3>Busts</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Flat Color</span> <span>${artPrice('art.bust.flat', 48)}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.bust.cel', 66)}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.bust.rendered', 88)}</span></div>
+                    <div class="price-item"><span>Flat to Rendered</span> <span>${artTypeRange('art.bust', 48, 88)}</span></div>
                 </div>
                 <h3>Half Bodies</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Flat Color</span> <span>${artPrice('art.halfBody.flat', 68)}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.halfBody.cel', 90)}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.halfBody.rendered', 118)}</span></div>
+                    <div class="price-item"><span>Flat to Rendered</span> <span>${artTypeRange('art.halfBody', 68, 118)}</span></div>
                 </div>
                 <h3>Full Bodies</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Flat Color</span> <span>${artPrice('art.fullBody.flat', 88)}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.fullBody.cel', 116)}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.fullBody.rendered', 152)}</span></div>
+                    <div class="price-item"><span>Flat to Rendered</span> <span>${artTypeRange('art.fullBody', 88, 152)}</span></div>
                 </div>
                 <h3>Scenes</h3>
                 <div class="price-grid">
-                    <div class="price-item"><span>Flat Color</span> <span>${artPrice('art.scene.flat', 190)}</span></div>
-                    <div class="price-item"><span>Cel Shaded</span> <span>${artPrice('art.scene.cel', 240)}</span></div>
-                    <div class="price-item"><span>Rendered</span> <span>${artPrice('art.scene.rendered', 300)}</span></div>
+                    <div class="price-item"><span>Flat to Rendered</span> <span>${artTypeRange('art.scene', 190, 300)}</span></div>
                 </div>
                 <h3>Reference Sheets</h3>
                 <ul>
