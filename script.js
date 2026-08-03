@@ -2378,7 +2378,18 @@ function buildGalleryImageAltText(item, index) {
 function getSafeMediaUrl(rawUrl) {
     const value = String(rawUrl || '').trim();
     if (!value) return '';
-    return /^https?:\/\//i.test(value) ? value : encodeURI(value);
+
+    let normalized = value;
+    // Repair legacy double-encoded Firebase storage URLs (for example `%252F` -> `%2F`).
+    if (/firebasestorage\.googleapis\.com/i.test(normalized) && /%25[0-9a-f]{2}/i.test(normalized)) {
+        try {
+            normalized = decodeURIComponent(normalized);
+        } catch {
+            normalized = value;
+        }
+    }
+
+    return /^https?:\/\//i.test(normalized) ? normalized : encodeURI(normalized);
 }
 
 function normalizeGalleryCatalog(raw) {
@@ -2391,7 +2402,7 @@ function normalizeGalleryCatalog(raw) {
         const fallbackTitle = fallbackEntry.title || `Gallery Item ${index + 1}`;
         const title = String(entry?.title || fallbackTitle).trim() || fallbackTitle;
         const creator = String(entry?.creator || fallbackEntry.creator || 'Horizon Tide').trim() || 'Horizon Tide';
-        const url = String(entry?.url || fallbackEntry.url || '').trim();
+        const url = getSafeMediaUrl(String(entry?.url || fallbackEntry.url || '').trim());
         const videoLink = String(entry?.videoLink || fallbackEntry.videoLink || '').trim();
         const categories = normalizeGalleryCategories(entry?.categories, normalizeGalleryCategories(fallbackEntry.categories));
         const id = String(entry?.id || title)
