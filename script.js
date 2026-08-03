@@ -15233,7 +15233,7 @@ function loadAdminDashboard() {
         try {
             if (selectedFile) {
                 const safeName = selectedFile.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
-                imageUrl = await uploadFileAndResolveUrl(selectedFile, `gallery/${Date.now()}_${safeName}`);
+                imageUrl = await uploadFileAndResolveUrl(selectedFile, `premade-keychains/gallery/${Date.now()}_${safeName}`);
             }
 
             const catalog = normalizeGalleryCatalog(window.galleryCatalog);
