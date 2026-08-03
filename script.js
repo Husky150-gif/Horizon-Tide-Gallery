@@ -2431,6 +2431,7 @@ function normalizeGalleryCatalog(raw) {
             url,
             videoLink,
             categories,
+            visible: entry?.visible !== false,
             sortOrder: sanitizeGallerySortOrder(entry?.sortOrder, index + 1)
         };
     }).filter((item) => Boolean(item.url));
@@ -3277,6 +3278,7 @@ function setAdminGalleryEditState(item = null) {
     const titleInput = document.getElementById('adminGalleryTitle');
     const creatorInput = document.getElementById('adminGalleryCreator');
     const categoriesInput = document.getElementById('adminGalleryCategories');
+    const visibleInput = document.getElementById('adminGalleryVisible');
     const imageUrlInput = document.getElementById('adminGalleryImageUrl');
     const imageUploadInput = document.getElementById('adminGalleryImageUpload');
     const videoInput = document.getElementById('adminGalleryVideoLink');
@@ -3292,6 +3294,7 @@ function setAdminGalleryEditState(item = null) {
         creatorInput.value = 'Horizon Tide';
         categoriesInput.value = '';
         renderAdminGalleryCategoryChecklist(['digital-art']);
+        if (visibleInput instanceof HTMLInputElement) visibleInput.checked = true;
         imageUrlInput.value = '';
         videoInput.value = '';
         if (imageUploadInput instanceof HTMLInputElement) imageUploadInput.value = '';
@@ -3308,6 +3311,7 @@ function setAdminGalleryEditState(item = null) {
     creatorInput.value = item.creator;
     categoriesInput.value = categorySelection.custom.join(', ');
     renderAdminGalleryCategoryChecklist(categorySelection.selected);
+    if (visibleInput instanceof HTMLInputElement) visibleInput.checked = item.visible !== false;
     imageUrlInput.value = item.url;
     videoInput.value = item.videoLink || '';
     if (imageUploadInput instanceof HTMLInputElement) imageUploadInput.value = '';
@@ -3324,6 +3328,7 @@ function renderAdminGallerySummary(catalogInput = window.galleryCatalog, visible
     const catalog = normalizeGalleryCatalog(catalogInput);
     const total = catalog.items.length;
     const videoCount = catalog.items.filter((item) => String(item.videoLink || '').trim()).length;
+    const publishedCount = catalog.items.filter((item) => item.visible !== false).length;
     const creators = Array.from(new Set(catalog.items.map((item) => item.creator))).length;
     const shown = Number.isFinite(visibleCount) ? Math.max(0, Math.floor(visibleCount)) : total;
     const filterLabel = activeCategory === 'all' ? 'All Categories' : formatGalleryCategoryLabel(activeCategory);
@@ -3331,6 +3336,7 @@ function renderAdminGallerySummary(catalogInput = window.galleryCatalog, visible
     summaryEl.innerHTML = `
         <span class="admin-premade-summary-pill">Items: <strong>${total}</strong></span>
         <span class="admin-premade-summary-pill">Visible: <strong>${shown}</strong></span>
+        <span class="admin-premade-summary-pill">Published: <strong>${publishedCount}</strong></span>
         <span class="admin-premade-summary-pill">View: <strong>${escapeHTML(filterLabel)}</strong></span>
         <span class="admin-premade-summary-pill">Creators: <strong>${creators}</strong></span>
         <span class="admin-premade-summary-pill">Video links: <strong>${videoCount}</strong></span>
@@ -3448,6 +3454,36 @@ function bindAdminGalleryListActions() {
                 target.disabled = false;
             }
         }
+
+        if (target.matches('.admin-gallery-toggle-visibility')) {
+            if (!requireAdminSession('Please sign in with an authorized admin account before changing gallery visibility.')) return;
+            const itemId = target.getAttribute('data-id');
+            if (!itemId) return;
+
+            const catalogState = normalizeGalleryCatalog(window.galleryCatalog);
+            const source = catalogState.items.find((item) => item.id === itemId);
+            if (!source) return;
+
+            const nextCatalog = normalizeGalleryCatalog({
+                items: catalogState.items.map((item) => item.id === itemId ? { ...item, visible: item.visible === false } : item)
+            });
+
+            target.disabled = true;
+            try {
+                const result = await persistGalleryCatalog(nextCatalog, {
+                    previousCatalog: catalogState,
+                    reason: source.visible === false ? 'publish-item' : 'hide-item'
+                });
+                window.galleryCatalog = result.nextCatalog;
+                applyGalleryCatalogToCurrentDOM();
+                showAdminToast(source.visible === false ? 'Gallery item published.' : 'Gallery item moved to draft.');
+            } catch (error) {
+                console.error(error);
+                showAdminToast(`Failed to change gallery visibility. ${getFriendlyAdminError(error)}`, true);
+            } finally {
+                target.disabled = false;
+            }
+        }
     });
 
     listEl.dataset.bound = 'true';
@@ -3494,6 +3530,7 @@ function renderAdminGalleryManager() {
             <div class="admin-gallery-item__info">
                 <strong>${escapeHTML(item.title)}</strong>
                 <span>${escapeHTML(item.creator)}</span>
+                <span class="admin-detail">${item.visible === false ? 'Draft (hidden from public)' : 'Published'}</span>
                 <div class="admin-gallery-item__chips">${item.categories.map((category) => renderGalleryCategoryBadgeMarkup(category, 'admin-gallery-category-chip')).join('')}</div>
                 ${item.videoLink ? `<small>Video: ${escapeHTML(item.videoLink)}</small>` : ''}
             </div>
@@ -3501,6 +3538,7 @@ function renderAdminGalleryManager() {
                 <button type="button" class="admin-btn-edit admin-gallery-move-btn" data-id="${escapeHTML(item.id)}" data-direction="up" ${upDisabled ? 'disabled' : ''}>Up</button>
                 <button type="button" class="admin-btn-edit admin-gallery-move-btn" data-id="${escapeHTML(item.id)}" data-direction="down" ${downDisabled ? 'disabled' : ''}>Down</button>
                 <button type="button" class="admin-btn-edit admin-edit-gallery-item" data-id="${escapeHTML(item.id)}">Edit</button>
+                <button type="button" class="admin-btn-edit admin-gallery-toggle-visibility" data-id="${escapeHTML(item.id)}">${item.visible === false ? 'Publish' : 'Hide'}</button>
                 <button type="button" class="admin-btn-delete admin-delete-gallery-item" data-id="${escapeHTML(item.id)}">Delete</button>
             </div>
         </article>
@@ -6915,7 +6953,7 @@ function loadGalleryPage() {
     renderDynamicMoon();
     createBubbles();
 
-    const galleryItems = normalizeGalleryCatalog(window.galleryCatalog).items;
+    const galleryItems = normalizeGalleryCatalog(window.galleryCatalog).items.filter((item) => item.visible !== false);
     const galleryFilters = getGalleryFilterOptions(galleryItems);
 
     let galleryHTML = `
@@ -11387,7 +11425,9 @@ function populateAnnouncementForm(id, data = {}) {
     visibleField.checked = data.visible !== false;
     pinnedField.checked = data.pinned === true;
     window.currentEditingAnnounceId = id || null;
-    saveBtn.textContent = id ? 'Update Announcement' : 'Publish Announcement';
+    saveBtn.textContent = id
+        ? (visibleField.checked ? 'Update Announcement' : 'Save Draft')
+        : (visibleField.checked ? 'Publish Announcement' : 'Save Draft');
 
     if (id) {
         document.querySelector('.announcements-manager-card')?.scrollIntoView({ behavior: 'smooth' });
@@ -15492,6 +15532,7 @@ function loadAdminDashboard() {
         const titleField = document.getElementById('adminGalleryTitle');
         const creatorField = document.getElementById('adminGalleryCreator');
         const categoriesField = document.getElementById('adminGalleryCategories');
+        const visibleField = document.getElementById('adminGalleryVisible');
         const imageField = document.getElementById('adminGalleryImageUrl');
         const videoField = document.getElementById('adminGalleryVideoLink');
         const uploadField = document.getElementById('adminGalleryImageUpload');
@@ -15503,6 +15544,7 @@ function loadAdminDashboard() {
         const title = titleField.value.trim();
         const creator = creatorField.value.trim() || 'Horizon Tide';
         const categories = getAdminGalleryFormCategories();
+        const visible = visibleField instanceof HTMLInputElement ? visibleField.checked : true;
         const selectedFile = uploadField.files?.[0] || null;
         const currentImage = triggerBtn.dataset.currentImage || '';
         const isEditing = Boolean(window.currentEditingGalleryItemId);
@@ -15552,6 +15594,7 @@ function loadAdminDashboard() {
                 title,
                 creator,
                 categories,
+                visible,
                 url: imageUrl,
                 videoLink,
                 sortOrder: existing?.sortOrder ?? (catalog.items.length + 1)
@@ -15690,14 +15733,14 @@ function loadAdminDashboard() {
                 await updateDoc(doc(db, "announcements", window.currentEditingAnnounceId), {
                     title, date, category, body, visible, pinned, timestamp: serverTimestamp()
                 });
-                showAdminToast("Announcement updated! ✨");
+                showAdminToast(visible ? "Announcement updated! ✨" : "Announcement draft saved.");
                 window.currentEditingAnnounceId = null;
                 btn.innerText = "Publish Announcement";
             } else {
                 await addDoc(collection(db, "announcements"), {
                     title, date, category, body, visible, pinned, timestamp: serverTimestamp()
                 });
-                showAdminToast("Announcement published! 🚀");
+                showAdminToast(visible ? "Announcement published! 🚀" : "Announcement draft saved.");
             }
             e.target.reset();
         } catch (error) {
@@ -15710,6 +15753,16 @@ function loadAdminDashboard() {
     });
 
     if (window.adminAnnounceUnsub) window.adminAnnounceUnsub();
+    document.getElementById('adminAnnounceVisible')?.addEventListener('change', () => {
+        const saveBtn = document.getElementById('btnSaveAnnouncement');
+        const visibleField = document.getElementById('adminAnnounceVisible');
+        if (!(saveBtn instanceof HTMLButtonElement) || !(visibleField instanceof HTMLInputElement)) return;
+        if (window.currentEditingAnnounceId) {
+            saveBtn.textContent = visibleField.checked ? 'Update Announcement' : 'Save Draft';
+        } else {
+            saveBtn.textContent = visibleField.checked ? 'Publish Announcement' : 'Save Draft';
+        }
+    });
     const qAnnounce = query(collection(db, "announcements"), orderBy("timestamp", "desc"));
     window.adminAnnounceUnsub = onSnapshot(qAnnounce, (snapshot) => {
         const listEl = document.getElementById('adminAnnouncementsList');

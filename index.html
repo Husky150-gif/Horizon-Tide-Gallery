@@ -405,6 +405,7 @@
                     <input type="checkbox" id="adminAnnounceVisible" class="admin-checkbox" checked>
                     <label for="adminAnnounceVisible" class="admin-checkbox-label">Visible to public?</label>
                 </div>
+                <p class="admin-detail">Tip: uncheck visibility to save as draft and publish later.</p>
 
                 <div class="admin-checkbox-group">
                     <input type="checkbox" id="adminAnnouncePinned" class="admin-checkbox">
@@ -631,6 +632,10 @@
                     Extra Categories (optional, comma separated)
                     <input type="text" id="adminGalleryCategories" class="admin-input" placeholder="Use only for new custom tags">
                 </label>
+                <div class="admin-checkbox-group">
+                    <input type="checkbox" id="adminGalleryVisible" class="admin-checkbox" checked>
+                    <label for="adminGalleryVisible" class="admin-checkbox-label">Published to public gallery?</label>
+                </div>
             </div>
 
             <div class="admin-form-row">
@@ -689,7 +694,7 @@
         </div>
     </div>
 
-    <script type="module" src="script.js?v=158"></script>
+    <script type="module" src="script.js?v=159"></script>
     <script defer src="loader.js?v=3"></script>
 </body>
 </html>
