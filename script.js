@@ -2389,7 +2389,19 @@ function getSafeMediaUrl(rawUrl) {
         }
     }
 
-    return /^https?:\/\//i.test(normalized) ? normalized : encodeURI(normalized);
+    if (/^https?:\/\//i.test(normalized)) {
+        return normalized;
+    }
+
+    // For local/relative paths, decode once (if already encoded) and encode once.
+    // This keeps URLs stable and avoids `%25` double-encoding regressions.
+    let relativePath = normalized;
+    try {
+        relativePath = decodeURI(normalized);
+    } catch {
+        relativePath = normalized;
+    }
+    return encodeURI(relativePath);
 }
 
 function normalizeGalleryCatalog(raw) {
