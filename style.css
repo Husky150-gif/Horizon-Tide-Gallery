@@ -1907,6 +1907,27 @@ body[data-page="quick-actor"] .home-intent-budget-message {
     color: #cde8f8;
 }
 
+body[data-page="quick-actor"] .home-intent-eligible-summary {
+    margin: -2px 0 0;
+    font-size: 0.84rem;
+    line-height: 1.45;
+    color: #93c5fd;
+}
+
+body[data-page="quick-actor"] .home-intent-eligible-list {
+    margin: 0;
+    padding: 8px 0 0 18px;
+    display: grid;
+    gap: 5px;
+    color: #dbeafe;
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
+
+body[data-page="quick-actor"] .home-intent-eligible-item {
+    margin: 0;
+}
+
 body[data-page="quick-actor"] .home-teaser-complexity-note {
     margin: -2px 0 2px;
     font-size: 0.8rem;

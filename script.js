@@ -5630,6 +5630,24 @@ function getHomeIntentMinimum(typeValue, pricingConfig) {
     return pricingConfig.art.headshot.flat;
 }
 
+function getHomeIntentTypePrefix(typeValue) {
+    const intent = String(typeValue || '').toLowerCase();
+    if (intent.includes('fursuit')) return 'fursuit-';
+    if (intent.includes('merch') || intent.includes('keychain')) return 'keychain-';
+    if (intent.includes('sticker')) return 'sticker-';
+    if (intent.includes('animation')) return 'animation-';
+    return 'art-';
+}
+
+function getHomeIntentLabel(typeValue) {
+    const intent = String(typeValue || '').toLowerCase();
+    if (intent.includes('fursuit')) return 'fursuit';
+    if (intent.includes('merch') || intent.includes('keychain')) return 'keychain/merch';
+    if (intent.includes('sticker')) return 'sticker';
+    if (intent.includes('animation')) return 'animation';
+    return 'art';
+}
+
 function getHomeTeaserSeedRange(typeValue, pricingConfig) {
     const type = String(typeValue || '').toLowerCase();
     if (type === 'art-icon') return { min: pricingConfig.art.icon.flat, max: pricingConfig.art.icon.rendered };
@@ -5701,6 +5719,8 @@ function bindHomeConversionPack() {
     const intentBudgetAmount = document.getElementById('homeIntentBudgetAmount');
     const intentBudgetMessage = document.getElementById('homeIntentBudgetMessage');
     const intentSummary = document.getElementById('homeIntentSummary');
+    const intentEligibleSummary = document.getElementById('homeIntentEligibleSummary');
+    const intentEligibleList = document.getElementById('homeIntentEligibleList');
     const intentPrimaryBtn = document.getElementById('homeIntentPrimaryBtn');
     const teaserType = document.getElementById('homeTeaserType');
     const teaserQty = document.getElementById('homeTeaserQty');
@@ -5717,6 +5737,60 @@ function bindHomeConversionPack() {
     const reviewsCounter = document.getElementById('homeApprovedReviewsCount');
     const slotCounter = document.getElementById('homeOpenSlotsCount');
     const pricingConfig = getPricingConfig();
+
+    const getIntentPricedOptions = () => {
+        if (!(intentType instanceof HTMLSelectElement) || !(teaserType instanceof HTMLSelectElement)) return [];
+        const prefix = getHomeIntentTypePrefix(intentType.value);
+        const options = Array.from(teaserType.options).filter((option) => String(option.value || '').startsWith(prefix));
+        return options.map((option) => {
+            const typeValue = String(option.value || '');
+            const seedRange = getHomeTeaserSeedRange(typeValue, pricingConfig);
+            const discountTarget = getHomeTeaserDiscountTarget(typeValue);
+            const pct = getBestDiscount(discountTarget);
+            const min = pct > 0 ? Math.round(seedRange.min * (1 - pct / 100)) : Math.round(seedRange.min);
+            return {
+                label: String(option.textContent || '').trim(),
+                min,
+                pct
+            };
+        }).sort((a, b) => a.min - b.min || a.label.localeCompare(b.label));
+    };
+
+    const updateIntentEligibleItems = (enteredBudget) => {
+        if (!(intentEligibleSummary instanceof HTMLElement) || !(intentEligibleList instanceof HTMLElement)) return;
+
+        intentEligibleList.innerHTML = '';
+        if (!(intentType instanceof HTMLSelectElement) || !(teaserType instanceof HTMLSelectElement)) {
+            intentEligibleSummary.textContent = 'Budget matching is unavailable right now.';
+            return;
+        }
+
+        if (!Number.isFinite(enteredBudget) || enteredBudget <= 0) {
+            intentEligibleSummary.textContent = 'Enter a budget to see all matching items you can start with.';
+            return;
+        }
+
+        const serviceLabel = getHomeIntentLabel(intentType.value);
+        const pricedOptions = getIntentPricedOptions();
+
+        const eligible = pricedOptions.filter((item) => enteredBudget >= item.min);
+
+        if (eligible.length < 1) {
+            const lowest = pricedOptions[0]?.min ?? Math.round(getHomeIntentMinimum(intentType.value, pricingConfig));
+            intentEligibleSummary.textContent = `No ${serviceLabel} items fit $${Math.round(enteredBudget)} yet. Starting point is around $${lowest}.`;
+            return;
+        }
+
+        const hasDiscounted = eligible.some((item) => item.pct > 0);
+        intentEligibleSummary.textContent = `With $${Math.round(enteredBudget)}, you are eligible for ${eligible.length} ${serviceLabel} option${eligible.length === 1 ? '' : 's'}.${hasDiscounted ? ' Active sale pricing is included.' : ''}`;
+
+        eligible.forEach((item) => {
+            const li = document.createElement('li');
+            li.className = 'home-intent-eligible-item';
+            li.textContent = `${item.label} - starts around $${item.min}`;
+            intentEligibleList.appendChild(li);
+        });
+    };
 
     const updateIntentSummary = () => {
         if (!(intentSummary instanceof HTMLElement) || !(intentType instanceof HTMLSelectElement)) return;
@@ -5741,7 +5815,8 @@ function bindHomeConversionPack() {
 
         if (intentBudgetMessage instanceof HTMLElement) {
             if (Number.isFinite(enteredBudget) && enteredBudget > 0) {
-                const floor = Math.round(getHomeIntentMinimum(intentType.value, pricingConfig));
+                const pricedOptions = getIntentPricedOptions();
+                const floor = pricedOptions[0]?.min ?? Math.round(getHomeIntentMinimum(intentType.value, pricingConfig));
                 if (enteredBudget < floor) {
                     intentBudgetMessage.textContent = `Sorry, we cannot go this low for this service. The realistic starting point is around $${floor}.`;
                     intentBudgetMessage.classList.add('is-low');
@@ -5754,6 +5829,8 @@ function bindHomeConversionPack() {
                 intentBudgetMessage.classList.remove('is-low');
             }
         }
+
+        updateIntentEligibleItems(enteredBudget);
 
         if (intentPrimaryBtn instanceof HTMLButtonElement) {
             intentPrimaryBtn.textContent = route.label;
@@ -6919,6 +6996,8 @@ function loadQuickActorPage() {
                         </div>
                         <p class="home-intent-summary" id="homeIntentSummary">Best lane will appear here.</p>
                         <p class="home-intent-budget-message" id="homeIntentBudgetMessage">Enter a target budget and we will instantly tell you if it fits this lane.</p>
+                        <p class="home-intent-eligible-summary" id="homeIntentEligibleSummary">Enter a budget to see all matching items you can start with.</p>
+                        <ul class="home-intent-eligible-list" id="homeIntentEligibleList" aria-live="polite"></ul>
                         <button type="button" class="nav-btn home-conversion-btn" id="homeIntentPrimaryBtn">Start Art Request</button>
                     </article>
 
@@ -8342,13 +8421,12 @@ function loadAnnouncementsPage() {
     if(!listContainer) return;
     
     if (window.announcementsUnsubscribe) window.announcementsUnsubscribe();
-    const q = query(collection(db, "announcements"), orderBy("timestamp", "desc"));
+    const q = query(collection(db, "announcements"), where("visible", "==", true));
     window.announcementsUnsubscribe = onSnapshot(q, (snapshot) => {
         const visibleAnnouncements = [];
 
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            if (!data.visible) return;
             visibleAnnouncements.push({ id: docSnap.id, ...data });
         });
 
@@ -8394,6 +8472,13 @@ function loadAnnouncementsPage() {
         }
         
         listContainer.innerHTML = html;
+    }, (error) => {
+        console.error('Failed to load announcements:', error);
+        listContainer.innerHTML = `
+            <div class="empty-announcements-msg">
+                <p>Updates could not load right now. Please refresh and try again.</p>
+            </div>
+        `;
     });
     
     attachInnerScrollListener();
@@ -15294,7 +15379,7 @@ function loadAdminDashboard() {
         try {
             if (window.currentEditingAnnounceId) {
                 await updateDoc(doc(db, "announcements", window.currentEditingAnnounceId), {
-                    title, date, category, body, visible, pinned
+                    title, date, category, body, visible, pinned, timestamp: serverTimestamp()
                 });
                 showAdminToast("Announcement updated! ✨");
                 window.currentEditingAnnounceId = null;
