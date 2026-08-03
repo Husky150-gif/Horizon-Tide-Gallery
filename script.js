@@ -5808,6 +5808,32 @@ function getHomeIntentLabel(typeValue) {
     return 'art';
 }
 
+function getArtRefSheetRange(pricingConfig, tier = 'basic') {
+    const safeTier = String(tier || 'basic').toLowerCase();
+    const baseMap = {
+        basic: Number(pricingConfig?.art?.refSheets?.basic) || 190,
+        standard: Number(pricingConfig?.art?.refSheets?.standard) || 260,
+        deluxe: Number(pricingConfig?.art?.refSheets?.deluxe) || 330
+    };
+    const multiplierMap = {
+        basic: 1.2,
+        standard: 1.22,
+        deluxe: 1.25
+    };
+    const min = Math.round(baseMap[safeTier] || baseMap.basic);
+    const max = Math.max(min, Math.round(min * (multiplierMap[safeTier] || multiplierMap.basic)));
+    return { min, max };
+}
+
+function buildArtRefSheetFinishTable(pricingConfig, tier = 'basic') {
+    const range = getArtRefSheetRange(pricingConfig, tier);
+    return {
+        flat: range.min,
+        cel: Math.max(range.min, Math.round((range.min + range.max) / 2)),
+        rendered: range.max
+    };
+}
+
 function getHomeTeaserSeedRange(typeValue, pricingConfig) {
     const type = String(typeValue || '').toLowerCase();
     if (type === 'art-icon') return { min: pricingConfig.art.icon.flat, max: pricingConfig.art.icon.rendered };
@@ -5816,9 +5842,9 @@ function getHomeTeaserSeedRange(typeValue, pricingConfig) {
     if (type === 'art-halfbody') return { min: pricingConfig.art.halfBody.flat, max: pricingConfig.art.halfBody.rendered };
     if (type === 'art-fullbody') return { min: pricingConfig.art.fullBody.flat, max: pricingConfig.art.fullBody.rendered };
     if (type === 'art-scene') return { min: pricingConfig.art.scene.flat, max: pricingConfig.art.scene.rendered };
-    if (type === 'art-ref-basic') return { min: pricingConfig.art.refSheets.basic, max: pricingConfig.art.refSheets.basic };
-    if (type === 'art-ref-standard') return { min: pricingConfig.art.refSheets.standard, max: pricingConfig.art.refSheets.standard };
-    if (type === 'art-ref-deluxe') return { min: pricingConfig.art.refSheets.deluxe, max: pricingConfig.art.refSheets.deluxe };
+    if (type === 'art-ref-basic') return getArtRefSheetRange(pricingConfig, 'basic');
+    if (type === 'art-ref-standard') return getArtRefSheetRange(pricingConfig, 'standard');
+    if (type === 'art-ref-deluxe') return getArtRefSheetRange(pricingConfig, 'deluxe');
     if (type === 'animation-loop') return { min: pricingConfig.animation.loop.min, max: pricingConfig.animation.loop.max };
     if (type === 'animation-simple') return { min: pricingConfig.animation.simple.min, max: pricingConfig.animation.simple.max };
     if (type === 'animation-full-character') return { min: pricingConfig.animation.fullCharacter.min, max: pricingConfig.animation.fullCharacter.max };
@@ -6291,9 +6317,9 @@ function attachDynamicEstimator(formId, baseType) {
                 'Half Body': { flat: pricingConfig.art.halfBody.flat, cel: pricingConfig.art.halfBody.cel, rendered: pricingConfig.art.halfBody.rendered },
                 'Full Body': { flat: pricingConfig.art.fullBody.flat, cel: pricingConfig.art.fullBody.cel, rendered: pricingConfig.art.fullBody.rendered },
                 'Scene': { flat: pricingConfig.art.scene.flat, cel: pricingConfig.art.scene.cel, rendered: pricingConfig.art.scene.rendered },
-                'Basic Ref Sheet': { flat: pricingConfig.art.refSheets.basic, cel: pricingConfig.art.refSheets.basic, rendered: pricingConfig.art.refSheets.basic },
-                'Standard Ref Sheet': { flat: pricingConfig.art.refSheets.standard, cel: pricingConfig.art.refSheets.standard, rendered: pricingConfig.art.refSheets.standard },
-                'Deluxe Ref Sheet': { flat: pricingConfig.art.refSheets.deluxe, cel: pricingConfig.art.refSheets.deluxe, rendered: pricingConfig.art.refSheets.deluxe }
+                'Basic Ref Sheet': buildArtRefSheetFinishTable(pricingConfig, 'basic'),
+                'Standard Ref Sheet': buildArtRefSheetFinishTable(pricingConfig, 'standard'),
+                'Deluxe Ref Sheet': buildArtRefSheetFinishTable(pricingConfig, 'deluxe')
             };
 
             const artType = String(typeSel?.value || 'Headshot');
@@ -7301,9 +7327,13 @@ function loadPricingPage() {
     renderDashboardStars();
 
     const tideSnapshot = getTideStatusSnapshot(window.homeAvailability);
+    const pricingConfig = getPricingConfig();
     const huskyAvailability = tideSnapshot.husky;
     const lopsideAvailability = tideSnapshot.lopside;
     const tideClass = `tide-${tideSnapshot.tide.toLowerCase()}`;
+    const artRefBasicRange = getArtRefSheetRange(pricingConfig, 'basic');
+    const artRefStandardRange = getArtRefSheetRange(pricingConfig, 'standard');
+    const artRefDeluxeRange = getArtRefSheetRange(pricingConfig, 'deluxe');
     const pricingMetaPills = (items = []) => `
         <div class="pricing-meta-pills">${items.map((item) => `<span class="pricing-meta-pill">${item}</span>`).join('')}</div>
     `;
@@ -7462,9 +7492,9 @@ function loadPricingPage() {
                 </div>
                 <h3>Reference Sheets</h3>
                 <ul>
-                    <li><strong>Basic: ${artPrice('art.refSheets.basic', 190)}</strong><br>Includes front view, color palette, and basic info.</li>
-                    <li><strong>Standard: ${artPrice('art.refSheets.standard', 260)}</strong><br>Includes front & back views, palette, and detail notes.</li>
-                    <li><strong>Deluxe: ${artPrice('art.refSheets.deluxe', 330, true)}</strong><br>Includes front & back views, expressions, outfit variations, props, and detail panels.</li>
+                    <li><strong>Basic: ${renderPriceRange(artRefBasicRange.min, artRefBasicRange.max, 'art')}</strong><br>Includes front view, color palette, and basic info.</li>
+                    <li><strong>Standard: ${renderPriceRange(artRefStandardRange.min, artRefStandardRange.max, 'art')}</strong><br>Includes front & back views, palette, and detail notes.</li>
+                    <li><strong>Deluxe: ${renderPriceRange(artRefDeluxeRange.min, artRefDeluxeRange.max, 'art', true)}</strong><br>Includes front & back views, expressions, outfit variations, props, and detail panels.</li>
                 </ul>
                 <h3>Discord Stickers</h3>
                 <div class="price-grid">
@@ -11616,15 +11646,15 @@ function estimateOrderRevenue(order) {
             ? 'rendered'
             : (shading.includes('cel') ? 'cel' : 'flat');
         const table = {
-            'Icon': { flat: 26, cel: 38, rendered: 54 },
-            'Headshot': { flat: 40, cel: 55, rendered: 74 },
-            'Bust': { flat: 48, cel: 66, rendered: 88 },
-            'Half Body': { flat: 68, cel: 90, rendered: 118 },
-            'Full Body': { flat: 88, cel: 116, rendered: 152 },
-            'Scene': { flat: 190, cel: 240, rendered: 300 },
-            'Basic Ref Sheet': { flat: 190, cel: 190, rendered: 190 },
-            'Standard Ref Sheet': { flat: 260, cel: 260, rendered: 260 },
-            'Deluxe Ref Sheet': { flat: 330, cel: 330, rendered: 330 }
+            'Icon': { flat: pricingConfig.art.icon.flat, cel: pricingConfig.art.icon.cel, rendered: pricingConfig.art.icon.rendered },
+            'Headshot': { flat: pricingConfig.art.headshot.flat, cel: pricingConfig.art.headshot.cel, rendered: pricingConfig.art.headshot.rendered },
+            'Bust': { flat: pricingConfig.art.bust.flat, cel: pricingConfig.art.bust.cel, rendered: pricingConfig.art.bust.rendered },
+            'Half Body': { flat: pricingConfig.art.halfBody.flat, cel: pricingConfig.art.halfBody.cel, rendered: pricingConfig.art.halfBody.rendered },
+            'Full Body': { flat: pricingConfig.art.fullBody.flat, cel: pricingConfig.art.fullBody.cel, rendered: pricingConfig.art.fullBody.rendered },
+            'Scene': { flat: pricingConfig.art.scene.flat, cel: pricingConfig.art.scene.cel, rendered: pricingConfig.art.scene.rendered },
+            'Basic Ref Sheet': buildArtRefSheetFinishTable(pricingConfig, 'basic'),
+            'Standard Ref Sheet': buildArtRefSheetFinishTable(pricingConfig, 'standard'),
+            'Deluxe Ref Sheet': buildArtRefSheetFinishTable(pricingConfig, 'deluxe')
         };
         const styleTable = table[artType] || table['Headshot'];
         let estimate = Number(styleTable?.[styleKey] || styleTable?.flat || 32);
