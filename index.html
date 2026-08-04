@@ -152,7 +152,7 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=134">
+    <link rel="stylesheet" href="style.css?v=137">
     
     <script defer type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
@@ -345,7 +345,7 @@
     <template id="adminPricingSettingsTemplate">
         <div class="admin-card pricing-settings-card">
             <h3 class="admin-card-title pricing-settings-title">Pricing Settings</h3>
-            <p class="admin-card-subtitle">Use the visual controls below to update pricing. Forms, calculators, and the pricing sheet update automatically after save.</p>
+            <p class="admin-card-subtitle">Use the visual controls below to update pricing. Base pricing still drives the forms, calculators, and pricing sheet.</p>
 
             <div id="adminPricingJumpNav" class="admin-pricing-jump-nav" aria-label="Pricing editor sections"></div>
 
@@ -366,6 +366,28 @@
             </div>
 
             <p class="admin-detail" id="adminPricingConfigHint">Tip: update values in the visual editor, then click Save Pricing to publish.</p>
+        </div>
+    </template>
+
+    <template id="adminQuickGuideSettingsTemplate">
+        <div class="admin-card pricing-settings-card">
+            <h3 class="admin-card-title pricing-settings-title">Quick Guide Ranges</h3>
+            <p class="admin-card-subtitle">These only change the planning ranges shown in Quick Actor and the home quick guide. They do not change your main calculator pricing.</p>
+
+            <section class="admin-quick-guide-shell" aria-labelledby="adminQuickGuideTitle">
+                <div class="admin-quick-guide-shell__head">
+                    <h4 id="adminQuickGuideTitle">Planner Ranges</h4>
+                    <p>Use Auto to keep the planner linked to pricing. Use Custom only when you want the quick guide to show a different range.</p>
+                </div>
+                <div id="adminQuickGuideFieldGrid" class="admin-pricing-field-grid" aria-live="polite"></div>
+            </section>
+
+            <div class="admin-actions discount-actions">
+                <button type="button" id="btnSaveQuickGuideConfig" class="admin-btn-save">Save Ranges</button>
+                <button type="button" id="btnResetQuickGuideConfig" class="admin-btn-publish">Reset All to Auto</button>
+            </div>
+
+            <p class="admin-detail">Auto follows pricing settings. Custom only changes the guide.</p>
         </div>
     </template>
 
@@ -694,7 +716,7 @@
         </div>
     </div>
 
-    <script type="module" src="script.js?v=173"></script>
+    <script type="module" src="script.js?v=179"></script>
     <script defer src="loader.js?v=3"></script>
 </body>
 </html>

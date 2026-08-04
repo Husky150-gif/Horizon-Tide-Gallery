@@ -3990,6 +3990,33 @@ function getDefaultPricingConfig() {
                 complexCharacter: 120
             }
         },
+        quickGuide: {
+            'art-icon': { mode: 'follow', min: 26, max: 54 },
+            'art-headshot': { mode: 'follow', min: 40, max: 74 },
+            'art-bust': { mode: 'follow', min: 48, max: 88 },
+            'art-halfbody': { mode: 'follow', min: 68, max: 118 },
+            'art-fullbody': { mode: 'follow', min: 88, max: 152 },
+            'art-scene': { mode: 'follow', min: 190, max: 300 },
+            'art-ref-basic': { mode: 'follow', min: 190, max: 228 },
+            'art-ref-standard': { mode: 'follow', min: 260, max: 317 },
+            'art-ref-deluxe': { mode: 'follow', min: 330, max: 413 },
+            'fursuit-tail': { mode: 'follow', min: 100, max: 118 },
+            'fursuit-paws': { mode: 'follow', min: 170, max: 204 },
+            'fursuit-paws-tail': { mode: 'follow', min: 260, max: 312 },
+            'fursuit-feet-paws': { mode: 'follow', min: 270, max: 324 },
+            'fursuit-trio': { mode: 'follow', min: 530, max: 625 },
+            'fursuit-head': { mode: 'follow', min: 1100, max: 1320 },
+            'fursuit-mini-partial': { mode: 'follow', min: 1350, max: 1593 },
+            'fursuit-full-partial': { mode: 'follow', min: 1620, max: 1879 },
+            'keychain-custom-chibi': { mode: 'follow', min: 56, max: 56 },
+            'keychain-custom-half': { mode: 'follow', min: 72, max: 72 },
+            'keychain-custom-full': { mode: 'follow', min: 92, max: 92 },
+            'keychain-custom-complex': { mode: 'follow', min: 120, max: 120 },
+            'sticker-single': { mode: 'follow', min: 20, max: 36 },
+            'sticker-pair': { mode: 'follow', min: 36, max: 36 },
+            'sticker-sheet': { mode: 'follow', min: 80, max: 100 },
+            'sticker-small-batch': { mode: 'follow', min: 100, max: 125 }
+        },
         meta: {
             premiumMarginPercent: 10
         }
@@ -4001,11 +4028,103 @@ function normalizePricingNumber(value, fallback) {
     return Number.isFinite(nextValue) ? Math.max(0, nextValue) : fallback;
 }
 
+function normalizeQuickGuideMode(value) {
+    return String(value || '').trim().toLowerCase() === 'custom' ? 'custom' : 'follow';
+}
+
+function getQuickGuideOverrideDefinitions() {
+    return [
+        'art-icon',
+        'art-headshot',
+        'art-bust',
+        'art-halfbody',
+        'art-fullbody',
+        'art-scene',
+        'art-ref-basic',
+        'art-ref-standard',
+        'art-ref-deluxe',
+        'fursuit-tail',
+        'fursuit-paws',
+        'fursuit-paws-tail',
+        'fursuit-feet-paws',
+        'fursuit-trio',
+        'fursuit-head',
+        'fursuit-mini-partial',
+        'fursuit-full-partial',
+        'keychain-custom-chibi',
+        'keychain-custom-half',
+        'keychain-custom-full',
+        'keychain-custom-complex',
+        'sticker-single',
+        'sticker-pair',
+        'sticker-sheet',
+        'sticker-small-batch'
+    ];
+}
+
+function getHomeTeaserFallbackRange(typeValue, pricingConfig) {
+    const type = String(typeValue || '').toLowerCase();
+    if (type === 'art-icon') return { min: pricingConfig.art.icon.flat, max: pricingConfig.art.icon.rendered };
+    if (type === 'art-headshot') return { min: pricingConfig.art.headshot.flat, max: pricingConfig.art.headshot.rendered };
+    if (type === 'art-bust') return { min: pricingConfig.art.bust.flat, max: pricingConfig.art.bust.rendered };
+    if (type === 'art-halfbody') return { min: pricingConfig.art.halfBody.flat, max: pricingConfig.art.halfBody.rendered };
+    if (type === 'art-fullbody') return { min: pricingConfig.art.fullBody.flat, max: pricingConfig.art.fullBody.rendered };
+    if (type === 'art-scene') return { min: pricingConfig.art.scene.flat, max: pricingConfig.art.scene.rendered };
+    if (type === 'art-ref-basic') return getArtRefSheetRange(pricingConfig, 'basic');
+    if (type === 'art-ref-standard') return getArtRefSheetRange(pricingConfig, 'standard');
+    if (type === 'art-ref-deluxe') return getArtRefSheetRange(pricingConfig, 'deluxe');
+    if (type === 'animation-loop') return { min: pricingConfig.animation.loop.min, max: pricingConfig.animation.loop.max };
+    if (type === 'animation-simple') return { min: pricingConfig.animation.simple.min, max: pricingConfig.animation.simple.max };
+    if (type === 'animation-full-character') return { min: pricingConfig.animation.fullCharacter.min, max: pricingConfig.animation.fullCharacter.max };
+    if (type === 'animation-complex-scene') return { min: pricingConfig.animation.complexScene, max: Math.round(pricingConfig.animation.complexScene * 1.2) };
+    if (type === 'fursuit-tail') return { min: pricingConfig.fursuits.tail, max: Math.round(pricingConfig.fursuits.tail * 1.18) };
+    if (type === 'fursuit-paws') return { min: pricingConfig.fursuits.paws, max: Math.round(pricingConfig.fursuits.paws * 1.2) };
+    if (type === 'fursuit-paws-tail') return { min: pricingConfig.fursuits.pawsTailSet, max: Math.round(pricingConfig.fursuits.pawsTailSet * 1.2) };
+    if (type === 'fursuit-feet-paws') return { min: pricingConfig.fursuits.feetPaws, max: Math.round(pricingConfig.fursuits.feetPaws * 1.2) };
+    if (type === 'fursuit-trio') return { min: pricingConfig.fursuits.trioSet, max: Math.round(pricingConfig.fursuits.trioSet * 1.18) };
+    if (type === 'fursuit-head') return { min: pricingConfig.fursuits.head, max: Math.round(pricingConfig.fursuits.head * 1.2) };
+    if (type === 'fursuit-mini-partial') return { min: pricingConfig.fursuits.miniPartial, max: Math.round(pricingConfig.fursuits.miniPartial * 1.18) };
+    if (type === 'fursuit-full-partial') return { min: pricingConfig.fursuits.fullPartial, max: Math.round(pricingConfig.fursuits.fullPartial * 1.16) };
+    if (type === 'keychain-premade-clear') return { min: pricingConfig.keychains.premade.clearAcrylic, max: pricingConfig.keychains.premade.clearAcrylic };
+    if (type === 'keychain-premade-epoxy') return { min: pricingConfig.keychains.premade.epoxy, max: pricingConfig.keychains.premade.epoxy };
+    if (type === 'keychain-premade-colored') return { min: pricingConfig.keychains.premade.coloredAcrylic, max: pricingConfig.keychains.premade.coloredAcrylic };
+    if (type === 'keychain-premade-rainbow') return { min: pricingConfig.keychains.premade.rainbowAcrylic, max: pricingConfig.keychains.premade.rainbowAcrylic };
+    if (type === 'keychain-premade-translucent') return { min: pricingConfig.keychains.premade.translucentAcrylic, max: pricingConfig.keychains.premade.translucentAcrylic };
+    if (type === 'keychain-premade-holographic') return { min: pricingConfig.keychains.premade.holographic, max: pricingConfig.keychains.premade.holographic };
+    if (type === 'keychain-premade-glow') return { min: pricingConfig.keychains.premade.glowInDark, max: pricingConfig.keychains.premade.glowInDark };
+    if (type === 'keychain-custom-chibi') return { min: pricingConfig.keychains.custom.chibiIcon, max: pricingConfig.keychains.custom.chibiIcon };
+    if (type === 'keychain-custom-half') return { min: pricingConfig.keychains.custom.halfBody, max: pricingConfig.keychains.custom.halfBody };
+    if (type === 'keychain-custom-full') return { min: pricingConfig.keychains.custom.fullBody, max: pricingConfig.keychains.custom.fullBody };
+    if (type === 'keychain-custom-complex') return { min: pricingConfig.keychains.custom.complexCharacter, max: pricingConfig.keychains.custom.complexCharacter };
+    if (type === 'sticker-single') return { min: pricingConfig.stickers.single, max: pricingConfig.stickers.pair };
+    if (type === 'sticker-pair') return { min: pricingConfig.stickers.pair, max: pricingConfig.stickers.pair };
+    if (type === 'sticker-sheet') return { min: pricingConfig.stickers.sheet, max: Math.round(pricingConfig.stickers.sheet * 1.25) };
+    if (type === 'sticker-small-batch') return { min: pricingConfig.stickers.smallBatch, max: Math.round(pricingConfig.stickers.smallBatch * 1.25) };
+    return { min: pricingConfig.art.headshot.flat, max: pricingConfig.art.headshot.rendered };
+}
+
+function normalizeQuickGuideConfig(rawQuickGuide, pricingConfig) {
+    const defaults = getDefaultPricingConfig();
+    const sourcePricing = pricingConfig && typeof pricingConfig === 'object' ? pricingConfig : defaults;
+    const raw = rawQuickGuide && typeof rawQuickGuide === 'object' ? rawQuickGuide : {};
+    return Object.fromEntries(getQuickGuideOverrideDefinitions().map((key) => {
+        const fallback = getHomeTeaserFallbackRange(key, sourcePricing);
+        const source = raw[key] && typeof raw[key] === 'object' ? raw[key] : {};
+        const min = normalizePricingNumber(source.min, fallback.min);
+        const max = Math.max(min, normalizePricingNumber(source.max, fallback.max));
+        return [key, {
+            mode: normalizeQuickGuideMode(source.mode),
+            min,
+            max
+        }];
+    }));
+}
+
 function normalizePricingConfig(rawConfig) {
     const defaults = getDefaultPricingConfig();
     const raw = rawConfig && typeof rawConfig === 'object' ? rawConfig : {};
 
-    return {
+    const normalized = {
         art: {
             icon: {
                 flat: normalizePricingNumber(raw?.art?.icon?.flat, defaults.art.icon.flat),
@@ -4128,6 +4247,9 @@ function normalizePricingConfig(rawConfig) {
             premiumMarginPercent: normalizePricingNumber(raw?.meta?.premiumMarginPercent, defaults.meta.premiumMarginPercent)
         }
     };
+
+    normalized.quickGuide = normalizeQuickGuideConfig(raw?.quickGuide, normalized);
+    return normalized;
 }
 
 function getPricingConfig() {
@@ -4377,6 +4499,121 @@ function renderAdminPricingJumpNav() {
     }
 }
 
+function getQuickGuideEditorGroups() {
+    return [
+        {
+            title: 'Fursuits',
+            tone: 'fursuits',
+            description: 'Planner ranges for Lopside without changing locked starts.',
+            items: [
+                { key: 'fursuit-tail', label: 'Tail' },
+                { key: 'fursuit-paws', label: 'Paws' },
+                { key: 'fursuit-paws-tail', label: 'Paws + Tail' },
+                { key: 'fursuit-feet-paws', label: 'Feet Paws' },
+                { key: 'fursuit-trio', label: 'Trio Set' },
+                { key: 'fursuit-head', label: 'Head' },
+                { key: 'fursuit-mini-partial', label: 'Mini Partial' },
+                { key: 'fursuit-full-partial', label: 'Full Partial' }
+            ]
+        },
+        {
+            title: 'Stickers',
+            tone: 'stickers',
+            description: 'Planner ranges only.',
+            items: [
+                { key: 'sticker-single', label: 'Single' },
+                { key: 'sticker-pair', label: 'Matching Pair' },
+                { key: 'sticker-sheet', label: 'Sheet' },
+                { key: 'sticker-small-batch', label: 'Small Batch' }
+            ]
+        },
+        {
+            title: 'Custom Keychains',
+            tone: 'keychains',
+            description: 'Custom keychain planner ranges only.',
+            items: [
+                { key: 'keychain-custom-chibi', label: 'Chibi/Icon' },
+                { key: 'keychain-custom-half', label: 'Half Body' },
+                { key: 'keychain-custom-full', label: 'Full Body' },
+                { key: 'keychain-custom-complex', label: 'Complex Character' }
+            ]
+        },
+        {
+            title: 'Art',
+            tone: 'art',
+            description: 'Leave on Auto unless you want planner-only art ranges.',
+            items: [
+                { key: 'art-icon', label: 'Icon' },
+                { key: 'art-headshot', label: 'Headshot' },
+                { key: 'art-bust', label: 'Bust' },
+                { key: 'art-halfbody', label: 'Half Body' },
+                { key: 'art-fullbody', label: 'Full Body' },
+                { key: 'art-scene', label: 'Scene' },
+                { key: 'art-ref-basic', label: 'Ref Sheet Basic' },
+                { key: 'art-ref-standard', label: 'Ref Sheet Standard' },
+                { key: 'art-ref-deluxe', label: 'Ref Sheet Deluxe' }
+            ]
+        }
+    ];
+}
+
+function renderAdminQuickGuideSettings(config) {
+    const wrap = document.getElementById('adminQuickGuideFieldGrid');
+    if (!(wrap instanceof HTMLElement)) return;
+
+    wrap.innerHTML = getQuickGuideEditorGroups().map((group) => {
+        const itemsHtml = group.items.map((item) => {
+            const entry = config?.quickGuide?.[item.key] || { mode: 'follow', min: 0, max: 0 };
+            const mode = normalizeQuickGuideMode(entry.mode);
+            const effectiveRange = getHomeTeaserSeedRange(item.key, config);
+            const modeLabel = mode === 'custom' ? 'Custom range' : 'Auto linked';
+            return `
+                <article class="admin-quick-guide-card ${mode === 'custom' ? 'is-custom' : 'is-follow'}">
+                    <div class="admin-quick-guide-card__head">
+                        <div class="admin-quick-guide-card__titlewrap">
+                            <strong>${escapeHTML(item.label)}</strong>
+                            <small>${escapeHTML(modeLabel)}</small>
+                        </div>
+                        <span>${escapeHTML(formatEstimateRange(effectiveRange.min, effectiveRange.max))}</span>
+                    </div>
+                    <div class="admin-quick-guide-card__grid">
+                        <label class="admin-label admin-pricing-field admin-quick-guide-card__mode-field">
+                            <span>Mode</span>
+                            <select class="admin-input" data-quick-guide-key="${escapeHTML(item.key)}" data-quick-guide-field="mode">
+                                <option value="follow" ${mode === 'follow' ? 'selected' : ''}>Auto</option>
+                                <option value="custom" ${mode === 'custom' ? 'selected' : ''}>Custom</option>
+                            </select>
+                        </label>
+                        <label class="admin-label admin-pricing-field">
+                            <span>Min</span>
+                            <input type="number" class="admin-input" data-quick-guide-key="${escapeHTML(item.key)}" data-quick-guide-field="min" min="0" step="1" value="${escapeHTML(String(entry.min || 0))}" ${mode === 'custom' ? '' : 'disabled'}>
+                        </label>
+                        <label class="admin-label admin-pricing-field">
+                            <span>Max</span>
+                            <input type="number" class="admin-input" data-quick-guide-key="${escapeHTML(item.key)}" data-quick-guide-field="max" min="0" step="1" value="${escapeHTML(String(entry.max || 0))}" ${mode === 'custom' ? '' : 'disabled'}>
+                        </label>
+                    </div>
+                </article>
+            `;
+        }).join('');
+
+        return `
+            <details class="admin-pricing-group admin-pricing-group--${escapeHTML(group.tone)}" ${group.title === 'Fursuits' || group.title === 'Stickers' || group.title === 'Custom Keychains' ? 'open' : ''}>
+                <summary class="admin-pricing-group-summary">
+                    <span class="admin-pricing-group-summary__copy">
+                        <strong>${escapeHTML(group.title)}</strong>
+                        <small>${escapeHTML(group.description)}</small>
+                    </span>
+                    <span class="admin-pricing-group-summary__meta">${group.items.length} quick guide items</span>
+                </summary>
+                <div class="admin-pricing-group-body">
+                    <div class="admin-quick-guide-grid">${itemsHtml}</div>
+                </div>
+            </details>
+        `;
+    }).join('');
+}
+
 function collectPricingConfigFromEditor() {
     const config = getDefaultPricingConfig();
     const fields = document.querySelectorAll('[data-pricing-path]');
@@ -4396,6 +4633,23 @@ function collectPricingConfigFromEditor() {
             current = current[part];
         }
         current[parts[parts.length - 1]] = value;
+    });
+
+    config.quickGuide = normalizeQuickGuideConfig(config.quickGuide, config);
+    getQuickGuideEditorGroups().forEach((group) => {
+        group.items.forEach((item) => {
+            const modeField = document.querySelector(`[data-quick-guide-key="${item.key}"][data-quick-guide-field="mode"]`);
+            const minField = document.querySelector(`[data-quick-guide-key="${item.key}"][data-quick-guide-field="min"]`);
+            const maxField = document.querySelector(`[data-quick-guide-key="${item.key}"][data-quick-guide-field="max"]`);
+            const fallback = config.quickGuide[item.key] || { mode: 'follow', min: 0, max: 0 };
+            const min = minField instanceof HTMLInputElement ? normalizePricingNumber(minField.value, fallback.min) : fallback.min;
+            const max = maxField instanceof HTMLInputElement ? Math.max(min, normalizePricingNumber(maxField.value, fallback.max)) : fallback.max;
+            config.quickGuide[item.key] = {
+                mode: modeField instanceof HTMLSelectElement ? normalizeQuickGuideMode(modeField.value) : fallback.mode,
+                min,
+                max
+            };
+        });
     });
 
     return normalizePricingConfig(config);
@@ -4519,6 +4773,10 @@ function refreshPricingDependentViews() {
         return;
     }
 
+    if (bodyElement.getAttribute('data-page') === 'home' || bodyElement.getAttribute('data-page') === 'quick-actor') {
+        bindHomeConversionPack();
+    }
+
     document.querySelectorAll('form').forEach((form) => {
         if (!(form instanceof HTMLFormElement)) return;
         if (form.querySelector('#liveEstimate')) {
@@ -4548,6 +4806,8 @@ function renderAdminPricingSettings() {
     if (grid instanceof HTMLElement) {
         grid.innerHTML = getPricingEditorFieldDefinitions().map((group) => renderPricingFieldCard(group, config)).join('');
     }
+
+    renderAdminQuickGuideSettings(config);
 
     const jsonField = document.getElementById('adminPricingConfigJson');
     if (jsonField instanceof HTMLTextAreaElement) {
@@ -4625,6 +4885,7 @@ function applyPremiumPricingMargin(config, percent) {
                 complexCharacter: scale(source.keychains.custom.complexCharacter)
             }
         },
+        quickGuide: normalizeQuickGuideConfig(source.quickGuide, source),
         meta: {
             premiumMarginPercent: Math.max(0, Number(percent) || 0)
         }
@@ -4654,10 +4915,52 @@ function setPricingEditorConfig(nextConfig) {
 
 function bindAdminPricingSettingsControls() {
     const grid = document.getElementById('adminPricingFieldGrid');
+    const quickGuideGrid = document.getElementById('adminQuickGuideFieldGrid');
     const jsonField = document.getElementById('adminPricingConfigJson');
     const saveBtn = document.getElementById('btnSavePricingConfig');
+    const saveQuickGuideBtn = document.getElementById('btnSaveQuickGuideConfig');
     const presetBtn = document.getElementById('btnApplyPremiumPricingPreset');
     const resetBtn = document.getElementById('btnResetPricingConfig');
+    const resetQuickGuideBtn = document.getElementById('btnResetQuickGuideConfig');
+
+    const savePricingConfig = async (buttonEl, successMessage = 'Pricing settings saved.') => {
+        if (!requireAdminSession('Please sign in with an authorized admin account before saving pricing.')) return;
+
+        const button = buttonEl;
+        const jsonFieldEl = document.getElementById('adminPricingConfigJson');
+        let nextConfig;
+
+        try {
+            nextConfig = readPricingConfigFromEditor();
+        } catch (error) {
+            showAdminToast(error instanceof Error ? error.message : 'Pricing JSON could not be parsed.', true);
+            return;
+        }
+
+        const normalized = normalizePricingConfig(nextConfig);
+        const originalLabel = button.textContent || 'Save';
+        button.disabled = true;
+        button.textContent = 'Saving...';
+
+        try {
+            await setDoc(doc(db, 'settings', 'pricing'), normalized, { merge: true });
+            window.pricingConfig = normalized;
+            window.adminPricingDraftConfig = normalizePricingConfig(normalized);
+            renderAdminPricingSettings();
+            bindAdminPricingSettingsControls();
+            refreshPricingDependentViews();
+            showAdminToast(successMessage);
+        } catch (error) {
+            console.error(error);
+            showAdminToast('Failed to save pricing settings.', true);
+        } finally {
+            button.disabled = false;
+            button.textContent = originalLabel;
+            if (jsonFieldEl instanceof HTMLTextAreaElement) {
+                jsonFieldEl.dataset.serialized = jsonFieldEl.value;
+            }
+        }
+    };
 
     if (grid instanceof HTMLElement && grid.dataset.pricingBound !== 'true') {
         grid.addEventListener('input', () => {
@@ -4665,6 +4968,23 @@ function bindAdminPricingSettingsControls() {
             syncPricingJsonEditor(window.adminPricingDraftConfig);
         });
         grid.dataset.pricingBound = 'true';
+    }
+
+    if (quickGuideGrid instanceof HTMLElement && quickGuideGrid.dataset.pricingBound !== 'true') {
+        quickGuideGrid.addEventListener('input', () => {
+            window.adminPricingDraftConfig = collectPricingConfigFromEditor();
+            syncPricingJsonEditor(window.adminPricingDraftConfig);
+        });
+        quickGuideGrid.addEventListener('change', (event) => {
+            const target = event.target instanceof HTMLElement ? event.target : null;
+            window.adminPricingDraftConfig = collectPricingConfigFromEditor();
+            if (target instanceof HTMLSelectElement && target.getAttribute('data-quick-guide-field') === 'mode') {
+                renderAdminPricingSettings();
+                bindAdminPricingSettingsControls();
+            }
+            syncPricingJsonEditor(window.adminPricingDraftConfig);
+        });
+        quickGuideGrid.dataset.pricingBound = 'true';
     }
 
     if (jsonField instanceof HTMLTextAreaElement && jsonField.dataset.pricingBound !== 'true') {
@@ -4676,42 +4996,16 @@ function bindAdminPricingSettingsControls() {
 
     if (saveBtn instanceof HTMLButtonElement && saveBtn.dataset.pricingBound !== 'true') {
         saveBtn.addEventListener('click', async () => {
-            if (!requireAdminSession('Please sign in with an authorized admin account before saving pricing.')) return;
-
-            const button = saveBtn;
-            const jsonFieldEl = document.getElementById('adminPricingConfigJson');
-            let nextConfig;
-
-            try {
-                nextConfig = readPricingConfigFromEditor();
-            } catch (error) {
-                showAdminToast(error instanceof Error ? error.message : 'Pricing JSON could not be parsed.', true);
-                return;
-            }
-
-            const normalized = normalizePricingConfig(nextConfig);
-            button.disabled = true;
-            button.textContent = 'Saving...';
-
-            try {
-                await setDoc(doc(db, 'settings', 'pricing'), normalized, { merge: true });
-                window.pricingConfig = normalized;
-                window.adminPricingDraftConfig = normalizePricingConfig(normalized);
-                renderAdminPricingSettings();
-                refreshPricingDependentViews();
-                showAdminToast('Pricing settings saved.');
-            } catch (error) {
-                console.error(error);
-                showAdminToast('Failed to save pricing settings.', true);
-            } finally {
-                button.disabled = false;
-                button.textContent = 'Save Pricing';
-                if (jsonFieldEl instanceof HTMLTextAreaElement) {
-                    jsonFieldEl.dataset.serialized = jsonFieldEl.value;
-                }
-            }
+            await savePricingConfig(saveBtn, 'Pricing settings saved.');
         });
         saveBtn.dataset.pricingBound = 'true';
+    }
+
+    if (saveQuickGuideBtn instanceof HTMLButtonElement && saveQuickGuideBtn.dataset.pricingBound !== 'true') {
+        saveQuickGuideBtn.addEventListener('click', async () => {
+            await savePricingConfig(saveQuickGuideBtn, 'Quick guide ranges saved.');
+        });
+        saveQuickGuideBtn.dataset.pricingBound = 'true';
     }
 
     if (presetBtn instanceof HTMLButtonElement && presetBtn.dataset.pricingBound !== 'true') {
@@ -4730,6 +5024,17 @@ function bindAdminPricingSettingsControls() {
             showAdminToast('Default pricing loaded into the editor. Save to publish.');
         });
         resetBtn.dataset.pricingBound = 'true';
+    }
+
+    if (resetQuickGuideBtn instanceof HTMLButtonElement && resetQuickGuideBtn.dataset.pricingBound !== 'true') {
+        resetQuickGuideBtn.addEventListener('click', () => {
+            const nextConfig = normalizePricingConfig(window.adminPricingDraftConfig || window.pricingConfig || null);
+            nextConfig.quickGuide = normalizeQuickGuideConfig(null, nextConfig);
+            setPricingEditorConfig(nextConfig);
+            bindAdminPricingSettingsControls();
+            showAdminToast('Quick guide ranges reset to follow pricing. Save to publish.');
+        });
+        resetQuickGuideBtn.dataset.pricingBound = 'true';
     }
 }
 
@@ -5795,6 +6100,14 @@ function getFriendlyAdminError(error) {
 }
 
 function getHomeIntentMinimum(typeValue, pricingConfig) {
+    const prefix = getHomeIntentTypePrefix(typeValue);
+    const quickGuide = normalizeQuickGuideConfig(pricingConfig?.quickGuide, pricingConfig);
+    const matchingMins = Object.entries(quickGuide)
+        .filter(([key]) => key.startsWith(prefix))
+        .map(([key]) => getHomeTeaserSeedRange(key, pricingConfig).min)
+        .filter((value) => Number.isFinite(value) && value > 0);
+    if (matchingMins.length > 0) return Math.min(...matchingMins);
+
     const intent = String(typeValue || '').toLowerCase();
     if (intent.includes('fursuit')) return pricingConfig.fursuits.paws;
     if (intent.includes('merch') || intent.includes('keychain')) return pricingConfig.keychains.custom.chibiIcon;
@@ -5866,43 +6179,13 @@ function buildArtRefSheetFinishTable(pricingConfig, tier = 'basic') {
 
 function getHomeTeaserSeedRange(typeValue, pricingConfig) {
     const type = String(typeValue || '').toLowerCase();
-    if (type === 'art-icon') return { min: pricingConfig.art.icon.flat, max: pricingConfig.art.icon.rendered };
-    if (type === 'art-headshot') return { min: pricingConfig.art.headshot.flat, max: pricingConfig.art.headshot.rendered };
-    if (type === 'art-bust') return { min: pricingConfig.art.bust.flat, max: pricingConfig.art.bust.rendered };
-    if (type === 'art-halfbody') return { min: pricingConfig.art.halfBody.flat, max: pricingConfig.art.halfBody.rendered };
-    if (type === 'art-fullbody') return { min: pricingConfig.art.fullBody.flat, max: pricingConfig.art.fullBody.rendered };
-    if (type === 'art-scene') return { min: pricingConfig.art.scene.flat, max: pricingConfig.art.scene.rendered };
-    if (type === 'art-ref-basic') return getArtRefSheetRange(pricingConfig, 'basic');
-    if (type === 'art-ref-standard') return getArtRefSheetRange(pricingConfig, 'standard');
-    if (type === 'art-ref-deluxe') return getArtRefSheetRange(pricingConfig, 'deluxe');
-    if (type === 'animation-loop') return { min: pricingConfig.animation.loop.min, max: pricingConfig.animation.loop.max };
-    if (type === 'animation-simple') return { min: pricingConfig.animation.simple.min, max: pricingConfig.animation.simple.max };
-    if (type === 'animation-full-character') return { min: pricingConfig.animation.fullCharacter.min, max: pricingConfig.animation.fullCharacter.max };
-    if (type === 'animation-complex-scene') return { min: pricingConfig.animation.complexScene, max: Math.round(pricingConfig.animation.complexScene * 1.2) };
-    if (type === 'fursuit-tail') return { min: pricingConfig.fursuits.tail, max: Math.round(pricingConfig.fursuits.tail * 1.18) };
-    if (type === 'fursuit-paws') return { min: pricingConfig.fursuits.paws, max: Math.round(pricingConfig.fursuits.paws * 1.2) };
-    if (type === 'fursuit-paws-tail') return { min: pricingConfig.fursuits.pawsTailSet, max: Math.round(pricingConfig.fursuits.pawsTailSet * 1.2) };
-    if (type === 'fursuit-feet-paws') return { min: pricingConfig.fursuits.feetPaws, max: Math.round(pricingConfig.fursuits.feetPaws * 1.2) };
-    if (type === 'fursuit-trio') return { min: pricingConfig.fursuits.trioSet, max: Math.round(pricingConfig.fursuits.trioSet * 1.18) };
-    if (type === 'fursuit-head') return { min: pricingConfig.fursuits.head, max: Math.round(pricingConfig.fursuits.head * 1.2) };
-    if (type === 'fursuit-mini-partial') return { min: pricingConfig.fursuits.miniPartial, max: Math.round(pricingConfig.fursuits.miniPartial * 1.18) };
-    if (type === 'fursuit-full-partial') return { min: pricingConfig.fursuits.fullPartial, max: Math.round(pricingConfig.fursuits.fullPartial * 1.16) };
-    if (type === 'keychain-premade-clear') return { min: pricingConfig.keychains.premade.clearAcrylic, max: pricingConfig.keychains.premade.clearAcrylic };
-    if (type === 'keychain-premade-epoxy') return { min: pricingConfig.keychains.premade.epoxy, max: pricingConfig.keychains.premade.epoxy };
-    if (type === 'keychain-premade-colored') return { min: pricingConfig.keychains.premade.coloredAcrylic, max: pricingConfig.keychains.premade.coloredAcrylic };
-    if (type === 'keychain-premade-rainbow') return { min: pricingConfig.keychains.premade.rainbowAcrylic, max: pricingConfig.keychains.premade.rainbowAcrylic };
-    if (type === 'keychain-premade-translucent') return { min: pricingConfig.keychains.premade.translucentAcrylic, max: pricingConfig.keychains.premade.translucentAcrylic };
-    if (type === 'keychain-premade-holographic') return { min: pricingConfig.keychains.premade.holographic, max: pricingConfig.keychains.premade.holographic };
-    if (type === 'keychain-premade-glow') return { min: pricingConfig.keychains.premade.glowInDark, max: pricingConfig.keychains.premade.glowInDark };
-    if (type === 'keychain-custom-chibi') return { min: pricingConfig.keychains.custom.chibiIcon, max: pricingConfig.keychains.custom.chibiIcon };
-    if (type === 'keychain-custom-half') return { min: pricingConfig.keychains.custom.halfBody, max: pricingConfig.keychains.custom.halfBody };
-    if (type === 'keychain-custom-full') return { min: pricingConfig.keychains.custom.fullBody, max: pricingConfig.keychains.custom.fullBody };
-    if (type === 'keychain-custom-complex') return { min: pricingConfig.keychains.custom.complexCharacter, max: pricingConfig.keychains.custom.complexCharacter };
-    if (type === 'sticker-single') return { min: pricingConfig.stickers.single, max: pricingConfig.stickers.pair };
-    if (type === 'sticker-pair') return { min: pricingConfig.stickers.pair, max: pricingConfig.stickers.pair };
-    if (type === 'sticker-sheet') return { min: pricingConfig.stickers.sheet, max: Math.round(pricingConfig.stickers.sheet * 1.25) };
-    if (type === 'sticker-small-batch') return { min: pricingConfig.stickers.smallBatch, max: Math.round(pricingConfig.stickers.smallBatch * 1.25) };
-    return { min: pricingConfig.art.headshot.flat, max: pricingConfig.art.headshot.rendered };
+    const fallback = getHomeTeaserFallbackRange(type, pricingConfig);
+    const entry = pricingConfig?.quickGuide?.[type];
+    if (!entry || normalizeQuickGuideMode(entry.mode) !== 'custom') return fallback;
+
+    const min = normalizePricingNumber(entry.min, fallback.min);
+    const max = Math.max(min, normalizePricingNumber(entry.max, fallback.max));
+    return { min, max };
 }
 
 function getHomeTeaserDiscountTarget(typeValue) {
@@ -15093,6 +15376,7 @@ function loadAdminDashboard() {
                     <div class="admin-sidebar-group">
                         <p class="admin-sidebar-group-title">Business</p>
                         <button type="button" id="adminNavDiscounts" class="admin-side-link" data-admin-scroll="adminDiscountManagerSection">Discounts</button>
+                        <button type="button" id="adminNavQuickGuide" class="admin-side-link" data-admin-scroll="adminQuickGuideSettingsSection">Quick Guide</button>
                         <button type="button" id="adminNavPricing" class="admin-side-link" data-admin-scroll="adminPricingSettingsSection">Pricing</button>
                         <button type="button" id="adminNavAvailability" class="admin-side-link" data-admin-scroll="adminAvailabilitySection">Availability</button>
                         <button type="button" id="adminNavGalleryManager" class="admin-side-link" data-admin-scroll="adminGalleryManagerSection">Gallery Manager</button>
@@ -15445,6 +15729,12 @@ function loadAdminDashboard() {
                                 <summary><span class="admin-summary-label">Discounts</span></summary>
                                 <div class="admin-collapsible-body">
                                     ${getTemplateHTML('adminDiscountManagerTemplate')}
+                                </div>
+                            </details>
+                            <details class="admin-collapsible admin-collapsible--sub" id="adminQuickGuideSettingsSection">
+                                <summary><span class="admin-summary-label">Quick Guide Ranges</span></summary>
+                                <div class="admin-collapsible-body">
+                                    ${getTemplateHTML('adminQuickGuideSettingsTemplate')}
                                 </div>
                             </details>
                             <details class="admin-collapsible admin-collapsible--sub" id="adminPricingSettingsSection">
