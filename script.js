@@ -9972,7 +9972,7 @@ function loadStatusCheckPage() {
             <h1 style="color: #ffffff; text-shadow: 0 0 15px #00f2fe; margin-bottom: 10px; font-size: 2.5rem;">Check Preorder Status / Support Tickets</h1>
             <p style="margin-bottom: 25px; color: #e0f7fa; font-size: 1.1rem;">Enter your Order Number to check the status of your request.</p>
             <p style="margin: -10px 0 20px; color: #c4b5fd; font-size: 0.92rem; text-align: left;">Customer Actions (support ticket buttons) appears after we find your order in the public tracker.</p>
-            <p style="margin: -4px 0 18px; color: #bae6fd; font-size: 0.9rem; text-align: left;">Support email: <a href="mailto:${SITE_SUPPORT_EMAIL}" style="color: #7dd3fc;">${SITE_SUPPORT_EMAIL}</a></p>
+            <p style="margin: -4px 0 18px; color: #bae6fd; font-size: 0.9rem; text-align: left;">Support email (backup): <a href="mailto:${SITE_SUPPORT_EMAIL}" style="color: #7dd3fc;">${SITE_SUPPORT_EMAIL}</a></p>
             <form id="statusCheckForm" style="display: flex; flex-direction: column; gap: 15px;">
                 <input type="text" id="searchQuery" class="form-input" placeholder="e.g. HTG-YYYY-XXXXXX or XXXXXX" required style="font-size: 1.1rem; text-align: center;">
                 <button type="submit" class="preorder-btn" style="border-color: #a855f7;">Search ✨</button>
@@ -10347,7 +10347,7 @@ function renderPublicSupportTicketPanel() {
     return `
         <section style="margin-top: 18px; background: rgba(9, 18, 35, 0.76); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 14px; padding: 16px; text-align: left;">
             <h3 style="margin: 0 0 8px; color: #f8fafc;">Public Support Ticket</h3>
-            <p style="margin: 0 0 12px; color: #cbd5e1; font-size: 0.92rem;">Anyone can submit a support request here. It goes directly to the admin Customer Requests Inbox on site.</p>
+            <p style="margin: 0 0 12px; color: #cbd5e1; font-size: 0.92rem;">Anyone can submit a support request here with optional image/file upload. Tickets go directly to the admin Support Requests Inbox on site.</p>
             <div style="display: grid; gap: 10px;">
                 <label style="display: grid; gap: 6px; color: #cbd5e1; font-size: 0.9rem;">
                     Contact email
@@ -15087,7 +15087,7 @@ function loadAdminDashboard() {
 
                     <div class="admin-sidebar-group">
                         <p class="admin-sidebar-group-title">Customer</p>
-                        <button type="button" id="adminNavCustomerRequests" class="admin-side-link" data-admin-scroll="adminSectionCustomer">Customer Requests</button>
+                        <button type="button" id="adminNavCustomerRequests" class="admin-side-link" data-admin-scroll="adminSectionCustomer">Support Requests</button>
                     </div>
 
                     <div class="admin-sidebar-group">
@@ -15128,7 +15128,7 @@ function loadAdminDashboard() {
                     <div class="admin-quick-actions-grid">
                         <button type="button" class="nav-btn" id="adminQuickNewAnnouncementBtn">New Announcement</button>
                         <button type="button" class="nav-btn" id="adminQuickReviewQueueBtn">Review Queue</button>
-                        <button type="button" class="nav-btn" id="adminQuickCustomerRequestsBtn">Customer Requests</button>
+                        <button type="button" class="nav-btn" id="adminQuickCustomerRequestsBtn">Support Requests</button>
                         <button type="button" class="nav-btn" id="adminQueueFocusRefunds">Refund Queue</button>
                         <button type="button" class="nav-btn" id="adminQueueFocusCommissions">Commission Queue</button>
                         <button type="button" class="nav-btn" id="adminOpenContactPageBtn">Contact Inbox</button>
@@ -15241,12 +15241,12 @@ function loadAdminDashboard() {
                 </details>
 
                 <details class="admin-collapsible" id="adminSectionCustomer">
-                    <summary><span class="admin-summary-label">Customer Requests <span class="admin-panel-badge" id="adminCustomerCountBadge" data-tone="amber">0</span></span></summary>
+                    <summary><span class="admin-summary-label">Support Requests <span class="admin-panel-badge" id="adminCustomerCountBadge" data-tone="amber">0</span></span></summary>
                     <div class="admin-collapsible-body">
                         <p class="admin-section-note">Customer Actions submissions land here so you can triage edits, uploads, reminders, and DM alerts.</p>
                         <div class="admin-card admin-comments-card admin-customer-requests-card" id="adminCustomerRequestsCard">
-                            <h3 class="admin-card-title">Customer Requests Inbox</h3>
-                            <p class="admin-card-subtitle">Tickets customers send from the status page (Order Update, Revision Request, Files and Links, Payment Reminder, DM Alerts).</p>
+                            <h3 class="admin-card-title">Support Requests Inbox</h3>
+                            <p class="admin-card-subtitle">Tickets sent from the status page, including the public support form and Customer Actions tools (Order Update, Revision Request, Files and Links, Payment Reminder, DM Alerts).</p>
                             <div id="adminCustomerRequestsList" class="admin-comments-list">
                                 <p class="admin-detail">Loading customer requests...</p>
                             </div>
@@ -17228,7 +17228,7 @@ function renderAdminCustomerRequestsManager() {
     }, { all: 0, new: 0, 'in progress': 0, done: 0, archived: 0 });
 
     const filterBarHtml = `
-        <div class="admin-review-filter-row admin-customer-request-filter-row" role="group" aria-label="Filter customer requests">
+        <div class="admin-review-filter-row admin-customer-request-filter-row" role="group" aria-label="Filter support requests">
             <button type="button" class="admin-review-filter-btn admin-customer-request-filter-btn ${activeFilter === 'all' ? 'is-active' : ''}" data-request-filter="all">Open (${counts.all})</button>
             <button type="button" class="admin-review-filter-btn admin-customer-request-filter-btn ${activeFilter === 'new' ? 'is-active' : ''}" data-request-filter="new">New (${counts.new})</button>
             <button type="button" class="admin-review-filter-btn admin-customer-request-filter-btn ${activeFilter === 'in progress' ? 'is-active' : ''}" data-request-filter="in progress">In Progress (${counts['in progress']})</button>
@@ -17243,12 +17243,12 @@ function renderAdminCustomerRequestsManager() {
     });
 
     if (!entries.length) {
-        listEl.innerHTML = `${filterBarHtml}<p class="admin-detail">No customer requests yet.</p>`;
+        listEl.innerHTML = `${filterBarHtml}<p class="admin-detail">No support requests yet.</p>`;
         return;
     }
 
     if (!filteredEntries.length) {
-        listEl.innerHTML = `${filterBarHtml}<p class="admin-detail">No customer requests match this filter.</p>`;
+        listEl.innerHTML = `${filterBarHtml}<p class="admin-detail">No support requests match this filter.</p>`;
         return;
     }
 
