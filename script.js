@@ -4566,7 +4566,7 @@ function renderAdminQuickGuideSettings(config) {
             const entry = config?.quickGuide?.[item.key] || { mode: 'follow', min: 0, max: 0 };
             const mode = normalizeQuickGuideMode(entry.mode);
             const effectiveRange = getHomeTeaserSeedRange(item.key, config);
-            const modeLabel = mode === 'custom' ? 'Custom range' : 'Auto linked';
+            const modeLabel = mode === 'custom' ? 'Custom' : 'Auto';
             return `
                 <article class="admin-quick-guide-card ${mode === 'custom' ? 'is-custom' : 'is-follow'}">
                     <div class="admin-quick-guide-card__head">
@@ -4598,7 +4598,7 @@ function renderAdminQuickGuideSettings(config) {
         }).join('');
 
         return `
-            <details class="admin-pricing-group admin-pricing-group--${escapeHTML(group.tone)}" ${group.title === 'Fursuits' || group.title === 'Stickers' || group.title === 'Custom Keychains' ? 'open' : ''}>
+            <details class="admin-pricing-group admin-pricing-group--${escapeHTML(group.tone)}" ${group.title === 'Fursuits' ? 'open' : ''}>
                 <summary class="admin-pricing-group-summary">
                     <span class="admin-pricing-group-summary__copy">
                         <strong>${escapeHTML(group.title)}</strong>
