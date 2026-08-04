@@ -4000,6 +4000,10 @@ function getDefaultPricingConfig() {
             'art-ref-basic': { mode: 'follow', min: 190, max: 228 },
             'art-ref-standard': { mode: 'follow', min: 260, max: 317 },
             'art-ref-deluxe': { mode: 'follow', min: 330, max: 413 },
+            'animation-loop': { mode: 'follow', min: 20, max: 60 },
+            'animation-simple': { mode: 'follow', min: 60, max: 140 },
+            'animation-full-character': { mode: 'follow', min: 140, max: 300 },
+            'animation-complex-scene': { mode: 'follow', min: 300, max: 360 },
             'fursuit-tail': { mode: 'follow', min: 100, max: 118 },
             'fursuit-paws': { mode: 'follow', min: 170, max: 204 },
             'fursuit-paws-tail': { mode: 'follow', min: 260, max: 312 },
@@ -4043,6 +4047,10 @@ function getQuickGuideOverrideDefinitions() {
         'art-ref-basic',
         'art-ref-standard',
         'art-ref-deluxe',
+        'animation-loop',
+        'animation-simple',
+        'animation-full-character',
+        'animation-complex-scene',
         'fursuit-tail',
         'fursuit-paws',
         'fursuit-paws-tail',
@@ -4541,7 +4549,7 @@ function getQuickGuideEditorGroups() {
         {
             title: 'Art',
             tone: 'art',
-            description: 'Leave on Auto unless you want planner-only art ranges.',
+            description: 'Leave on Auto unless you want planner-only art or animation ranges.',
             items: [
                 { key: 'art-icon', label: 'Icon' },
                 { key: 'art-headshot', label: 'Headshot' },
@@ -4551,7 +4559,11 @@ function getQuickGuideEditorGroups() {
                 { key: 'art-scene', label: 'Scene' },
                 { key: 'art-ref-basic', label: 'Ref Sheet Basic' },
                 { key: 'art-ref-standard', label: 'Ref Sheet Standard' },
-                { key: 'art-ref-deluxe', label: 'Ref Sheet Deluxe' }
+                { key: 'art-ref-deluxe', label: 'Ref Sheet Deluxe' },
+                { key: 'animation-loop', label: 'Animation Loop' },
+                { key: 'animation-simple', label: 'Animation Simple' },
+                { key: 'animation-full-character', label: 'Animation Full Character' },
+                { key: 'animation-complex-scene', label: 'Animation Complex Scene' }
             ]
         }
     ];
