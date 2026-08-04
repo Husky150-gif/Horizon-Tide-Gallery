@@ -253,6 +253,7 @@ const ADMIN_IDLE_TIMEOUT_MS = 10 * 60 * 1000;
 const ADMIN_ACCEPTED_STALE_DAYS = 7;
 const ADMIN_REMINDER_COOLDOWN_MS = 18 * 60 * 60 * 1000;
 const QUICK_ACTOR_PREFILL_KEY = 'hz_quick_actor_prefill';
+const SITE_SUPPORT_EMAIL = 'horizontidegallery@gmail.com';
 const NAVIGATION_ENTRY = typeof performance !== 'undefined' && typeof performance.getEntriesByType === 'function'
     ? performance.getEntriesByType('navigation')[0]
     : null;
@@ -6327,6 +6328,30 @@ function attachDynamicEstimator(formId, baseType) {
     if(!estDisplay) return;
     syncPricingFormSelectPrices(form, baseType);
 
+    function storeEstimateSnapshot(min, max, isPlus, discountPercent) {
+        if (!Number.isFinite(min) || !Number.isFinite(max)) {
+            delete form.dataset.estimateMin;
+            delete form.dataset.estimateMax;
+            delete form.dataset.estimatePlus;
+            delete form.dataset.estimateSuggested;
+            delete form.dataset.estimateDiscountPercent;
+            return;
+        }
+
+        const safeMin = Math.max(0, Math.round(min));
+        const safeMax = Math.max(safeMin, Math.round(max));
+        form.dataset.estimateMin = String(safeMin);
+        form.dataset.estimateMax = String(safeMax);
+        form.dataset.estimatePlus = isPlus ? 'true' : 'false';
+        form.dataset.estimateSuggested = String(suggestSubmittedPriceFromRange(safeMin, safeMax, isPlus) ?? safeMax);
+
+        if (Number.isFinite(discountPercent) && discountPercent > 0) {
+            form.dataset.estimateDiscountPercent = String(discountPercent);
+        } else {
+            delete form.dataset.estimateDiscountPercent;
+        }
+    }
+
     function updateEstimate() {
         let min = 0;
         let max = 0;
@@ -6538,6 +6563,7 @@ function attachDynamicEstimator(formId, baseType) {
             let newText = formatEstimateRange(min, max);
 
             estDisplay.innerText = newText;
+            storeEstimateSnapshot(min, max, isPlus, pct);
             applyBestFitRecommendation(form, baseType, min, max);
             if (saveLine) {
                 saveLine.innerText += ` (regularly ${origText})`;
@@ -6549,6 +6575,7 @@ function attachDynamicEstimator(formId, baseType) {
         }
 
         estDisplay.innerText = formatEstimateRange(min, max);
+        storeEstimateSnapshot(min, max, isPlus, 0);
         applyBestFitRecommendation(form, baseType, min, max);
     }
 
@@ -7148,7 +7175,7 @@ function loadPreorderPage() {
                     <p class="menu-section-subtitle">Check price ranges or track an order before starting a new request.</p>
                     <button type="button" class="preorder-btn preorder-btn-violet" id="btnQuickActor">Quick Actor</button>
                     <button type="button" class="preorder-btn preorder-btn-violet" id="btnPricing">Pricing Sheet</button>
-                    <button type="button" class="preorder-btn preorder-btn-cyan" id="btnStatusCheck">Check Preorder Status</button>
+                    <button type="button" class="preorder-btn preorder-btn-cyan" id="btnStatusCheck">Check Preorder Status / Support Tickets</button>
                 </div>
                 <div class="menu-section">
                     <h3>Order Forms</h3>
@@ -9942,18 +9969,22 @@ function loadStatusCheckPage() {
     appViewport.innerHTML = `
         <div class="preorder-card">
             ${isAdminSessionActive() ? `<div class="admin-return-nav admin-return-nav--top-right">${renderAdminReturnButtonMarkup()}</div>` : ''}
-            <h1 style="color: #ffffff; text-shadow: 0 0 15px #00f2fe; margin-bottom: 10px; font-size: 2.5rem;">Check Status</h1>
+            <h1 style="color: #ffffff; text-shadow: 0 0 15px #00f2fe; margin-bottom: 10px; font-size: 2.5rem;">Check Preorder Status / Support Tickets</h1>
             <p style="margin-bottom: 25px; color: #e0f7fa; font-size: 1.1rem;">Enter your Order Number to check the status of your request.</p>
+            <p style="margin: -10px 0 20px; color: #c4b5fd; font-size: 0.92rem; text-align: left;">Customer Actions (support ticket buttons) appears after we find your order in the public tracker.</p>
+            <p style="margin: -4px 0 18px; color: #bae6fd; font-size: 0.9rem; text-align: left;">Support email: <a href="mailto:${SITE_SUPPORT_EMAIL}" style="color: #7dd3fc;">${SITE_SUPPORT_EMAIL}</a></p>
             <form id="statusCheckForm" style="display: flex; flex-direction: column; gap: 15px;">
                 <input type="text" id="searchQuery" class="form-input" placeholder="e.g. HTG-YYYY-XXXXXX or XXXXXX" required style="font-size: 1.1rem; text-align: center;">
                 <button type="submit" class="preorder-btn" style="border-color: #a855f7;">Search ✨</button>
             </form>
             <div id="statusResults" style="margin-top: 25px; text-align: left; display: flex; flex-direction: column; gap: 15px;"></div>
+            ${renderPublicSupportTicketPanel()}
             <button type="button" id="backToMenuBtn" class="nav-btn" style="margin-top: 30px;">← Back to Menu</button>
         </div>
     `;
     document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
     bindAdminReturnButtons(appViewport);
+    bindPublicSupportTicketPanel();
 
     const statusForm = document.getElementById('statusCheckForm');
     const statusQueryField = document.getElementById('searchQuery');
@@ -10005,7 +10036,7 @@ function loadStatusCheckPage() {
 
             if (!statusDoc || !statusDoc.exists()) {
                 trackAnalyticsEvent('status_lookup_result', { source: 'status_page', status: 'not_found' });
-                resultsDiv.innerHTML = `<p style="color: #f8d66d; text-align: center; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px;">Your order was not found in the public tracker yet. New submissions may appear after admin review. Please check back soon.</p>`;
+                resultsDiv.innerHTML = `<p style="color: #f8d66d; text-align: center; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px;">Your order was not found in the public tracker yet. New submissions may appear after admin review. Customer Actions will appear once your order is visible here. Please check back soon.</p>`;
             } else {
                 trackAnalyticsEvent('status_lookup_result', { source: 'status_page', status: 'found' });
                 const data = statusDoc.data();
@@ -10142,13 +10173,20 @@ function pushCustomerRequestHistory(orderId, entry) {
 }
 
 function getCustomerRequestTypeLabel(type) {
-    const value = String(type || '').trim().toLowerCase();
+    const rawValue = String(type || '').trim().toLowerCase();
+    const value = rawValue.replace(/^customer_+/, '');
     if (value === 'self_serve_edit') return 'Order Update';
     if (value === 'revision_request') return 'Revision Request';
     if (value === 'upload_center') return 'Files and Links';
     if (value === 'payment_reminder_request') return 'Payment Reminder';
     if (value === 'dm_alert_preference') return 'DM Alerts';
-    return 'Customer Request';
+    if (!value) return 'Customer Request';
+    const readable = value
+        .replace(/[_-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/\b\w/g, (match) => match.toUpperCase());
+    return readable || 'Customer Request';
 }
 
 function renderCustomerRequestHistoryCards(orderId) {
@@ -10275,8 +10313,8 @@ function renderCustomerPhaseTwoPanel(orderId, orderData = {}) {
 }
 
 async function submitCustomerActionTicket({ orderId, email, type, message, uploadLink, attachmentUrls, discordHandle, dmAlertsEnabled }) {
-    const safeOrderId = String(orderId || '').trim();
-    if (!safeOrderId) throw new Error('Missing order ID');
+    const normalizedOrderId = String(orderId || '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
+    const safeOrderId = normalizedOrderId || 'NO-ORDER';
     if (!checkClientCooldown('hz_customer_action_cooldown', 7000)) {
         throw new Error('Please wait a few seconds before sending another request.');
     }
@@ -10303,6 +10341,150 @@ async function submitCustomerActionTicket({ orderId, email, type, message, uploa
         dmAlertsEnabled: Boolean(dmAlertsEnabled),
         createdAt: serverTimestamp()
     });
+}
+
+function renderPublicSupportTicketPanel() {
+    return `
+        <section style="margin-top: 18px; background: rgba(9, 18, 35, 0.76); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 14px; padding: 16px; text-align: left;">
+            <h3 style="margin: 0 0 8px; color: #f8fafc;">Public Support Ticket</h3>
+            <p style="margin: 0 0 12px; color: #cbd5e1; font-size: 0.92rem;">Anyone can submit a support request here. It goes directly to the admin Customer Requests Inbox on site.</p>
+            <div style="display: grid; gap: 10px;">
+                <label style="display: grid; gap: 6px; color: #cbd5e1; font-size: 0.9rem;">
+                    Contact email
+                    <input type="email" id="publicSupportEmail" class="form-input" placeholder="you@example.com" style="text-align: left;">
+                </label>
+
+                <label style="display: grid; gap: 6px; color: #cbd5e1; font-size: 0.9rem;">
+                    Order ID (optional)
+                    <input type="text" id="publicSupportOrderId" class="form-input" placeholder="HTG-YYYY-XXXXXX (optional)" style="text-align: left;">
+                </label>
+
+                <label style="display: grid; gap: 6px; color: #cbd5e1; font-size: 0.9rem;">
+                    Ticket type
+                    <select id="publicSupportType" class="form-input" style="text-align: left;">
+                        <option value="general_support">General Support</option>
+                        <option value="self_serve_edit">Order Update</option>
+                        <option value="revision_request">Revision Request</option>
+                        <option value="upload_center">Files and Links</option>
+                        <option value="payment_reminder_request">Payment Reminder</option>
+                        <option value="dm_alert_preference">DM Alerts</option>
+                    </select>
+                </label>
+
+                <label style="display: grid; gap: 6px; color: #cbd5e1; font-size: 0.9rem;">
+                    Message
+                    <textarea id="publicSupportMessage" class="form-input" rows="4" placeholder="Describe the issue, request, or update you need." style="text-align: left;"></textarea>
+                </label>
+
+                <label style="display: grid; gap: 6px; color: #cbd5e1; font-size: 0.9rem;">
+                    File link (optional)
+                    <input type="url" id="publicSupportUploadLink" class="form-input" placeholder="Paste Drive/Dropbox/Discord link" style="text-align: left;">
+                </label>
+
+                <label style="display: grid; gap: 6px; color: #cbd5e1; font-size: 0.9rem;">
+                    Upload files (optional, up to 4 files, 8MB each)
+                    <input type="file" id="publicSupportFiles" class="form-input" multiple accept="image/*,.pdf,.txt,.doc,.docx" style="text-align: left; padding: 8px;">
+                </label>
+
+                <button type="button" id="publicSupportSubmitBtn" class="preorder-btn" style="border-color: #22c55e;">Submit Support Ticket</button>
+                <p id="publicSupportStatus" style="margin: 6px 0 0; color: #bae6fd; font-size: 0.9rem;"></p>
+            </div>
+        </section>
+    `;
+}
+
+function bindPublicSupportTicketPanel() {
+    const emailEl = document.getElementById('publicSupportEmail');
+    const orderEl = document.getElementById('publicSupportOrderId');
+    const typeEl = document.getElementById('publicSupportType');
+    const messageEl = document.getElementById('publicSupportMessage');
+    const uploadLinkEl = document.getElementById('publicSupportUploadLink');
+    const filesEl = document.getElementById('publicSupportFiles');
+    const submitBtn = document.getElementById('publicSupportSubmitBtn');
+    const statusEl = document.getElementById('publicSupportStatus');
+
+    if (!(emailEl instanceof HTMLInputElement)
+        || !(orderEl instanceof HTMLInputElement)
+        || !(typeEl instanceof HTMLSelectElement)
+        || !(messageEl instanceof HTMLTextAreaElement)
+        || !(uploadLinkEl instanceof HTMLInputElement)
+        || !(filesEl instanceof HTMLInputElement)
+        || !(submitBtn instanceof HTMLButtonElement)
+        || !(statusEl instanceof HTMLElement)) {
+        return;
+    }
+
+    const setStatus = (text, isError = false) => {
+        statusEl.textContent = text;
+        statusEl.style.color = isError ? '#fca5a5' : '#86efac';
+    };
+
+    const tryPrefillOrder = () => {
+        const lookupField = document.getElementById('searchQuery');
+        if (!(lookupField instanceof HTMLInputElement)) return;
+        const candidate = String(lookupField.value || '').trim().toUpperCase();
+        if (candidate && !orderEl.value.trim()) {
+            orderEl.value = candidate.slice(0, 32);
+        }
+    };
+
+    submitBtn.addEventListener('click', async () => {
+        const email = String(emailEl.value || '').trim();
+        const type = String(typeEl.value || 'general_support').trim().toLowerCase();
+        const message = String(messageEl.value || '').trim();
+        const uploadLink = String(uploadLinkEl.value || '').trim();
+        const orderId = String(orderEl.value || '').trim().toUpperCase().slice(0, 32);
+        const selectedFiles = Array.from(filesEl.files || []);
+
+        if (!email) {
+            setStatus('Please enter your contact email so we can reply.', true);
+            return;
+        }
+        if (!message && !uploadLink && selectedFiles.length === 0) {
+            setStatus('Please add a message, link, or file before submitting.', true);
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+        setStatus('Sending your ticket...');
+
+        try {
+            let uploadedUrls = [];
+            if (selectedFiles.length > 0) {
+                setStatus('Uploading file(s)...');
+                uploadedUrls = await uploadCustomerSupportFiles(orderId || 'NO-ORDER', selectedFiles);
+            }
+
+            await submitCustomerActionTicket({
+                orderId,
+                email,
+                type,
+                message,
+                uploadLink,
+                attachmentUrls: uploadedUrls,
+                discordHandle: '',
+                dmAlertsEnabled: type === 'dm_alert_preference'
+            });
+
+            messageEl.value = '';
+            uploadLinkEl.value = '';
+            filesEl.value = '';
+            setStatus('Ticket submitted. We received it in the site inbox and will follow up by email.');
+        } catch (error) {
+            console.error('Public support ticket failed:', error);
+            const safeMessage = String(error && error.message ? error.message : 'Could not submit right now. Please try again in a moment.');
+            setStatus(safeMessage, true);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Support Ticket';
+        }
+    });
+
+    const lookupField = document.getElementById('searchQuery');
+    lookupField?.addEventListener('blur', tryPrefillOrder);
+    lookupField?.addEventListener('change', tryPrefillOrder);
+    tryPrefillOrder();
 }
 
 function bindCustomerPhaseTwoPanel(orderId) {
@@ -10571,6 +10753,92 @@ function extractSubmittedEstimateDiscountFromNotes(notesValue) {
     return match && match[1] ? String(match[1]).trim() : '';
 }
 
+function parseEstimateRangeSnapshot(rawValue) {
+    const text = String(rawValue || '').trim();
+    if (!text) return null;
+
+    const numericMatches = Array.from(text.replace(/,/g, '').matchAll(/\$?\s*([0-9]+(?:\.[0-9]{1,2})?)/g))
+        .map((match) => Number.parseFloat(match[1]))
+        .filter((value) => Number.isFinite(value) && value >= 0);
+    if (numericMatches.length === 0) return null;
+
+    const min = Math.round(numericMatches[0]);
+    const max = Math.round(numericMatches.length > 1 ? numericMatches[1] : numericMatches[0]);
+    return {
+        min,
+        max: Math.max(min, max),
+        isPlus: /\+/.test(text)
+    };
+}
+
+function suggestSubmittedPriceFromRange(minValue, maxValue, isPlus = false) {
+    const min = Number(minValue);
+    const max = Number(maxValue);
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+    if (isPlus) return Math.max(0, Math.round(max));
+    return Math.max(0, Math.round((min + max) / 2));
+}
+
+function parseDiscountPercentFromSnapshot(rawValue) {
+    const text = String(rawValue || '').trim();
+    if (!text) return null;
+    const match = text.match(/([0-9]+(?:\.[0-9]+)?)\s*%\s*off/i);
+    if (!match || !match[1]) return null;
+    const value = Number.parseFloat(match[1]);
+    return Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function getSubmittedEstimateSummary(order) {
+    if (!order || typeof order !== 'object') {
+        return {
+            rangeText: '',
+            discountText: '',
+            min: null,
+            max: null,
+            isPlus: false,
+            suggested: null,
+            discountPercent: null
+        };
+    }
+
+    const rangeText = String(order.submittedEstimateText || extractSubmittedEstimateFromNotes(order.notes) || '').trim();
+    const discountText = String(order.submittedEstimateDiscountSnapshot || extractSubmittedEstimateDiscountFromNotes(order.notes) || '').trim();
+    const parsedRange = parseEstimateRangeSnapshot(rangeText);
+
+    const submittedMinRaw = Number(order.submittedEstimateMin);
+    const submittedMaxRaw = Number(order.submittedEstimateMax);
+    const min = Number.isFinite(submittedMinRaw)
+        ? Math.max(0, Math.round(submittedMinRaw))
+        : (parsedRange ? parsedRange.min : null);
+    const max = Number.isFinite(submittedMaxRaw)
+        ? Math.max(min != null ? min : 0, Math.round(submittedMaxRaw))
+        : (parsedRange ? parsedRange.max : null);
+
+    const isPlus = order.submittedEstimatePlus === true
+        ? true
+        : (parsedRange ? parsedRange.isPlus : false);
+
+    const suggestedRaw = Number(order.submittedSuggestedPrice);
+    const suggested = Number.isFinite(suggestedRaw)
+        ? Math.max(0, Math.round(suggestedRaw))
+        : suggestSubmittedPriceFromRange(min, max, isPlus);
+
+    const discountRaw = Number(order.submittedEstimateDiscountPercent);
+    const discountPercent = Number.isFinite(discountRaw) && discountRaw > 0
+        ? discountRaw
+        : parseDiscountPercentFromSnapshot(discountText);
+
+    return {
+        rangeText,
+        discountText,
+        min,
+        max,
+        isPlus,
+        suggested,
+        discountPercent
+    };
+}
+
 async function optimizeImageForUpload(file, options = {}) {
     if (!(file instanceof File)) return file;
     const mime = String(file.type || '').toLowerCase();
@@ -10744,6 +11012,26 @@ async function submitPreorder(event, orderType) {
     const estimateDiscountSnapshot = estimateDiscountEl instanceof HTMLElement && estimateDiscountEl.style.display !== 'none'
         ? String(estimateDiscountEl.textContent || '').trim()
         : '';
+    const estimateRangeMeta = parseEstimateRangeSnapshot(estimateSnapshot);
+    const submittedEstimateMinRaw = Number.parseInt(String(form.dataset.estimateMin || ''), 10);
+    const submittedEstimateMaxRaw = Number.parseInt(String(form.dataset.estimateMax || ''), 10);
+    const submittedEstimatePlus = String(form.dataset.estimatePlus || '').toLowerCase() === 'true';
+    const submittedSuggestedRaw = Number.parseInt(String(form.dataset.estimateSuggested || ''), 10);
+    const submittedDiscountRaw = Number.parseFloat(String(form.dataset.estimateDiscountPercent || ''));
+
+    const estimateMin = Number.isFinite(submittedEstimateMinRaw)
+        ? submittedEstimateMinRaw
+        : (estimateRangeMeta ? estimateRangeMeta.min : null);
+    const estimateMax = Number.isFinite(submittedEstimateMaxRaw)
+        ? submittedEstimateMaxRaw
+        : (estimateRangeMeta ? estimateRangeMeta.max : null);
+    const estimateIsPlus = submittedEstimatePlus || (estimateRangeMeta ? estimateRangeMeta.isPlus : false);
+    const estimateSuggested = Number.isFinite(submittedSuggestedRaw)
+        ? submittedSuggestedRaw
+        : suggestSubmittedPriceFromRange(estimateMin, estimateMax, estimateIsPlus);
+    const estimateDiscountPercent = Number.isFinite(submittedDiscountRaw) && submittedDiscountRaw > 0
+        ? submittedDiscountRaw
+        : parseDiscountPercentFromSnapshot(estimateDiscountSnapshot);
     
     const fileInput = form.querySelector('#refFilesInput');
     let uploadedImageUrls = [];
@@ -10822,6 +11110,7 @@ async function submitPreorder(event, orderType) {
     appendDetail('Other Social Handle', orderData.socialHandle);
     appendDetail('Reference Link', orderData.refLink);
     appendDetail('Estimated Price Snapshot', estimateSnapshot || 'Unavailable');
+    if (Number.isFinite(estimateSuggested)) appendDetail('Estimated Suggested Price', formatMoney(estimateSuggested));
     if (estimateDiscountSnapshot) appendDetail('Estimate Discount Snapshot', estimateDiscountSnapshot);
     if (addons.length > 0) appendDetail('Selected Add-ons', addons.join(', '));
     if (uploadedImageUrls.length > 0) appendDetail('Reference Uploads', uploadedImageUrls.join(' | '));
@@ -10867,6 +11156,13 @@ async function submitPreorder(event, orderType) {
         keychainType: (orderData.keychainType || '').trim(),
         stickerType: (orderData.stickerType || '').trim(),
         needsMeasurements: orderData.needsMeasurements ? 'Yes' : '',
+        submittedEstimateText: estimateSnapshot || '',
+        submittedEstimateMin: Number.isFinite(estimateMin) ? estimateMin : null,
+        submittedEstimateMax: Number.isFinite(estimateMax) ? estimateMax : null,
+        submittedEstimatePlus: Boolean(estimateIsPlus),
+        submittedSuggestedPrice: Number.isFinite(estimateSuggested) ? estimateSuggested : null,
+        submittedEstimateDiscountSnapshot: estimateDiscountSnapshot || '',
+        submittedEstimateDiscountPercent: Number.isFinite(estimateDiscountPercent) ? estimateDiscountPercent : null,
         refLink: (orderData.refLink || '').trim(),
         referenceImageUrls: uploadedImageUrls,
         status: 'Pending Review'
@@ -13852,7 +14148,7 @@ function setupAdminDashboardDelegation() {
             return;
         }
 
-        if (button.matches('.admin-review-filter-btn')) {
+        if (button.matches('.admin-review-filter-btn') && button.hasAttribute('data-filter')) {
             const nextFilter = String(button.getAttribute('data-filter') || 'all').toLowerCase();
             if (!['all', 'pending', 'approved', 'safe'].includes(nextFilter)) return;
             window.adminReviewFilterState.status = nextFilter;
@@ -14950,7 +15246,7 @@ function loadAdminDashboard() {
                         <p class="admin-section-note">Customer Actions submissions land here so you can triage edits, uploads, reminders, and DM alerts.</p>
                         <div class="admin-card admin-comments-card admin-customer-requests-card" id="adminCustomerRequestsCard">
                             <h3 class="admin-card-title">Customer Requests Inbox</h3>
-                            <p class="admin-card-subtitle">Tickets submitted from the status page Customer Actions panel.</p>
+                            <p class="admin-card-subtitle">Tickets customers send from the status page (Order Update, Revision Request, Files and Links, Payment Reminder, DM Alerts).</p>
                             <div id="adminCustomerRequestsList" class="admin-comments-list">
                                 <p class="admin-detail">Loading customer requests...</p>
                             </div>
@@ -17307,6 +17603,7 @@ function renderAdminOrders(ordersArr) {
         const buildOrderDetailRows = () => {
             const rows = [];
             const allReferenceImageUrls = getOrderReferenceImageUrls(order);
+            const estimateSummary = getSubmittedEstimateSummary(order);
             const pushRow = (label, value) => {
                 const text = getValue(value);
                 if (!text) return;
@@ -17344,8 +17641,9 @@ function renderAdminOrders(ordersArr) {
             pushRow('Description', order.description);
             pushRow('Materials', order.materials);
             pushRow('Selected Add-ons', order.selectedAddons || (Array.isArray(order.addon) ? order.addon.join(', ') : ''));
-            pushRow('Estimated Price At Submit', extractSubmittedEstimateFromNotes(order.notes));
-            pushRow('Estimate Discount At Submit', extractSubmittedEstimateDiscountFromNotes(order.notes));
+            pushRow('Estimated Price At Submit', estimateSummary.rangeText);
+            if (estimateSummary.suggested != null) pushRow('Suggested Price At Submit', formatMoney(estimateSummary.suggested));
+            pushRow('Estimate Discount At Submit', estimateSummary.discountText);
             pushRow('Notes', order.notes);
             pushRow('Status History', statusHistory);
             pushRow('Admin Notes', order.adminNotes);
@@ -17412,8 +17710,10 @@ function renderAdminOrders(ordersArr) {
         const archivedAtLabel = getComparableTimestampMs(order.archivedAt)
             ? new Date(getComparableTimestampMs(order.archivedAt)).toLocaleDateString()
             : '';
-        const submittedEstimate = extractSubmittedEstimateFromNotes(order.notes);
-        const submittedEstimateDiscount = extractSubmittedEstimateDiscountFromNotes(order.notes);
+        const estimateSummary = getSubmittedEstimateSummary(order);
+        const submittedEstimate = estimateSummary.rangeText;
+        const submittedEstimateDiscount = estimateSummary.discountText;
+        const submittedSuggestedPriceText = estimateSummary.suggested != null ? formatMoney(estimateSummary.suggested) : '';
         const publicStatusDoc = window.adminPublicStatusByOrderId[String(order.orderId || '').trim()] || null;
         const publishedRefsCount = Array.isArray(publicStatusDoc?.publicReferenceImageUrls)
             ? publicStatusDoc.publicReferenceImageUrls.filter(Boolean).length
@@ -17458,12 +17758,14 @@ function renderAdminOrders(ordersArr) {
                 <span class="admin-order-meta-pill"><strong>Date:</strong> ${escapeHTML(orderDate)}</span>
                 <span class="admin-order-meta-pill"><strong>Final:</strong> ${escapeHTML(finalMetaValue)}</span>
                 ${submittedEstimate ? `<span class="admin-order-meta-pill"><strong>Submitted Est:</strong> ${escapeHTML(submittedEstimate)}</span>` : ''}
+                ${submittedSuggestedPriceText ? `<span class="admin-order-meta-pill"><strong>Suggested:</strong> ${escapeHTML(submittedSuggestedPriceText)}</span>` : ''}
                 <span class="admin-order-meta-pill"><strong>Status:</strong> ${escapeHTML(currentStatus)}</span>
                 ${isArchived ? `<span class="admin-order-meta-pill admin-order-meta-pill--archived"><strong>Archive:</strong> ${escapeHTML(archivedAtLabel || 'Archived')}</span>` : ''}
                 <span class="admin-order-meta-pill"><strong>Public Uploads:</strong> <span class="admin-order-public-refs-flag ${refsPublished ? 'is-published' : 'is-hidden'}">${refsPublished ? `${publishedRefsCount} Published` : 'Hidden'}</span></span>
             </div>
 
             ${submittedEstimateDiscount ? `<div class="admin-detail" style="margin-bottom: 10px; color: #cdeafe;"><strong>Estimate Discount:</strong> ${escapeHTML(submittedEstimateDiscount)}</div>` : ''}
+            ${submittedSuggestedPriceText ? `<div class="admin-detail" style="margin-bottom: 10px; color: #a7f3d0;"><strong>Suggested Price:</strong> ${escapeHTML(submittedSuggestedPriceText)}</div>` : ''}
             <div class="admin-detail" style="margin-bottom: 10px; color: ${(finalBelowFloor || quoteBelowFloor) ? '#fca5a5' : '#86efac'};">
                 <strong>${(finalBelowFloor || quoteBelowFloor) ? 'Budget Alert:' : 'Sustainable Floor:'}</strong>
                 ${(finalBelowFloor || quoteBelowFloor)

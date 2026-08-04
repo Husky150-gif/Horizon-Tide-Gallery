@@ -38,6 +38,13 @@ service cloud.firestore {
         'keychainType',
         'stickerType',
         'needsMeasurements',
+        'submittedEstimateText',
+        'submittedEstimateMin',
+        'submittedEstimateMax',
+        'submittedEstimatePlus',
+        'submittedSuggestedPrice',
+        'submittedEstimateDiscountSnapshot',
+        'submittedEstimateDiscountPercent',
         'refLink',
         'referenceImageUrls',
         'createdAt'
@@ -57,6 +64,37 @@ service cloud.firestore {
         && (!('email' in request.resource.data.keys()) || request.resource.data.email is string)
         && (!('discord' in request.resource.data.keys()) || request.resource.data.discord is string)
         && (!('socialHandle' in request.resource.data.keys()) || request.resource.data.socialHandle is string)
+        && optionalShortString('submittedEstimateText', 120)
+        && (
+          !('submittedEstimateMin' in request.resource.data.keys())
+          || request.resource.data.submittedEstimateMin == null
+          || (request.resource.data.submittedEstimateMin is number && request.resource.data.submittedEstimateMin >= 0)
+        )
+        && (
+          !('submittedEstimateMax' in request.resource.data.keys())
+          || request.resource.data.submittedEstimateMax == null
+          || (request.resource.data.submittedEstimateMax is number && request.resource.data.submittedEstimateMax >= 0)
+        )
+        && (
+          !('submittedEstimatePlus' in request.resource.data.keys())
+          || request.resource.data.submittedEstimatePlus == null
+          || request.resource.data.submittedEstimatePlus is bool
+        )
+        && (
+          !('submittedSuggestedPrice' in request.resource.data.keys())
+          || request.resource.data.submittedSuggestedPrice == null
+          || (request.resource.data.submittedSuggestedPrice is number && request.resource.data.submittedSuggestedPrice >= 0)
+        )
+        && optionalShortString('submittedEstimateDiscountSnapshot', 200)
+        && (
+          !('submittedEstimateDiscountPercent' in request.resource.data.keys())
+          || request.resource.data.submittedEstimateDiscountPercent == null
+          || (
+            request.resource.data.submittedEstimateDiscountPercent is number
+            && request.resource.data.submittedEstimateDiscountPercent > 0
+            && request.resource.data.submittedEstimateDiscountPercent <= 100
+          )
+        )
         && !('adminNotes' in request.resource.data.keys())
         && !('privateNotes' in request.resource.data.keys())
         && !('paymentStatus' in request.resource.data.keys())
