@@ -6307,12 +6307,6 @@ function bindHomeConversionPack() {
 
         intentSummary.textContent = `Best lane: ${route.label}. You selected ${deadlineText} and ${budgetText}.`;
 
-        const pathMap = document.querySelector('.quick-actor-constellation');
-        if (pathMap instanceof HTMLElement) {
-            pathMap.dataset.project = String(intentType.value || 'art');
-            pathMap.dataset.timing = String(deadlineValue || 'flexible');
-        }
-
         if (intentBudgetMessage instanceof HTMLElement) {
             if (Number.isFinite(enteredBudget) && enteredBudget > 0) {
                 const pricedOptions = getIntentPricedOptions();
@@ -6336,8 +6330,6 @@ function bindHomeConversionPack() {
             intentPrimaryBtn.textContent = route.label;
             intentPrimaryBtn.dataset.targetHash = route.hash;
         }
-        const destinationLabel = document.getElementById('quickActorDestinationLabel');
-        if (destinationLabel instanceof HTMLElement) destinationLabel.textContent = route.label;
     };
 
     const updateTeaserEstimate = () => {
@@ -7520,18 +7512,6 @@ function loadQuickActorPage() {
                 <p class="quick-actor-subtitle">Shape your request, follow the stars, and discover a planning range before you submit.</p>
 
                 <section class="preorder-quick-actor-grid" aria-label="Quick Actor tools">
-                    <div class="quick-actor-constellation" aria-label="Your commission constellation">
-                        <span class="constellation-line constellation-line-a"></span>
-                        <span class="constellation-line constellation-line-b"></span>
-                        <span class="constellation-line constellation-line-c"></span>
-                        <span class="constellation-line constellation-line-d"></span>
-                        <span class="constellation-star constellation-star-a"></span>
-                        <span class="constellation-star constellation-star-b"></span>
-                        <span class="constellation-star constellation-star-core"></span>
-                        <span class="constellation-star constellation-star-c"></span>
-                        <span class="constellation-star constellation-star-d"></span>
-                        <span class="constellation-star constellation-star-e"></span>
-                    </div>
                     <article class="home-conversion-card home-intent-card">
                         <p class="home-conversion-kicker">☾ Your Commission</p>
                         <h4>Start a Request</h4>

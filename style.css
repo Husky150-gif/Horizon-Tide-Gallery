@@ -18151,22 +18151,6 @@ body[data-page="quick-actor"] .quick-actor-estimate-meta {
 }
 
 /* Final Quick Actor correction: keep the constellation in the center gap. */
-body[data-page="quick-actor"] .preorder-quick-actor-grid {
-    column-gap: clamp(92px, 13vw, 170px);
-}
-
-body[data-page="quick-actor"] .preorder-quick-actor-grid > .quick-actor-constellation {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 142px;
-    height: 116px;
-    margin: 0;
-    transform: translate(-50%, -50%);
-    border: 0;
-    z-index: 1;
-}
-
 body[data-page="quick-actor"] .preorder-quick-actor-grid > .home-conversion-card {
     z-index: 2;
 }
@@ -18198,12 +18182,6 @@ body[data-page="quick-actor"] #homeIntentBudgetAmount {
 }
 
 @media (max-width: 820px) {
-    body[data-page="quick-actor"] .preorder-quick-actor-grid {
-        column-gap: 0;
-    }
-    body[data-page="quick-actor"] .preorder-quick-actor-grid > .quick-actor-constellation {
-        display: none;
-    }
 }
 
 /* Complexity control: native range remains accessible, stars become the visual input. */
