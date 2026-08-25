@@ -7118,7 +7118,7 @@ function loadHomePage() {
             <nav class="home-top-nav" aria-label="Homepage utility links">
                 <button type="button" class="nav-btn home-top-link nav-pill" id="tosBtn">My TOS</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="whatWeDoBtn">What I do</button>
-                <button type="button" class="nav-btn home-top-link nav-pill" id="socialsBtn">Meet the Artists + FAQ + How to Order</button>
+                <button type="button" class="nav-btn home-top-link nav-pill" id="socialsBtn">My World + FAQ</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="reviewsBtn">Reviews</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="contactBtn">Contact me 💬</button>
             </nav>
