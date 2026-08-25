@@ -6373,6 +6373,10 @@ function bindHomeConversionPack() {
         if (teaserComplexityHelp instanceof HTMLElement) {
             teaserComplexityHelp.textContent = `${getTeaserComplexityGuide(complexity)} Based on markings, outfits, props, effects, and overall detail.`;
         }
+        const estimateMeta = document.getElementById('quickActorEstimateMeta');
+        if (estimateMeta instanceof HTMLElement) {
+            estimateMeta.textContent = `Based on ${quantity} item${quantity === 1 ? '' : 's'} · Complexity ${['0', 'I', 'II', 'III'][complexity]}${rushMultiplier > 1 ? ' · Rush' : ''}`;
+        }
         const complexityMap = document.querySelector('.quick-actor-complexity-map');
         const complexityLabel = document.getElementById('quickActorComplexityLabel');
         if (complexityMap instanceof HTMLElement) complexityMap.dataset.level = String(complexity);
@@ -7502,18 +7506,6 @@ function loadQuickActorPage() {
                 <p class="quick-actor-subtitle">Shape your request, follow the stars, and discover a planning range before you submit.</p>
 
                 <section class="preorder-quick-actor-grid" aria-label="Quick Actor tools">
-                    <div class="quick-actor-constellation" aria-hidden="true">
-                        <span class="constellation-line constellation-line-a"></span>
-                        <span class="constellation-line constellation-line-b"></span>
-                        <span class="constellation-line constellation-line-c"></span>
-                        <span class="constellation-star constellation-star-a"></span>
-                        <span class="constellation-star constellation-star-b"></span>
-                        <span class="constellation-star constellation-star-core"></span>
-                        <span class="constellation-star constellation-star-c"></span>
-                        <span class="constellation-star constellation-star-d"></span>
-                        <span class="constellation-destination-label">Your path</span>
-                        <strong id="quickActorDestinationLabel">Start Art Request</strong>
-                    </div>
                     <article class="home-conversion-card home-intent-card">
                         <p class="home-conversion-kicker">☾ Your Commission</p>
                         <h4>Start a Request</h4>
@@ -7609,9 +7601,20 @@ function loadQuickActorPage() {
                             <p class="home-teaser-complexity-note" id="homeTeaserComplexityHelp">Complexity 1: moderate detail, light markings, basic accessories. Based on markings, outfits, props, effects, and overall detail.</p>
                             <label class="home-teaser-toggle"><input id="homeTeaserRush" type="checkbox"> Rush needed</label>
                         </div>
+                        <div class="quick-actor-constellation" aria-label="Your commission constellation">
+                            <span class="constellation-line constellation-line-a"></span>
+                            <span class="constellation-line constellation-line-b"></span>
+                            <span class="constellation-line constellation-line-c"></span>
+                            <span class="constellation-star constellation-star-a"></span>
+                            <span class="constellation-star constellation-star-b"></span>
+                            <span class="constellation-star constellation-star-core"></span>
+                            <span class="constellation-star constellation-star-c"></span>
+                            <span class="constellation-star constellation-star-d"></span>
+                        </div>
                         <div class="quick-actor-estimate-result">
                             <p class="quick-actor-estimate-kicker">✦ Estimated Range ✦</p>
                             <p class="home-teaser-range" id="homeTeaserRange">$0</p>
+                            <p class="quick-actor-estimate-meta" id="quickActorEstimateMeta">Based on 1 item · Complexity I</p>
                         </div>
                         <p class="home-teaser-hint" id="homeTeaserHint">Set your options to preview a planning range.</p>
                         <button type="button" class="nav-btn home-conversion-btn" id="homeTeaserPricingBtn">Open Full Pricing</button>
