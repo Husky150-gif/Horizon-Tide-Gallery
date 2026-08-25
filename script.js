@@ -7102,6 +7102,10 @@ function loadHomePage() {
         <section class="home-hero-shell" aria-label="Welcome and primary actions">
 
             <div class="gif-container"><img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/umbreon.gif" alt="Shiny Umbreon" class="active-pokemon-gif"></div>
+            <div class="home-pokemon-orbit" aria-hidden="true">
+                <img class="home-pokemon-sprite home-pokemon-mew" src="https://img.pokemondb.net/sprites/black-white/anim/normal/mew.gif" alt="">
+                <img class="home-pokemon-sprite home-pokemon-magikarp" src="https://img.pokemondb.net/sprites/black-white/anim/normal/magikarp.gif" alt="">
+            </div>
             <header class="home-hero-header">
                 <h1>Welcome to The Horizon.</h1>
                 <h2>Custom Art • Animation • Handmade Creations</h2>

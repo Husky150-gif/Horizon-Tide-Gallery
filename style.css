@@ -177,6 +177,43 @@ body[data-page="home"] .home-card-deck-shell {
     transition: transform 260ms ease-out;
 }
 
+.home-pokemon-orbit {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.home-pokemon-sprite {
+    position: absolute;
+    width: 58px;
+    height: 58px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 0 10px rgba(147, 197, 253, 0.72));
+    animation: homePokemonFloat 6s ease-in-out infinite;
+}
+
+.home-pokemon-mew {
+    top: 15%;
+    left: 8%;
+    animation-delay: -1.4s;
+}
+
+.home-pokemon-magikarp {
+    right: 9%;
+    bottom: 12%;
+    width: 64px;
+    height: 64px;
+    filter: drop-shadow(0 0 10px rgba(244, 114, 182, 0.72));
+    animation-delay: -3.2s;
+}
+
+@keyframes homePokemonFloat {
+    0%, 100% { transform: translate3d(0, 0, 0) rotate(-3deg); }
+    50% { transform: translate3d(0, -9px, 0) rotate(3deg); }
+}
+
 @media (prefers-reduced-motion: reduce), (max-width: 768px) {
     [data-theme="horizon"] .galaxy-nebula,
     body[data-page="home"] .star-cluster-field,
@@ -185,6 +222,10 @@ body[data-page="home"] .home-card-deck-shell {
     body[data-page="home"] .home-card-deck-shell {
         transform: none;
         transition: none;
+    }
+
+    .home-pokemon-orbit {
+        display: none;
     }
 }
 
