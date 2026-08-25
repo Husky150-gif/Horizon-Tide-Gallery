@@ -18472,6 +18472,83 @@ input[type="number"]::-webkit-inner-spin-button {
     -webkit-appearance: none;
 }
 
+/* Final complexity slider geometry: four dots on one straight track. */
+body[data-page="quick-actor"] .quick-actor-complexity-map {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    height: 76px !important;
+    margin: 4px 0 8px !important;
+    background: transparent !important;
+}
+
+body[data-page="quick-actor"] .quick-actor-complexity-map::before {
+    content: '' !important;
+    display: block !important;
+    position: absolute !important;
+    left: 12% !important;
+    right: 12% !important;
+    top: 25px !important;
+    width: auto !important;
+    height: 1px !important;
+    background: linear-gradient(90deg, rgba(96, 165, 250, 0.3), rgba(236, 72, 153, 0.72), rgba(96, 165, 250, 0.3)) !important;
+    opacity: 1 !important;
+    transform: none !important;
+    z-index: 1 !important;
+}
+
+body[data-page="quick-actor"] .quick-actor-complexity-map::after,
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-line,
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-heart-line,
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-heart-svg {
+    display: none !important;
+}
+
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-level {
+    position: absolute !important;
+    left: auto !important;
+    top: 0 !important;
+    bottom: auto !important;
+    width: 25% !important;
+    height: 58px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+    border: 0 !important;
+    background: transparent !important;
+    z-index: 4 !important;
+}
+
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-level-a { left: 0 !important; }
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-level-b { left: 25% !important; }
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-level-c { left: 50% !important; }
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-level-d { left: 75% !important; }
+
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-level .complexity-map-star {
+    left: 50% !important;
+    top: 20px !important;
+    width: 10px !important;
+    height: 10px !important;
+    transform: translateX(-50%) !important;
+}
+
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-level small {
+    left: 50% !important;
+    top: 38px !important;
+    transform: translateX(-50%) !important;
+    color: #94a3b8 !important;
+    font-size: 0.72rem !important;
+}
+
+body[data-page="quick-actor"] .quick-actor-complexity-map[data-level="0"] .complexity-map-level-a .complexity-map-star,
+body[data-page="quick-actor"] .quick-actor-complexity-map[data-level="1"] .complexity-map-level-b .complexity-map-star,
+body[data-page="quick-actor"] .quick-actor-complexity-map[data-level="2"] .complexity-map-level-c .complexity-map-star,
+body[data-page="quick-actor"] .quick-actor-complexity-map[data-level="3"] .complexity-map-level-d .complexity-map-star {
+    transform: translateX(-50%) scale(1.3) !important;
+    background: #f9a8d4 !important;
+    box-shadow: 0 0 12px rgba(236, 72, 153, 0.84), 0 0 20px rgba(59, 130, 246, 0.42) !important;
+}
+
 /* Final Quick Actor layout: a separate center heart and a simple 0-3 dot slider. */
 body[data-page="quick-actor"] .preorder-quick-actor-grid {
     position: relative;
