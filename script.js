@@ -7474,6 +7474,10 @@ function loadQuickActorPage() {
                 <span class="quick-actor-star s5"></span><span class="quick-actor-star s6"></span><span class="quick-actor-star s7"></span><span class="quick-actor-star s8"></span>
                 <span class="quick-actor-star s9"></span><span class="quick-actor-star s10"></span><span class="quick-actor-star s11"></span><span class="quick-actor-star s12"></span>
             </div>
+            <div class="quick-actor-pokemon" aria-hidden="true">
+                <img class="quick-actor-pokemon-sprite quick-actor-pokemon-cleffa" src="https://img.pokemondb.net/sprites/black-white/anim/normal/cleffa.gif" alt="">
+                <img class="quick-actor-pokemon-sprite quick-actor-pokemon-lunatone" src="https://img.pokemondb.net/sprites/black-white/anim/normal/lunatone.gif" alt="">
+            </div>
 
             <div class="quick-actor-card-shell">
                 <h1>Quick Actor</h1>

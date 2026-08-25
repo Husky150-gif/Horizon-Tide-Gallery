@@ -1903,11 +1903,14 @@ body[data-page="quick-actor"] .quick-actor-page-shell {
     position: relative;
     width: min(1120px, 95vw);
     margin: 0 auto;
-    border-radius: 24px;
+    border-radius: 28px;
     overflow: hidden;
     border: 1px solid rgba(186, 230, 253, 0.3);
-    background: rgba(5, 12, 30, 0.56);
-    box-shadow: 0 20px 36px rgba(2, 8, 23, 0.4), inset 0 0 22px rgba(255, 255, 255, 0.05);
+    background:
+        radial-gradient(circle at 12% 18%, rgba(236, 72, 153, 0.18), transparent 28%),
+        radial-gradient(circle at 88% 78%, rgba(59, 130, 246, 0.2), transparent 30%),
+        linear-gradient(145deg, rgba(8, 15, 38, 0.96), rgba(14, 8, 34, 0.94));
+    box-shadow: 0 24px 55px rgba(2, 8, 23, 0.5), inset 0 0 30px rgba(125, 211, 252, 0.04);
 }
 
 body[data-page="quick-actor"] .quick-actor-card-shell {
@@ -1920,7 +1923,10 @@ body[data-page="quick-actor"] .quick-actor-card-shell {
 
 body[data-page="quick-actor"] .quick-actor-card-shell h1 {
     margin: 0;
-    color: #f8fbff;
+    background: linear-gradient(100deg, #f9a8d4, #bfdbfe 68%, #67e8f9);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
     font-size: clamp(1.9rem, 5vw, 2.8rem);
     text-align: center;
     text-shadow: 0 6px 18px rgba(56, 189, 248, 0.25);
@@ -1945,7 +1951,7 @@ body[data-page="quick-actor"] .preorder-quick-actor-grid {
 body[data-page="quick-actor"] .home-conversion-card {
     border: 1px solid rgba(125, 211, 252, 0.24);
     border-radius: 18px;
-    background: linear-gradient(155deg, rgba(7, 16, 37, 0.9), rgba(9, 22, 48, 0.84));
+    background: linear-gradient(155deg, rgba(10, 24, 52, 0.92), rgba(24, 11, 48, 0.88));
     box-shadow: 0 0 22px rgba(56, 189, 248, 0.08), inset 0 0 14px rgba(255, 255, 255, 0.02);
     padding: 14px;
     display: grid;
@@ -17687,5 +17693,60 @@ body[data-page="horizon-queue"] #backToPreorderBtn {
     }
     .form-card .form-group {
         padding: 11px;
+    }
+}
+
+body[data-page="quick-actor"] .home-conversion-card:first-child {
+    border-color: rgba(236, 72, 153, 0.38);
+}
+
+body[data-page="quick-actor"] .home-conversion-card:last-child {
+    border-color: rgba(96, 165, 250, 0.38);
+}
+
+body[data-page="quick-actor"] .home-conversion-btn {
+    background: linear-gradient(110deg, rgba(236, 72, 153, 0.78), rgba(59, 130, 246, 0.78));
+    border-color: rgba(191, 219, 254, 0.5);
+}
+
+.quick-actor-pokemon {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.quick-actor-pokemon-sprite {
+    position: absolute;
+    width: 58px;
+    height: 58px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    animation: quickActorPokemonFloat 6s ease-in-out infinite;
+}
+
+.quick-actor-pokemon-cleffa {
+    top: 7%;
+    left: 4%;
+    filter: drop-shadow(0 0 12px rgba(249, 168, 212, 0.85));
+}
+
+.quick-actor-pokemon-lunatone {
+    right: 4%;
+    bottom: 7%;
+    width: 66px;
+    height: 66px;
+    animation-delay: -2.8s;
+    filter: drop-shadow(0 0 12px rgba(96, 165, 250, 0.85));
+}
+
+@keyframes quickActorPokemonFloat {
+    0%, 100% { transform: translateY(0) rotate(-4deg); }
+    50% { transform: translateY(-10px) rotate(4deg); }
+}
+
+@media (prefers-reduced-motion: reduce), (max-width: 768px) {
+    body[data-page="quick-actor"] .quick-actor-pokemon {
+        display: none;
     }
 }
