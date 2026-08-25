@@ -634,6 +634,28 @@ function bootstrapHomeVisuals() {
     runVisuals();
 }
 
+let homeReactiveBackgroundBound = false;
+let homeReactiveFrame = null;
+
+function bindHomeReactiveBackground() {
+    if (homeReactiveBackgroundBound) return;
+    homeReactiveBackgroundBound = true;
+
+    const update = (event) => {
+        if (bodyElement.getAttribute('data-page') !== 'home' || window.innerWidth <= 768) return;
+        const x = ((event.clientX / window.innerWidth) - 0.5) * 2;
+        const y = ((event.clientY / window.innerHeight) - 0.5) * 2;
+        if (homeReactiveFrame !== null) cancelAnimationFrame(homeReactiveFrame);
+        homeReactiveFrame = requestAnimationFrame(() => {
+            document.documentElement.style.setProperty('--home-pointer-x', `${x.toFixed(3)}`);
+            document.documentElement.style.setProperty('--home-pointer-y', `${y.toFixed(3)}`);
+            homeReactiveFrame = null;
+        });
+    };
+
+    document.addEventListener('pointermove', update, { passive: true });
+}
+
 const ANALYTICS_EVENT_CACHE_KEY = 'hz_analytics_event_cache';
 const ANALYTICS_EVENT_COOLDOWN_MS = 9000;
 const CLIENT_ISSUE_CACHE_KEY = 'hz_client_issue_cache';
@@ -7253,6 +7275,7 @@ function loadHomePage() {
     applyHomeTrustSignalsToCurrentDOM();
     bindHomeConversionPack();
     bootstrapHomeVisuals();
+    bindHomeReactiveBackground();
     siteGuide.refresh();
 }
 
@@ -7389,7 +7412,6 @@ function loadPreorderPage() {
                 <div class="menu-section">
                     <h3>Coming Soon / Closed</h3>
                     <p class="menu-section-subtitle">These are not accepting requests yet, but they can reopen later.</p>
-                    <button type="button" class="preorder-btn disabled" id="btnCustomPlushies">Custom Plushies</button>
                     <button type="button" class="preorder-btn disabled" id="btnAnimations">Animations</button>
                 </div>
             </div>
@@ -7403,7 +7425,6 @@ function loadPreorderPage() {
     document.getElementById('btnHuskysList').addEventListener('click', (e) => cinematicTransition(e, loadHuskysListPage, '#horizon-queue'));
     document.getElementById('btnCustomStickers').addEventListener('click', (e) => cinematicTransition(e, loadCustomStickersForm, '#stickers'));
     document.getElementById('btnPremadeKeychains').addEventListener('click', (e) => cinematicTransition(e, loadPremadeKeychainsForm, '#premade'));
-    document.getElementById('btnCustomPlushies').addEventListener('click', (e) => cinematicTransition(e, () => loadNotReadyPage('Custom Plushies', 'Custom plushies are not ready yet, but they may open in the future.')));
     document.getElementById('btnCustomKeychains').addEventListener('click', (e) => cinematicTransition(e, loadCustomKeychainsForm, '#custom-keychain'));
     document.getElementById('btnAnimations').addEventListener('click', (e) => cinematicTransition(e, () => loadNotReadyPage('Animations', 'Animations are coming soon / closed for now.')));
     document.getElementById('btnArt').addEventListener('click', (e) => cinematicTransition(e, loadHuskyArtForm, '#art'));
