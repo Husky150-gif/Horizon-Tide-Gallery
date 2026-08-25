@@ -4,16 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Horizon</title>
-    <meta name="description" content="Horizon Tide Gallery by Husky and Lopside for custom art commissions, animation, fursuits, and handmade creations.">
+    <meta name="description" content="Horizon Tide Gallery by Husky for custom art commissions, animation, and handmade creations.">
     <meta property="og:title" content="Horizon Tide Gallery">
-    <meta property="og:description" content="Explore custom artwork, animation portfolios, fursuit builds, and handmade commissions by Husky and Lopside.">
+    <meta property="og:description" content="Explore custom artwork, animation portfolios, and handmade commissions by Husky.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://horizontidegallery.com/">
     <meta property="og:image" content="https://horizontidegallery.com/Images/banner%201.jpg">
     <meta name="robots" content="index, follow">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="The Horizon | Horizon Tide Gallery">
-    <meta name="twitter:description" content="Commission art, fursuits, keychains, and stickers from Husky and Lopside with clear communication and queue transparency.">
+    <meta name="twitter:description" content="Commission art, animation, keychains, and stickers from Husky with clear communication and queue transparency.">
     <meta name="twitter:image" content="https://horizontidegallery.com/Images/banner%201.jpg">
     <meta name="theme-color" content="#080d1f">
     <link rel="canonical" href="https://horizontidegallery.com/">
@@ -28,18 +28,17 @@
                     "alternateName": ["The Horizon", "Horizon Tide"],
                     "url": "https://horizontidegallery.com/",
                     "logo": "https://horizontidegallery.com/Images/banner%201.jpg",
-                    "description": "Custom art, animation, fursuits, and handmade creations with clear commission guidance and transparent queue updates.",
+                    "description": "Custom art, animation, and handmade creations with clear commission guidance and transparent queue updates.",
                     "sameAs": [
                         "https://discord.gg/JJt4wJca79",
                         "https://www.instagram.com/miraculously_cringe/",
                         "https://www.tiktok.com/@sugarmew_2",
-                        "https://www.instagram.com/littlelopsidestudio/",
-                        "https://www.tiktok.com/@little_lopside_studio",
-                        "https://x.com/littlelopside"
+                        "https://www.instagram.com/miraculously_cringe/",
+                        "https://www.tiktok.com/@sugarmew_2"
                     ],
                     "member": [
                         { "@id": "https://horizontidegallery.com/#husky" },
-                        { "@id": "https://horizontidegallery.com/#lopside" }
+                        { "@id": "https://horizontidegallery.com/#husky" }
                     ]
                 },
                 {
@@ -59,24 +58,6 @@
                         "https://www.tiktok.com/@sugarmew_2"
                     ]
                 },
-                {
-                    "@type": "Person",
-                    "@id": "https://horizontidegallery.com/#lopside",
-                    "name": "Lopside",
-                    "alternateName": ["Little Lopside"],
-                    "jobTitle": "Fursuit Maker and Handmade Artist",
-                    "description": "Lopside is the handmade creator at Horizon Tide Gallery focused on fursuit pieces, suit parts, and physical commissions.",
-                    "url": "https://horizontidegallery.com/lopside.html",
-                    "image": "https://horizontidegallery.com/Lopside%20Our%20Socials/IMG_0721.jpg",
-                    "worksFor": { "@id": "https://horizontidegallery.com/#organization" },
-                    "memberOf": { "@id": "https://horizontidegallery.com/#organization" },
-                    "knowsAbout": ["Fursuit Craft", "Handmade Commissions", "Sewing", "Patterning", "Physical Merch"],
-                    "sameAs": [
-                        "https://www.instagram.com/littlelopsidestudio/",
-                        "https://www.tiktok.com/@little_lopside_studio",
-                        "https://x.com/littlelopside"
-                    ]
-                }
             ]
         }
     </script>
@@ -90,7 +71,7 @@
                     "url": "https://horizontidegallery.com/",
                     "name": "Horizon Tide Gallery",
                     "alternateName": "The Horizon",
-                    "description": "Custom art commissions, animation, fursuits, and handmade creations by Husky and Lopside.",
+                    "description": "Custom art commissions, animation, and handmade creations by Husky.",
                     "publisher": {
                         "@id": "https://horizontidegallery.com/#organization"
                     },
@@ -112,7 +93,7 @@
                             "name": "How do commissions work?",
                             "acceptedAnswer": {
                                 "@type": "Answer",
-                                "text": "Submit a request through the order form, we review details, then contact you about pricing and timeline. Once confirmed, your order can be added to Horizon Queue for public progress updates."
+                                "text": "Submit a request through my order form. I review the details, then contact you about pricing and timeline. Once confirmed, your order can be added to Horizon Queue for public progress updates."
                             }
                         },
                         {
@@ -136,7 +117,7 @@
                             "name": "Who works on what?",
                             "acceptedAnswer": {
                                 "@type": "Answer",
-                                "text": "Husky focuses on digital art, animation, character art, and website work. Lopside focuses on fursuit creations, suit parts, and handmade physical commissions."
+                                "text": "Husky focuses on digital art, animation, character art, and website work."
                             }
                         }
                     ]
@@ -152,7 +133,7 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=138">
+    <link rel="stylesheet" href="style.css?v=146">
     
     <script defer type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
@@ -300,45 +281,89 @@
 
     <template id="adminDiscountManagerTemplate">
         <div class="admin-card discount-manager-card">
-            <h3 class="admin-card-title discount-manager-title">🌙 Discount Manager</h3>
-            <p class="admin-card-subtitle">Configure site-wide sales. This updates pricing sheets and calculators automatically.</p>
-            
-            <div class="discount-controls">
-                <label class="admin-label">
-                    Discount Amount (%)
-                    <input type="number" id="adminDiscountPercent" class="admin-input admin-input-narrow" min="10" max="50" step="1" placeholder="e.g. 20">
-                </label>
-
-                <label class="admin-label admin-label-wide">
-                    Sale Title/Message (Optional)
-                    <input type="text" id="adminDiscountMessage" class="admin-input" placeholder="e.g. Summer Commission Event">
-                </label>
-
-                <label class="admin-label">
-                    Applies To
-                    <select id="adminDiscountTarget" class="admin-input">
-                        <option value="all">All Items</option>
-                        <option value="art">Art Commissions</option>
-                        <option value="fursuits">Fursuits</option>
-                        <option value="keychains">Keychains</option>
-                        <option value="stickers">Stickers</option>
-                        <option value="animations">Animation Commissions</option>
-                    </select>
-                </label>
+            <div class="discount-manager-heading">
+                <div>
+                    <h3 class="admin-card-title discount-manager-title">Discount Manager</h3>
+                    <p class="admin-card-subtitle">Create targeted sales for banners, pricing sheets, and commission calculators.</p>
+                </div>
+                <span class="discount-manager-heading__status">Pricing promotion</span>
             </div>
 
-            <div class="discount-preview-area">
-                <h4 class="preview-title">Live Calculator Preview:</h4>
-                <p class="preview-text">Original Price: <span id="previewOriginalPrice" class="preview-original">$100.00</span></p>
-                <p class="preview-text">Discounted Price: <span id="previewDiscountedPrice" class="preview-discounted">$80.00</span></p>
-                <p class="preview-text">Amount Saved: <span id="previewAmountSaved" class="preview-saved">You saved $20.00</span></p>
+            <div class="discount-manager-tabs" role="tablist" aria-label="Discount Manager views">
+                <button type="button" id="adminDiscountEditorTab" class="discount-manager-tab is-active" role="tab" aria-selected="true" aria-controls="adminDiscountEditorPanel" data-discount-tab="editor">Create / Edit</button>
+                <button type="button" id="adminDiscountSalesTab" class="discount-manager-tab" role="tab" aria-selected="false" aria-controls="adminDiscountSalesPanel" data-discount-tab="sales" tabindex="-1">Active Sales <span id="adminDiscountCount" class="discount-manager-tab__count">0</span></button>
             </div>
 
-            <div class="admin-actions discount-actions">
-                <button type="button" id="btnSaveDiscount" class="admin-btn-save">Add Discount</button>
-            </div>
-            
-            <div id="adminActiveDiscountsList" class="active-discounts-list"></div>
+            <section id="adminDiscountEditorPanel" class="discount-manager-tab-panel discount-editor-workspace" role="tabpanel" aria-labelledby="adminDiscountEditorTab" data-discount-panel="editor">
+                <div class="discount-editor-form">
+                    <div class="discount-editor-form__heading">
+                        <span class="discount-editor-form__number">1</span>
+                        <div>
+                            <h4>Promotion details</h4>
+                            <p>Choose the percentage, eligible work, and optional public message.</p>
+                        </div>
+                    </div>
+
+                    <div class="discount-controls">
+                        <label class="admin-label">
+                            Discount amount
+                            <span class="discount-field-hint">Percentage off</span>
+                            <input type="number" id="adminDiscountPercent" class="admin-input" min="1" max="100" step="1" placeholder="20">
+                        </label>
+
+                        <label class="admin-label">
+                            Applies to
+                            <span class="discount-field-hint">Pricing category</span>
+                            <select id="adminDiscountTarget" class="admin-input">
+                                <option value="all">All Items</option>
+                                <option value="art">Art Commissions</option>
+                                <option value="keychains">Keychains</option>
+                                <option value="stickers">Stickers</option>
+                                <option value="animations">Animation Commissions</option>
+                            </select>
+                        </label>
+
+                        <label class="admin-label discount-message-field">
+                            Sale title / message
+                            <span class="discount-field-hint">Optional public banner text</span>
+                            <input type="text" id="adminDiscountMessage" class="admin-input" placeholder="Example: Summer Commission Event">
+                        </label>
+                    </div>
+
+                    <div class="admin-actions discount-actions">
+                        <button type="button" id="btnSaveDiscount" class="admin-btn-save">Add Discount</button>
+                    </div>
+                </div>
+
+                <aside class="discount-preview-area" aria-labelledby="discountPreviewHeading">
+                    <span class="discount-preview-kicker">Storefront preview</span>
+                    <h4 id="discountPreviewHeading" class="preview-title">How this sale appears</h4>
+                    <div class="discount-banner-preview">
+                        <strong id="adminDiscountPreviewMessage">New promotion</strong>
+                        <span><b id="adminDiscountPreviewPercent">0%</b> off <span id="adminDiscountPreviewTarget">all items</span></span>
+                    </div>
+                    <div class="discount-price-preview">
+                        <span class="discount-price-preview__label">Example on a $100 order</span>
+                        <div class="discount-price-preview__values">
+                            <span id="previewOriginalPrice" class="preview-original">$100.00</span>
+                            <span id="previewDiscountedPrice" class="preview-discounted">$100.00</span>
+                        </div>
+                        <span id="previewAmountSaved" class="preview-saved">No discount applied</span>
+                    </div>
+                    <p class="discount-preview-note">Saving enables a new sale. You can disable it later without deleting it.</p>
+                </aside>
+            </section>
+
+            <section id="adminDiscountSalesPanel" class="discount-manager-tab-panel discount-sales-panel" role="tabpanel" aria-labelledby="adminDiscountSalesTab" data-discount-panel="sales" hidden>
+                <div class="discount-sales-heading">
+                    <div>
+                        <span class="discount-preview-kicker">Promotions</span>
+                        <h4>Saved discounts</h4>
+                    </div>
+                    <p>Enable, disable, edit, or remove promotions without changing base prices.</p>
+                </div>
+                <div id="adminActiveDiscountsList" class="active-discounts-list"></div>
+            </section>
         </div>
     </template>
 
@@ -451,123 +476,112 @@
 
     <template id="adminAvailabilityManagerTemplate">
         <div class="admin-card availability-manager-card">
-            <h3 class="admin-card-title availability-manager-title">📅 Availability Manager</h3>
-            <p class="admin-card-subtitle">Edit Home page artist names, service labels, status, slots, and response time.</p>
-
-            <div class="admin-form-row">
-                <label class="admin-label admin-label-medium">
-                    Husky Name
-                    <input type="text" id="adminAvailHuskyName" class="admin-input" placeholder="Husky">
-                </label>
-                <label class="admin-label admin-label-wide">
-                    Husky Service
-                    <input type="text" id="adminAvailHuskyService" class="admin-input" placeholder="Digital Art">
-                </label>
-                <label class="admin-label admin-label-medium">
-                    Husky Status
-                    <select id="adminAvailHuskyStatus" class="admin-input">
-                        <option value="Open">Open</option>
-                        <option value="Limited">Limited</option>
-                        <option value="Closed">Closed</option>
-                    </select>
-                </label>
-                <label class="admin-label">
-                    Husky Slots
-                    <input type="number" id="adminAvailHuskySlots" class="admin-input admin-input-narrow" min="0" step="1" placeholder="3">
-                </label>
+            <div class="availability-manager-heading">
+                <div>
+                    <h3 class="admin-card-title availability-manager-title">Availability Manager</h3>
+                    <p class="admin-card-subtitle">Control both artists, open slots, and the weekly snapshot shown publicly.</p>
+                </div>
+                <span class="availability-manager-heading__status">Homepage settings</span>
             </div>
 
-            <div class="admin-form-row">
-                <label class="admin-label admin-label-medium">
-                    Lopside Name
-                    <input type="text" id="adminAvailLopsideName" class="admin-input" placeholder="Lopside">
-                </label>
-                <label class="admin-label admin-label-wide">
-                    Lopside Service
-                    <input type="text" id="adminAvailLopsideService" class="admin-input" placeholder="Fursuit Creations">
-                </label>
-                <label class="admin-label admin-label-medium">
-                    Lopside Status
-                    <select id="adminAvailLopsideStatus" class="admin-input">
-                        <option value="Open">Open</option>
-                        <option value="Limited">Limited</option>
-                        <option value="Closed">Closed</option>
-                    </select>
-                </label>
-                <label class="admin-label">
-                    Lopside Slots
-                    <input type="number" id="adminAvailLopsideSlots" class="admin-input admin-input-narrow" min="0" step="1" placeholder="2">
-                </label>
+            <div class="availability-admin-workspace">
+                <div class="availability-admin-editor">
+                    <section class="availability-admin-section" aria-labelledby="availabilityArtistsHeading">
+                        <div class="availability-admin-section__heading">
+                            <span class="availability-admin-section__number">1</span>
+                            <div>
+                                <h4 id="availabilityArtistsHeading">Artist availability</h4>
+                                <p>Set each artist's public service, status, and remaining commission slots.</p>
+                            </div>
+                        </div>
+
+                        <div class="availability-artist-grid">
+                            <fieldset class="availability-artist-panel availability-artist-panel--husky">
+                                <legend>Husky</legend>
+                                <div class="availability-artist-fields">
+                                    <label class="admin-label">
+                                        Display name
+                                        <input type="text" id="adminAvailHuskyName" class="admin-input" placeholder="Husky">
+                                    </label>
+                                    <label class="admin-label">
+                                        Service
+                                        <input type="text" id="adminAvailHuskyService" class="admin-input" placeholder="Digital Art">
+                                    </label>
+                                    <label class="admin-label">
+                                        Status
+                                        <select id="adminAvailHuskyStatus" class="admin-input">
+                                            <option value="Open">Open</option>
+                                            <option value="Limited">Limited</option>
+                                            <option value="Closed">Closed</option>
+                                        </select>
+                                    </label>
+                                    <label class="admin-label">
+                                        Open slots
+                                        <input type="number" id="adminAvailHuskySlots" class="admin-input" min="0" step="1" placeholder="3">
+                                    </label>
+                                </div>
+                            </fieldset>
+
+                        </div>
+                    </section>
+
+                    <section class="availability-admin-section" aria-labelledby="availabilityScheduleHeading">
+                        <div class="availability-admin-section__heading">
+                            <span class="availability-admin-section__number">2</span>
+                            <div>
+                                <h4 id="availabilityScheduleHeading">Shared schedule</h4>
+                                <p>Set expected reply timing and the seven-day snapshot visitors see.</p>
+                            </div>
+                        </div>
+
+                        <label class="admin-label availability-response-field">
+                            Current response time
+                            <input type="text" id="adminAvailResponseTime" class="admin-input" placeholder="1-3 days">
+                        </label>
+
+                        <div class="availability-week-grid">
+                            <label class="admin-label">Sun<select id="adminAvailWeekSun" class="admin-input"><option value="open">Open</option><option value="limited">Limited</option><option value="closed">Closed</option></select></label>
+                            <label class="admin-label">Mon<select id="adminAvailWeekMon" class="admin-input"><option value="open">Open</option><option value="limited">Limited</option><option value="closed">Closed</option></select></label>
+                            <label class="admin-label">Tue<select id="adminAvailWeekTue" class="admin-input"><option value="open">Open</option><option value="limited">Limited</option><option value="closed">Closed</option></select></label>
+                            <label class="admin-label">Wed<select id="adminAvailWeekWed" class="admin-input"><option value="open">Open</option><option value="limited">Limited</option><option value="closed">Closed</option></select></label>
+                            <label class="admin-label">Thu<select id="adminAvailWeekThu" class="admin-input"><option value="open">Open</option><option value="limited">Limited</option><option value="closed">Closed</option></select></label>
+                            <label class="admin-label">Fri<select id="adminAvailWeekFri" class="admin-input"><option value="open">Open</option><option value="limited">Limited</option><option value="closed">Closed</option></select></label>
+                            <label class="admin-label">Sat<select id="adminAvailWeekSat" class="admin-input"><option value="open">Open</option><option value="limited">Limited</option><option value="closed">Closed</option></select></label>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="availability-admin-preview" aria-labelledby="availabilityPreviewHeading">
+                    <span class="availability-admin-preview__kicker">Homepage preview</span>
+                    <h4 id="availabilityPreviewHeading">What visitors will see</h4>
+                    <p class="availability-admin-preview__note">Updates here while you edit. Nothing publishes until Save Availability.</p>
+                    <div class="availability-list">
+                        <div class="availability-item">
+                            <div class="availability-service">
+                                <strong id="adminAvailPreviewHuskyName">Husky</strong>
+                                <span id="adminAvailPreviewHuskyService">Digital Art</span>
+                            </div>
+                            <div class="availability-meta">
+                                <span id="adminAvailPreviewHuskyStatus" class="status-pill status-open">Open</span>
+                                <span id="adminAvailPreviewHuskySlots" class="slot-pill">3 slots</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="availability-response">
+                        <span>Typical response</span>
+                        <strong id="adminAvailPreviewResponse">1-3 days</strong>
+                    </div>
+                    <div id="adminAvailPreviewWeek" class="availability-admin-preview__week"></div>
+                </aside>
             </div>
 
-            <div class="admin-form-row">
-                <label class="admin-label admin-label-wide">
-                    Current Response Time
-                    <input type="text" id="adminAvailResponseTime" class="admin-input" placeholder="1-3 days">
-                </label>
+            <div class="availability-admin-footer">
+                <div class="admin-actions discount-actions">
+                    <button type="button" id="btnSaveAvailabilitySettings" class="admin-btn-save">Save Availability</button>
+                    <button type="button" id="btnResetAvailabilityDefaults" class="admin-btn-publish">Reset Form to Defaults</button>
+                </div>
+                <p id="adminAvailLastSaved" class="admin-detail">Last saved: Never</p>
             </div>
-
-            <div class="admin-form-row">
-                <label class="admin-label">Sun Snapshot
-                    <select id="adminAvailWeekSun" class="admin-input">
-                        <option value="open">Open</option>
-                        <option value="limited">Limited</option>
-                        <option value="closed">Closed</option>
-                    </select>
-                </label>
-                <label class="admin-label">Mon Snapshot
-                    <select id="adminAvailWeekMon" class="admin-input">
-                        <option value="open">Open</option>
-                        <option value="limited">Limited</option>
-                        <option value="closed">Closed</option>
-                    </select>
-                </label>
-                <label class="admin-label">Tue Snapshot
-                    <select id="adminAvailWeekTue" class="admin-input">
-                        <option value="open">Open</option>
-                        <option value="limited">Limited</option>
-                        <option value="closed">Closed</option>
-                    </select>
-                </label>
-                <label class="admin-label">Wed Snapshot
-                    <select id="adminAvailWeekWed" class="admin-input">
-                        <option value="open">Open</option>
-                        <option value="limited">Limited</option>
-                        <option value="closed">Closed</option>
-                    </select>
-                </label>
-            </div>
-
-            <div class="admin-form-row">
-                <label class="admin-label">Thu Snapshot
-                    <select id="adminAvailWeekThu" class="admin-input">
-                        <option value="open">Open</option>
-                        <option value="limited">Limited</option>
-                        <option value="closed">Closed</option>
-                    </select>
-                </label>
-                <label class="admin-label">Fri Snapshot
-                    <select id="adminAvailWeekFri" class="admin-input">
-                        <option value="open">Open</option>
-                        <option value="limited">Limited</option>
-                        <option value="closed">Closed</option>
-                    </select>
-                </label>
-                <label class="admin-label">Sat Snapshot
-                    <select id="adminAvailWeekSat" class="admin-input">
-                        <option value="open">Open</option>
-                        <option value="limited">Limited</option>
-                        <option value="closed">Closed</option>
-                    </select>
-                </label>
-            </div>
-
-            <div class="admin-actions discount-actions">
-                <button type="button" id="btnSaveAvailabilitySettings" class="admin-btn-save">Save Availability</button>
-                <button type="button" id="btnResetAvailabilityDefaults" class="admin-btn-publish">Reset Form to Defaults</button>
-            </div>
-
-            <p id="adminAvailLastSaved" class="admin-detail">Last saved: Never</p>
         </div>
     </template>
 
@@ -624,87 +638,152 @@
 
     <template id="adminGalleryManagerTemplate">
         <div class="admin-card gallery-manager-card">
-            <h3 class="admin-card-title gallery-manager-title">Gallery Manager</h3>
-            <p class="admin-card-subtitle">Add and manage gallery images here instead of editing code manually.</p>
+            <div class="gallery-manager-heading">
+                <div>
+                    <h3 class="admin-card-title gallery-manager-title">Gallery Manager</h3>
+                    <p class="admin-card-subtitle">Create an entry, choose where it appears, then publish it.</p>
+                </div>
+                <span class="gallery-manager-heading__status">Gallery workspace</span>
+            </div>
 
-            <div class="admin-form-row">
-                <label class="admin-label admin-label-medium">
-                    Title
-                    <input type="text" id="adminGalleryTitle" class="admin-input" placeholder="Example: Sunset Portrait">
-                </label>
-                <label class="admin-label admin-label-medium">
-                    Creator
-                    <input type="text" id="adminGalleryCreator" class="admin-input" placeholder="Husky, Lopside, Horizon Tide">
-                </label>
-                <label class="admin-label admin-label-wide">
-                    Category Placement
-                    <div id="adminGalleryCategoryChecklist" class="admin-gallery-category-checklist" role="group" aria-label="Gallery categories"></div>
-                    <p id="adminGalleryCategoryValidation" class="admin-gallery-category-validation" hidden>Select at least one category before saving.</p>
-                </label>
-                <div class="admin-label admin-label-wide admin-gallery-presets-wrap">
-                    <span>Quick Presets</span>
-                    <div id="adminGalleryPresetButtons" class="admin-gallery-preset-buttons" role="group" aria-label="Gallery category presets">
-                        <button type="button" class="admin-btn-edit admin-gallery-preset-btn" data-preset="husky-art">Husky Art</button>
-                        <button type="button" class="admin-btn-edit admin-gallery-preset-btn" data-preset="lopside-fursuit">Lopside Fursuit</button>
-                        <button type="button" class="admin-btn-edit admin-gallery-preset-btn" data-preset="merch">Merch</button>
-                        <button type="button" class="admin-btn-edit admin-gallery-preset-btn" data-preset="animation">Animation</button>
+            <div class="gallery-manager-tabs" role="tablist" aria-label="Gallery Manager views">
+                <button type="button" id="adminGalleryEditorTab" class="gallery-manager-tab is-active" role="tab" aria-selected="true" aria-controls="adminGalleryEditorPanel" data-gallery-tab="editor">Create / Edit</button>
+                <button type="button" id="adminGalleryItemsTab" class="gallery-manager-tab" role="tab" aria-selected="false" aria-controls="adminGalleryItemsPanel" data-gallery-tab="items" tabindex="-1">Gallery Items</button>
+                <button type="button" id="adminGalleryBackupsTab" class="gallery-manager-tab" role="tab" aria-selected="false" aria-controls="adminGalleryBackupsPanel" data-gallery-tab="backups" tabindex="-1">Backups</button>
+            </div>
+
+            <section id="adminGalleryEditorPanel" class="gallery-manager-tab-panel gallery-editor-workspace" role="tabpanel" aria-labelledby="adminGalleryEditorTab" data-gallery-panel="editor">
+                <div class="gallery-editor-main">
+                    <section class="gallery-editor-section" aria-labelledby="galleryDetailsHeading">
+                        <div class="gallery-editor-section__heading">
+                            <span class="gallery-editor-section__number">1</span>
+                            <div>
+                                <h4 id="galleryDetailsHeading">Artwork details</h4>
+                                <p>Name the piece and credit its creator.</p>
+                            </div>
+                        </div>
+                        <div class="gallery-editor-fields gallery-editor-fields--two">
+                            <label class="admin-label admin-label-medium">
+                                Title
+                                <input type="text" id="adminGalleryTitle" class="admin-input" placeholder="Example: Sunset Portrait">
+                            </label>
+                            <label class="admin-label admin-label-medium">
+                                Creator
+                                <input type="text" id="adminGalleryCreator" class="admin-input" placeholder="Husky, Horizon Tide">
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="gallery-editor-section" aria-labelledby="galleryCategoriesHeading">
+                        <div class="gallery-editor-section__heading">
+                            <span class="gallery-editor-section__number">2</span>
+                            <div>
+                                <h4 id="galleryCategoriesHeading">Gallery placement</h4>
+                                <p>Select every collection where this piece belongs.</p>
+                            </div>
+                        </div>
+                        <div class="admin-label admin-gallery-presets-wrap">
+                            <span>Quick presets</span>
+                            <div id="adminGalleryPresetButtons" class="admin-gallery-preset-buttons" role="group" aria-label="Gallery category presets">
+                                <button type="button" class="admin-btn-edit admin-gallery-preset-btn" data-preset="husky-art">Husky Art</button>
+                                <button type="button" class="admin-btn-edit admin-gallery-preset-btn" data-preset="merch">Merch</button>
+                                <button type="button" class="admin-btn-edit admin-gallery-preset-btn" data-preset="animation">Animation</button>
+                            </div>
+                        </div>
+                        <div id="adminGalleryCategoryChecklist" class="admin-gallery-category-checklist" role="group" aria-label="Gallery categories"></div>
+                        <p id="adminGalleryCategoryValidation" class="admin-gallery-category-validation" hidden>Select at least one category before saving.</p>
+                        <label class="admin-label gallery-editor-custom-category">
+                            Extra categories <span class="gallery-field-optional">Optional, comma separated</span>
+                            <input type="text" id="adminGalleryCategories" class="admin-input" placeholder="Use only for new custom tags">
+                        </label>
+                    </section>
+
+                    <section class="gallery-editor-section" aria-labelledby="galleryMediaHeading">
+                        <div class="gallery-editor-section__heading">
+                            <span class="gallery-editor-section__number">3</span>
+                            <div>
+                                <h4 id="galleryMediaHeading">Media</h4>
+                                <p>Upload an image or link to one already online.</p>
+                            </div>
+                        </div>
+                        <div class="gallery-editor-fields gallery-editor-fields--two">
+                            <label class="admin-label admin-label-wide">
+                                Image URL
+                                <input type="url" id="adminGalleryImageUrl" class="admin-input" placeholder="https://... or local relative path">
+                            </label>
+                            <label class="admin-label admin-label-wide">
+                                Video link <span class="gallery-field-optional">Optional</span>
+                                <input type="url" id="adminGalleryVideoLink" class="admin-input" placeholder="https://youtu.be/...">
+                            </label>
+                        </div>
+                        <label class="admin-label gallery-editor-upload">
+                            Upload new image
+                            <input type="file" id="adminGalleryImageUpload" class="admin-input" accept="image/*">
+                        </label>
+                    </section>
+                </div>
+
+                <aside class="gallery-editor-publish" aria-labelledby="galleryPublishHeading">
+                    <div class="gallery-editor-publish__heading">
+                        <span>Preview &amp; publish</span>
+                        <h4 id="galleryPublishHeading">Ready when you are</h4>
                     </div>
+                    <div class="gallery-editor-preview-shell">
+                        <div class="admin-gallery-preview" id="adminGalleryPreview" hidden>
+                            <img id="adminGalleryPreviewImg" class="admin-gallery-preview__img" alt="Gallery preview" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==">
+                        </div>
+                        <div class="admin-gallery-meta">
+                            <p id="adminGalleryImageHint" class="admin-detail">Paste an image URL or upload an image file.</p>
+                        </div>
+                    </div>
+                    <div class="admin-checkbox-group gallery-editor-visibility">
+                        <input type="checkbox" id="adminGalleryVisible" class="admin-checkbox" checked>
+                        <label for="adminGalleryVisible" class="admin-checkbox-label">
+                            <strong>Published</strong>
+                            <span>Show this in the public gallery.</span>
+                        </label>
+                    </div>
+                    <div class="admin-actions discount-actions gallery-editor-actions">
+                        <button type="button" id="btnSaveGalleryItem" class="admin-btn-save">Add Gallery Item</button>
+                        <button type="button" id="btnResetGalleryItemForm" class="admin-btn-publish">Reset Form</button>
+                    </div>
+                </aside>
+            </section>
+
+            <section id="adminGalleryItemsPanel" class="gallery-manager-tab-panel gallery-library" role="tabpanel" aria-labelledby="adminGalleryItemsTab" data-gallery-panel="items" hidden>
+                <div class="gallery-library-toolbar">
+                    <div>
+                        <span class="gallery-library-kicker">Collection</span>
+                        <h4 id="galleryLibraryHeading">Existing gallery items</h4>
+                    </div>
+                    <label class="admin-label gallery-library-filter">
+                        View category
+                        <select id="adminGalleryGroupFilter" class="admin-input"></select>
+                    </label>
                 </div>
-                <label class="admin-label admin-label-wide">
-                    Extra Categories (optional, comma separated)
-                    <input type="text" id="adminGalleryCategories" class="admin-input" placeholder="Use only for new custom tags">
-                </label>
-                <div class="admin-checkbox-group">
-                    <input type="checkbox" id="adminGalleryVisible" class="admin-checkbox" checked>
-                    <label for="adminGalleryVisible" class="admin-checkbox-label">Published to public gallery?</label>
+                <div class="gallery-library-meta">
+                    <div id="adminGallerySummary" class="admin-gallery-summary" aria-live="polite"></div>
+                    <p id="adminGalleryLastSavedMeta" class="admin-gallery-last-saved">Last saved: awaiting first synced update.</p>
                 </div>
-            </div>
-
-            <div class="admin-form-row">
-                <label class="admin-label admin-label-wide">
-                    Image URL
-                    <input type="url" id="adminGalleryImageUrl" class="admin-input" placeholder="https://... or local relative path">
-                </label>
-                <label class="admin-label admin-label-wide">
-                    Optional YouTube / Video Link
-                    <input type="url" id="adminGalleryVideoLink" class="admin-input" placeholder="https://youtu.be/...">
-                </label>
-            </div>
-
-            <div class="admin-form-row">
-                <label class="admin-label admin-label-wide">
-                    Upload New Image
-                    <input type="file" id="adminGalleryImageUpload" class="admin-input" accept="image/*">
-                </label>
-            </div>
-
-            <div class="admin-form-row">
-                <div class="admin-gallery-preview" id="adminGalleryPreview" hidden>
-                    <img id="adminGalleryPreviewImg" class="admin-gallery-preview__img" alt="Gallery preview" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==">
+                <div id="adminGalleryItemsList" class="admin-gallery-list">
+                    <p class="admin-detail">Gallery items will appear here after loading.</p>
                 </div>
-                <div class="admin-gallery-meta">
-                    <p id="adminGalleryImageHint" class="admin-detail">Paste an image URL or upload an image file.</p>
+            </section>
+
+            <section id="adminGalleryBackupsPanel" class="gallery-manager-tab-panel gallery-backups" role="tabpanel" aria-labelledby="adminGalleryBackupsTab" data-gallery-panel="backups" hidden>
+                <div class="gallery-backups__heading">
+                    <span class="gallery-library-kicker">Recovery</span>
+                    <h4>Gallery backups</h4>
+                    <p>Restore a saved gallery state if an item was changed or removed by mistake.</p>
                 </div>
-            </div>
-
-            <div class="admin-actions discount-actions">
-                <button type="button" id="btnSaveGalleryItem" class="admin-btn-save">Add Gallery Item</button>
-                <button type="button" id="btnResetGalleryItemForm" class="admin-btn-publish">Reset Form</button>
-                <button type="button" id="btnRestoreLatestGalleryBackup" class="admin-btn-edit">Restore Latest Backup</button>
-                <button type="button" id="btnRestorePreviousGalleryBackup" class="admin-btn-edit">Restore Previous Backup</button>
-            </div>
-
-            <label class="admin-label admin-label-medium">
-                Manage View Category
-                <select id="adminGalleryGroupFilter" class="admin-input"></select>
-            </label>
-
-            <div id="adminGallerySummary" class="admin-gallery-summary" aria-live="polite"></div>
-            <p id="adminGalleryLastSavedMeta" class="admin-gallery-last-saved">Last saved: awaiting first synced update.</p>
-
-            <div id="adminGalleryItemsList" class="admin-gallery-list">
-                <p class="admin-detail">Gallery items will appear here after loading.</p>
-            </div>
+                <div class="gallery-backups__notice">
+                    Restoring creates a snapshot of the current gallery first. Images in Storage are not deleted.
+                </div>
+                <div class="gallery-backups__actions">
+                    <button type="button" id="btnRestoreLatestGalleryBackup" class="admin-btn-edit">Restore Latest Backup</button>
+                    <button type="button" id="btnRestorePreviousGalleryBackup" class="admin-btn-edit">Restore Previous Backup</button>
+                </div>
+            </section>
         </div>
     </template>
 
@@ -716,7 +795,7 @@
         </div>
     </div>
 
-    <script type="module" src="script.js?v=182"></script>
+    <script type="module" src="script.js?v=186"></script>
     <script defer src="loader.js?v=3"></script>
 </body>
 </html>

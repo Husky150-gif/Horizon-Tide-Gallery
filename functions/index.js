@@ -65,11 +65,6 @@ exports.sendReportEmail = functions.firestore
   });
 
 function normalizeQueueOwnerFromItemType(itemType) {
-  const raw = String(itemType || '').toLowerCase();
-  const lopsideKeywords = ['fursuit', 'paw', 'tail', 'partial', 'head', 'feet'];
-  if (lopsideKeywords.some((keyword) => raw.includes(keyword))) {
-    return 'lopside';
-  }
   return 'husky';
 }
 

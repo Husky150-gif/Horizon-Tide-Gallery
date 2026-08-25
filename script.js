@@ -52,8 +52,7 @@ let globalGalleryCatalogListener = null;
 
 const DEFAULT_HOME_AVAILABILITY = {
     artists: {
-        husky: { name: 'Husky', service: 'Digital Art', status: 'Open', slots: 3 },
-        lopside: { name: 'Lopside', service: 'Fursuit Creations', status: 'Limited', slots: 2 }
+        husky: { name: 'Husky', service: 'Digital Art', status: 'Open', slots: 3 }
     },
     weeklySnapshot: {
         sun: 'open',
@@ -117,14 +116,6 @@ const DEFAULT_GALLERY_CATALOG = {
         { id: 'gallery-premade-keychain', url: 'Premade keychains/Absol_keycahin_watermark.png', title: 'Premade Keychain', creator: 'Horizon Tide', categories: ['keychains', 'finished-commissions'] },
         { id: 'gallery-keychain-sample', url: 'Premade keychains/bleh1.png', title: 'Keychain Sample', creator: 'Horizon Tide', categories: ['keychains'] },
         { id: 'gallery-keychain-illustration', url: 'Premade keychains/Illustration13_2.png', title: 'Keychain Illustration', creator: 'Horizon Tide', categories: ['keychains'] },
-        { id: 'gallery-fursuit-build', url: "Lopside's art images/03F50406-DA67-44D8-8E51-DB337E650157.jpg", title: 'Fursuit Build', creator: 'Lopside', categories: ['fursuits', 'finished-commissions'] },
-        { id: 'gallery-fursuit-detail', url: "Lopside's art images/BD466073-9A75-4F99-A7E3-45BBF7A3DCAE.jpg", title: 'Fursuit Detail', creator: 'Lopside', categories: ['fursuits'] },
-        { id: 'gallery-suit-progress-1', url: "Lopside's art images/IMG_1464.jpg", title: 'Suit Progress', creator: 'Lopside', categories: ['fursuits', 'finished-commissions'] },
-        { id: 'gallery-suit-progress-2', url: "Lopside's art images/IMG_2276.jpg", title: 'Suit Progress 2', creator: 'Lopside', categories: ['fursuits'] },
-        { id: 'gallery-suit-progress-3', url: "Lopside's art images/IMG_2309.jpg", title: 'Suit Progress 3', creator: 'Lopside', categories: ['fursuits'] },
-        { id: 'gallery-suit-progress-4', url: "Lopside's art images/IMG_2557.jpg", title: 'Suit Progress 4', creator: 'Lopside', categories: ['fursuits', 'finished-commissions'] },
-        { id: 'gallery-suit-progress-5', url: "Lopside's art images/IMG_5188.jpg", title: 'Suit Progress 5', creator: 'Lopside', categories: ['fursuits'] },
-        { id: 'gallery-suit-progress-6', url: "Lopside's art images/IMG_5784.jpg", title: 'Suit Progress 6', creator: 'Lopside', categories: ['fursuits', 'finished-commissions'] },
         {
             id: 'gallery-animation-preview',
             url: 'https://img.youtube.com/vi/jnh7WgHTO6w/hqdefault.jpg',
@@ -138,7 +129,6 @@ const DEFAULT_GALLERY_CATALOG = {
 
 const DEFAULT_GALLERY_CATEGORY_OPTIONS = [
     { value: 'digital-art', label: 'Digital Art' },
-    { value: 'fursuits', label: 'Fursuits' },
     { value: 'keychains', label: 'Keychains' },
     { value: 'stickers', label: 'Stickers' },
     { value: 'animation', label: 'Animation' },
@@ -147,7 +137,6 @@ const DEFAULT_GALLERY_CATEGORY_OPTIONS = [
 
 const GALLERY_CATEGORY_PRESETS = [
     { id: 'husky-art', categories: ['digital-art', 'finished-commissions'] },
-    { id: 'lopside-fursuit', categories: ['fursuits', 'finished-commissions'] },
     { id: 'merch', categories: ['keychains', 'stickers', 'finished-commissions'] },
     { id: 'animation', categories: ['animation', 'finished-commissions'] }
 ];
@@ -164,11 +153,6 @@ const GALLERY_CATEGORY_ALIAS_MAP = new Map([
     ['art', 'digital-art'],
     ['digitalart', 'digital-art'],
     ['digital-arts', 'digital-art'],
-    ['fursuit', 'fursuits'],
-    ['fur-suit', 'fursuits'],
-    ['fur-suits', 'fursuits'],
-    ['suit', 'fursuits'],
-    ['suits', 'fursuits'],
     ['keychain', 'keychains'],
     ['key-chain', 'keychains'],
     ['key-chains', 'keychains'],
@@ -234,14 +218,12 @@ window.adminDiagnosticsState = {
 
 const ADMIN_EMAIL_ALLOWLIST = new Set([
     'musicisbae6547@gmail.com',
-    'horizontidegallery@gmail.com',
-    'littlelopsidestudio@gmail.com'
+    'horizontidegallery@gmail.com'
 ]);
 
 const OWNER_ROLE_BY_EMAIL = new Map([
     ['musicisbae6547@gmail.com', 'Husky (Owner)'],
-    ['horizontidegallery@gmail.com', 'Husky (Owner Shared Inbox)'],
-    ['littlelopsidestudio@gmail.com', 'Lopside (Owner)']
+    ['horizontidegallery@gmail.com', 'Husky (Owner Shared Inbox)']
 ]);
 
 const ADMIN_PERSISTENCE_PREF_KEY = 'hz_admin_stay_signed_in';
@@ -368,12 +350,12 @@ const DEFAULT_SOCIAL_IMAGE = `${SITE_BASE_URL}${encodeURI('Images/banner 1.jpg')
 
 const PUBLIC_HEAD_METADATA = {
     title: 'The Horizon | Horizon Tide Gallery',
-    description: 'Horizon Tide Gallery by Husky and Lopside for custom art commissions, animation, fursuits, and handmade creations.',
+    description: 'Horizon Tide Gallery by Husky for custom art commissions, animation, and handmade creations.',
     ogTitle: 'Horizon Tide Gallery',
-    ogDescription: 'Explore custom artwork, animation portfolios, fursuit builds, and handmade commissions by Husky and Lopside.',
+    ogDescription: 'Explore custom artwork, animation portfolios, and handmade commissions by Husky.',
     ogUrl: SITE_BASE_URL,
     twitterTitle: 'The Horizon | Horizon Tide Gallery',
-    twitterDescription: 'Commission art, fursuits, keychains, and stickers from Husky and Lopside with clear communication and queue transparency.',
+    twitterDescription: 'Commission art, animation, keychains, and stickers from Husky with clear communication and queue transparency.',
     ogType: 'website',
     robots: 'index, follow',
     ogImage: DEFAULT_SOCIAL_IMAGE,
@@ -383,13 +365,13 @@ const PUBLIC_HEAD_METADATA = {
 
 const ROUTE_HEAD_METADATA = {
     '#home': {
-        title: 'The Horizon | Art, Fursuits, and Handmade Creations',
-        description: 'Start your commission with Husky and Lopside at Horizon Tide Gallery: clear steps, artist availability, reviews, and a transparent queue.',
-        ogDescription: 'Custom art, fursuits, merch, and step-by-step commission guidance from Husky and Lopside at Horizon Tide Gallery.'
+        title: 'The Horizon | Art, Animation, and Handmade Creations',
+        description: 'Start your commission with Husky at Horizon Tide Gallery: clear steps, artist availability, reviews, and a transparent queue.',
+        ogDescription: 'Custom art, merch, and step-by-step commission guidance from Husky at Horizon Tide Gallery.'
     },
     '#gallery': {
         title: 'Gallery | The Horizon',
-        description: 'Browse Horizon Tide Gallery artwork, fursuit builds, merch samples, and animation previews.',
+        description: 'Browse Horizon Tide Gallery artwork, merch samples, and animation previews.',
         ogTitle: 'Gallery | Horizon Tide Gallery'
     },
     '#preorder': {
@@ -404,7 +386,7 @@ const ROUTE_HEAD_METADATA = {
     },
     '#pricing': {
         title: 'Pricing Sheet | The Horizon',
-        description: 'Review starting prices for art, animation, stickers, keychains, and fursuit work at Horizon Tide Gallery.',
+        description: 'Review starting prices for art, animation, stickers, keychains, and handmade work at Horizon Tide Gallery.',
         ogTitle: 'Pricing Sheet | Horizon Tide Gallery'
     },
     '#updates': {
@@ -429,7 +411,7 @@ const ROUTE_HEAD_METADATA = {
     },
     '#socials': {
         title: 'Artists, FAQ, and Socials | The Horizon',
-        description: 'Meet Husky and Lopside, get ordering answers, and find official Horizon Tide Gallery social links.',
+        description: 'Meet Husky, get ordering answers, and find official Horizon Tide Gallery social links.',
         ogTitle: 'Artists, FAQ, and Socials | Horizon Tide Gallery'
     },
     '#discord': {
@@ -444,7 +426,7 @@ const ROUTE_HEAD_METADATA = {
     },
     '#whatwedo': {
         title: 'What We Do | The Horizon',
-        description: 'See Husky and Lopside services, specialties, and creative offerings across art, animation, fursuits, and handmade commissions.',
+        description: 'See Husky services, specialties, and creative offerings across art, animation, and handmade commissions.',
         ogTitle: 'What We Do | Horizon Tide Gallery'
     },
     '#horizon-queue': {
@@ -790,7 +772,7 @@ const siteGuide = installGuidedTour({
             route: '#home',
             selector: '#btnGalleryHome',
             title: 'Browse The Gallery',
-            body: 'The gallery is where people can preview finished work, fursuit builds, merch, and animation examples.'
+            body: 'The gallery is where people can preview finished work, merch, and animation examples.'
         },
         {
             key: 'home-availability',
@@ -834,9 +816,9 @@ const siteGuide = installGuidedTour({
         {
             key: 'home-guides',
             route: '#home',
-            selector: '.home-trust-card .care-guide-pill[data-care-key="Fursuit washing guides"]',
+            selector: '.home-trust-card .care-guide-pill[data-care-key="Keychain protection"]',
             title: 'Use The Care Guides Too',
-            body: 'Near the bottom of the homepage, these guides help people with fursuit care, keychain protection, and sticker weatherproofing tips.',
+            body: 'Near the bottom of the homepage, these guides help people protect keychains and keep stickers weatherproof.',
             scrollBehavior: 'auto',
             scrollBlock: 'center',
             cardSide: 'top'
@@ -921,31 +903,29 @@ const TOS_CONTENT_HTML = `
         <a href="#tos-art" class="tos-jump-btn">Art Policy</a>
         <a href="#tos-animation" class="tos-jump-btn">Animation Policy</a>
     </div>
-    <p>By commissioning, purchasing, or placing an order with Horizon Tide Gallery, the client agrees to the following Terms of Service. Please read carefully before purchasing or commissioning any product or service.</p>
-    <p>This website may store order submissions, status lookup activity, lightweight usage analytics, and technical error reports needed to run the site, improve the ordering flow, and troubleshoot problems. By using the site forms and tools, you agree to that operational use of your submitted information.</p>
+    <p>By commissioning, purchasing, or placing an order with Horizon Tide Gallery, you agree to these Terms of Service. Please read them carefully before purchasing or commissioning any product or service.</p>
+    <p>This website may store order submissions, status lookup activity, lightweight usage analytics, and technical error reports I need to run the site, improve the ordering flow, and troubleshoot problems. By using my forms and tools, you agree to that operational use of your submitted information.</p>
     
     <h2 id="tos-general" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">GENERAL</h2>
-    <p>Horizon Tide Gallery reserves the right to refuse, decline, cancel, or discontinue any commission, order, inquiry, or interaction for any reason, including but not limited to:</p>
+    <p>I reserve the right to refuse, decline, cancel, or discontinue any commission, order, inquiry, or interaction for any reason, including but not limited to:</p>
     <ul>
         <li>Inappropriate or disrespectful behavior</li>
         <li>Harassment or excessive spam messaging</li>
         <li>Offensive, hateful, discriminatory, or illegal content</li>
-        <li>Requests outside our skill level or comfort zone</li>
+        <li>Requests outside my skill level or comfort zone</li>
         <li>Failure to communicate or follow payment agreements</li>
-        <li>Repeated violation of our boundaries or policies</li>
+        <li>Repeated violation of my boundaries or policies</li>
     </ul>
-    <p>We reserve the right to decline any request without explanation.<br>Clients commissioning NSFW content or entering payment agreements independently must be 18 years of age or older. Certain commission types may require parental permission for minors.</p>
-    <p>All commission requests and custom order inquiries must be submitted through official Horizon Tide website forms. DM-only or social-only messages are not treated as accepted orders until the website form is submitted.</p>
+    <p>I reserve the right to decline any request without explanation.<br>Clients commissioning NSFW content or entering payment agreements independently must be 18 years of age or older. Certain commission types may require parental permission for minors.</p>
+    <p>All commission requests and custom order inquiries must be submitted through my official Horizon Tide website forms. DM-only or social-only messages are not treated as accepted orders until the website form is submitted.</p>
     
     <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">PRODUCTS & SERVICES</h2>
-    <p>Horizon Tide Gallery may offer products and services including, but not limited to: Fursuits, parts & accessories (Tails, paws, partials), Character artwork & Digital illustrations, Keychains, charms, handmade merchandise & custom crafts. Because many products are handmade, slight variations may occur between finished items.</p>
+    <p>Horizon Tide Gallery may offer products and services including, but not limited to: Character artwork, digital illustrations, animation, keychains, charms, stickers, and handmade crafts. Because many products are handmade, slight variations may occur between finished items.</p>
     
     <h2 id="tos-payment" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">PAYMENT</h2>
     <p>Accepted payment methods may include: PayPal, CashApp, Ko-fi, or other approved platforms.</p>
     <ul>
         <li>A non-refundable deposit of 10%–30% may be required before work begins.</li>
-        <li>For Lopside handmade/fursuit orders, a supplies deposit is required for materials before the order is added to active production.</li>
-        <li>The Lopside supplies deposit is non-refundable once materials are purchased for your project.</li>
         <li>Smaller or digital commissions may require full upfront payment.</li>
         <li>Payment plans may be available for orders over $200.</li>
         <li>Full payment must be completed before physical items are shipped.</li>
@@ -963,18 +943,18 @@ const TOS_CONTENT_HTML = `
     <p>Small imperfections may naturally occur (slight asymmetry, minor stitching visibility, natural variation). Factory-level perfection should not be expected. Materials may vary slightly in color, texture, or pile length.</p>
     
     <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">SHIPPING & REPAIRS</h2>
-    <p>Clients are responsible for providing a correct address and paying shipping costs. Once shipped, ownership transfers to the shipping carrier and client. Minor craftsmanship-related repairs may be offered within 7 days of delivery at our discretion (this does not include wear and tear, pet damage, or improper care).</p>
+    <p>Clients are responsible for providing a correct address and paying shipping costs. Once shipped, ownership transfers to the shipping carrier and client. I may offer minor craftsmanship-related repairs within 7 days of delivery at my discretion (this does not include wear and tear, pet damage, or improper care).</p>
     
     <h2 id="tos-art" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">ART CONTENT & NSFW POLICY</h2>
     
     <p class="age-verification-warning">
-        ⚠️ <strong>Age Verification Required:</strong> Please note that you must contact us directly via Discord or email for NSFW requests. We require valid proof that you are 18 or older before discussing or accepting any mature commissions.
+        ⚠️ <strong>Age Verification Required:</strong> Please contact me directly via Discord or email for NSFW requests. I require valid proof that you are 18 or older before discussing or accepting any mature commissions.
     </p>
     
-    <p>We may create furry/anthro art, original characters, fanart, and mild NSFW. We will NOT create illegal content, hate content, heavy gore, or content involving minors. All NSFW commissioners must be 18+.</p>
+    <p>I may create furry/anthro art, original characters, fanart, and mild NSFW. I will NOT create illegal content, hate content, heavy gore, or content involving minors. All NSFW commissioners must be 18+.</p>
     
     <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">ARTISTIC RIGHTS & USAGE</h2>
-    <p>We retain artistic rights to all creations. Clients may use purchased products for personal use and upload photos with credit. Clients MAY NOT claim the work as their own, trace/replicate, mass-produce, or use our work for AI training datasets.</p>
+    <p>I retain artistic rights to all creations. Clients may use purchased products for personal use and upload photos with credit. Clients MAY NOT claim the work as their own, trace/replicate, mass-produce, or use my work for AI training datasets.</p>
 
     <h2 id="tos-animation" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">ANIMATION POLICY</h2>
     <p><strong>Process:</strong><br>
@@ -1004,7 +984,7 @@ const TOS_CONTENT_HTML = `
     <p><strong>Cancellation & Behavior:</strong><br>
     Cancellation before starting is allowed (standard refund rules apply). After starting, there is no refund. Respect is required; rude behavior may result in cancellation without a refund. By commissioning me, the client agrees to all terms and understands the time required for animation.</p>
 
-    <p style="text-align: center; margin-top: 30px; color: #f472b6; font-weight: bold;">✨ Thank you for supporting Horizon Tide Gallery. Every order directly supports independent artists, handmade craftsmanship, and small-business creativity.</p>
+    <p style="text-align: center; margin-top: 30px; color: #f472b6; font-weight: bold;">✨ Thank you for supporting Horizon Tide Gallery. Every order directly supports my independent art practice and small-business creativity.</p>
 `;
 
 // === HELPER FUNCTIONS ===
@@ -1155,21 +1135,16 @@ function getChecklistHTML(options = {}) {
         excludeRefImage = false,
         includeHandmadeTiming = true,
         includeInstantShipping = true,
-        includeLopsideSuppliesDeposit = false
     } = options;
 
     const refHtml = excludeRefImage ? '' : `<div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I have clear reference images ready</label></div>`;
     const handmadeHtml = includeHandmadeTiming ? `<div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I know handmade/custom items take time</label></div>` : '';
     const shippingHtml = includeInstantShipping ? `<div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I understand this is not instant shipping</label></div>` : '';
-    const lopsideDepositHtml = includeLopsideSuppliesDeposit
-        ? `<div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I understand Lopside handmade/fursuit orders require a non-refundable supplies deposit for materials before production starts.</label></div>`
-        : '';
     
     return `
         <div class="before-order-checklist">
             <h4>📋 Before You Order:</h4>
             ${handmadeHtml}
-            ${lopsideDepositHtml}
             ${refHtml}
             ${shippingHtml}
             <div class="checklist-item"><input type="checkbox" class="req-check" required> <label>I understand prices are estimates and final pricing may vary</label></div>
@@ -1613,9 +1588,8 @@ function getDefaultWeeklySnapshotForTide(tide = 'calm') {
 
 function inferTideFromAvailability(availability) {
     const husky = availability?.artists?.husky || DEFAULT_HOME_AVAILABILITY.artists.husky;
-    const lopside = availability?.artists?.lopside || DEFAULT_HOME_AVAILABILITY.artists.lopside;
-    const statuses = [sanitizeAvailabilityStatus(husky.status), sanitizeAvailabilityStatus(lopside.status)];
-    const totalSlots = Math.max(0, Number(husky.slots) || 0) + Math.max(0, Number(lopside.slots) || 0);
+    const statuses = [sanitizeAvailabilityStatus(husky.status)];
+    const totalSlots = Math.max(0, Number(husky.slots) || 0);
 
     if (statuses.includes('Closed') || totalSlots <= 1) return 'stormy';
     if (statuses.includes('Limited') || totalSlots <= 4) return 'busy';
@@ -1637,34 +1611,30 @@ function normalizeWeeklySnapshot(raw, availabilityForFallback = null) {
 function getTideStatusSnapshot(availabilityInput = window.homeAvailability) {
     const availability = normalizeHomeAvailability(availabilityInput);
     const husky = availability.artists.husky;
-    const lopside = availability.artists.lopside;
-    const statuses = [sanitizeAvailabilityStatus(husky.status), sanitizeAvailabilityStatus(lopside.status)];
-    const totalSlots = Math.max(0, Number(husky.slots) || 0) + Math.max(0, Number(lopside.slots) || 0);
+    const statuses = [sanitizeAvailabilityStatus(husky.status)];
+    const totalSlots = Math.max(0, Number(husky.slots) || 0);
 
     let tide = 'Calm';
-    let note = 'The tide is calm and our queue is moving at a steady pace.';
+    let note = 'The tide is calm and my queue is moving at a steady pace.';
 
     if (statuses.includes('Closed') || totalSlots <= 1) {
         tide = 'Stormy';
-        note = 'The tide is stormy right now. Replies may be slower while we clear active work.';
+        note = 'The tide is stormy right now. Replies may be slower while I clear active work.';
     } else if (statuses.includes('Limited') || totalSlots <= 4) {
         tide = 'Busy';
-        note = 'The tide is a bit busy. We are still taking requests, but capacity is limited.';
+        note = 'The tide is a bit busy. I am still taking requests, but capacity is limited.';
     }
 
-    return { tide, note, availability, husky, lopside, totalSlots };
+    return { tide, note, availability, husky, totalSlots };
 }
 
 function getAvailabilityCalendarSnapshotMarkup(tideSnapshot) {
     const availability = tideSnapshot?.availability || window.homeAvailability || DEFAULT_HOME_AVAILABILITY;
     const husky = availability?.artists?.husky || DEFAULT_HOME_AVAILABILITY.artists.husky;
-    const lopside = availability?.artists?.lopside || DEFAULT_HOME_AVAILABILITY.artists.lopside;
 
     const huskyStatus = sanitizeAvailabilityStatus(husky.status).toLowerCase();
-    const lopsideStatus = sanitizeAvailabilityStatus(lopside.status).toLowerCase();
     const huskySlots = Math.max(0, Number(husky.slots) || 0);
-    const lopsideSlots = Math.max(0, Number(lopside.slots) || 0);
-    const totalSlots = huskySlots + lopsideSlots;
+    const totalSlots = huskySlots;
 
     const weeklySnapshot = normalizeWeeklySnapshot(availability?.weeklySnapshot, availability);
     const today = new Date();
@@ -1689,7 +1659,6 @@ function getAvailabilityCalendarSnapshotMarkup(tideSnapshot) {
     return `
         <div class="home-availability-snapshot-slot-note" aria-label="Current slots by artist">
             <span class="slot-chip is-${huskyStatus}">${escapeHTML(String(husky.name || 'Husky'))}: ${escapeHTML(formatAvailabilitySlotLabel(huskySlots))}</span>
-            <span class="slot-chip is-${lopsideStatus}">${escapeHTML(String(lopside.name || 'Lopside'))}: ${escapeHTML(formatAvailabilitySlotLabel(lopsideSlots))}</span>
             <span class="slot-chip is-${totalSlots <= 1 ? 'closed' : (totalSlots <= 4 ? 'limited' : 'open')}">Total: ${totalSlots} ${totalSlots === 1 ? 'slot' : 'slots'}</span>
         </div>
         <ul class="availability-snapshot-grid" aria-label="Weekly availability snapshot">
@@ -1763,7 +1732,6 @@ function normalizeHomeAvailability(raw) {
     if (!raw || typeof raw !== 'object') return fallback;
 
     const huskyRaw = raw.artists && raw.artists.husky ? raw.artists.husky : {};
-    const lopsideRaw = raw.artists && raw.artists.lopside ? raw.artists.lopside : {};
 
     fallback.artists.husky.name = String(huskyRaw.name || fallback.artists.husky.name).trim() || fallback.artists.husky.name;
     fallback.artists.husky.service = String(huskyRaw.service || fallback.artists.husky.service).trim() || fallback.artists.husky.service;
@@ -1772,14 +1740,6 @@ function normalizeHomeAvailability(raw) {
     fallback.artists.husky.slots = Number.isFinite(huskySlots)
         ? Math.max(0, Math.floor(huskySlots))
         : fallback.artists.husky.slots;
-
-    fallback.artists.lopside.name = String(lopsideRaw.name || fallback.artists.lopside.name).trim() || fallback.artists.lopside.name;
-    fallback.artists.lopside.service = String(lopsideRaw.service || fallback.artists.lopside.service).trim() || fallback.artists.lopside.service;
-    fallback.artists.lopside.status = sanitizeAvailabilityStatus(lopsideRaw.status);
-    const lopsideSlots = Number(lopsideRaw.slots);
-    fallback.artists.lopside.slots = Number.isFinite(lopsideSlots)
-        ? Math.max(0, Math.floor(lopsideSlots))
-        : fallback.artists.lopside.slots;
 
     fallback.weeklySnapshot = normalizeWeeklySnapshot(raw.weeklySnapshot, fallback);
     fallback.lastSavedAt = typeof raw.lastSavedAt === 'string' ? raw.lastSavedAt : fallback.lastSavedAt;
@@ -1791,18 +1751,12 @@ function normalizeHomeAvailability(raw) {
 function applyHomeAvailabilityToCurrentDOM() {
     const availability = normalizeHomeAvailability(window.homeAvailability);
     const husky = availability.artists.husky;
-    const lopside = availability.artists.lopside;
     const tideSnapshot = getTideStatusSnapshot(availability);
 
     const huskyNameEl = document.getElementById('homeAvailHuskyName');
     const huskyServiceEl = document.getElementById('homeAvailHuskyService');
     const huskyStatusEl = document.getElementById('homeAvailHuskyStatus');
     const huskySlotsEl = document.getElementById('homeAvailHuskySlots');
-
-    const lopsideNameEl = document.getElementById('homeAvailLopsideName');
-    const lopsideServiceEl = document.getElementById('homeAvailLopsideService');
-    const lopsideStatusEl = document.getElementById('homeAvailLopsideStatus');
-    const lopsideSlotsEl = document.getElementById('homeAvailLopsideSlots');
 
     const responseEl = document.getElementById('homeAvailResponseTime');
     const heroAvgReplyEl = document.getElementById('homeHeroAvgReply');
@@ -1815,14 +1769,6 @@ function applyHomeAvailabilityToCurrentDOM() {
         huskyStatusEl.className = `status-pill ${getAvailabilityStatusClass(husky.status)}`;
     }
     if (huskySlotsEl) huskySlotsEl.textContent = formatAvailabilitySlotLabel(husky.slots);
-
-    if (lopsideNameEl) lopsideNameEl.textContent = lopside.name;
-    if (lopsideServiceEl) lopsideServiceEl.textContent = lopside.service;
-    if (lopsideStatusEl) {
-        lopsideStatusEl.textContent = lopside.status;
-        lopsideStatusEl.className = `status-pill ${getAvailabilityStatusClass(lopside.status)}`;
-    }
-    if (lopsideSlotsEl) lopsideSlotsEl.textContent = formatAvailabilitySlotLabel(lopside.slots);
 
     if (responseEl) responseEl.textContent = availability.responseTime;
     if (heroAvgReplyEl) heroAvgReplyEl.textContent = availability.responseTime;
@@ -2356,13 +2302,7 @@ function buildGalleryImageAltText(item, index) {
     const title = String(item?.title || fallbackTitle).trim() || fallbackTitle;
     const rawCreator = String(item?.creator || 'Horizon Tide Gallery').trim() || 'Horizon Tide Gallery';
     const normalizedCreator = rawCreator.toLowerCase();
-    let creatorLabel = rawCreator;
-
-    if (normalizedCreator === 'husky') {
-        creatorLabel = 'Husky (The Horizon)';
-    } else if (normalizedCreator === 'lopside') {
-        creatorLabel = 'Lopside (The Horizon)';
-    }
+    const creatorLabel = normalizedCreator === 'husky' ? 'Husky (The Horizon)' : rawCreator;
 
     const categorySnippet = Array.isArray(item?.categories)
         ? item.categories
@@ -3346,7 +3286,60 @@ function renderAdminGallerySummary(catalogInput = window.galleryCatalog, visible
     renderAdminGalleryLastSavedMeta();
 }
 
+function openAdminGalleryTab(tabName, options = {}) {
+    const { focus = false } = options;
+    const allowedTabs = new Set(['editor', 'items', 'backups']);
+    const normalizedTab = allowedTabs.has(tabName) ? tabName : 'editor';
+    const tabButtons = Array.from(document.querySelectorAll('.gallery-manager-tab'));
+
+    tabButtons.forEach((button) => {
+        if (!(button instanceof HTMLButtonElement)) return;
+        const isActive = button.dataset.galleryTab === normalizedTab;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        button.tabIndex = isActive ? 0 : -1;
+        if (isActive && focus) button.focus();
+    });
+
+    document.querySelectorAll('.gallery-manager-tab-panel').forEach((panel) => {
+        if (!(panel instanceof HTMLElement)) return;
+        panel.hidden = panel.dataset.galleryPanel !== normalizedTab;
+    });
+}
+
+function bindAdminGalleryTabs() {
+    const tabList = document.querySelector('.gallery-manager-tabs');
+    if (!(tabList instanceof HTMLElement) || tabList.dataset.bound === 'true') return;
+
+    tabList.addEventListener('click', (event) => {
+        const button = event.target instanceof Element ? event.target.closest('.gallery-manager-tab') : null;
+        if (!(button instanceof HTMLButtonElement)) return;
+        openAdminGalleryTab(button.dataset.galleryTab || 'editor');
+    });
+
+    tabList.addEventListener('keydown', (event) => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        const tabs = Array.from(tabList.querySelectorAll('.gallery-manager-tab'));
+        const currentIndex = tabs.indexOf(document.activeElement);
+        if (currentIndex < 0) return;
+
+        event.preventDefault();
+        const nextIndex = event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+                ? tabs.length - 1
+                : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+        const nextTab = tabs[nextIndex];
+        if (nextTab instanceof HTMLButtonElement) {
+            openAdminGalleryTab(nextTab.dataset.galleryTab || 'editor', { focus: true });
+        }
+    });
+
+    tabList.dataset.bound = 'true';
+}
+
 function focusAdminGalleryEditor(fieldName = 'title') {
+    openAdminGalleryTab('editor');
     const galleryCard = document.querySelector('.gallery-manager-card');
     const focusTarget = fieldName === 'categories'
         ? document.getElementById('adminGalleryCategories')
@@ -3495,6 +3488,7 @@ function renderAdminGalleryManager() {
     if (!(listEl instanceof HTMLElement)) return;
 
     const catalog = normalizeGalleryCatalog(window.galleryCatalog);
+    bindAdminGalleryTabs();
     bindAdminGalleryPresetButtons();
     bindAdminGalleryListActions();
     renderAdminGalleryLastSavedMeta();
@@ -3797,6 +3791,12 @@ function attachGlobalSettingsListener() {
             }
         }
         updateDiscountUI();
+        if (document.getElementById('adminActiveDiscountsList')) {
+            bindAdminDiscountTabs();
+            bindAdminDiscountPreview();
+            renderActiveDiscountsList();
+            updateAdminPreview();
+        }
     });
 }
 attachGlobalSettingsListener();
@@ -3963,16 +3963,6 @@ function getDefaultPricingConfig() {
             smallBatch: 100,
             printing: { firstCopy: 6, additionalCopy: 3 }
         },
-        fursuits: {
-            tail: 100,
-            paws: 170,
-            pawsTailSet: 260,
-            feetPaws: 270,
-            trioSet: 530,
-            head: 1100,
-            miniPartial: 1350,
-            fullPartial: 1620
-        },
         keychains: {
             premade: {
                 clearAcrylic: 22,
@@ -4004,14 +3994,6 @@ function getDefaultPricingConfig() {
             'animation-simple': { mode: 'follow', min: 60, max: 140 },
             'animation-full-character': { mode: 'follow', min: 140, max: 300 },
             'animation-complex-scene': { mode: 'follow', min: 300, max: 360 },
-            'fursuit-tail': { mode: 'follow', min: 100, max: 118 },
-            'fursuit-paws': { mode: 'follow', min: 170, max: 204 },
-            'fursuit-paws-tail': { mode: 'follow', min: 260, max: 312 },
-            'fursuit-feet-paws': { mode: 'follow', min: 270, max: 324 },
-            'fursuit-trio': { mode: 'follow', min: 530, max: 625 },
-            'fursuit-head': { mode: 'follow', min: 1100, max: 1320 },
-            'fursuit-mini-partial': { mode: 'follow', min: 1350, max: 1593 },
-            'fursuit-full-partial': { mode: 'follow', min: 1620, max: 1879 },
             'keychain-custom-chibi': { mode: 'follow', min: 56, max: 56 },
             'keychain-custom-half': { mode: 'follow', min: 72, max: 72 },
             'keychain-custom-full': { mode: 'follow', min: 92, max: 92 },
@@ -4051,14 +4033,6 @@ function getQuickGuideOverrideDefinitions() {
         'animation-simple',
         'animation-full-character',
         'animation-complex-scene',
-        'fursuit-tail',
-        'fursuit-paws',
-        'fursuit-paws-tail',
-        'fursuit-feet-paws',
-        'fursuit-trio',
-        'fursuit-head',
-        'fursuit-mini-partial',
-        'fursuit-full-partial',
         'keychain-custom-chibi',
         'keychain-custom-half',
         'keychain-custom-full',
@@ -4085,14 +4059,6 @@ function getHomeTeaserFallbackRange(typeValue, pricingConfig) {
     if (type === 'animation-simple') return { min: pricingConfig.animation.simple.min, max: pricingConfig.animation.simple.max };
     if (type === 'animation-full-character') return { min: pricingConfig.animation.fullCharacter.min, max: pricingConfig.animation.fullCharacter.max };
     if (type === 'animation-complex-scene') return { min: pricingConfig.animation.complexScene, max: Math.round(pricingConfig.animation.complexScene * 1.2) };
-    if (type === 'fursuit-tail') return { min: pricingConfig.fursuits.tail, max: Math.round(pricingConfig.fursuits.tail * 1.18) };
-    if (type === 'fursuit-paws') return { min: pricingConfig.fursuits.paws, max: Math.round(pricingConfig.fursuits.paws * 1.2) };
-    if (type === 'fursuit-paws-tail') return { min: pricingConfig.fursuits.pawsTailSet, max: Math.round(pricingConfig.fursuits.pawsTailSet * 1.2) };
-    if (type === 'fursuit-feet-paws') return { min: pricingConfig.fursuits.feetPaws, max: Math.round(pricingConfig.fursuits.feetPaws * 1.2) };
-    if (type === 'fursuit-trio') return { min: pricingConfig.fursuits.trioSet, max: Math.round(pricingConfig.fursuits.trioSet * 1.18) };
-    if (type === 'fursuit-head') return { min: pricingConfig.fursuits.head, max: Math.round(pricingConfig.fursuits.head * 1.2) };
-    if (type === 'fursuit-mini-partial') return { min: pricingConfig.fursuits.miniPartial, max: Math.round(pricingConfig.fursuits.miniPartial * 1.18) };
-    if (type === 'fursuit-full-partial') return { min: pricingConfig.fursuits.fullPartial, max: Math.round(pricingConfig.fursuits.fullPartial * 1.16) };
     if (type === 'keychain-premade-clear') return { min: pricingConfig.keychains.premade.clearAcrylic, max: pricingConfig.keychains.premade.clearAcrylic };
     if (type === 'keychain-premade-epoxy') return { min: pricingConfig.keychains.premade.epoxy, max: pricingConfig.keychains.premade.epoxy };
     if (type === 'keychain-premade-colored') return { min: pricingConfig.keychains.premade.coloredAcrylic, max: pricingConfig.keychains.premade.coloredAcrylic };
@@ -4224,16 +4190,6 @@ function normalizePricingConfig(rawConfig) {
                 additionalCopy: normalizePricingNumber(raw?.stickers?.printing?.additionalCopy, defaults.stickers.printing.additionalCopy)
             }
         },
-        fursuits: {
-            tail: normalizePricingNumber(raw?.fursuits?.tail, defaults.fursuits.tail),
-            paws: normalizePricingNumber(raw?.fursuits?.paws, defaults.fursuits.paws),
-            pawsTailSet: normalizePricingNumber(raw?.fursuits?.pawsTailSet, defaults.fursuits.pawsTailSet),
-            feetPaws: normalizePricingNumber(raw?.fursuits?.feetPaws, defaults.fursuits.feetPaws),
-            trioSet: normalizePricingNumber(raw?.fursuits?.trioSet, defaults.fursuits.trioSet),
-            head: normalizePricingNumber(raw?.fursuits?.head, defaults.fursuits.head),
-            miniPartial: normalizePricingNumber(raw?.fursuits?.miniPartial, defaults.fursuits.miniPartial),
-            fullPartial: normalizePricingNumber(raw?.fursuits?.fullPartial, defaults.fursuits.fullPartial)
-        },
         keychains: {
             premade: {
                 clearAcrylic: normalizePricingNumber(raw?.keychains?.premade?.clearAcrylic, defaults.keychains.premade.clearAcrylic),
@@ -4358,20 +4314,6 @@ function getPricingEditorFieldDefinitions() {
             ]
         },
         {
-            title: 'Fursuits',
-            description: 'Wearable build starting prices.',
-            fields: [
-                { label: 'Tail', path: 'fursuits.tail' },
-                { label: 'Paws', path: 'fursuits.paws' },
-                { label: 'Paws and Tail Set', path: 'fursuits.pawsTailSet' },
-                { label: 'Feet Paws', path: 'fursuits.feetPaws' },
-                { label: 'Trio Set', path: 'fursuits.trioSet' },
-                { label: 'Head', path: 'fursuits.head' },
-                { label: 'Mini Partial', path: 'fursuits.miniPartial' },
-                { label: 'Full Partial', path: 'fursuits.fullPartial' }
-            ]
-        },
-        {
             title: 'Keychains',
             description: 'Premade finish costs and custom charm starts.',
             fields: [
@@ -4403,7 +4345,6 @@ function getAdminPricingGroupTone(title) {
     if (normalized === 'art') return 'art';
     if (normalized === 'animation') return 'animation';
     if (normalized === 'stickers') return 'stickers';
-    if (normalized === 'fursuits') return 'fursuits';
     if (normalized === 'keychains') return 'keychains';
     return 'meta';
 }
@@ -4509,21 +4450,6 @@ function renderAdminPricingJumpNav() {
 
 function getQuickGuideEditorGroups() {
     return [
-        {
-            title: 'Fursuits',
-            tone: 'fursuits',
-            description: 'Planner ranges for Lopside without changing locked starts.',
-            items: [
-                { key: 'fursuit-tail', label: 'Tail' },
-                { key: 'fursuit-paws', label: 'Paws' },
-                { key: 'fursuit-paws-tail', label: 'Paws + Tail' },
-                { key: 'fursuit-feet-paws', label: 'Feet Paws' },
-                { key: 'fursuit-trio', label: 'Trio Set' },
-                { key: 'fursuit-head', label: 'Head' },
-                { key: 'fursuit-mini-partial', label: 'Mini Partial' },
-                { key: 'fursuit-full-partial', label: 'Full Partial' }
-            ]
-        },
         {
             title: 'Stickers',
             tone: 'stickers',
@@ -6037,7 +5963,6 @@ function animateCountValue(element, targetValue, durationMs = 900) {
 
 function getHomeIntentRoute(typeValue) {
     const intent = String(typeValue || '').toLowerCase();
-    if (intent.includes('fursuit')) return { label: 'Start Fursuit Request', action: loadFursuitForm, hash: '#fursuits' };
     if (intent.includes('merch') || intent.includes('keychain')) return { label: 'Start Merch Request', action: loadCustomKeychainsForm, hash: '#custom-keychain' };
     if (intent.includes('sticker')) return { label: 'Start Sticker Request', action: loadCustomStickersForm, hash: '#stickers' };
     if (intent.includes('animation')) return { label: 'Start Animation Request', action: loadHuskyArtForm, hash: '#art' };
@@ -6046,7 +5971,6 @@ function getHomeIntentRoute(typeValue) {
 
 function getQuickActorRouteForTeaserType(typeValue) {
     const type = String(typeValue || '').toLowerCase();
-    if (type.startsWith('fursuit-')) return { action: loadFursuitForm, hash: '#fursuits' };
     if (type.startsWith('keychain-')) return { action: loadCustomKeychainsForm, hash: '#custom-keychain' };
     if (type.startsWith('sticker-')) return { action: loadCustomStickersForm, hash: '#stickers' };
     return { action: loadHuskyArtForm, hash: '#art' };
@@ -6121,7 +6045,6 @@ function getHomeIntentMinimum(typeValue, pricingConfig) {
     if (matchingMins.length > 0) return Math.min(...matchingMins);
 
     const intent = String(typeValue || '').toLowerCase();
-    if (intent.includes('fursuit')) return pricingConfig.fursuits.paws;
     if (intent.includes('merch') || intent.includes('keychain')) return pricingConfig.keychains.custom.chibiIcon;
     if (intent.includes('sticker')) return pricingConfig.stickers.single;
     if (intent.includes('animation')) return pricingConfig.animation.loop.min;
@@ -6130,7 +6053,6 @@ function getHomeIntentMinimum(typeValue, pricingConfig) {
 
 function getHomeIntentTypePrefix(typeValue) {
     const intent = String(typeValue || '').toLowerCase();
-    if (intent.includes('fursuit')) return 'fursuit-';
     if (intent.includes('merch') || intent.includes('keychain')) return 'keychain-';
     if (intent.includes('sticker')) return 'sticker-';
     if (intent.includes('animation')) return 'animation-';
@@ -6139,7 +6061,6 @@ function getHomeIntentTypePrefix(typeValue) {
 
 function getHomeIntentLabel(typeValue) {
     const intent = String(typeValue || '').toLowerCase();
-    if (intent.includes('fursuit')) return 'fursuit';
     if (intent.includes('merch') || intent.includes('keychain')) return 'keychain/merch';
     if (intent.includes('sticker')) return 'sticker';
     if (intent.includes('animation')) return 'animation';
@@ -6204,7 +6125,6 @@ function getHomeTeaserDiscountTarget(typeValue) {
     const type = String(typeValue || '').toLowerCase();
     if (type.startsWith('art-')) return 'art';
     if (type.startsWith('animation-')) return 'animations';
-    if (type.startsWith('fursuit-')) return 'fursuits';
     if (type.startsWith('keychain-')) return 'keychains';
     if (type.startsWith('sticker-')) return 'stickers';
     return 'all';
@@ -6377,7 +6297,7 @@ function bindHomeConversionPack() {
                     intentBudgetMessage.classList.remove('is-low');
                 }
             } else {
-                intentBudgetMessage.textContent = 'Enter a target budget and we will instantly tell you if it fits this lane.';
+                intentBudgetMessage.textContent = 'Enter a target budget and I will instantly tell you if it fits this lane.';
                 intentBudgetMessage.classList.remove('is-low');
             }
         }
@@ -6445,7 +6365,7 @@ function bindHomeConversionPack() {
             smartPrimaryBtn.textContent = 'View Pricing';
             smartPrimaryBtn.dataset.target = 'pricing';
         } else {
-            smartPrimaryBtn.textContent = 'Contact Us';
+            smartPrimaryBtn.textContent = 'Contact Me';
             smartPrimaryBtn.dataset.target = 'contact';
         }
     };
@@ -6466,7 +6386,7 @@ function bindHomeConversionPack() {
 
     const currentAvailability = normalizeHomeAvailability(window.homeAvailability);
     animateCountValue(reviewsCounter, window.homeReviewSummary.approvedCount || 0);
-    animateCountValue(slotCounter, (Number(currentAvailability.artists.husky.slots) || 0) + (Number(currentAvailability.artists.lopside.slots) || 0));
+    animateCountValue(slotCounter, Number(currentAvailability.artists.husky.slots) || 0);
 
     updateIntentSummary();
     updateTeaserEstimate();
@@ -7145,16 +7065,15 @@ function loadHomePage() {
     const availability = normalizeHomeAvailability(window.homeAvailability);
     const tideSnapshot = getTideStatusSnapshot(availability);
     const husky = availability.artists.husky;
-    const lopside = availability.artists.lopside;
 
     appViewport.innerHTML = `
         <div class="home-top-nav-strip" role="presentation">
             <nav class="home-top-nav" aria-label="Homepage utility links">
-                <button type="button" class="nav-btn home-top-link nav-pill" id="tosBtn">Our TOS</button>
+                <button type="button" class="nav-btn home-top-link nav-pill" id="tosBtn">My TOS</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="whatWeDoBtn">What we do</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="socialsBtn">Meet the Artists + FAQ + How to Order</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="reviewsBtn">Reviews</button>
-                <button type="button" class="nav-btn home-top-link nav-pill" id="contactBtn">Contact us 💬</button>
+                <button type="button" class="nav-btn home-top-link nav-pill" id="contactBtn">Contact me 💬</button>
             </nav>
         </div>
 
@@ -7163,7 +7082,7 @@ function loadHomePage() {
             <div class="gif-container"><img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/umbreon.gif" alt="Shiny Umbreon" class="active-pokemon-gif"></div>
             <header class="home-hero-header">
                 <h1>Welcome to The Horizon.</h1>
-                <h2>Custom Art • Fursuits • Animation • Handmade Creations</h2>
+                <h2>Custom Art • Animation • Handmade Creations</h2>
                 <p class="home-hero-note">Custom pieces with clear timelines, status updates, and artist guidance from inquiry to delivery.</p>
             </header>
 
@@ -7172,7 +7091,7 @@ function loadHomePage() {
                 <div class="home-cta-proof-row" aria-label="Conversion trust row">
                     <p class="home-proof-badge" aria-label="Average reply time"><span>Avg reply</span><strong id="homeHeroAvgReply">${escapeHTML(availability.responseTime)}</strong></p>
                     <p class="home-proof-badge" aria-label="Approved reviews"><span>Approved reviews</span><strong id="homeApprovedReviewsCount">${window.homeReviewSummary.approvedCount}</strong></p>
-                    <p class="home-proof-badge" aria-label="Open slots"><span>Open slots</span><strong id="homeOpenSlotsCount">${Math.max(0, Number(husky.slots) || 0) + Math.max(0, Number(lopside.slots) || 0)}</strong></p>
+                    <p class="home-proof-badge" aria-label="Open slots"><span>Open slots</span><strong id="homeOpenSlotsCount">${Math.max(0, Number(husky.slots) || 0)}</strong></p>
                     <p class="home-proof-badge" aria-label="Queue freshness"><span>Queue updated</span><strong id="homeQueueUpdatedLabel">${escapeHTML(formatQueueFreshnessLabel(window.homeQueueFreshness.latestUpdatedAtMs))}</strong></p>
                 </div>
                 <section class="home-availability-snapshot" aria-label="Weekly availability snapshot">
@@ -7201,16 +7120,6 @@ function loadHomePage() {
                         <div class="availability-meta">
                             <span id="homeAvailHuskyStatus" class="status-pill ${getAvailabilityStatusClass(husky.status)}">${escapeHTML(husky.status)}</span>
                             <span id="homeAvailHuskySlots" class="slot-pill">${escapeHTML(formatAvailabilitySlotLabel(husky.slots))}</span>
-                        </div>
-                    </div>
-                    <div class="availability-item">
-                        <div class="availability-service">
-                            <strong id="homeAvailLopsideName">${escapeHTML(lopside.name)}</strong>
-                            <span id="homeAvailLopsideService">${escapeHTML(lopside.service)}</span>
-                        </div>
-                        <div class="availability-meta">
-                            <span id="homeAvailLopsideStatus" class="status-pill ${getAvailabilityStatusClass(lopside.status)}">${escapeHTML(lopside.status)}</span>
-                            <span id="homeAvailLopsideSlots" class="slot-pill">${escapeHTML(formatAvailabilitySlotLabel(lopside.slots))}</span>
                         </div>
                     </div>
                 </div>
@@ -7250,7 +7159,7 @@ function loadHomePage() {
                 <h3>What Happens Next</h3>
                 <p class="home-pro-card-subtitle">A simple post-submit timeline so you always know what stage your order is in.</p>
                 <div class="care-guide-grid">
-                    <article class="care-guide-item"><h4>Review</h4><p>We check details and confirm scope.</p></article>
+                    <article class="care-guide-item"><h4>Review</h4><p>I check details and confirm scope.</p></article>
                     <article class="care-guide-item"><h4>Quote</h4><p>You get pricing and timeline clarity.</p></article>
                     <article class="care-guide-item"><h4>Queue</h4><p>Your order status is tracked publicly.</p></article>
                     <article class="care-guide-item"><h4>Delivery</h4><p>Final files or products are delivered.</p></article>
@@ -7278,7 +7187,7 @@ function loadHomePage() {
 
                 <article class="home-trust-card">
                     <h4>Artist-Guided Process</h4>
-                    <p>We help you prepare references, notes, and expectations before work begins.</p>
+                    <p>I help you prepare references, notes, and expectations before work begins.</p>
                     <div class="home-proof-chips" aria-label="Process highlights">
                         <span class="home-proof-chip">Concept check-ins</span>
                         <span class="home-proof-chip">Character sheet review</span>
@@ -7300,7 +7209,6 @@ function loadHomePage() {
                     <h4>Handmade Care</h4>
                     <p>Physical items include basic care guidance so they last longer.</p>
                     <div class="home-proof-chips" aria-label="Care highlights">
-                        <span class="home-proof-chip care-guide-pill" data-care-key="Fursuit washing guides">Fursuit washing guides</span>
                         <span class="home-proof-chip care-guide-pill" data-care-key="Keychain scratch prevention">Keychain scratch prevention</span>
                         <span class="home-proof-chip care-guide-pill" data-care-key="Sticker weatherproofing tips">Sticker weatherproofing tips</span>
                     </div>
@@ -7321,10 +7229,10 @@ function loadHomePage() {
 
         <section class="home-final-cta-shell" aria-label="Final homepage call to action">
             <h3>Ready to bring your idea to life?</h3>
-            <p>Open Preorder Menu to start. Need help choosing? Contact us first and we will guide you.</p>
+            <p>Open Preorder Menu to start. Need help choosing? Contact me first and I will guide you.</p>
             <div class="home-final-cta-actions">
                 <button type="button" class="nav-btn home-final-cta-primary" id="homeFinalCtaPreorderBtn">Open Preorder Menu</button>
-                <button type="button" class="nav-btn home-final-cta-secondary" id="homeFinalCtaContactBtn">Contact Us</button>
+                <button type="button" class="nav-btn home-final-cta-secondary" id="homeFinalCtaContactBtn">Contact Me</button>
             </div>
             <button type="button" class="home-final-cta-pricing-link" id="homeFinalCtaPricingBtn">Need pricing first? View Pricing Sheet</button>
             <p class="home-final-cta-reassure">No payment needed to submit an inquiry.</p>
@@ -7434,7 +7342,7 @@ function loadPreorderPage() {
         <div class="preorder-card preorder-menu-card">
             <button type="button" id="btnHuskysList" class="preorder-btn huskys-list-btn">Horizon Queue</button>
             <h1 class="preorder-menu-title">Preorder Menu</h1>
-            <p class="preorder-menu-subtitle">Choose what you'd like to view or preorder from Horizon Tide Gallery.</p>
+            <p class="preorder-menu-subtitle">Choose what you would like to explore or request from my studio.</p>
             <section class="preorder-guide-shell" aria-label="Best fit launcher">
                 <h3>Pick your best fit</h3>
                 <p class="preorder-guide-copy">Use this quick launcher if you already know the kind of project you want.</p>
@@ -7442,10 +7350,6 @@ function loadPreorderPage() {
                     <button type="button" class="preorder-guide-card" data-guide-target="btnArt">
                         <strong>Digital Art</strong>
                         <span>Icons, scenes, ref sheets, and character art.</span>
-                    </button>
-                    <button type="button" class="preorder-guide-card" data-guide-target="btnFursuits">
-                        <strong>Wearables & Builds</strong>
-                        <span>Suit parts, heads, partials, and handmade pieces.</span>
                     </button>
                     <button type="button" class="preorder-guide-card" data-guide-target="btnCustomKeychains">
                         <strong>Merch & Small Goods</strong>
@@ -7474,13 +7378,12 @@ function loadPreorderPage() {
                 </div>
                 <div class="menu-section">
                     <h3>Order Forms</h3>
-                    <p class="menu-section-subtitle">Choose the form closest to what you want. We will guide the rest from there.</p>
+                    <p class="menu-section-subtitle">Choose the form closest to what you want. I will guide the rest from there.</p>
                     <div class="button-grid-2col">
                         <button type="button" class="preorder-btn preorder-btn-magenta" id="btnArt">Husky's Art Commissions</button>
                         <button type="button" class="preorder-btn preorder-btn-magenta" id="btnCustomStickers">Custom Stickers</button>
                         <button type="button" class="preorder-btn preorder-btn-cyan" id="btnPremadeKeychains">Premade Keychains</button>
                         <button type="button" class="preorder-btn preorder-btn-cyan" id="btnCustomKeychains">Custom Keychains</button>
-                        <button type="button" class="preorder-btn preorder-btn-green preorder-btn-wide" id="btnFursuits">Lopside's Fursuit Creations</button>
                     </div>
                 </div>
                 <div class="menu-section">
@@ -7504,7 +7407,6 @@ function loadPreorderPage() {
     document.getElementById('btnCustomKeychains').addEventListener('click', (e) => cinematicTransition(e, loadCustomKeychainsForm, '#custom-keychain'));
     document.getElementById('btnAnimations').addEventListener('click', (e) => cinematicTransition(e, () => loadNotReadyPage('Animations', 'Animations are coming soon / closed for now.')));
     document.getElementById('btnArt').addEventListener('click', (e) => cinematicTransition(e, loadHuskyArtForm, '#art'));
-    document.getElementById('btnFursuits').addEventListener('click', (e) => cinematicTransition(e, loadFursuitForm, '#fursuits'));
     document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
 
     const highlightLauncherTarget = (targetId) => {
@@ -7556,11 +7458,10 @@ function loadQuickActorPage() {
                     <article class="home-conversion-card home-intent-card">
                         <p class="home-conversion-kicker">Service Finder</p>
                         <h4>Not sure where to start?</h4>
-                        <p class="home-conversion-copy">Pick your project type, timing, and budget. We will point you to the best request lane.</p>
+                        <p class="home-conversion-copy">Pick your project type, timing, and budget. I will point you to the best request lane.</p>
                         <div class="home-conversion-controls">
                             <select id="homeIntentType" class="form-select">
                                 <option value="art">Digital Art</option>
-                                <option value="fursuit">Fursuit / Handmade</option>
                                 <option value="keychain">Keychains / Merch</option>
                                 <option value="sticker">Stickers</option>
                                 <option value="animation">Animation</option>
@@ -7575,7 +7476,7 @@ function loadQuickActorPage() {
                             </label>
                         </div>
                         <p class="home-intent-summary" id="homeIntentSummary">Best lane will appear here.</p>
-                        <p class="home-intent-budget-message" id="homeIntentBudgetMessage">Enter a target budget and we will instantly tell you if it fits this lane.</p>
+                        <p class="home-intent-budget-message" id="homeIntentBudgetMessage">Enter a target budget and I will instantly tell you if it fits this lane.</p>
                         <p class="home-intent-eligible-summary" id="homeIntentEligibleSummary">Enter a budget to see all matching items you can start with.</p>
                         <ul class="home-intent-eligible-list" id="homeIntentEligibleList" aria-live="polite"></ul>
                         <button type="button" class="nav-btn home-conversion-btn" id="homeIntentPrimaryBtn">Start Art Request</button>
@@ -7603,16 +7504,6 @@ function loadQuickActorPage() {
                                     <option value="animation-simple">Animation: Simple</option>
                                     <option value="animation-full-character">Animation: Full Character</option>
                                     <option value="animation-complex-scene">Animation: Complex Scene</option>
-                                </optgroup>
-                                <optgroup label="Fursuits">
-                                    <option value="fursuit-tail">Fursuit: Tail</option>
-                                    <option value="fursuit-paws">Fursuit: Paws</option>
-                                    <option value="fursuit-paws-tail">Fursuit: Paws + Tail</option>
-                                    <option value="fursuit-feet-paws">Fursuit: Feet Paws</option>
-                                    <option value="fursuit-trio">Fursuit: Trio Set</option>
-                                    <option value="fursuit-head">Fursuit: Head</option>
-                                    <option value="fursuit-mini-partial">Fursuit: Mini Partial</option>
-                                    <option value="fursuit-full-partial">Fursuit: Full Partial</option>
                                 </optgroup>
                                 <optgroup label="Premade Keychains">
                                     <option value="keychain-premade-clear">Premade Keychain: Clear Acrylic</option>
@@ -7680,7 +7571,6 @@ function loadPricingPage() {
     const tideSnapshot = getTideStatusSnapshot(window.homeAvailability);
     const pricingConfig = getPricingConfig();
     const huskyAvailability = tideSnapshot.husky;
-    const lopsideAvailability = tideSnapshot.lopside;
     const tideClass = `tide-${tideSnapshot.tide.toLowerCase()}`;
     const artRefBasicRange = getArtRefSheetRange(pricingConfig, 'basic');
     const artRefStandardRange = getArtRefSheetRange(pricingConfig, 'standard');
@@ -7693,7 +7583,6 @@ function loadPricingPage() {
     const animationPrice = (path, fallback, isPlus = false) => renderPrice(getPricingConfigValue(path, fallback), 'animations', isPlus);
     const animationRange = (minPath, maxPath, fallbackMin, fallbackMax, isPlus = false) => renderPriceRange(getPricingConfigValue(minPath, fallbackMin), getPricingConfigValue(maxPath, fallbackMax), 'animations', isPlus);
     const stickerPrice = (path, fallback, isPlus = false) => renderPrice(getPricingConfigValue(path, fallback), 'stickers', isPlus);
-    const fursuitPrice = (path, fallback, isPlus = false) => renderPrice(getPricingConfigValue(path, fallback), 'fursuits', isPlus);
     const keychainPrice = (path, fallback, isPlus = false) => renderPrice(getPricingConfigValue(path, fallback), 'keychains', isPlus);
 
     appViewport.innerHTML = `
@@ -7705,7 +7594,6 @@ function loadPricingPage() {
                 <button type="button" class="pricing-jump-btn is-active" data-pricing-target="pricing-art" aria-current="true" aria-label="Art"><span class="pricing-jump-label-full">Art</span><span class="pricing-jump-label-short" aria-hidden="true">Art</span></button>
                 <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-animation" aria-label="Animation"><span class="pricing-jump-label-full">Animation</span><span class="pricing-jump-label-short" aria-hidden="true">Motion</span></button>
                 <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-stickers" aria-label="Stickers"><span class="pricing-jump-label-full">Stickers</span><span class="pricing-jump-label-short" aria-hidden="true">Stkrs</span></button>
-                <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-fursuits" aria-label="Fursuits"><span class="pricing-jump-label-full">Fursuits</span><span class="pricing-jump-label-short" aria-hidden="true">Suits</span></button>
                 <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-keychains" aria-label="Keychains"><span class="pricing-jump-label-full">Keychains</span><span class="pricing-jump-label-short" aria-hidden="true">Keys</span></button>
                 <button type="button" class="pricing-jump-btn" data-pricing-target="pricing-calculator" aria-label="Calculator"><span class="pricing-jump-label-full">Calculator</span><span class="pricing-jump-label-short" aria-hidden="true">Start</span></button>
             </div>
@@ -7714,11 +7602,10 @@ function loadPricingPage() {
                 <article class="pricing-start-card pricing-start-card--compact">
                     <div class="pricing-start-card-copy">
                         <h3>Need a starting point?</h3>
-                        <p>Choose the lane that matches your project, then compare the starting prices below. Everything here is a planning estimate until we review your exact request.</p>
+                        <p>Choose the lane that matches your project, then compare the starting prices below. Everything here is a planning estimate until I review your exact request.</p>
                     </div>
                     <div class="pricing-start-actions">
                         <button type="button" class="pricing-start-btn" data-pricing-target="pricing-art">I want digital art</button>
-                        <button type="button" class="pricing-start-btn" data-pricing-target="pricing-fursuits">I want handmade / wearable</button>
                         <button type="button" class="pricing-start-btn" data-pricing-target="pricing-keychains">I want merch</button>
                     </div>
                     <ul class="pricing-start-mini-list">
@@ -7743,7 +7630,7 @@ function loadPricingPage() {
                             <li>Rush deadlines and compressed timelines</li>
                             <li>Physical material needs for handmade pieces</li>
                         </ul>
-                        <p class="policy-soft-note">Estimate tools help with planning, but the final quote is confirmed after we review your exact request.</p>
+                        <p class="policy-soft-note">Estimate tools help with planning, but I confirm the final quote after reviewing your exact request.</p>
                     </article>
 
                     <article class="pricing-policy-card">
@@ -7758,7 +7645,7 @@ function loadPricingPage() {
 
                     <article class="pricing-policy-card">
                         <h3>Due Date & Rush Policy</h3>
-                        <p>Deadlines help us confirm whether a project is realistic before it is accepted.</p>
+                        <p>Deadlines help me confirm whether a project is realistic before I accept it.</p>
                         <ul>
                             <li>Rush requests may be possible depending on current schedule</li>
                             <li>Rush fees may apply when timelines are compressed</li>
@@ -7782,16 +7669,6 @@ function loadPricingPage() {
                             <div class="availability-meta">
                                 <span class="status-pill ${getAvailabilityStatusClass(huskyAvailability.status)}">${escapeHTML(huskyAvailability.status)}</span>
                                 <span class="slot-pill">${escapeHTML(formatAvailabilitySlotLabel(huskyAvailability.slots))}</span>
-                            </div>
-                        </div>
-                        <div class="tide-artist-row">
-                            <div>
-                                <strong>${escapeHTML(lopsideAvailability.name)}</strong>
-                                <span>${escapeHTML(lopsideAvailability.service)}</span>
-                            </div>
-                            <div class="availability-meta">
-                                <span class="status-pill ${getAvailabilityStatusClass(lopsideAvailability.status)}">${escapeHTML(lopsideAvailability.status)}</span>
-                                <span class="slot-pill">${escapeHTML(formatAvailabilitySlotLabel(lopsideAvailability.slots))}</span>
                             </div>
                         </div>
                     </article>
@@ -7927,26 +7804,6 @@ function loadPricingPage() {
                 <div class="pricing-section-actions">${pricingSectionCta('pricingStickerCtaBtn', 'Start Sticker Request')}</div>
             </div>
 
-            <div class="pricing-section" id="pricing-fursuits" style="border-left-color: #a855f7;">
-                <div class="pricing-section-head">
-                    <h2 style="color: #a855f7; border-left-color: #a855f7;">Lopside's Fursuit Creations</h2>
-                    ${pricingMetaPills(['Best for wearable builds and suit parts', 'Turnaround: varies by build size', 'Payment: quote after review'])}
-                </div>
-                <p class="pricing-section-intro">Best for tails, paws, heads, partials, and other handmade wearable work.</p>
-                <div class="price-grid">
-                    <div class="price-item price-item-popular"><span>Tails <em class="price-item-flag">Entry option</em></span> <span>${fursuitPrice('fursuits.tail', 100)}</span></div>
-                    <div class="price-item price-item-popular"><span>Paws <em class="price-item-flag">Popular build</em></span> <span>${fursuitPrice('fursuits.paws', 170)}</span></div>
-                    <div class="price-item"><span>Paws and Tail Set</span> <span>${fursuitPrice('fursuits.pawsTailSet', 260)}</span></div>
-                    <div class="price-item"><span>Feet Paws</span> <span>${fursuitPrice('fursuits.feetPaws', 270)}</span></div>
-                    <div class="price-item"><span>Trio Set (Feet, Paws, Tail)</span> <span>${fursuitPrice('fursuits.trioSet', 530)}</span></div>
-                    <div class="price-item"><span>Heads (Artistic Liberty Only)</span> <span>${fursuitPrice('fursuits.head', 1100)}</span></div>
-                    <div class="price-item"><span>Mini Partial</span> <span>${fursuitPrice('fursuits.miniPartial', 1350)}</span></div>
-                    <div class="price-item"><span>Full Partial</span> <span>${fursuitPrice('fursuits.fullPartial', 1620)}</span></div>
-                </div>
-                <p style="color: #eab308; font-size: 0.95rem; margin-top: 10px;">*Important note: Heads are artistic liberty only.</p>
-                <div class="pricing-section-actions">${pricingSectionCta('pricingFursuitCtaBtn', 'Start Fursuit Request')}</div>
-            </div>
-            
             <div class="pricing-section" id="pricing-keychains" style="border-left-color: #00f2fe; margin-bottom: 0;">
                 <div class="pricing-section-head">
                     <h2 style="color: #00f2fe; border-left-color: #00f2fe;">Keychain Pricing</h2>
@@ -8053,7 +7910,6 @@ function loadPricingPage() {
     bindPricingJumpButtons();
     document.getElementById('pricingArtCtaBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadHuskyArtForm, '#art'));
     document.getElementById('pricingStickerCtaBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadCustomStickersForm, '#stickers'));
-    document.getElementById('pricingFursuitCtaBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadFursuitForm, '#fursuits'));
     document.getElementById('pricingKeychainCtaBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadCustomKeychainsForm, '#custom-keychain'));
     
     document.getElementById('backToMenuBtn').addEventListener('click', (e) => cinematicTransition(e, loadPreorderPage, '#preorder'));
@@ -8268,7 +8124,7 @@ function loadHuskyArtForm() {
         sections: [
             {
                 title: 'Contact details',
-                description: 'We use this only to reply about your request and next steps.',
+                description: 'I use this only to reply about your request and next steps.',
                 targets: ['name', 'email', 'discord', 'characterName']
             },
             {
@@ -8292,7 +8148,7 @@ function loadHuskyArtForm() {
             email: 'Used only for updates, quote follow-up, and your order confirmation.',
             discord: 'Helpful if you prefer faster conversation there.',
             refLink: 'One gallery, toyhou.se page, or drive link is completely fine.',
-            deadline: 'Optional, but it helps us confirm whether the timeline is realistic.'
+                deadline: 'Optional, but it helps me confirm whether the timeline is realistic.'
         },
         examples: {
             pose: {
@@ -8306,7 +8162,7 @@ function loadHuskyArtForm() {
         },
         warningRules: [
             {
-                message: 'No reference upload or link added yet. One clear visual helps us quote much faster.',
+                message: 'No reference upload or link added yet. One clear visual helps me quote much faster.',
                 when: (form) => {
                     const uploads = form.querySelector('#refFilesInput');
                     return ((uploads instanceof HTMLInputElement ? uploads.files?.length || 0 : 0) === 0)
@@ -8314,7 +8170,7 @@ function loadHuskyArtForm() {
                 }
             },
             {
-                message: 'You added a deadline without extra context. A short note about why the date matters will help us review it.',
+                message: 'You added a deadline without extra context. A short note about why the date matters will help me review it.',
                 when: (form) => Boolean(getFormControlValue(form, 'deadline')) && !getFormControlValue(form, 'notes')
             },
             {
@@ -8345,12 +8201,20 @@ function loadHuskyArtForm() {
 }
 
 function loadFursuitForm() {
+    loadPreorderPage();
+    return;
+
+    loadPreorderPage();
+    return;
+
+    loadHomePage();
+    return;
+
     clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'fursuit-form'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="form-card">
-            <h1>Lopside's Fursuit Creations</h1>
-            <p class="form-desc">Request fursuit parts, handmade costume pieces, or 3D physical creations from Lopside.</p>
-            <p style="color: #a855f7; font-size: 0.9rem; text-align: center; margin-bottom: 20px;">* Note: This is a request form. Lopside will review the project before accepting.</p>
+            <h1>Request type unavailable</h1>
+            <p class="form-desc">This request type is no longer available.</p>
             ${getFormDraftBannerHTML()}
 
             <form id="fursuitForm">
@@ -8411,12 +8275,12 @@ function loadFursuitForm() {
         sections: [
             {
                 title: 'Contact details',
-                description: 'Tell us who to reach and what character or species this is for. Email is required, and Discord or a social handle is optional.',
+                description: 'Tell me who to reach and what character or species this is for. Email is required, and Discord or a social handle is optional.',
                 targets: ['name', 'email', 'discord', 'species']
             },
             {
                 title: 'Build details',
-                description: 'These choices help us understand scope, materials, and fit.',
+                description: 'These choices help me understand scope, materials, and fit.',
                 targets: ['partType', 'materials', '#measurementsCheck']
             },
             {
@@ -8457,7 +8321,7 @@ function loadFursuitForm() {
                 }
             },
             {
-                message: 'You entered a deadline without build notes. Even one sentence about the event or timing helps us review feasibility.',
+                message: 'You entered a deadline without build notes. Even one sentence about the event or timing helps me review feasibility.',
                 when: (form) => Boolean(getFormControlValue(form, 'deadline')) && !getFormControlValue(form, 'notes')
             }
         ],
@@ -8558,7 +8422,7 @@ function loadCustomKeychainsForm() {
         sections: [
             {
                 title: 'Contact details',
-                description: 'Basic contact first, then we can focus on the design. Email is required, and Discord or a social handle is optional.',
+                description: 'Basic contact first, then I can focus on the design. Email is required, and Discord or a social handle is optional.',
                 targets: ['name', 'email', 'discord', 'characterName']
             },
             {
@@ -8707,7 +8571,7 @@ function loadCustomStickersForm() {
         sections: [
             {
                 title: 'Contact details',
-                description: 'A few basics first so we know where to reply. Email is required, and Discord or a social handle is optional.',
+                description: 'A few basics first so I know where to reply. Email is required, and Discord or a social handle is optional.',
                 targets: ['name', 'email', 'discord', 'subject']
             },
             {
@@ -8717,7 +8581,7 @@ function loadCustomStickersForm() {
             },
             {
                 title: 'References',
-                description: 'Visuals help us quote more confidently and reduce revisions later.',
+                description: 'Visuals help me quote more confidently and reduce revisions later.',
                 targets: ['#refFilesInput', 'refLink']
             }
         ],
@@ -8730,7 +8594,7 @@ function loadCustomStickersForm() {
         helperText: {
             subject: 'Example: your fursona, pet, logo, or a specific emote idea.',
             refLink: 'One link is enough if you do not want to upload images right now.',
-            deadline: 'Optional, but it helps us decide if rush timing is realistic.'
+            deadline: 'Optional, but it helps me decide if rush timing is realistic.'
         },
         examples: {
             subject: {
@@ -8752,7 +8616,7 @@ function loadCustomStickersForm() {
                 }
             },
             {
-                message: 'You added a deadline, but no extra notes yet. If timing matters, one short note can help us prioritize.',
+                message: 'You added a deadline, but no extra notes yet. If timing matters, one short note can help me prioritize.',
                 when: (form) => Boolean(getFormControlValue(form, 'deadline')) && !getFormControlValue(form, 'notes')
             }
         ],
@@ -8837,7 +8701,7 @@ function loadPremadeKeychainsForm() {
         sections: [
             {
                 title: 'Contact details',
-                description: 'Tell us who you are and the best way to reach you. Email is required, and Discord or a social handle is optional.',
+                description: 'Tell me who you are and the best way to reach you. Email is required, and Discord or a social handle is optional.',
                 targets: ['name', 'email', 'discord']
             },
             {
@@ -8847,7 +8711,7 @@ function loadPremadeKeychainsForm() {
             },
             {
                 title: 'Shipping details',
-                description: 'We only use this for sending the finished physical order.',
+                description: 'I only use this for sending the finished physical order.',
                 targets: ['shippingName', 'shippingAddress']
             }
         ],
@@ -8907,10 +8771,9 @@ function loadWhatWeDoPage() {
         <div class="split-workspace-layout">
             <div class="text-scroller-card">
                 <h3>What We Do</h3>
-                <p>At Horizon Tide, we bring ideas from imagination into reality, from sketches on a screen to creations you can hold in your hands.</p>
+                <p>At Horizon Tide, I bring ideas from imagination into reality, from sketches on a screen to creations you can hold in your hands.</p>
                 <p>🎨 <strong>Artist Husky</strong> specializes in creating artwork, character designs, and concepts for physical projects. From illustrations and creative ideas to designing products and visual concepts, every project starts with a spark of imagination.</p>
-                <p>🧵 <strong>Lopside</strong> transforms those ideas into something real through handcrafted 3D work and fursuit creation. Bringing personality, detail, and life into every piece, turning concepts into wearable creations.</p>
-                <p>Together, we combine 2D creativity and 3D craftsmanship, blending art and creation to make unique projects inspired by the sea, stars, and the things we love.</p>
+                <p>I combine 2D creativity and handmade craftsmanship to make unique projects inspired by the sea, stars, and the things I love.</p>
             </div>
             <div class="visual-media-card">
                 <h3>What we do</h3>
@@ -8943,7 +8806,7 @@ function loadSocialsPage() {
         <section class="meet-artists-heading">
             <p class="meet-artists-kicker">Horizon Tide Studio</p>
             <h1 class="meet-artists-title">Meet the Artists & Socials</h1>
-            <p class="meet-artists-subtitle">A warm hello from the two creators behind Horizon Tide. Meet Husky, our digital artist and animator, and Lopside, our handmade and fursuit maker.</p>
+            <p class="meet-artists-subtitle">A warm hello from Husky, the digital artist and animator behind Horizon Tide.</p>
         </section>
         <section class="meet-info-signpost" aria-label="Meet page quick links">
             <p class="meet-info-signpost-label">Need quick info?</p>
@@ -8963,20 +8826,9 @@ function loadSocialsPage() {
                 <a href="https://www.instagram.com/miraculously_cringe?igsh=Y3NoNjlydmxoZW1x&utm_source=qr" target="_blank" class="social-link-btn">Instagram</a>
                 <a href="https://www.tiktok.com/@sugarmew_2?_r=1&_t=ZT-96gjOKaomdh" target="_blank" class="social-link-btn">TikTok</a>
             </article>
-            <article class="profile-card card-green">
-                <img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/espeon.gif" alt="Shiny Espeon" class="card-espeon" style="filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.5));">
-                <img src="Lopside Our Socials/IMG_0721.jpg" alt="Lopside handmade artist and fursuit maker profile photo" class="profile-img" style="object-fit: cover; object-position: center;" onerror="handleImageError(this)">
-                <h2 class="starborn-name">Lopside</h2>
-                <p class="artist-role">Fursuit Maker • Handmade Creator</p>
-                <p class="artist-blurb">Lopside handles fursuit creations, suit parts, and handmade physical commissions. Her approach is friendly, detail-focused, and deeply craft-driven.</p>
-                <a href="lopside.html" id="lopsideCreatorProfileLink" class="social-link-btn">Official Lopside Creator Page</a>
-                <a href="https://www.instagram.com/littlelopsidestudio?igsh=MW00OGFkbW13Zm5iOQ==" target="_blank" class="social-link-btn">Instagram</a>
-                <a href="https://www.tiktok.com/@little_lopside_studio?_r=1&_t=ZT-96eI2PAh4kn" target="_blank" class="social-link-btn">TikTok</a>
-                <a href="https://x.com/littlelopside?s=21" target="_blank" class="social-link-btn">X / Twitter</a>
-            </article>
         </div>
         <div class="socials-bio">
-            We are a small handmade studio built around trust, communication, and creativity. Husky leads digital projects and visual storytelling, while Lopside leads handmade and fursuit-focused work. Together, we keep each project personal, clear, and carefully crafted from first idea to final delivery.
+            Horizon Tide is a small handmade studio built around trust, communication, and creativity. Husky leads digital projects and visual storytelling, keeping each project personal, clear, and carefully crafted from first idea to final delivery.
         </div>
         <section class="meet-faq-shell" id="meetFaqSection">
             <h2>Frequently Asked Questions</h2>
@@ -8984,15 +8836,15 @@ function loadSocialsPage() {
             <div class="faq-list">
                 <details class="faq-item" open>
                     <summary>How do commissions work?</summary>
-                    <p>You submit a request through the order form, we review the details, then we contact you about pricing, timing, and next steps. Once everything is confirmed, your order can be added to Horizon Queue so you can follow public progress updates.</p>
+                    <p>You submit a request through my order form. I review the details, then contact you about pricing, timing, and next steps. Once everything is confirmed, your order can be added to Horizon Queue so you can follow public progress updates.</p>
                 </details>
                 <details class="faq-item">
                     <summary>Do you prefer due dates?</summary>
-                    <p>Yes. Due dates help us plan better. Please include any important deadline when ordering. We cannot always guarantee rushed work, but knowing the date helps us decide whether the project is possible.</p>
+                    <p>Yes. Due dates help me plan better. Please include any important deadline when ordering. I cannot always guarantee rushed work, but knowing the date helps me decide whether the project is possible.</p>
                 </details>
                 <details class="faq-item">
                     <summary>Can I order without a due date?</summary>
-                    <p>Yes. If there is no deadline, we will place the order into our normal queue and update progress as we work.</p>
+                    <p>Yes. If there is no deadline, I will place the order into my normal queue and update progress as I work.</p>
                 </details>
                 <details class="faq-item">
                     <summary>Why can the final quote differ from the calculator?</summary>
@@ -9004,7 +8856,7 @@ function loadSocialsPage() {
                 </details>
                 <details class="faq-item">
                     <summary>What if I need to update my request?</summary>
-                    <p>Contact us as soon as possible. Small updates may be possible before work begins, but larger changes may affect price, timeline, or whether the commission can still be completed as originally planned.</p>
+                    <p>Contact me as soon as possible. Small updates may be possible before work begins, but larger changes may affect price, timeline, or whether the commission can still be completed as originally planned.</p>
                 </details>
                 <details class="faq-item">
                     <summary>Do you offer refunds?</summary>
@@ -9016,15 +8868,15 @@ function loadSocialsPage() {
                 </details>
                 <details class="faq-item">
                     <summary>How long do commissions take?</summary>
-                    <p>Turnaround time depends on the type of commission, complexity, materials, queue size, and due date. We try to keep communication clear and update the queue when progress changes.</p>
+                    <p>Turnaround time depends on the type of commission, complexity, materials, queue size, and due date. I try to keep communication clear and update the queue when progress changes.</p>
                 </details>
                 <details class="faq-item">
                     <summary>Can I rush an order?</summary>
-                    <p>Rush orders may be possible depending on our schedule and the type of commission. Rush work may cost extra and must be approved before we accept the deadline.</p>
+                    <p>Rush orders may be possible depending on my schedule and the type of commission. Rush work may cost extra and must be approved before I accept the deadline.</p>
                 </details>
                 <details class="faq-item">
                     <summary>Who works on what?</summary>
-                    <p>Husky focuses on digital art, animation, character art, and the website. Lopside focuses on fursuit creations, suit parts, and handmade physical commissions.</p>
+                    <p>Husky focuses on digital art, animation, character art, and website work.</p>
                 </details>
             </div>
         </section>
@@ -9032,13 +8884,13 @@ function loadSocialsPage() {
             <h2>How Ordering Works</h2>
             <ol>
                 <li>Submit a request</li>
-                <li>We review the details</li>
-                <li>We contact you with pricing and timeline</li>
+                <li>I review the details</li>
+                <li>I contact you with pricing and timeline</li>
                 <li>Payment and due date are confirmed</li>
                 <li>Your order enters the queue</li>
                 <li>Progress updates appear in Horizon Queue</li>
             </ol>
-            <p class="meet-trust-note">We use Horizon Queue to keep public progress updates organized while protecting private customer information.</p>
+            <p class="meet-trust-note">I use Horizon Queue to keep public progress updates organized while protecting private customer information.</p>
         </section>
         <button type="button" id="backHomeBtn" class="nav-btn" style="margin-top: 10px; border-color: #a855f7;">← Back to Horizon</button>
     `;
@@ -9055,9 +8907,6 @@ function loadSocialsPage() {
         cinematicNavigateToUrl(event, 'husky.html');
     });
 
-    document.getElementById('lopsideCreatorProfileLink')?.addEventListener('click', (event) => {
-        cinematicNavigateToUrl(event, 'lopside.html');
-    });
 
     document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
     attachInnerScrollListener();
@@ -9251,13 +9100,6 @@ function loadHuskysListPage() {
                         </div>
                         <div id="huskyCommissionQueueContainer" class="commission-public-list-shell"></div>
                     </section>
-                    <section class="commission-artist-section">
-                        <div class="commission-artist-head">
-                            <h3>Lopside's Queue</h3>
-                            <p>Handmade and fursuit-focused public queue entries.</p>
-                        </div>
-                        <div id="lopsideCommissionQueueContainer" class="commission-public-list-shell"></div>
-                    </section>
                 </div>
             </section>
 
@@ -9336,23 +9178,17 @@ function loadHuskysListPage() {
             return aTime - bTime;
         });
 
-        const lopsideContainer = document.getElementById('lopsideCommissionQueueContainer');
         const huskyContainer = document.getElementById('huskyCommissionQueueContainer');
         window.__publicQueueCommissionsCache = commissions;
         const refundRows = Array.isArray(window.__publicQueueRefundsCache) ? window.__publicQueueRefundsCache : [];
         updatePublicQueueLastUpdatedLabel(refundRows, commissions);
 
-        if (!lopsideContainer || !huskyContainer) return;
+        if (!huskyContainer) return;
 
-        renderPublicCommissionArtistQueues(lopsideContainer, huskyContainer, commissions);
+        renderPublicCommissionList(huskyContainer, commissions.filter((item) => inferCommissionQueueOwner(item) === 'husky'));
     }, (error) => {
-        const lopsideContainer = document.getElementById('lopsideCommissionQueueContainer');
         const huskyContainer = document.getElementById('huskyCommissionQueueContainer');
-        [lopsideContainer, huskyContainer].forEach((container) => {
-            if (container) {
-                container.innerHTML = `<div class="refunds-empty-state"><p>Unable to load commissions. Please check back later.</p></div>`;
-            }
-        });
+        if (huskyContainer) huskyContainer.innerHTML = `<div class="refunds-empty-state"><p>Unable to load commissions. Please check back later.</p></div>`;
         console.error('Public commissions query failed', error);
     });
 
@@ -10053,7 +9889,7 @@ function loadContactPage() {
 
     appViewport.innerHTML = `
         <div class="gif-container"><img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/umbreon.gif" alt="Shiny Umbreon" class="active-pokemon-gif"></div>
-        <header><h1>Contact Us</h1><h2>Drop a message in our galactic wave box</h2></header>
+        <header><h1>Contact Me</h1><h2>Drop a message in my galactic wave box</h2></header>
         <div class="admin-public-nav-row">
             <button type="button" id="backHomeBtn" class="nav-btn">← Back to Horizon</button>
             ${renderAdminReturnButtonMarkup()}
@@ -10074,18 +9910,18 @@ function loadContactPage() {
         <section class="contact-policy-shell" aria-label="Privacy and shipping policies">
             <article class="contact-policy-card">
                 <h3>Privacy Policy</h3>
-                <p>When you use our order or contact forms, we may collect details like your name, email, Discord handle, request info, references, and notes so we can review your request, communicate with you, and provide updates.</p>
-                <p>We collect this information only to support customer communication, project planning, and order fulfillment. Private details are never shown publicly.</p>
+                <p>When you use my order or contact forms, I may collect details like your name, email, Discord handle, request info, references, and notes so I can review your request, communicate with you, and provide updates.</p>
+                <p>I collect this information only to support customer communication, project planning, and order fulfillment. Private details are never shown publicly.</p>
                 <p>Horizon Queue only displays public-safe details such as display names, queue status, and general progress updates.</p>
-                <p>If you need an update or removal request for submitted information, please contact us and we will help as quickly as possible.</p>
+                <p>If you need an update or removal request for submitted information, please contact me and I will help as quickly as possible.</p>
             </article>
 
             <article class="contact-policy-card">
                 <h3>Shipping & Physical Item Policy</h3>
                 <p>Shipping times may vary depending on location, carrier load, weather, and seasonal volume.</p>
                 <p>Tracking details are shared when available. Please make sure your shipping information is accurate before final confirmation.</p>
-                <p>After an item is shipped, carrier delays are outside our direct control.</p>
-                <p>If a physical item arrives damaged, contact us with photos and order details so we can assist.</p>
+                <p>After an item is shipped, carrier delays are outside my direct control.</p>
+                <p>If a physical item arrives damaged, contact me with photos and order details so I can assist.</p>
             </article>
         </section>
     `;
@@ -11503,7 +11339,7 @@ async function submitPreorder(event, orderType) {
                         <div class="success-sparkles"></div>
                     </div>
                     <h2 class="success-headline">Yay! Order Sent!</h2>
-                    <p class="success-subtext">We safely received your request, <strong>${escapeHTML(preorderPayload.name)}</strong>!<br>A confirmation bottle is floating to your email: <br><strong style="color: #00f2fe;">${escapeHTML(preorderPayload.email)}</strong></p>
+                    <p class="success-subtext">I safely received your request, <strong>${escapeHTML(preorderPayload.name)}</strong>!<br>A confirmation bottle is floating to your email: <br><strong style="color: #00f2fe;">${escapeHTML(preorderPayload.email)}</strong></p>
                     <div class="order-number-card">
                         <p style="color: #00f2fe; font-size: 0.95rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; font-weight: 500;">Save Your Order ID</p>
                         <h3 style="color: #ffffff; font-size: 2.2rem; letter-spacing: 2px; margin: 0; text-shadow: 0 0 10px rgba(0, 242, 254, 0.4);">${newOrderId}</h3>
@@ -11511,10 +11347,10 @@ async function submitPreorder(event, orderType) {
                     <p style="color: #a2b7cc; font-size: 0.95rem; margin-top: 5px; margin-bottom: 8px;">Please keep this ID for status checks and support.</p>
                     ${uploadSummaryLine}
                     <ul class="success-next-steps">
-                        <li>Watch your email for follow-up updates from us.</li>
-                        <li>We will review your request and contact you with next steps.</li>
+                        <li>Watch your email for follow-up updates from me.</li>
+                        <li>I will review your request and contact you with next steps.</li>
                         <li>Approved work may enter Horizon Queue for public-safe progress updates.</li>
-                        <li>If something needs correction, contact us as soon as possible.</li>
+                        <li>If something needs correction, contact me as soon as possible.</li>
                     </ul>
                     <button type="button" class="nav-btn" style="width: 100%; max-width: 300px;" id="successBackBtn">← Back to Menu</button>
                 </div>
@@ -12037,11 +11873,96 @@ async function lockAdminForIdle() {
     showAdminIdleLockScreen();
 }
 
+function getDiscountTargetLabel(value) {
+    const labels = {
+        all: 'all items',
+        art: 'art commissions',
+        fursuits: 'fursuits',
+        keychains: 'keychains',
+        stickers: 'stickers',
+        animations: 'animation commissions'
+    };
+    return labels[String(value || '').toLowerCase()] || 'selected items';
+}
+
+function openAdminDiscountTab(tabName, options = {}) {
+    const { focus = false } = options;
+    const normalizedTab = tabName === 'sales' ? 'sales' : 'editor';
+
+    document.querySelectorAll('.discount-manager-tab').forEach((button) => {
+        if (!(button instanceof HTMLButtonElement)) return;
+        const isActive = button.dataset.discountTab === normalizedTab;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        button.tabIndex = isActive ? 0 : -1;
+        if (isActive && focus) button.focus();
+    });
+
+    document.querySelectorAll('.discount-manager-tab-panel').forEach((panel) => {
+        if (!(panel instanceof HTMLElement)) return;
+        panel.hidden = panel.dataset.discountPanel !== normalizedTab;
+    });
+}
+
+function bindAdminDiscountTabs() {
+    const tabList = document.querySelector('.discount-manager-tabs');
+    if (!(tabList instanceof HTMLElement) || tabList.dataset.bound === 'true') return;
+
+    tabList.addEventListener('click', (event) => {
+        const button = event.target instanceof Element ? event.target.closest('.discount-manager-tab') : null;
+        if (!(button instanceof HTMLButtonElement)) return;
+        openAdminDiscountTab(button.dataset.discountTab || 'editor');
+    });
+
+    tabList.addEventListener('keydown', (event) => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        const tabs = Array.from(tabList.querySelectorAll('.discount-manager-tab'));
+        const currentIndex = tabs.indexOf(document.activeElement);
+        if (currentIndex < 0) return;
+
+        event.preventDefault();
+        const nextIndex = event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+                ? tabs.length - 1
+                : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+        const nextTab = tabs[nextIndex];
+        if (nextTab instanceof HTMLButtonElement) {
+            openAdminDiscountTab(nextTab.dataset.discountTab || 'editor', { focus: true });
+        }
+    });
+
+    tabList.dataset.bound = 'true';
+}
+
+function bindAdminDiscountPreview() {
+    const card = document.querySelector('.discount-manager-card');
+    if (!(card instanceof HTMLElement) || card.dataset.previewBound === 'true') return;
+
+    const update = (event) => {
+        if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) {
+            updateAdminPreview();
+        }
+    };
+    card.addEventListener('input', update);
+    card.addEventListener('change', update);
+    card.dataset.previewBound = 'true';
+}
+
 function updateAdminPreview() {
     const dPercent = document.getElementById('adminDiscountPercent');
     if(!dPercent) return;
     const pct = parseInt(dPercent.value) || 0;
     const base = 100;
+    const messageInput = document.getElementById('adminDiscountMessage');
+    const targetInput = document.getElementById('adminDiscountTarget');
+    const messagePreview = document.getElementById('adminDiscountPreviewMessage');
+    const percentPreview = document.getElementById('adminDiscountPreviewPercent');
+    const targetPreview = document.getElementById('adminDiscountPreviewTarget');
+
+    if (messagePreview) messagePreview.textContent = messageInput?.value.trim() || 'New promotion';
+    if (percentPreview) percentPreview.textContent = `${pct}%`;
+    if (targetPreview) targetPreview.textContent = getDiscountTargetLabel(targetInput?.value);
     
     if(pct > 0) {
         const discounted = base * (1 - pct/100);
@@ -12058,6 +11979,7 @@ function updateAdminPreview() {
 }
 
 function setDiscountEditState(sale = null) {
+    openAdminDiscountTab('editor');
     const percentInput = document.getElementById('adminDiscountPercent');
     const targetInput = document.getElementById('adminDiscountTarget');
     const messageInput = document.getElementById('adminDiscountMessage');
@@ -12125,24 +12047,33 @@ function renderActiveDiscountsList() {
     const listEl = document.getElementById('adminActiveDiscountsList');
     if(!listEl) return;
     listEl.innerHTML = '';
+    const sales = Array.isArray(window.activeSales) ? window.activeSales : [];
+    const countEl = document.getElementById('adminDiscountCount');
+    if (countEl) countEl.textContent = String(sales.length);
     
-    if(!window.activeSales || window.activeSales.length === 0) {
-        listEl.innerHTML = '<p style="color:#a2b7cc; font-size:0.9rem;">No active discounts.</p>';
+    if(sales.length === 0) {
+        listEl.innerHTML = '<p class="discount-sales-empty">No saved discounts yet. Create one when you are ready to run a promotion.</p>';
         window.currentEditingDiscountId = null;
         return;
     }
 
-    window.activeSales.forEach(sale => {
+    sales.forEach(sale => {
         const div = document.createElement('div');
-        div.className = 'admin-discount-item';
+        const isEnabled = sale.enabled !== false;
+        const percentage = Math.max(0, Number(sale.percentage) || 0);
+        const targetLabel = getDiscountTargetLabel(sale.target);
+        div.className = `admin-discount-item${isEnabled ? '' : ' is-disabled'}`;
         div.innerHTML = `
             <div class="discount-item-info">
-                <span class="discount-item-title">${sale.percentage}% OFF - ${sale.target.toUpperCase()}</span>
-                <span class="discount-item-meta">${sale.enabled === false ? 'Disabled' : 'Enabled'} | Msg: ${escapeHTML(sale.message || 'None')}</span>
+                <div class="discount-item-heading">
+                    <span class="discount-item-title">${escapeHTML(String(percentage))}% off ${escapeHTML(targetLabel)}</span>
+                    <span class="discount-item-status ${isEnabled ? 'is-enabled' : 'is-paused'}">${isEnabled ? 'Enabled' : 'Paused'}</span>
+                </div>
+                <span class="discount-item-meta">${escapeHTML(sale.message || 'No public message')}</span>
             </div>
             <div class="announce-item-actions">
                 <button type="button" class="admin-btn-edit btn-edit-discount" data-id="${sale.id}">Edit</button>
-                <button type="button" class="admin-btn-edit btn-toggle-discount" data-id="${sale.id}" data-enabled="${sale.enabled === false ? 'false' : 'true'}">${sale.enabled === false ? 'Enable' : 'Disable'}</button>
+                <button type="button" class="admin-btn-edit btn-toggle-discount" data-id="${sale.id}" data-enabled="${isEnabled ? 'true' : 'false'}">${isEnabled ? 'Pause' : 'Enable'}</button>
                 <button type="button" class="admin-btn-delete btn-delete-discount" data-id="${sale.id}">Delete</button>
             </div>
         `;
@@ -12222,7 +12153,7 @@ function getOrderServiceType(order) {
 }
 
 function getOrderCreator(serviceType) {
-    return serviceType === 'fursuits' ? 'lopside' : 'husky';
+    return 'husky';
 }
 
 function isOrderRecordValidForRevenue(order) {
@@ -12922,16 +12853,6 @@ function getAdminSmartAlertRows(orders = [], reminderRows = []) {
         return getOrderAgeDays(order) >= ADMIN_ACCEPTED_STALE_DAYS;
     }).length;
 
-    const missingDeposit = orders.filter((order) => {
-        const status = normalizeOrderStatus(order?.status);
-        if (!(status === 'accepted' || status === 'in progress')) return false;
-        if (!isLopsideFursuitOrder(order)) return false;
-        const target = Math.max(0, getOrderLopsideDepositTarget(order));
-        if (target <= 0) return false;
-        const collected = Math.max(0, getOrderLopsideDepositCollected(order));
-        return collected < target;
-    }).length;
-
     return [
         {
             tone: pendingReviews > 0 ? 'amber' : 'green',
@@ -12944,12 +12865,6 @@ function getAdminSmartAlertRows(orders = [], reminderRows = []) {
             title: `Accepted ${ADMIN_ACCEPTED_STALE_DAYS}+ Days`,
             value: staleAccepted,
             detail: staleAccepted > 0 ? 'Accepted orders waiting without movement.' : 'Accepted orders look fresh.'
-        },
-        {
-            tone: missingDeposit > 0 ? 'red' : 'green',
-            title: 'Missing Lopside Deposit',
-            value: missingDeposit,
-            detail: missingDeposit > 0 ? 'Deposit not fully recorded yet.' : 'No Lopside deposit gaps.'
         },
         {
             tone: reminderRows.length > 0 ? 'cyan' : 'green',
@@ -13059,17 +12974,8 @@ function computeAdminDashboardMetrics() {
     const totalAmountPaid =
         orders.filter(isOrderRecordValidForRevenue).reduce((sum, order) => sum + getOrderCollectedAmount(order), 0)
         + commissionsForMoneyMetrics.reduce((sum, commission) => sum + getCommissionPaidAmount(commission), 0);
-    const lopsideDepositCollected = orders.reduce((sum, order) => sum + getOrderLopsideDepositCollected(order), 0);
-    const lopsideDepositOutstanding = orders.reduce((sum, order) => {
-        if (!isLopsideFursuitOrder(order)) return sum;
-        const target = Math.max(0, getOrderLopsideDepositTarget(order));
-        if (target <= 0) return sum;
-        const collected = Math.max(0, getOrderLopsideDepositCollected(order));
-        return sum + Math.max(0, roundMoney(target - collected));
-    }, 0);
-
-    const revenueByCreator = { husky: 0, lopside: 0 };
-    const revenueByService = { art: 0, animation: 0, fursuits: 0, keychains: 0, stickers: 0 };
+    const revenueByCreator = { husky: 0 };
+    const revenueByService = { art: 0, animation: 0, keychains: 0, stickers: 0 };
     scopedRevenueOrders.forEach((order) => {
         const serviceType = getOrderServiceType(order);
         const creator = getOrderCreator(serviceType);
@@ -13148,7 +13054,7 @@ function computeAdminDashboardMetrics() {
         reviewCount: comments.length,
         activeSaleLabel: activeSale ? `${activeSale.percentage || 0}%` : 'None',
         huskyOpenSlots: Math.max(0, Number(availability.artists.husky.slots) || 0),
-        lopsideOpenSlots: Math.max(0, Number(availability.artists.lopside.slots) || 0),
+        lopsideOpenSlots: 0,
         responseTimeLabel: availability.responseTime || 'Not set',
         revenueTotal,
         revenueScopeLabel: getRevenueScopeLabel(revenueOptions.scope),
@@ -13156,13 +13062,11 @@ function computeAdminDashboardMetrics() {
         revenueScope: revenueOptions.scope,
         revenueBasis: revenueOptions.basis,
         totalAmountPaid,
-        lopsideDepositCollected,
         estimatedAcceptedRevenue,
         estimatedPendingRevenue,
         estimatedCompletedRevenue,
         thisMonthRevenue,
         pipelineOutstandingRevenue,
-        lopsideDepositOutstanding,
         revenueByCreator,
         revenueByService,
         monthlyBuckets,
@@ -13665,7 +13569,6 @@ function updateAdminDashboardOverview() {
             cards: [
                 { group: 'Business Health', label: 'Revenue', value: formatMoney(metrics.revenueTotal) },
                 { group: 'Business Health', label: 'Paid So Far', value: formatMoney(metrics.totalAmountPaid) },
-                { group: 'Business Health', label: 'Lopside Deposits', value: formatMoney(metrics.lopsideDepositCollected) },
                 { group: 'Business Health', label: 'Active Preorders', value: metrics.activePreorderWorkCount },
                 { group: 'Business Health', label: 'Open Slots', value: metrics.huskyOpenSlots + metrics.lopsideOpenSlots }
             ]
@@ -13699,12 +13602,10 @@ function updateAdminDashboardOverview() {
 
     const creatorRows = [
         { label: 'Husky', value: metrics.revenueByCreator.husky },
-        { label: 'Lopside', value: metrics.revenueByCreator.lopside }
     ];
     const serviceRows = [
         { label: 'Art', value: metrics.revenueByService.art },
         { label: 'Animation', value: metrics.revenueByService.animation },
-        { label: 'Fursuits', value: metrics.revenueByService.fursuits },
         { label: 'Keychains', value: metrics.revenueByService.keychains },
         { label: 'Stickers', value: metrics.revenueByService.stickers }
     ];
@@ -13732,14 +13633,13 @@ function updateAdminDashboardOverview() {
             <h3>Revenue Observatory | By Creator</h3>
             <p>Compact creator split using the selected revenue mode.</p>
             ${renderWidgetStatChips([
-                { label: 'Husky', value: formatMoney(metrics.revenueByCreator.husky) },
-                { label: 'Lopside', value: formatMoney(metrics.revenueByCreator.lopside) }
+                { label: 'Husky', value: formatMoney(metrics.revenueByCreator.husky) }
             ])}
             ${renderMiniColumnChart(creatorRows)}
         </article>
         <article class="admin-chart-card">
             <h3>Revenue Observatory | By Service</h3>
-            <p>Service mix for art, animation, fursuits, keychains, and stickers.</p>
+            <p>Service mix for art, animation, keychains, and stickers.</p>
             ${renderServiceDonutChart(serviceRows)}
         </article>
         <article class="admin-chart-card">
@@ -13753,7 +13653,6 @@ function updateAdminDashboardOverview() {
             ${renderWidgetStatChips([
                 { label: 'This Month', value: formatMoney(metrics.thisMonthRevenue) },
                 { label: 'Outstanding', value: formatMoney(metrics.pipelineOutstandingRevenue) },
-                { label: 'Deposit Due', value: formatMoney(metrics.lopsideDepositOutstanding) }
             ])}
             ${renderMiniColumnChart([
                 { label: 'Projected', value: metrics.revenueTotal },
@@ -15225,7 +15124,6 @@ async function syncOrderQueueFallbackFromAdmin(order, status) {
         let adminName = 'Admin Team';
         if (adminEmail === 'musicisbae6547@gmail.com') adminName = 'Admin Husky 🎨';
         if (adminEmail === 'horizontidegallery@gmail.com') adminName = 'Admin Horizon 🌊';
-        if (adminEmail === 'littlelopsidestudio@gmail.com') adminName = 'Admin Lopside 🧵';
 
         const sourceComment = (Array.isArray(window.adminCommentsEntries) ? window.adminCommentsEntries : []).find((entry) => entry.id === targetId);
         if (!sourceComment) return;
@@ -15504,7 +15402,6 @@ function loadAdminDashboard() {
                             <div class="admin-filters admin-filters--chips">
                                 <button type="button" class="nav-btn admin-creator-chip" data-creator-filter="all">All Creators</button>
                                 <button type="button" class="nav-btn admin-creator-chip" data-creator-filter="husky">Husky Orders</button>
-                                <button type="button" class="nav-btn admin-creator-chip" data-creator-filter="lopside">Lopside Orders</button>
                             </div>
                             <div id="adminOrdersSnapshot" class="admin-orders-snapshot" aria-live="polite"></div>
                             <div class="admin-bulk-actions" aria-label="Bulk order actions">
@@ -15658,10 +15555,10 @@ function loadAdminDashboard() {
                         <div class="commission-admin-form-column">
                         <label class="admin-label">Commission ID<input type="text" id="commissionIdField" class="admin-input" placeholder="e.g. COM-001"></label>
                         <label class="admin-label">Display Name<input type="text" id="commissionDisplayNameField" class="admin-input" placeholder="Public username or initials"></label>
-                        <label class="admin-label">Commission Type<input type="text" id="commissionTypeField" class="admin-input" placeholder="e.g. Fursuit Partial, Animation, Icon"></label>
+                        <label class="admin-label">Commission Type<input type="text" id="commissionTypeField" class="admin-input" placeholder="e.g. Animation, Digital Art, Icon"></label>
                         <label class="admin-label">Estimated Price<input type="number" id="commissionEstimatedPriceField" class="admin-input" placeholder="0" min="0" step="0.01"></label>
                         <label class="admin-label">Amount Paid<input type="number" id="commissionAmountPaidField" class="admin-input" placeholder="0" min="0" step="0.01"></label>
-                        <label class="admin-label">Queue Owner<select id="commissionQueueOwnerField" class="admin-input"><option value="husky">Husky</option><option value="lopside">Lopside</option></select></label>
+                        <label class="admin-label">Queue Owner<select id="commissionQueueOwnerField" class="admin-input"><option value="husky">Husky</option></select></label>
                         <label class="admin-label">Queue Status<select id="commissionQueueStatusField" class="admin-input"><option>Not Started</option><option>Started</option><option>Finished</option></select></label>
                         <label class="admin-label admin-checkbox-label-wrap"><input type="checkbox" id="commissionIsPublicField" class="admin-checkbox"> Show public</label>
                         <label class="admin-label">Private Notes<textarea id="commissionPrivateNotesField" class="admin-input admin-textarea" rows="3" placeholder="Admin-only notes..."></textarea></label>
@@ -15886,7 +15783,8 @@ function loadAdminDashboard() {
 
     // --- DISCOUNT MANAGER BINDINGS ---
     const dPercent = document.getElementById('adminDiscountPercent');
-    if(dPercent) dPercent.addEventListener('input', updateAdminPreview);
+    bindAdminDiscountTabs();
+    bindAdminDiscountPreview();
     updateAdminPreview();
 
     bindAdminDashboardNavigation();
@@ -15979,12 +15877,13 @@ function loadAdminDashboard() {
             if(dTarget) dTarget.value = 'all';
             updateAdminPreview();
             renderActiveDiscountsList();
+            openAdminDiscountTab('sales');
             updateAdminDashboardOverview();
         } catch (error) {
             console.error(error);
             showAdminToast(currentEditId ? "Failed to update discount." : "Failed to add discount.", true);
         } finally {
-            btn.innerText = "Add Discount";
+            btn.innerText = window.currentEditingDiscountId ? "Save Discount" : "Add Discount";
             btn.disabled = false;
         }
     });
@@ -16023,33 +15922,7 @@ function loadAdminDashboard() {
     document.getElementById('btnSaveAvailabilitySettings')?.addEventListener('click', async (e) => {
         if (!requireAdminSession('Please sign in with an authorized admin account before saving availability.')) return;
         const btn = e.target;
-        const weeklySnapshot = {
-            sun: document.getElementById('adminAvailWeekSun')?.value,
-            mon: document.getElementById('adminAvailWeekMon')?.value,
-            tue: document.getElementById('adminAvailWeekTue')?.value,
-            wed: document.getElementById('adminAvailWeekWed')?.value,
-            thu: document.getElementById('adminAvailWeekThu')?.value,
-            fri: document.getElementById('adminAvailWeekFri')?.value,
-            sat: document.getElementById('adminAvailWeekSat')?.value
-        };
-        const payload = normalizeHomeAvailability({
-            artists: {
-                husky: {
-                    name: document.getElementById('adminAvailHuskyName')?.value,
-                    service: document.getElementById('adminAvailHuskyService')?.value,
-                    status: document.getElementById('adminAvailHuskyStatus')?.value,
-                    slots: document.getElementById('adminAvailHuskySlots')?.value
-                },
-                lopside: {
-                    name: document.getElementById('adminAvailLopsideName')?.value,
-                    service: document.getElementById('adminAvailLopsideService')?.value,
-                    status: document.getElementById('adminAvailLopsideStatus')?.value,
-                    slots: document.getElementById('adminAvailLopsideSlots')?.value
-                }
-            },
-            weeklySnapshot,
-            responseTime: document.getElementById('adminAvailResponseTime')?.value
-        });
+        const payload = getAdminAvailabilityDraft();
         payload.lastSavedAt = new Date().toISOString();
 
         btn.disabled = true;
@@ -16714,21 +16587,79 @@ function loadAdminDashboard() {
     });
 }
 
+function getAdminAvailabilityDraft() {
+    return normalizeHomeAvailability({
+        artists: {
+            husky: {
+                name: document.getElementById('adminAvailHuskyName')?.value,
+                service: document.getElementById('adminAvailHuskyService')?.value,
+                status: document.getElementById('adminAvailHuskyStatus')?.value,
+                slots: document.getElementById('adminAvailHuskySlots')?.value
+            },
+        },
+        weeklySnapshot: {
+            sun: document.getElementById('adminAvailWeekSun')?.value,
+            mon: document.getElementById('adminAvailWeekMon')?.value,
+            tue: document.getElementById('adminAvailWeekTue')?.value,
+            wed: document.getElementById('adminAvailWeekWed')?.value,
+            thu: document.getElementById('adminAvailWeekThu')?.value,
+            fri: document.getElementById('adminAvailWeekFri')?.value,
+            sat: document.getElementById('adminAvailWeekSat')?.value
+        },
+        responseTime: document.getElementById('adminAvailResponseTime')?.value
+    });
+}
+
+function renderAdminAvailabilityPreview() {
+    const previewRoot = document.querySelector('.availability-admin-preview');
+    if (!(previewRoot instanceof HTMLElement)) return;
+
+    const draft = getAdminAvailabilityDraft();
+    const updateArtist = (prefix, artist) => {
+        const name = document.getElementById(`adminAvailPreview${prefix}Name`);
+        const service = document.getElementById(`adminAvailPreview${prefix}Service`);
+        const status = document.getElementById(`adminAvailPreview${prefix}Status`);
+        const slots = document.getElementById(`adminAvailPreview${prefix}Slots`);
+        if (name) name.textContent = artist.name;
+        if (service) service.textContent = artist.service;
+        if (status) {
+            status.textContent = artist.status;
+            status.className = `status-pill ${getAvailabilityStatusClass(artist.status)}`;
+        }
+        if (slots) slots.textContent = formatAvailabilitySlotLabel(artist.slots);
+    };
+
+    updateArtist('Husky', draft.artists.husky);
+    const response = document.getElementById('adminAvailPreviewResponse');
+    if (response) response.textContent = draft.responseTime;
+
+    const week = document.getElementById('adminAvailPreviewWeek');
+    if (week) week.innerHTML = getAvailabilityCalendarSnapshotMarkup(getTideStatusSnapshot(draft));
+}
+
+function bindAdminAvailabilityPreview() {
+    const card = document.querySelector('.availability-manager-card');
+    if (!(card instanceof HTMLElement) || card.dataset.previewBound === 'true') return;
+
+    const updatePreview = (event) => {
+        if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) {
+            renderAdminAvailabilityPreview();
+        }
+    };
+    card.addEventListener('input', updatePreview);
+    card.addEventListener('change', updatePreview);
+    card.dataset.previewBound = 'true';
+}
+
 function renderAdminAvailabilitySettings() {
     const availability = normalizeHomeAvailability(window.homeAvailability);
     const husky = availability.artists.husky;
-    const lopside = availability.artists.lopside;
     const weekly = normalizeWeeklySnapshot(availability.weeklySnapshot, availability);
 
     const huskyName = document.getElementById('adminAvailHuskyName');
     const huskyService = document.getElementById('adminAvailHuskyService');
     const huskyStatus = document.getElementById('adminAvailHuskyStatus');
     const huskySlots = document.getElementById('adminAvailHuskySlots');
-
-    const lopsideName = document.getElementById('adminAvailLopsideName');
-    const lopsideService = document.getElementById('adminAvailLopsideService');
-    const lopsideStatus = document.getElementById('adminAvailLopsideStatus');
-    const lopsideSlots = document.getElementById('adminAvailLopsideSlots');
 
     const responseTime = document.getElementById('adminAvailResponseTime');
     const weekSun = document.getElementById('adminAvailWeekSun');
@@ -16744,11 +16675,6 @@ function renderAdminAvailabilitySettings() {
     if (huskyStatus) huskyStatus.value = husky.status;
     if (huskySlots) huskySlots.value = husky.slots;
 
-    if (lopsideName) lopsideName.value = lopside.name;
-    if (lopsideService) lopsideService.value = lopside.service;
-    if (lopsideStatus) lopsideStatus.value = lopside.status;
-    if (lopsideSlots) lopsideSlots.value = lopside.slots;
-
     if (responseTime) responseTime.value = availability.responseTime;
     if (weekSun) weekSun.value = weekly.sun;
     if (weekMon) weekMon.value = weekly.mon;
@@ -16758,6 +16684,8 @@ function renderAdminAvailabilitySettings() {
     if (weekFri) weekFri.value = weekly.fri;
     if (weekSat) weekSat.value = weekly.sat;
 
+    bindAdminAvailabilityPreview();
+    renderAdminAvailabilityPreview();
     refreshAdminAvailabilityLastSavedLabel();
 }
 
@@ -18634,7 +18562,6 @@ const routes = {
     '#premade': loadPremadeKeychainsForm,
     '#custom-keychain': loadCustomKeychainsForm,
     '#art': loadHuskyArtForm,
-    '#fursuits': loadFursuitForm,
     '#horizon-queue': loadHuskysListPage,
     '#huskys-list': loadHuskysListPage,
     '#/horizon-queue': loadHuskysListPage,

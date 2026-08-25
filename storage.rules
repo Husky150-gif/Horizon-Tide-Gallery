@@ -6,7 +6,6 @@ service firebase.storage {
         && request.auth.token.email in [
           'horizontidegallery@gmail.com',
           'musicisbae6547@gmail.com',
-          'littlelopsidestudio@gmail.com'
         ];
     }
 

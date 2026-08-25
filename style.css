@@ -3367,6 +3367,16 @@ body.admin-login-modal-open {
     max-width: 900px;
 }
 
+.socials-container .profile-card:only-child {
+    width: min(100%, 620px);
+    min-height: 0;
+}
+
+.socials-container .profile-card:only-child {
+    width: min(100%, 620px);
+    min-height: 0;
+}
+
 .profile-card {
     background: rgba(10, 5, 20, 0.85);
     backdrop-filter: blur(15px);
@@ -6754,14 +6764,14 @@ body[data-page="reviews"] .reviews-submit-btn {
 
 .admin-main-area {
     display: grid;
-    gap: 10px;
+    gap: 16px;
     min-width: 0;
     width: 100%;
 }
 
 .admin-dashboard-band {
     display: grid;
-    gap: 7px;
+    gap: 10px;
 }
 
 .admin-revenue-controls {
@@ -6807,7 +6817,9 @@ body[data-page="reviews"] .reviews-submit-btn {
 .admin-quick-actions-card {
     grid-template-columns: 1fr;
     gap: 8px;
-    padding: 12px;
+    padding: 16px;
+    border-color: rgba(34, 211, 238, 0.3);
+    background: linear-gradient(145deg, rgba(8, 24, 45, 0.96), rgba(7, 13, 28, 0.92));
 }
 
 .admin-quick-actions-card .admin-card-title {
@@ -7200,6 +7212,32 @@ body[data-page="reviews"] .reviews-submit-btn {
     overflow: hidden;
 }
 
+.admin-management-zone {
+    gap: 12px;
+}
+
+.admin-management-zone > .admin-zone-heading,
+.admin-dashboard-band > .admin-zone-heading {
+    padding-left: 4px;
+}
+
+.admin-collapsible > summary {
+    min-height: 48px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, rgba(12, 34, 61, 0.92), rgba(8, 17, 34, 0.94));
+}
+
+.admin-collapsible-body {
+    padding: 16px;
+    background: rgba(3, 9, 20, 0.34);
+}
+
+.admin-dashboard-band > .admin-card,
+.admin-dashboard-band > .admin-revenue-grid,
+.admin-dashboard-band > .admin-activity-panel {
+    min-width: 0;
+}
+
 .admin-collapsible > summary {
     cursor: pointer;
     display: flex;
@@ -7313,7 +7351,23 @@ body[data-page="reviews"] .reviews-submit-btn {
 }
 
 .admin-collapsible--sub > .admin-collapsible-body {
-    padding: 8px 8px 10px;
+    padding: 14px;
+    background: rgba(3, 9, 20, 0.34);
+}
+
+#adminDashboardView .admin-revenue-grid {
+    align-items: stretch;
+}
+
+#adminDashboardView .admin-chart-card {
+    min-height: 260px;
+}
+
+#adminDashboardView .admin-card,
+#adminDashboardView .admin-collapsible,
+#adminDashboardView .admin-chart-card,
+#adminDashboardView .admin-activity-panel {
+    box-shadow: 0 14px 32px rgba(2, 8, 18, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
 
 .admin-diagnostics-grid {
@@ -11838,6 +11892,10 @@ body[data-page="admin"] .global-sale-banner {
 }
 
 .admin-gallery-category-option input[type="checkbox"] {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    margin: 0;
     accent-color: #22c55e;
 }
 
@@ -11868,6 +11926,58 @@ body[data-page="admin"] .global-sale-banner {
 
 .admin-gallery-preset-btn {
     min-width: 0;
+}
+
+.gallery-manager-card .admin-form-row > .admin-label-medium {
+    flex: 1 1 240px;
+}
+
+.gallery-manager-card .admin-form-row > .admin-label-wide {
+    flex: 1 1 320px;
+}
+
+.gallery-manager-card .admin-form-row > .admin-gallery-presets-wrap {
+    flex-basis: 100%;
+}
+
+.gallery-manager-card .admin-form-row > .admin-checkbox-group {
+    flex: 1 1 240px;
+    min-width: 0;
+}
+
+@media (max-width: 768px) {
+    .gallery-manager-card {
+        padding: 14px;
+    }
+
+    .gallery-manager-card .admin-form-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+        width: 100%;
+    }
+
+    .gallery-manager-card .admin-form-row > * {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .gallery-manager-card .admin-input {
+        width: 100%;
+    }
+
+    .gallery-manager-card .admin-checkbox-group {
+        align-items: flex-start;
+    }
+
+    .gallery-manager-card .admin-checkbox {
+        flex: 0 0 18px;
+        width: 18px;
+        height: 18px;
+        margin: 2px 0 0;
+    }
 }
 
 .admin-gallery-summary {
@@ -13687,9 +13797,9 @@ body[data-page="preorder"] #footerCredit {
 }
 
 .admin-donut-chart {
-    width: 150px;
-    height: 150px;
-    overflow: visible;
+    width: 128px;
+    height: 128px;
+    border-radius: 7px;
 }
 
 .admin-donut-track {
@@ -16277,5 +16387,1094 @@ body[data-page="socials"] .meet-ordering-shell li {
         padding: 10px 12px;
         font-size: 0.96rem;
         line-height: 1.24;
+    }
+}
+
+/* Gallery manager workspace */
+.gallery-manager-card {
+    gap: 22px;
+}
+
+.gallery-manager-heading,
+.gallery-library-toolbar,
+.gallery-library-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.gallery-manager-heading .admin-card-subtitle {
+    margin: 8px 0 0;
+}
+
+.gallery-manager-card .gallery-manager-title {
+    margin: 0;
+}
+
+.gallery-manager-heading__status,
+.gallery-library-kicker,
+.gallery-editor-publish__heading > span {
+    color: #6ee7b7;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.gallery-manager-heading__status {
+    flex: 0 0 auto;
+    padding: 7px 10px;
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    border-radius: 6px;
+    background: rgba(6, 78, 59, 0.22);
+}
+
+.gallery-editor-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+    gap: 20px;
+    align-items: start;
+}
+
+.gallery-editor-main {
+    min-width: 0;
+    display: grid;
+}
+
+.gallery-editor-section {
+    min-width: 0;
+    padding: 20px 0;
+    border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.gallery-editor-section:first-child {
+    padding-top: 0;
+    border-top: 0;
+}
+
+.gallery-editor-section__heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    margin-bottom: 15px;
+}
+
+.gallery-editor-section__number {
+    flex: 0 0 27px;
+    width: 27px;
+    height: 27px;
+    display: grid;
+    place-items: center;
+    border-radius: 6px;
+    background: #047857;
+    color: #ecfdf5;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.gallery-manager-card .gallery-editor-section h4,
+.gallery-manager-card .gallery-editor-publish h4,
+.gallery-manager-card .gallery-library h4 {
+    margin: 0;
+    color: #f0fdf4;
+    font-size: 1rem;
+}
+
+.gallery-editor-section__heading p {
+    margin: 3px 0 0;
+    color: #94a3b8;
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
+
+.gallery-editor-fields {
+    display: grid;
+    gap: 14px;
+}
+
+.gallery-editor-fields--two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.gallery-manager-card .gallery-editor-fields .admin-label,
+.gallery-editor-custom-category,
+.gallery-editor-upload {
+    min-width: 0;
+}
+
+.gallery-manager-card .gallery-editor-fields .admin-input,
+.gallery-editor-custom-category .admin-input,
+.gallery-editor-upload .admin-input {
+    width: 100%;
+}
+
+.gallery-field-optional {
+    color: #94a3b8;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.gallery-editor-custom-category,
+.gallery-editor-upload {
+    margin-top: 14px;
+}
+
+.gallery-editor-publish {
+    position: sticky;
+    top: 18px;
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid rgba(52, 211, 153, 0.26);
+    border-radius: 8px;
+    background: rgba(3, 18, 20, 0.72);
+}
+
+.gallery-editor-publish__heading {
+    margin-bottom: 14px;
+}
+
+.gallery-editor-publish__heading h4 {
+    margin-top: 3px;
+}
+
+.gallery-editor-preview-shell {
+    min-height: 152px;
+    display: grid;
+    place-items: center;
+    padding: 12px;
+    border: 1px dashed rgba(110, 231, 183, 0.28);
+    border-radius: 7px;
+    background: rgba(2, 8, 23, 0.55);
+    text-align: center;
+}
+
+.gallery-editor-preview-shell .admin-gallery-preview {
+    width: 128px;
+    height: 128px;
+    border-radius: 7px;
+}
+
+.gallery-editor-preview-shell .admin-gallery-preview[hidden] {
+    display: none;
+}
+
+.gallery-editor-preview-shell .admin-detail {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+.gallery-editor-visibility {
+    align-items: flex-start;
+    margin-top: 14px;
+    padding: 12px 0;
+    border-top: 1px solid rgba(148, 163, 184, 0.13);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.13);
+}
+
+.gallery-editor-visibility .admin-checkbox-label {
+    display: grid;
+    gap: 2px;
+    line-height: 1.3;
+}
+
+.gallery-editor-visibility .admin-checkbox-label span {
+    color: #94a3b8;
+    font-size: 0.78rem;
+}
+
+.gallery-manager-card .gallery-editor-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    margin-top: 14px;
+}
+
+.gallery-editor-actions button {
+    width: 100%;
+    min-height: 40px;
+}
+
+.gallery-library {
+    min-width: 0;
+    padding-top: 20px;
+    border-top: 1px solid rgba(52, 211, 153, 0.22);
+}
+
+.gallery-library-toolbar {
+    align-items: flex-end;
+    margin-bottom: 12px;
+}
+
+.gallery-library-kicker {
+    display: block;
+    margin-bottom: 3px;
+}
+
+.gallery-library-filter {
+    width: min(260px, 100%);
+}
+
+.gallery-library-meta {
+    align-items: flex-start;
+    margin-bottom: 14px;
+}
+
+.gallery-library-recovery {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.gallery-library-recovery summary {
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.gallery-library-recovery__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+@media (max-width: 900px) {
+    .gallery-editor-workspace {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .gallery-editor-publish {
+        position: static;
+    }
+}
+
+@media (max-width: 768px) {
+    .gallery-manager-card {
+        gap: 18px;
+        padding: 14px;
+    }
+
+    .gallery-manager-heading,
+    .gallery-library-toolbar,
+    .gallery-library-meta {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .gallery-manager-heading__status {
+        align-self: flex-start;
+    }
+
+    .gallery-editor-fields--two {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .gallery-editor-section {
+        padding: 18px 0;
+    }
+
+    .gallery-manager-card .admin-input,
+    .gallery-library-filter {
+        width: 100%;
+    }
+}
+
+.gallery-manager-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid rgba(52, 211, 153, 0.2);
+    border-radius: 8px;
+    background: rgba(2, 8, 23, 0.62);
+}
+
+.gallery-manager-tab {
+    min-width: 0;
+    min-height: 42px;
+    padding: 9px 12px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    background: transparent;
+    color: #94a3b8;
+    font-family: inherit;
+    font-size: 0.86rem;
+    font-weight: 700;
+}
+
+.gallery-manager-tab:hover {
+    color: #d1fae5;
+    background: rgba(6, 78, 59, 0.2);
+}
+
+.gallery-manager-tab.is-active {
+    border-color: rgba(52, 211, 153, 0.38);
+    background: rgba(5, 150, 105, 0.2);
+    color: #ecfdf5;
+    box-shadow: inset 0 -2px 0 #34d399;
+}
+
+.gallery-manager-tab:focus-visible {
+    outline: 2px solid #67e8f9;
+    outline-offset: 2px;
+}
+
+.gallery-manager-tab-panel[hidden] {
+    display: none;
+}
+
+.gallery-backups {
+    width: min(680px, 100%);
+    min-width: 0;
+    padding: 20px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 8px;
+    background: rgba(3, 12, 24, 0.62);
+    box-sizing: border-box;
+}
+
+.gallery-backups__heading h4 {
+    margin: 3px 0 0;
+}
+
+.gallery-backups__heading p {
+    margin: 7px 0 0;
+    color: #a7b5c8;
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.gallery-backups__notice {
+    margin-top: 18px;
+    padding: 12px;
+    border-left: 3px solid #22d3ee;
+    background: rgba(8, 47, 73, 0.28);
+    color: #bae6fd;
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+.gallery-backups__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+@media (max-width: 520px) {
+    .gallery-manager-tabs {
+        gap: 3px;
+        padding: 3px;
+    }
+
+    .gallery-manager-tab {
+        min-height: 44px;
+        padding: 8px 5px;
+        font-size: 0.76rem;
+        line-height: 1.2;
+    }
+
+    .gallery-backups {
+        padding: 16px;
+    }
+
+    .gallery-backups__actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .gallery-backups__actions button {
+        width: 100%;
+    }
+}
+
+/* Availability manager workspace */
+.availability-manager-card {
+    gap: 22px;
+}
+
+.availability-manager-heading,
+.availability-admin-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.availability-manager-heading .admin-card-subtitle {
+    margin: 8px 0 0;
+}
+
+.availability-manager-card .availability-manager-title {
+    margin: 0;
+}
+
+.availability-manager-heading__status,
+.availability-admin-preview__kicker {
+    color: #6ee7b7;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.availability-manager-heading__status {
+    flex: 0 0 auto;
+    padding: 7px 10px;
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    border-radius: 6px;
+    background: rgba(6, 78, 59, 0.22);
+}
+
+.availability-admin-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(290px, 350px);
+    gap: 20px;
+    align-items: start;
+}
+
+.availability-admin-editor {
+    min-width: 0;
+    display: grid;
+}
+
+.availability-admin-section {
+    min-width: 0;
+    padding: 20px 0;
+    border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.availability-admin-section:first-child {
+    padding-top: 0;
+    border-top: 0;
+}
+
+.availability-admin-section__heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    margin-bottom: 15px;
+}
+
+.availability-admin-section__number {
+    flex: 0 0 27px;
+    width: 27px;
+    height: 27px;
+    display: grid;
+    place-items: center;
+    border-radius: 6px;
+    background: #047857;
+    color: #ecfdf5;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.availability-manager-card h4 {
+    margin: 0;
+    color: #f0fdf4;
+    font-size: 1rem;
+}
+
+.availability-admin-section__heading p {
+    margin: 3px 0 0;
+    color: #94a3b8;
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
+
+.availability-artist-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.availability-artist-panel {
+    min-width: 0;
+    margin: 0;
+    padding: 14px;
+    border: 1px solid rgba(52, 211, 153, 0.24);
+    border-radius: 8px;
+    background: rgba(3, 18, 20, 0.52);
+}
+
+.availability-artist-panel--lopside {
+    border-color: rgba(56, 189, 248, 0.24);
+    background: rgba(4, 18, 34, 0.52);
+}
+
+.availability-artist-panel legend {
+    padding: 0 7px;
+    color: #a7f3d0;
+    font-size: 0.88rem;
+    font-weight: 800;
+}
+
+.availability-artist-panel--lopside legend {
+    color: #bae6fd;
+}
+
+.availability-artist-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(90px, 0.55fr);
+    gap: 12px;
+}
+
+.availability-artist-fields .admin-label {
+    min-width: 0;
+}
+
+.availability-artist-fields .admin-label:nth-child(-n + 2) {
+    grid-column: 1 / -1;
+}
+
+.availability-manager-card .admin-input {
+    width: 100%;
+    min-width: 0;
+}
+
+.availability-response-field {
+    width: min(360px, 100%);
+    margin-bottom: 14px;
+}
+
+.availability-week-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.availability-week-grid .admin-label {
+    min-width: 0;
+    color: #cbd5e1;
+    font-size: 0.8rem;
+}
+
+.availability-admin-preview {
+    position: sticky;
+    top: 18px;
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid rgba(52, 211, 153, 0.26);
+    border-radius: 8px;
+    background: rgba(3, 18, 20, 0.72);
+}
+
+.availability-admin-preview h4 {
+    margin-top: 3px;
+}
+
+.availability-admin-preview__note {
+    margin: 7px 0 14px;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
+.availability-admin-preview .availability-item {
+    padding: 10px;
+    border-radius: 7px;
+}
+
+.availability-admin-preview .availability-service strong {
+    font-size: 0.95rem;
+}
+
+.availability-admin-preview .availability-service span {
+    font-size: 0.8rem;
+}
+
+.availability-admin-preview .availability-meta {
+    gap: 4px;
+}
+
+.availability-admin-preview .status-pill,
+.availability-admin-preview .slot-pill {
+    padding: 3px 7px;
+    font-size: 0.7rem;
+}
+
+.availability-admin-preview__week {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(148, 163, 184, 0.13);
+}
+
+.availability-admin-preview__week .home-availability-snapshot-slot-note {
+    display: none;
+}
+
+.availability-admin-preview__week .availability-snapshot-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 3px;
+}
+
+.availability-admin-preview__week .availability-snapshot-day {
+    min-width: 0;
+    padding: 6px 2px;
+}
+
+.availability-admin-preview__week .availability-snapshot-name {
+    font-size: 0.62rem;
+}
+
+.availability-admin-preview__week .availability-snapshot-state {
+    font-size: 0.56rem;
+}
+
+.availability-admin-footer {
+    align-items: flex-end;
+    padding-top: 18px;
+    border-top: 1px solid rgba(52, 211, 153, 0.18);
+}
+
+.availability-admin-footer .admin-actions {
+    margin: 0;
+}
+
+.availability-admin-footer #adminAvailLastSaved {
+    max-width: 520px;
+    margin: 0;
+}
+
+@media (max-width: 1050px) {
+    .availability-admin-workspace {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .availability-admin-preview {
+        position: static;
+    }
+}
+
+@media (max-width: 900px) {
+    body[data-page="home"] .home-pro-grid:first-of-type,
+    body[data-page="home"] .home-pro-grid:last-of-type {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 720px) {
+    .availability-manager-heading,
+    .availability-admin-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .availability-manager-heading__status {
+        align-self: flex-start;
+    }
+
+    .availability-artist-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .availability-week-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .availability-admin-footer .admin-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .availability-admin-footer button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 420px) {
+    .availability-artist-fields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .availability-artist-fields .admin-label:nth-child(-n + 2) {
+        grid-column: auto;
+    }
+}
+
+/* Discount manager workspace */
+.discount-manager-card {
+    gap: 22px;
+}
+
+.discount-manager-heading,
+.discount-sales-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.discount-manager-heading .admin-card-subtitle {
+    margin: 8px 0 0;
+}
+
+.discount-manager-card .discount-manager-title {
+    margin: 0;
+}
+
+.discount-manager-heading__status,
+.discount-preview-kicker {
+    color: #f9a8d4;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.discount-manager-heading__status {
+    flex: 0 0 auto;
+    padding: 7px 10px;
+    border: 1px solid rgba(244, 114, 182, 0.3);
+    border-radius: 6px;
+    background: rgba(131, 24, 67, 0.2);
+}
+
+.discount-manager-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid rgba(244, 114, 182, 0.2);
+    border-radius: 8px;
+    background: rgba(2, 8, 23, 0.62);
+}
+
+.discount-manager-tab {
+    min-width: 0;
+    min-height: 42px;
+    padding: 9px 12px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    background: transparent;
+    color: #94a3b8;
+    font-family: inherit;
+    font-size: 0.86rem;
+    font-weight: 700;
+}
+
+.discount-manager-tab:hover {
+    color: #fce7f3;
+    background: rgba(131, 24, 67, 0.18);
+}
+
+.discount-manager-tab.is-active {
+    border-color: rgba(244, 114, 182, 0.38);
+    background: rgba(190, 24, 93, 0.18);
+    color: #fdf2f8;
+    box-shadow: inset 0 -2px 0 #f472b6;
+}
+
+.discount-manager-tab:focus-visible {
+    outline: 2px solid #67e8f9;
+    outline-offset: 2px;
+}
+
+.discount-manager-tab__count {
+    display: inline-grid;
+    min-width: 20px;
+    height: 20px;
+    margin-left: 5px;
+    padding: 0 5px;
+    place-items: center;
+    border-radius: 999px;
+    background: rgba(244, 114, 182, 0.16);
+    color: #fbcfe8;
+    box-sizing: border-box;
+}
+
+.discount-manager-tab-panel[hidden] {
+    display: none;
+}
+
+.discount-editor-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(270px, 330px);
+    gap: 20px;
+    align-items: start;
+}
+
+.discount-editor-form {
+    min-width: 0;
+}
+
+.discount-editor-form__heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    margin-bottom: 16px;
+}
+
+.discount-editor-form__number {
+    flex: 0 0 27px;
+    width: 27px;
+    height: 27px;
+    display: grid;
+    place-items: center;
+    border-radius: 6px;
+    background: #be185d;
+    color: #fdf2f8;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.discount-manager-card h4 {
+    margin: 0;
+    color: #fdf2f8;
+    font-size: 1rem;
+}
+
+.discount-editor-form__heading p,
+.discount-sales-heading p {
+    margin: 3px 0 0;
+    color: #94a3b8;
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+.discount-manager-card .discount-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.discount-manager-card .discount-controls .admin-label {
+    min-width: 0;
+}
+
+.discount-manager-card .discount-controls .admin-input {
+    width: 100%;
+    min-width: 0;
+}
+
+.discount-message-field {
+    grid-column: 1 / -1;
+}
+
+.discount-field-hint {
+    color: #94a3b8;
+    font-size: 0.72rem;
+    font-weight: 500;
+}
+
+.discount-manager-card .discount-actions {
+    margin-top: 16px;
+}
+
+.discount-manager-card .discount-preview-area {
+    position: sticky;
+    top: 18px;
+    min-width: 0;
+    margin: 0;
+    padding: 16px;
+    border: 1px solid rgba(244, 114, 182, 0.28);
+    border-radius: 8px;
+    background: rgba(24, 8, 24, 0.72);
+}
+
+.discount-manager-card .preview-title {
+    margin: 3px 0 14px;
+    color: #fdf2f8;
+}
+
+.discount-banner-preview {
+    display: grid;
+    gap: 4px;
+    padding: 13px;
+    border: 1px solid rgba(244, 114, 182, 0.28);
+    border-radius: 7px;
+    background: rgba(131, 24, 67, 0.2);
+}
+
+.discount-banner-preview strong {
+    color: #fdf2f8;
+    overflow-wrap: anywhere;
+}
+
+.discount-banner-preview span {
+    color: #fbcfe8;
+    font-size: 0.8rem;
+}
+
+.discount-price-preview {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 13px;
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 7px;
+    background: rgba(2, 8, 23, 0.5);
+}
+
+.discount-price-preview__label {
+    color: #94a3b8;
+    font-size: 0.76rem;
+}
+
+.discount-price-preview__values {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.discount-manager-card .preview-saved {
+    color: #86efac;
+    font-size: 0.8rem;
+}
+
+.discount-preview-note {
+    margin: 12px 0 0;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    line-height: 1.45;
+}
+
+.discount-sales-panel {
+    min-width: 0;
+}
+
+.discount-sales-heading {
+    align-items: flex-end;
+    margin-bottom: 14px;
+}
+
+.discount-sales-heading p {
+    max-width: 520px;
+    text-align: right;
+}
+
+.discount-manager-card .active-discounts-list {
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    border-top: 0;
+}
+
+.discount-manager-card .admin-discount-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid rgba(244, 114, 182, 0.24);
+    border-radius: 8px;
+    background: rgba(20, 8, 24, 0.52);
+}
+
+.discount-manager-card .admin-discount-item.is-disabled {
+    border-color: rgba(148, 163, 184, 0.18);
+    background: rgba(15, 23, 42, 0.42);
+}
+
+.discount-item-heading {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.discount-manager-card .discount-item-title {
+    color: #f9a8d4;
+    font-size: 1rem;
+}
+
+.discount-item-status {
+    padding: 3px 7px;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.discount-item-status.is-enabled {
+    border: 1px solid rgba(74, 222, 128, 0.34);
+    background: rgba(22, 101, 52, 0.24);
+    color: #bbf7d0;
+}
+
+.discount-item-status.is-paused {
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    background: rgba(71, 85, 105, 0.24);
+    color: #cbd5e1;
+}
+
+.discount-manager-card .discount-item-meta {
+    overflow-wrap: anywhere;
+}
+
+.discount-manager-card .announce-item-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.discount-sales-empty {
+    margin: 0;
+    padding: 20px;
+    border: 1px dashed rgba(148, 163, 184, 0.24);
+    border-radius: 8px;
+    color: #94a3b8;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .discount-editor-workspace {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .discount-manager-card .discount-preview-area {
+        position: static;
+    }
+}
+
+@media (max-width: 640px) {
+    .discount-manager-heading,
+    .discount-sales-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .discount-manager-heading__status {
+        align-self: flex-start;
+    }
+
+    .discount-sales-heading p {
+        max-width: none;
+        text-align: left;
+    }
+
+    .discount-manager-card .discount-controls {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .discount-message-field {
+        grid-column: auto;
+    }
+
+    .discount-manager-card .discount-actions,
+    .discount-manager-card .discount-actions button {
+        width: 100%;
+    }
+
+    .discount-manager-card .admin-discount-item {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .discount-manager-card .announce-item-actions {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .discount-manager-card .announce-item-actions button {
+        min-width: 0;
+        padding-left: 6px;
+        padding-right: 6px;
+    }
+}
+
+@media (max-width: 420px) {
+    .discount-manager-tab {
+        padding: 8px 6px;
+        font-size: 0.78rem;
     }
 }
