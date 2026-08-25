@@ -18566,6 +18566,18 @@ body[data-page="quick-actor"] .quick-actor-center-heart {
     pointer-events: none;
 }
 
+body[data-page="quick-actor"] .quick-actor-center-heart::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    left: -120px;
+    right: -120px;
+    top: 54%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.42) 25%, rgba(236, 72, 153, 0.72) 50%, rgba(96, 165, 250, 0.42) 75%, transparent);
+    box-shadow: 0 0 8px rgba(236, 72, 153, 0.24);
+}
+
 body[data-page="quick-actor"] .quick-actor-center-heart svg {
     width: 100%;
     height: 100%;
@@ -18575,14 +18587,14 @@ body[data-page="quick-actor"] .quick-actor-center-heart svg {
 body[data-page="quick-actor"] .quick-actor-center-heart path {
     fill: none;
     stroke: rgba(236, 72, 153, 0.72);
-    stroke-width: 1.4;
+    stroke-width: 1.8;
     stroke-linejoin: round;
-    filter: drop-shadow(0 0 5px rgba(236, 72, 153, 0.42));
+    filter: drop-shadow(0 0 6px rgba(236, 72, 153, 0.52));
 }
 
 body[data-page="quick-actor"] .quick-actor-center-heart circle {
     fill: #f9a8d4;
-    filter: drop-shadow(0 0 6px rgba(236, 72, 153, 0.72));
+    filter: drop-shadow(0 0 7px rgba(236, 72, 153, 0.78));
 }
 
 body[data-page="quick-actor"] .quick-actor-complexity-map {
