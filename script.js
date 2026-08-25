@@ -1889,7 +1889,7 @@ function formatGalleryCategoryLabel(value) {
 function getGalleryCategoryTone(categoryValue) {
     const normalized = String(categoryValue || '').trim().toLowerCase();
     const knownPalette = {
-        'digital-art': { bg: 'rgba(34, 197, 94, 0.2)', border: 'rgba(34, 197, 94, 0.45)', text: '#dcfce7' },
+        'digital-art': { bg: 'rgba(59, 130, 246, 0.2)', border: 'rgba(59, 130, 246, 0.45)', text: '#dbeafe' },
         fursuits: { bg: 'rgba(14, 165, 233, 0.2)', border: 'rgba(56, 189, 248, 0.45)', text: '#dbeafe' },
         keychains: { bg: 'rgba(245, 158, 11, 0.2)', border: 'rgba(245, 158, 11, 0.45)', text: '#ffedd5' },
         stickers: { bg: 'rgba(236, 72, 153, 0.2)', border: 'rgba(236, 72, 153, 0.45)', text: '#fce7f3' },
