@@ -6307,6 +6307,12 @@ function bindHomeConversionPack() {
 
         intentSummary.textContent = `Best lane: ${route.label}. You selected ${deadlineText} and ${budgetText}.`;
 
+        const pathMap = document.querySelector('.quick-actor-constellation');
+        if (pathMap instanceof HTMLElement) {
+            pathMap.dataset.project = String(intentType.value || 'art');
+            pathMap.dataset.timing = String(deadlineValue || 'flexible');
+        }
+
         if (intentBudgetMessage instanceof HTMLElement) {
             if (Number.isFinite(enteredBudget) && enteredBudget > 0) {
                 const pricedOptions = getIntentPricedOptions();
@@ -6362,6 +6368,10 @@ function bindHomeConversionPack() {
         if (teaserComplexityHelp instanceof HTMLElement) {
             teaserComplexityHelp.textContent = `${getTeaserComplexityGuide(complexity)} Based on markings, outfits, props, effects, and overall detail.`;
         }
+        const complexityMap = document.querySelector('.quick-actor-complexity-map');
+        const complexityLabel = document.getElementById('quickActorComplexityLabel');
+        if (complexityMap instanceof HTMLElement) complexityMap.dataset.level = String(complexity);
+        if (complexityLabel instanceof HTMLElement) complexityLabel.textContent = `Complexity ${['0', 'I', 'II', 'III'][complexity]}`;
     };
 
     const handleIntentPrimaryClick = (event) => {
@@ -7482,14 +7492,26 @@ function loadQuickActorPage() {
             </div>
 
             <div class="quick-actor-card-shell">
-                <h1>Quick Actor</h1>
-                <p class="quick-actor-subtitle">Choose type, timing, and budget to get a fast recommendation, then preview a planning range before you submit.</p>
+                <p class="quick-actor-kicker">✦ Commission Constellation ✦</p>
+                <h1>Find the right path for your project.</h1>
+                <p class="quick-actor-subtitle">Shape your request, follow the stars, and discover a planning range before you submit.</p>
 
                 <section class="preorder-quick-actor-grid" aria-label="Quick Actor tools">
+                    <div class="quick-actor-constellation" aria-hidden="true">
+                        <span class="constellation-line constellation-line-a"></span>
+                        <span class="constellation-line constellation-line-b"></span>
+                        <span class="constellation-line constellation-line-c"></span>
+                        <span class="constellation-star constellation-star-a"></span>
+                        <span class="constellation-star constellation-star-b"></span>
+                        <span class="constellation-star constellation-star-core"></span>
+                        <span class="constellation-star constellation-star-c"></span>
+                        <span class="constellation-star constellation-star-d"></span>
+                    </div>
                     <article class="home-conversion-card home-intent-card">
-                        <p class="home-conversion-kicker">Service Finder</p>
-                        <h4>Not sure where to start?</h4>
+                        <p class="home-conversion-kicker">☾ Your Commission</p>
+                        <h4>Start a Request</h4>
                         <p class="home-conversion-copy">Pick your project type, timing, and budget. I will point you to the best request lane.</p>
+                        <p class="quick-actor-field-label">✦ Project</p>
                         <div class="home-conversion-controls">
                             <select id="homeIntentType" class="form-select">
                                 <option value="art">Digital Art</option>
@@ -7506,7 +7528,10 @@ function loadQuickActorPage() {
                                 <input id="homeIntentBudgetAmount" class="form-input" type="number" min="1" step="1" placeholder="Example: 150">
                             </label>
                         </div>
-                        <p class="home-intent-summary" id="homeIntentSummary">Best lane will appear here.</p>
+                        <div class="quick-actor-path-card">
+                            <p class="quick-actor-path-kicker">✦ Your Path</p>
+                            <p class="home-intent-summary" id="homeIntentSummary">Best lane will appear here.</p>
+                        </div>
                         <p class="home-intent-budget-message" id="homeIntentBudgetMessage">Enter a target budget and I will instantly tell you if it fits this lane.</p>
                         <p class="home-intent-eligible-summary" id="homeIntentEligibleSummary">Enter a budget to see all matching items you can start with.</p>
                         <ul class="home-intent-eligible-list" id="homeIntentEligibleList" aria-live="polite"></ul>
@@ -7514,9 +7539,10 @@ function loadQuickActorPage() {
                     </article>
 
                     <article class="home-conversion-card home-estimator-card">
-                        <p class="home-conversion-kicker">Quick Estimator</p>
-                        <h4>Planning range before you order</h4>
+                        <p class="home-conversion-kicker">✦ Your Estimate</p>
+                        <h4>Explore Pricing</h4>
                         <p class="home-conversion-copy">This gives a rough planning range. Final pricing is confirmed after review.</p>
+                        <p class="quick-actor-field-label">✦ Build the estimate</p>
                         <div class="home-conversion-controls">
                             <select id="homeTeaserType" class="form-select">
                                 <optgroup label="Digital Art">
@@ -7564,10 +7590,22 @@ function loadQuickActorPage() {
                             <label class="home-teaser-field">Complexity (0-3)
                                 <input id="homeTeaserComplexity" type="range" min="0" max="3" step="1" value="1">
                             </label>
+                            <div class="quick-actor-complexity-map" aria-label="Complexity constellation">
+                                <span class="complexity-map-line complexity-map-line-a"></span>
+                                <span class="complexity-map-line complexity-map-line-b"></span>
+                                <span class="complexity-map-star complexity-map-star-a"></span>
+                                <span class="complexity-map-star complexity-map-star-b"></span>
+                                <span class="complexity-map-star complexity-map-star-c"></span>
+                                <span class="complexity-map-star complexity-map-star-d"></span>
+                                <strong id="quickActorComplexityLabel">Complexity I</strong>
+                            </div>
                             <p class="home-teaser-complexity-note" id="homeTeaserComplexityHelp">Complexity 1: moderate detail, light markings, basic accessories. Based on markings, outfits, props, effects, and overall detail.</p>
                             <label class="home-teaser-toggle"><input id="homeTeaserRush" type="checkbox"> Rush needed</label>
                         </div>
-                        <p class="home-teaser-range" id="homeTeaserRange">$0</p>
+                        <div class="quick-actor-estimate-result">
+                            <p class="quick-actor-estimate-kicker">✦ Estimated Range ✦</p>
+                            <p class="home-teaser-range" id="homeTeaserRange">$0</p>
+                        </div>
                         <p class="home-teaser-hint" id="homeTeaserHint">Set your options to preview a planning range.</p>
                         <button type="button" class="nav-btn home-conversion-btn" id="homeTeaserPricingBtn">Open Full Pricing</button>
                     </article>
