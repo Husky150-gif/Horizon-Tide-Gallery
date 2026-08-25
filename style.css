@@ -17732,12 +17732,30 @@ body[data-page="quick-actor"] .home-conversion-btn {
 }
 
 .quick-actor-pokemon-lunatone {
-    right: 4%;
-    bottom: 7%;
+    right: 1.5%;
+    top: 31%;
     width: 66px;
     height: 66px;
     animation-delay: -2.8s;
     filter: drop-shadow(0 0 12px rgba(96, 165, 250, 0.85));
+}
+
+.quick-actor-pokemon-jirachi {
+    left: 1.5%;
+    bottom: 18%;
+    width: 52px;
+    height: 52px;
+    animation-delay: -1.6s;
+    filter: drop-shadow(0 0 12px rgba(250, 204, 21, 0.78));
+}
+
+.quick-actor-pokemon-starmie {
+    right: 12%;
+    bottom: 4%;
+    width: 50px;
+    height: 50px;
+    animation-delay: -4.1s;
+    filter: drop-shadow(0 0 12px rgba(236, 72, 153, 0.8));
 }
 
 @keyframes quickActorPokemonFloat {

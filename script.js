@@ -7477,6 +7477,8 @@ function loadQuickActorPage() {
             <div class="quick-actor-pokemon" aria-hidden="true">
                 <img class="quick-actor-pokemon-sprite quick-actor-pokemon-cleffa" src="https://img.pokemondb.net/sprites/black-white/anim/normal/cleffa.gif" alt="">
                 <img class="quick-actor-pokemon-sprite quick-actor-pokemon-lunatone" src="https://img.pokemondb.net/sprites/black-white/anim/normal/lunatone.gif" alt="">
+                <img class="quick-actor-pokemon-sprite quick-actor-pokemon-jirachi" src="https://img.pokemondb.net/sprites/black-white/anim/normal/jirachi.gif" alt="">
+                <img class="quick-actor-pokemon-sprite quick-actor-pokemon-starmie" src="https://img.pokemondb.net/sprites/black-white/anim/normal/starmie.gif" alt="">
             </div>
 
             <div class="quick-actor-card-shell">
