@@ -7596,6 +7596,15 @@ function loadQuickActorPage() {
                                 <input id="homeTeaserComplexity" type="range" min="0" max="3" step="1" value="1">
                             </label>
                             <div class="quick-actor-complexity-map" aria-label="Complexity constellation">
+                                <svg class="complexity-heart-svg" viewBox="0 0 200 140" aria-hidden="true" focusable="false">
+                                    <polyline points="24,28 100,44 176,28 158,78 100,126 42,78 24,28"></polyline>
+                                    <circle cx="24" cy="28" r="4"></circle>
+                                    <circle cx="100" cy="44" r="3"></circle>
+                                    <circle cx="176" cy="28" r="4"></circle>
+                                    <circle cx="158" cy="78" r="3"></circle>
+                                    <circle cx="100" cy="126" r="5"></circle>
+                                    <circle cx="42" cy="78" r="3"></circle>
+                                </svg>
                                 <span class="complexity-heart-line complexity-heart-line-1"></span>
                                 <span class="complexity-heart-line complexity-heart-line-2"></span>
                                 <span class="complexity-heart-line complexity-heart-line-3"></span>

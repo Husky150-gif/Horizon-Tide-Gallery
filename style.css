@@ -18345,6 +18345,7 @@ body[data-page="quick-actor"] .quick-actor-complexity-map::before {
 }
 
 body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-line,
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-heart-line,
 body[data-page="quick-actor"] .quick-actor-complexity-map::after {
     display: none;
 }
@@ -18469,4 +18470,135 @@ input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
     margin: 0;
     -webkit-appearance: none;
+}
+
+/* Final heart map: one outline, no crossing lines or inherited slider geometry. */
+body[data-page="quick-actor"] .quick-actor-complexity-map {
+    position: relative;
+    height: 156px;
+    margin: 2px 0 8px;
+    overflow: visible;
+    background: radial-gradient(ellipse at 50% 46%, rgba(236, 72, 153, 0.12), transparent 58%);
+}
+
+body[data-page="quick-actor"] .quick-actor-complexity-map::before,
+body[data-page="quick-actor"] .quick-actor-complexity-map::after,
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-line,
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-star::before,
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-star::after {
+    display: none !important;
+}
+
+body[data-page="quick-actor"] .complexity-heart-svg {
+    position: absolute;
+    inset: 5px 0 0;
+    width: 100%;
+    height: 132px;
+    overflow: visible;
+    z-index: 1;
+    pointer-events: none;
+}
+
+body[data-page="quick-actor"] .complexity-heart-svg polyline {
+    fill: none;
+    stroke: rgba(147, 197, 253, 0.62);
+    stroke-width: 1;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+body[data-page="quick-actor"] .complexity-heart-svg circle {
+    fill: #475569;
+    opacity: 0.72;
+}
+
+body[data-page="quick-actor"] .quick-actor-complexity-map[data-level="3"] .complexity-heart-svg circle:nth-of-type(5),
+body[data-page="quick-actor"] .quick-actor-complexity-map[data-level="3"] .complexity-heart-svg circle:nth-of-type(6) {
+    fill: #f9a8d4;
+    opacity: 1;
+    filter: drop-shadow(0 0 4px rgba(236, 72, 153, 0.8));
+}
+
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-level-a { left: 2%; top: 8px; }
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-level-b { right: 2%; top: 8px; }
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-level-c { left: 15%; top: 62px; }
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-level-d { left: 39%; top: 108px; }
+
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-level {
+    position: absolute;
+    width: 44px;
+    height: 52px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    z-index: 4;
+}
+
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-level-a { left: 4%; top: 16px; }
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-level-b { right: 4%; top: 16px; }
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-level-c { left: 24%; top: 86px; }
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-level-d { left: 50%; top: 112px; transform: translateX(-50%); }
+
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-level .complexity-map-star {
+    left: 50% !important;
+    top: 8px !important;
+    transform: translateX(-50%) !important;
+}
+
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-level small {
+    left: 50% !important;
+    top: 32px !important;
+    transform: translateX(-50%) !important;
+}
+
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-star-e,
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-star-f,
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-star-g {
+    position: absolute;
+    z-index: 3;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #334155;
+    box-shadow: none;
+}
+
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-star-e { left: 20%; top: 76px; }
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-star-f { left: 50%; top: 38px; transform: translateX(-50%); }
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-star-g { right: 20%; top: 76px; }
+
+body[data-page="quick-actor"] .complexity-heart-line {
+    position: absolute;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(147, 197, 253, 0.14), rgba(236, 72, 153, 0.7), rgba(147, 197, 253, 0.14));
+    transform-origin: left center;
+    opacity: 0.72;
+    z-index: 2;
+}
+
+body[data-page="quick-actor"] .complexity-heart-line-1 { left: 8%; top: 38px; width: 34%; transform: rotate(18deg); }
+body[data-page="quick-actor"] .complexity-heart-line-2 { left: 50%; top: 43px; width: 34%; transform: rotate(-18deg); }
+body[data-page="quick-actor"] .complexity-heart-line-3 { left: 23%; top: 80px; width: 31%; transform: rotate(36deg); }
+body[data-page="quick-actor"] .complexity-heart-line-4 { right: 23%; top: 80px; width: 31%; transform: rotate(144deg); transform-origin: right center; }
+body[data-page="quick-actor"] .complexity-heart-line-5 { left: 29%; top: 108px; width: 25%; transform: rotate(29deg); }
+body[data-page="quick-actor"] .complexity-heart-line-6 { right: 29%; top: 108px; width: 25%; transform: rotate(151deg); transform-origin: right center; }
+
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-star-e,
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-star-f,
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-star-g {
+    transition: background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+body[data-page="quick-actor"] .quick-actor-complexity-map[data-level="3"] .complexity-map-star-e,
+body[data-page="quick-actor"] .quick-actor-complexity-map[data-level="3"] .complexity-map-star-f,
+body[data-page="quick-actor"] .quick-actor-complexity-map[data-level="3"] .complexity-map-star-g {
+    background: #f9a8d4;
+    box-shadow: 0 0 12px rgba(236, 72, 153, 0.8);
+}
+
+body[data-page="quick-actor"] .quick-actor-complexity-map strong {
+    bottom: -18px;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    color: #cfe5fb;
 }
