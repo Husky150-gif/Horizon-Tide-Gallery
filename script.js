@@ -425,9 +425,9 @@ const ROUTE_HEAD_METADATA = {
         ogTitle: 'Order Status | Horizon Tide Gallery'
     },
     '#whatwedo': {
-        title: 'What We Do | The Horizon',
+        title: 'What I Do | The Horizon',
         description: 'See Husky services, specialties, and creative offerings across art, animation, and handmade commissions.',
-        ogTitle: 'What We Do | Horizon Tide Gallery'
+        ogTitle: 'What I Do | Horizon Tide Gallery'
     },
     '#horizon-queue': {
         title: 'Horizon Queue | The Horizon',
@@ -7070,7 +7070,7 @@ function loadHomePage() {
         <div class="home-top-nav-strip" role="presentation">
             <nav class="home-top-nav" aria-label="Homepage utility links">
                 <button type="button" class="nav-btn home-top-link nav-pill" id="tosBtn">My TOS</button>
-                <button type="button" class="nav-btn home-top-link nav-pill" id="whatWeDoBtn">What we do</button>
+                <button type="button" class="nav-btn home-top-link nav-pill" id="whatWeDoBtn">What I do</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="socialsBtn">Meet the Artists + FAQ + How to Order</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="reviewsBtn">Reviews</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="contactBtn">Contact me 💬</button>
@@ -8770,13 +8770,13 @@ function loadWhatWeDoPage() {
         <button type="button" id="backHomeBtn" class="nav-btn" style="margin-bottom: 25px; border-color: #ec4899;">← Back to Horizon</button>
         <div class="split-workspace-layout">
             <div class="text-scroller-card">
-                <h3>What We Do</h3>
+                <h3>What I Do</h3>
                 <p>At Horizon Tide, I bring ideas from imagination into reality, from sketches on a screen to creations you can hold in your hands.</p>
                 <p>🎨 <strong>Artist Husky</strong> specializes in creating artwork, character designs, and concepts for physical projects. From illustrations and creative ideas to designing products and visual concepts, every project starts with a spark of imagination.</p>
                 <p>I combine 2D creativity and handmade craftsmanship to make unique projects inspired by the sea, stars, and the things I love.</p>
             </div>
             <div class="visual-media-card">
-                <h3>What we do</h3>
+                <h3>What I do</h3>
                 <img src="https://img.pokemondb.net/sprites/black-white/anim/normal/mew.gif" alt="Mew Normal" class="mew-display-gif">
             </div>
         </div>
