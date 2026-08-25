@@ -6336,6 +6336,8 @@ function bindHomeConversionPack() {
             intentPrimaryBtn.textContent = route.label;
             intentPrimaryBtn.dataset.targetHash = route.hash;
         }
+        const destinationLabel = document.getElementById('quickActorDestinationLabel');
+        if (destinationLabel instanceof HTMLElement) destinationLabel.textContent = route.label;
     };
 
     const updateTeaserEstimate = () => {
@@ -6360,6 +6362,9 @@ function bindHomeConversionPack() {
         const max = pct > 0 ? Math.round(boundedMax * (1 - pct / 100)) : boundedMax;
 
         teaserRange.textContent = formatEstimateRange(min, max);
+        teaserRange.classList.remove('is-revealing');
+        void teaserRange.offsetWidth;
+        teaserRange.classList.add('is-revealing');
         const discountDetail = pct > 0 ? ` Includes active ${pct}% sale pricing.` : '';
         const complexityDetail = spread > 0
             ? 'Higher complexity moves your estimate toward the top of this selected tier.'
@@ -7506,6 +7511,8 @@ function loadQuickActorPage() {
                         <span class="constellation-star constellation-star-core"></span>
                         <span class="constellation-star constellation-star-c"></span>
                         <span class="constellation-star constellation-star-d"></span>
+                        <span class="constellation-destination-label">Your path</span>
+                        <strong id="quickActorDestinationLabel">Start Art Request</strong>
                     </div>
                     <article class="home-conversion-card home-intent-card">
                         <p class="home-conversion-kicker">☾ Your Commission</p>
