@@ -7132,9 +7132,10 @@ function loadHomePage() {
                 <img class="home-pokemon-sprite home-pokemon-magikarp" src="https://img.pokemondb.net/sprites/black-white/anim/normal/magikarp.gif" alt="">
             </div>
             <header class="home-hero-header">
-                <h1>Welcome to The Horizon.</h1>
+                <p class="home-hero-kicker">✦ Husky's Studio · A little corner of space ✦</p>
+                <h1>Husky's Horizon.</h1>
                 <h2>Custom Art • Animation • Handmade Creations</h2>
-                <p class="home-hero-note">Custom pieces with clear timelines, status updates, and artist guidance from inquiry to delivery.</p>
+                <p class="home-hero-note">Dreamy art, animated stories, and handmade pieces made by me with care from first idea to final delivery.</p>
             </header>
 
             <div class="button-container button-container-home home-card-deck-shell">
