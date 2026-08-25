@@ -7616,12 +7616,19 @@ function loadQuickActorPage() {
                                 <input id="homeTeaserComplexity" type="range" min="0" max="3" step="1" value="1">
                             </label>
                             <div class="quick-actor-complexity-map" aria-label="Complexity constellation">
-                                <span class="complexity-map-line complexity-map-line-a"></span>
-                                <span class="complexity-map-line complexity-map-line-b"></span>
+                                <span class="complexity-heart-line complexity-heart-line-1"></span>
+                                <span class="complexity-heart-line complexity-heart-line-2"></span>
+                                <span class="complexity-heart-line complexity-heart-line-3"></span>
+                                <span class="complexity-heart-line complexity-heart-line-4"></span>
+                                <span class="complexity-heart-line complexity-heart-line-5"></span>
+                                <span class="complexity-heart-line complexity-heart-line-6"></span>
                                 <button type="button" class="complexity-map-level complexity-map-level-a" data-complexity-level="0" aria-label="Complexity 0"><span class="complexity-map-star complexity-map-star-a"></span><small>0</small></button>
                                 <button type="button" class="complexity-map-level complexity-map-level-b" data-complexity-level="1" aria-label="Complexity 1"><span class="complexity-map-star complexity-map-star-b"></span><small>1</small></button>
+                                <span class="complexity-map-star complexity-map-star-e" aria-hidden="true"></span>
+                                <span class="complexity-map-star complexity-map-star-f" aria-hidden="true"></span>
                                 <button type="button" class="complexity-map-level complexity-map-level-c" data-complexity-level="2" aria-label="Complexity 2"><span class="complexity-map-star complexity-map-star-c"></span><small>2</small></button>
                                 <button type="button" class="complexity-map-level complexity-map-level-d" data-complexity-level="3" aria-label="Complexity 3"><span class="complexity-map-star complexity-map-star-d"></span><small>3</small></button>
+                                <span class="complexity-map-star complexity-map-star-g" aria-hidden="true"></span>
                                 <strong id="quickActorComplexityLabel">Complexity I</strong>
                             </div>
                             <p class="home-teaser-complexity-note" id="homeTeaserComplexityHelp">Complexity 1: moderate detail, light markings, basic accessories. Based on markings, outfits, props, effects, and overall detail.</p>
