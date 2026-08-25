@@ -7520,6 +7520,16 @@ function loadQuickActorPage() {
                 <p class="quick-actor-subtitle">Shape your request, follow the stars, and discover a planning range before you submit.</p>
 
                 <section class="preorder-quick-actor-grid" aria-label="Quick Actor tools">
+                    <div class="quick-actor-constellation" aria-label="Your commission constellation">
+                        <span class="constellation-line constellation-line-a"></span>
+                        <span class="constellation-line constellation-line-b"></span>
+                        <span class="constellation-line constellation-line-c"></span>
+                        <span class="constellation-star constellation-star-a"></span>
+                        <span class="constellation-star constellation-star-b"></span>
+                        <span class="constellation-star constellation-star-core"></span>
+                        <span class="constellation-star constellation-star-c"></span>
+                        <span class="constellation-star constellation-star-d"></span>
+                    </div>
                     <article class="home-conversion-card home-intent-card">
                         <p class="home-conversion-kicker">☾ Your Commission</p>
                         <h4>Start a Request</h4>
@@ -7538,7 +7548,7 @@ function loadQuickActorPage() {
                                 <option value="rush">Rush timeline</option>
                             </select>
                             <label class="home-intent-budget-field">Your budget (USD)
-                                <input id="homeIntentBudgetAmount" class="form-input" type="number" min="1" step="1" placeholder="Example: 150">
+                                <span class="quick-actor-budget-input"><span class="quick-actor-currency" aria-hidden="true">$</span><input id="homeIntentBudgetAmount" class="form-input" type="number" min="1" step="1" placeholder="150"></span>
                             </label>
                         </div>
                         <div class="quick-actor-path-card">
@@ -7614,16 +7624,6 @@ function loadQuickActorPage() {
                             </div>
                             <p class="home-teaser-complexity-note" id="homeTeaserComplexityHelp">Complexity 1: moderate detail, light markings, basic accessories. Based on markings, outfits, props, effects, and overall detail.</p>
                             <label class="home-teaser-toggle"><input id="homeTeaserRush" type="checkbox"> Rush needed</label>
-                        </div>
-                        <div class="quick-actor-constellation" aria-label="Your commission constellation">
-                            <span class="constellation-line constellation-line-a"></span>
-                            <span class="constellation-line constellation-line-b"></span>
-                            <span class="constellation-line constellation-line-c"></span>
-                            <span class="constellation-star constellation-star-a"></span>
-                            <span class="constellation-star constellation-star-b"></span>
-                            <span class="constellation-star constellation-star-core"></span>
-                            <span class="constellation-star constellation-star-c"></span>
-                            <span class="constellation-star constellation-star-d"></span>
                         </div>
                         <div class="quick-actor-estimate-result">
                             <p class="quick-actor-estimate-kicker">✦ Estimated Range ✦</p>
