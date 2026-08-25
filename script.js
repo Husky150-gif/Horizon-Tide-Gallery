@@ -7524,11 +7524,13 @@ function loadQuickActorPage() {
                         <span class="constellation-line constellation-line-a"></span>
                         <span class="constellation-line constellation-line-b"></span>
                         <span class="constellation-line constellation-line-c"></span>
+                        <span class="constellation-line constellation-line-d"></span>
                         <span class="constellation-star constellation-star-a"></span>
                         <span class="constellation-star constellation-star-b"></span>
                         <span class="constellation-star constellation-star-core"></span>
                         <span class="constellation-star constellation-star-c"></span>
                         <span class="constellation-star constellation-star-d"></span>
+                        <span class="constellation-star constellation-star-e"></span>
                     </div>
                     <article class="home-conversion-card home-intent-card">
                         <p class="home-conversion-kicker">☾ Your Commission</p>
