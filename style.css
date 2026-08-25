@@ -18988,13 +18988,25 @@ body[data-page="home"] .home-hero-note {
 }
 
 body[data-page="home"] .home-pokemon-mew {
-    left: 22%;
-    top: 24%;
+    left: 12%;
+    top: 48%;
+    transform: scale(0.9);
 }
 
 body[data-page="home"] .home-pokemon-magikarp {
-    right: 22%;
-    bottom: 16%;
+    right: 13%;
+    bottom: 8%;
+    transform: scale(0.92);
+}
+
+body[data-page="home"] .home-top-nav-strip {
+    opacity: 1 !important;
+}
+
+body[data-page="home"] .home-top-link {
+    background: rgba(5, 12, 30, 0.82);
+    border-color: rgba(96, 165, 250, 0.46);
+    box-shadow: 0 0 14px rgba(59, 130, 246, 0.1);
 }
 
 body[data-page="home"] .celestial-nav-console {
