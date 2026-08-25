@@ -18989,9 +18989,14 @@ body[data-page="home"] .home-hero-note {
 
 body[data-page="home"] .home-pokemon-mew {
     left: auto;
-    right: 5%;
-    top: 28%;
-    transform: scale(0.9);
+    right: 20%;
+    top: 10%;
+    width: 72px !important;
+    height: 72px !important;
+    max-width: 72px;
+    max-height: 72px;
+    transform: rotate(-8deg);
+    filter: drop-shadow(0 0 12px rgba(249, 168, 212, 0.9)) drop-shadow(0 0 22px rgba(96, 165, 250, 0.38));
 }
 
 body[data-page="home"] .home-pokemon-magikarp {
