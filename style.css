@@ -18311,3 +18311,52 @@ body[data-page="quick-actor"] .quick-actor-complexity-map[data-level="3"] .compl
 body[data-page="quick-actor"] .quick-actor-complexity-map[data-level="3"] .complexity-map-star-d {
     transform: translateX(-50%) scale(1.3);
 }
+
+body[data-page="quick-actor"] .quick-actor-constellation {
+    width: 168px;
+    height: 128px;
+    background: radial-gradient(circle at 50% 48%, rgba(236, 72, 153, 0.16), transparent 62%);
+}
+
+body[data-page="quick-actor"] .quick-actor-constellation .constellation-star-a { left: 25px; top: 24px; }
+body[data-page="quick-actor"] .quick-actor-constellation .constellation-star-b { right: 25px; top: 24px; }
+body[data-page="quick-actor"] .quick-actor-constellation .constellation-star-core { left: 50%; top: 48px; }
+body[data-page="quick-actor"] .quick-actor-constellation .constellation-star-c { left: 52px; bottom: 18px; }
+body[data-page="quick-actor"] .quick-actor-constellation .constellation-star-d { right: 52px; bottom: 18px; }
+
+body[data-page="quick-actor"] .quick-actor-constellation .constellation-line {
+    left: 50%;
+    top: 54px;
+    width: 40px;
+    height: 1px;
+    transform-origin: left center;
+    opacity: 0.72;
+}
+body[data-page="quick-actor"] .quick-actor-constellation .constellation-line-a { transform: rotate(215deg); }
+body[data-page="quick-actor"] .quick-actor-constellation .constellation-line-b { transform: rotate(-35deg); }
+body[data-page="quick-actor"] .quick-actor-constellation .constellation-line-c { top: 62px; width: 48px; transform: rotate(112deg); }
+
+body[data-page="quick-actor"] .quick-actor-complexity-map::before {
+    display: none;
+}
+
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-line {
+    width: 30%;
+    left: 20%;
+    top: 42px;
+    background: linear-gradient(90deg, rgba(96, 165, 250, 0.18), rgba(236, 72, 153, 0.72));
+}
+
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-line-a { transform: rotate(28deg); }
+body[data-page="quick-actor"] .quick-actor-complexity-map .complexity-map-line-b { left: 50%; transform: rotate(-28deg); }
+
+input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+}
