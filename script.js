@@ -7512,6 +7512,17 @@ function loadQuickActorPage() {
                 <p class="quick-actor-subtitle">Shape your request, follow the stars, and discover a planning range before you submit.</p>
 
                 <section class="preorder-quick-actor-grid" aria-label="Quick Actor tools">
+                    <div class="quick-actor-center-heart" aria-hidden="true">
+                        <svg viewBox="0 0 180 150" focusable="false">
+                            <path d="M90 136 L24 72 C-8 40 18 8 49 24 L90 55 L131 24 C162 8 188 40 156 72 Z"></path>
+                            <circle cx="49" cy="32" r="4"></circle>
+                            <circle cx="90" cy="62" r="3"></circle>
+                            <circle cx="131" cy="32" r="4"></circle>
+                            <circle cx="151" cy="72" r="3"></circle>
+                            <circle cx="90" cy="136" r="5"></circle>
+                            <circle cx="29" cy="72" r="3"></circle>
+                        </svg>
+                    </div>
                     <article class="home-conversion-card home-intent-card">
                         <p class="home-conversion-kicker">☾ Your Commission</p>
                         <h4>Start a Request</h4>
@@ -7596,28 +7607,10 @@ function loadQuickActorPage() {
                                 <input id="homeTeaserComplexity" type="range" min="0" max="3" step="1" value="1">
                             </label>
                             <div class="quick-actor-complexity-map" aria-label="Complexity constellation">
-                                <svg class="complexity-heart-svg" viewBox="0 0 200 140" aria-hidden="true" focusable="false">
-                                    <polyline points="24,28 100,44 176,28 158,78 100,126 42,78 24,28"></polyline>
-                                    <circle cx="24" cy="28" r="4"></circle>
-                                    <circle cx="100" cy="44" r="3"></circle>
-                                    <circle cx="176" cy="28" r="4"></circle>
-                                    <circle cx="158" cy="78" r="3"></circle>
-                                    <circle cx="100" cy="126" r="5"></circle>
-                                    <circle cx="42" cy="78" r="3"></circle>
-                                </svg>
-                                <span class="complexity-heart-line complexity-heart-line-1"></span>
-                                <span class="complexity-heart-line complexity-heart-line-2"></span>
-                                <span class="complexity-heart-line complexity-heart-line-3"></span>
-                                <span class="complexity-heart-line complexity-heart-line-4"></span>
-                                <span class="complexity-heart-line complexity-heart-line-5"></span>
-                                <span class="complexity-heart-line complexity-heart-line-6"></span>
                                 <button type="button" class="complexity-map-level complexity-map-level-a" data-complexity-level="0" aria-label="Complexity 0"><span class="complexity-map-star complexity-map-star-a"></span><small>0</small></button>
                                 <button type="button" class="complexity-map-level complexity-map-level-b" data-complexity-level="1" aria-label="Complexity 1"><span class="complexity-map-star complexity-map-star-b"></span><small>1</small></button>
-                                <span class="complexity-map-star complexity-map-star-e" aria-hidden="true"></span>
-                                <span class="complexity-map-star complexity-map-star-f" aria-hidden="true"></span>
                                 <button type="button" class="complexity-map-level complexity-map-level-c" data-complexity-level="2" aria-label="Complexity 2"><span class="complexity-map-star complexity-map-star-c"></span><small>2</small></button>
                                 <button type="button" class="complexity-map-level complexity-map-level-d" data-complexity-level="3" aria-label="Complexity 3"><span class="complexity-map-star complexity-map-star-d"></span><small>3</small></button>
-                                <span class="complexity-map-star complexity-map-star-g" aria-hidden="true"></span>
                                 <strong id="quickActorComplexityLabel">Complexity I</strong>
                             </div>
                             <p class="home-teaser-complexity-note" id="homeTeaserComplexityHelp">Complexity 1: moderate detail, light markings, basic accessories. Based on markings, outfits, props, effects, and overall detail.</p>
