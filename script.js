@@ -6381,6 +6381,11 @@ function bindHomeConversionPack() {
         const complexityLabel = document.getElementById('quickActorComplexityLabel');
         if (complexityMap instanceof HTMLElement) complexityMap.dataset.level = String(complexity);
         if (complexityLabel instanceof HTMLElement) complexityLabel.textContent = `Complexity ${['0', 'I', 'II', 'III'][complexity]}`;
+        document.querySelectorAll('[data-complexity-level]').forEach((levelButton) => {
+            if (levelButton instanceof HTMLButtonElement) {
+                levelButton.setAttribute('aria-pressed', levelButton.dataset.complexityLevel === String(complexity) ? 'true' : 'false');
+            }
+        });
     };
 
     const handleIntentPrimaryClick = (event) => {
@@ -6443,6 +6448,15 @@ function bindHomeConversionPack() {
     teaserQty?.addEventListener('input', updateTeaserEstimate);
     teaserComplexity?.addEventListener('input', updateTeaserEstimate);
     teaserRush?.addEventListener('change', updateTeaserEstimate);
+    document.querySelectorAll('[data-complexity-level]').forEach((levelButton) => {
+        if (!(levelButton instanceof HTMLButtonElement)) return;
+        levelButton.addEventListener('click', () => {
+            if (!(teaserComplexity instanceof HTMLInputElement)) return;
+            teaserComplexity.value = levelButton.dataset.complexityLevel || '0';
+            teaserComplexity.dispatchEvent(new Event('input', { bubbles: true }));
+            teaserComplexity.focus();
+        });
+    });
     teaserPricingBtn?.addEventListener('click', (event) => cinematicTransition(event, loadPricingPage, '#pricing'));
     smartPrimaryBtn?.addEventListener('click', handleSmartPrimaryClick);
     smartStatusBtn?.addEventListener('click', (event) => cinematicTransition(event, loadHuskysListPage, '#horizon-queue'));
@@ -7586,16 +7600,16 @@ function loadQuickActorPage() {
                             <label class="home-teaser-field">Quantity
                                 <input id="homeTeaserQty" class="form-input" type="number" min="1" max="10" value="1">
                             </label>
-                            <label class="home-teaser-field">Complexity (0-3)
+                            <label class="home-teaser-field">Complexity
                                 <input id="homeTeaserComplexity" type="range" min="0" max="3" step="1" value="1">
                             </label>
                             <div class="quick-actor-complexity-map" aria-label="Complexity constellation">
                                 <span class="complexity-map-line complexity-map-line-a"></span>
                                 <span class="complexity-map-line complexity-map-line-b"></span>
-                                <span class="complexity-map-star complexity-map-star-a"></span>
-                                <span class="complexity-map-star complexity-map-star-b"></span>
-                                <span class="complexity-map-star complexity-map-star-c"></span>
-                                <span class="complexity-map-star complexity-map-star-d"></span>
+                                <button type="button" class="complexity-map-level complexity-map-level-a" data-complexity-level="0" aria-label="Complexity 0"><span class="complexity-map-star complexity-map-star-a"></span><small>0</small></button>
+                                <button type="button" class="complexity-map-level complexity-map-level-b" data-complexity-level="1" aria-label="Complexity 1"><span class="complexity-map-star complexity-map-star-b"></span><small>1</small></button>
+                                <button type="button" class="complexity-map-level complexity-map-level-c" data-complexity-level="2" aria-label="Complexity 2"><span class="complexity-map-star complexity-map-star-c"></span><small>2</small></button>
+                                <button type="button" class="complexity-map-level complexity-map-level-d" data-complexity-level="3" aria-label="Complexity 3"><span class="complexity-map-star complexity-map-star-d"></span><small>3</small></button>
                                 <strong id="quickActorComplexityLabel">Complexity I</strong>
                             </div>
                             <p class="home-teaser-complexity-note" id="homeTeaserComplexityHelp">Complexity 1: moderate detail, light markings, basic accessories. Based on markings, outfits, props, effects, and overall detail.</p>
