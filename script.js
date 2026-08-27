@@ -4267,96 +4267,166 @@ function getPricingEditorFieldDefinitions() {
         {
             title: 'Art',
             description: 'Digital art starting prices and add-ons.',
-            fields: [
-                { label: 'Icon Flat', path: 'art.icon.flat' },
-                { label: 'Icon Cel', path: 'art.icon.cel' },
-                { label: 'Icon Rendered', path: 'art.icon.rendered' },
-                { label: 'Headshot Flat', path: 'art.headshot.flat' },
-                { label: 'Headshot Cel', path: 'art.headshot.cel' },
-                { label: 'Headshot Rendered', path: 'art.headshot.rendered' },
-                { label: 'Bust Flat', path: 'art.bust.flat' },
-                { label: 'Bust Cel', path: 'art.bust.cel' },
-                { label: 'Bust Rendered', path: 'art.bust.rendered' },
-                { label: 'Half Body Flat', path: 'art.halfBody.flat' },
-                { label: 'Half Body Cel', path: 'art.halfBody.cel' },
-                { label: 'Half Body Rendered', path: 'art.halfBody.rendered' },
-                { label: 'Full Body Flat', path: 'art.fullBody.flat' },
-                { label: 'Full Body Cel', path: 'art.fullBody.cel' },
-                { label: 'Full Body Rendered', path: 'art.fullBody.rendered' },
-                { label: 'Scene Flat', path: 'art.scene.flat' },
-                { label: 'Scene Cel', path: 'art.scene.cel' },
-                { label: 'Scene Rendered', path: 'art.scene.rendered' },
-                { label: 'Reference Sheet Basic', path: 'art.refSheets.basic' },
-                { label: 'Reference Sheet Basic Cel', path: 'art.refSheets.basicCel' },
-                { label: 'Reference Sheet Basic Max', path: 'art.refSheets.basicMax' },
-                { label: 'Reference Sheet Standard', path: 'art.refSheets.standard' },
-                { label: 'Reference Sheet Standard Cel', path: 'art.refSheets.standardCel' },
-                { label: 'Reference Sheet Standard Max', path: 'art.refSheets.standardMax' },
-                { label: 'Reference Sheet Deluxe', path: 'art.refSheets.deluxe' },
-                { label: 'Reference Sheet Deluxe Cel', path: 'art.refSheets.deluxeCel' },
-                { label: 'Reference Sheet Deluxe Max', path: 'art.refSheets.deluxeMax' },
-                { label: 'Extra Outfit', path: 'art.addOns.extraOutfit' },
-                { label: 'Prop', path: 'art.addOns.prop' },
-                { label: 'Detailed Background', path: 'art.addOns.detailedBackground' },
-                { label: 'Sticker Pack', path: 'art.addOns.stickerPack' }
+            subGroups: [
+                {
+                    label: 'Icons & Headshots',
+                    fields: [
+                        { label: 'Icon Flat', path: 'art.icon.flat' },
+                        { label: 'Icon Cel', path: 'art.icon.cel' },
+                        { label: 'Icon Rendered', path: 'art.icon.rendered' },
+                        { label: 'Headshot Flat', path: 'art.headshot.flat' },
+                        { label: 'Headshot Cel', path: 'art.headshot.cel' },
+                        { label: 'Headshot Rendered', path: 'art.headshot.rendered' }
+                    ]
+                },
+                {
+                    label: 'Bust & Half Body',
+                    fields: [
+                        { label: 'Bust Flat', path: 'art.bust.flat' },
+                        { label: 'Bust Cel', path: 'art.bust.cel' },
+                        { label: 'Bust Rendered', path: 'art.bust.rendered' },
+                        { label: 'Half Body Flat', path: 'art.halfBody.flat' },
+                        { label: 'Half Body Cel', path: 'art.halfBody.cel' },
+                        { label: 'Half Body Rendered', path: 'art.halfBody.rendered' }
+                    ]
+                },
+                {
+                    label: 'Full Body & Scenes',
+                    fields: [
+                        { label: 'Full Body Flat', path: 'art.fullBody.flat' },
+                        { label: 'Full Body Cel', path: 'art.fullBody.cel' },
+                        { label: 'Full Body Rendered', path: 'art.fullBody.rendered' },
+                        { label: 'Scene Flat', path: 'art.scene.flat' },
+                        { label: 'Scene Cel', path: 'art.scene.cel' },
+                        { label: 'Scene Rendered', path: 'art.scene.rendered' }
+                    ]
+                },
+                {
+                    label: 'Reference Sheets',
+                    fields: [
+                        { label: 'Basic', path: 'art.refSheets.basic' },
+                        { label: 'Basic Cel', path: 'art.refSheets.basicCel' },
+                        { label: 'Basic Max', path: 'art.refSheets.basicMax' },
+                        { label: 'Standard', path: 'art.refSheets.standard' },
+                        { label: 'Standard Cel', path: 'art.refSheets.standardCel' },
+                        { label: 'Standard Max', path: 'art.refSheets.standardMax' },
+                        { label: 'Deluxe', path: 'art.refSheets.deluxe' },
+                        { label: 'Deluxe Cel', path: 'art.refSheets.deluxeCel' },
+                        { label: 'Deluxe Max', path: 'art.refSheets.deluxeMax' }
+                    ]
+                },
+                {
+                    label: 'Add-ons',
+                    fields: [
+                        { label: 'Extra Outfit', path: 'art.addOns.extraOutfit' },
+                        { label: 'Prop', path: 'art.addOns.prop' },
+                        { label: 'Detailed Background', path: 'art.addOns.detailedBackground' },
+                        { label: 'Sticker Pack', path: 'art.addOns.stickerPack' }
+                    ]
+                }
             ]
         },
         {
             title: 'Animation',
             description: 'Loop and scene pricing ranges.',
-            fields: [
-                { label: 'Loop Min', path: 'animation.loop.min' },
-                { label: 'Loop Max', path: 'animation.loop.max' },
-                { label: 'Simple Min', path: 'animation.simple.min' },
-                { label: 'Simple Max', path: 'animation.simple.max' },
-                { label: 'Full Character Min', path: 'animation.fullCharacter.min' },
-                { label: 'Full Character Max', path: 'animation.fullCharacter.max' },
-                { label: 'Long Scene', path: 'animation.complexScene' },
-                { label: 'Extra Character Min', path: 'animation.extraCharacter.min' },
-                { label: 'Extra Character Max', path: 'animation.extraCharacter.max' },
-                { label: 'Simple BG Min', path: 'animation.simpleBackground.min' },
-                { label: 'Simple BG Max', path: 'animation.simpleBackground.max' },
-                { label: 'Detailed BG Min', path: 'animation.detailedBackground.min' },
-                { label: 'Detailed BG Max', path: 'animation.detailedBackground.max' },
-                { label: 'Complex Motion Min', path: 'animation.complexMotion.min' },
-                { label: 'Complex Motion Max', path: 'animation.complexMotion.max' },
-                { label: 'Lip Sync Add-on', path: 'animation.lipSync' }
+            subGroups: [
+                {
+                    label: 'Loops & Simple Scenes',
+                    fields: [
+                        { label: 'Loop Min', path: 'animation.loop.min' },
+                        { label: 'Loop Max', path: 'animation.loop.max' },
+                        { label: 'Simple Min', path: 'animation.simple.min' },
+                        { label: 'Simple Max', path: 'animation.simple.max' }
+                    ]
+                },
+                {
+                    label: 'Full Character & Long Scenes',
+                    fields: [
+                        { label: 'Full Character Min', path: 'animation.fullCharacter.min' },
+                        { label: 'Full Character Max', path: 'animation.fullCharacter.max' },
+                        { label: 'Long Scene', path: 'animation.complexScene' },
+                        { label: 'Extra Character Min', path: 'animation.extraCharacter.min' },
+                        { label: 'Extra Character Max', path: 'animation.extraCharacter.max' }
+                    ]
+                },
+                {
+                    label: 'Backgrounds & Motion',
+                    fields: [
+                        { label: 'Simple BG Min', path: 'animation.simpleBackground.min' },
+                        { label: 'Simple BG Max', path: 'animation.simpleBackground.max' },
+                        { label: 'Detailed BG Min', path: 'animation.detailedBackground.min' },
+                        { label: 'Detailed BG Max', path: 'animation.detailedBackground.max' },
+                        { label: 'Complex Motion Min', path: 'animation.complexMotion.min' },
+                        { label: 'Complex Motion Max', path: 'animation.complexMotion.max' }
+                    ]
+                },
+                {
+                    label: 'Add-ons',
+                    fields: [
+                        { label: 'Lip Sync Add-on', path: 'animation.lipSync' }
+                    ]
+                }
             ]
         },
         {
             title: 'Stickers',
             description: 'Sticker sheet and print add-on pricing.',
-            fields: [
-                { label: 'Single Sticker', path: 'stickers.single' },
-                { label: 'Matching Pair', path: 'stickers.pair' },
-                { label: 'Sticker Sheet', path: 'stickers.sheet' },
-                { label: 'Small Batch', path: 'stickers.smallBatch' },
-                { label: 'Print Add-on First Copy', path: 'stickers.printing.firstCopy' },
-                { label: 'Print Add-on Extra Copy', path: 'stickers.printing.additionalCopy' }
+            subGroups: [
+                {
+                    label: 'Sticker Pricing',
+                    fields: [
+                        { label: 'Single Sticker', path: 'stickers.single' },
+                        { label: 'Matching Pair', path: 'stickers.pair' },
+                        { label: 'Sticker Sheet', path: 'stickers.sheet' },
+                        { label: 'Small Batch', path: 'stickers.smallBatch' }
+                    ]
+                },
+                {
+                    label: 'Printing Add-ons',
+                    fields: [
+                        { label: 'Print Add-on First Copy', path: 'stickers.printing.firstCopy' },
+                        { label: 'Print Add-on Extra Copy', path: 'stickers.printing.additionalCopy' }
+                    ]
+                }
             ]
         },
         {
             title: 'Keychains',
             description: 'Premade finish costs and custom charm starts.',
-            fields: [
-                { label: 'Clear Acrylic', path: 'keychains.premade.clearAcrylic' },
-                { label: 'Epoxy', path: 'keychains.premade.epoxy' },
-                { label: 'Colored Acrylic', path: 'keychains.premade.coloredAcrylic' },
-                { label: 'Rainbow Acrylic', path: 'keychains.premade.rainbowAcrylic' },
-                { label: 'Translucent Acrylic', path: 'keychains.premade.translucentAcrylic' },
-                { label: 'Holographic', path: 'keychains.premade.holographic' },
-                { label: 'Glow in the Dark', path: 'keychains.premade.glowInDark' },
-                { label: 'Chibi/Icon', path: 'keychains.custom.chibiIcon' },
-                { label: 'Half Body', path: 'keychains.custom.halfBody' },
-                { label: 'Full Body', path: 'keychains.custom.fullBody' },
-                { label: 'Complex Character', path: 'keychains.custom.complexCharacter' }
+            subGroups: [
+                {
+                    label: 'Premade Finishes',
+                    fields: [
+                        { label: 'Clear Acrylic', path: 'keychains.premade.clearAcrylic' },
+                        { label: 'Epoxy', path: 'keychains.premade.epoxy' },
+                        { label: 'Colored Acrylic', path: 'keychains.premade.coloredAcrylic' },
+                        { label: 'Rainbow Acrylic', path: 'keychains.premade.rainbowAcrylic' },
+                        { label: 'Translucent Acrylic', path: 'keychains.premade.translucentAcrylic' },
+                        { label: 'Holographic', path: 'keychains.premade.holographic' },
+                        { label: 'Glow in the Dark', path: 'keychains.premade.glowInDark' }
+                    ]
+                },
+                {
+                    label: 'Custom Charms',
+                    fields: [
+                        { label: 'Chibi/Icon', path: 'keychains.custom.chibiIcon' },
+                        { label: 'Half Body', path: 'keychains.custom.halfBody' },
+                        { label: 'Full Body', path: 'keychains.custom.fullBody' },
+                        { label: 'Complex Character', path: 'keychains.custom.complexCharacter' }
+                    ]
+                }
             ]
         },
         {
             title: 'Meta',
             description: 'Editor-wide defaults.',
-            fields: [
-                { label: 'Premium Margin Percent', path: 'meta.premiumMarginPercent' }
+            subGroups: [
+                {
+                    label: 'Defaults',
+                    fields: [
+                        { label: 'Premium Margin Percent', path: 'meta.premiumMarginPercent' }
+                    ]
+                }
             ]
         }
     ];
@@ -4385,7 +4455,9 @@ function renderPricingFieldCard(fieldGroup, config) {
         return normalizePricingNumber(current, 0);
     };
 
-    const fieldsHTML = fieldGroup.fields.map((field) => {
+    const allFields = fieldGroup.subGroups.flatMap((subGroup) => subGroup.fields);
+
+    const renderFieldsHTML = (fields) => fields.map((field) => {
         const value = readConfigValue(config, field.path);
         return `
             <label class="admin-label admin-pricing-field">
@@ -4395,7 +4467,19 @@ function renderPricingFieldCard(fieldGroup, config) {
         `;
     }).join('');
 
-    const numericValues = fieldGroup.fields
+    const subGroupsHTML = fieldGroup.subGroups.length > 1
+        ? fieldGroup.subGroups.map((subGroup, index) => `
+            <details class="admin-pricing-subgroup" ${index === 0 ? 'open' : ''}>
+                <summary class="admin-pricing-subgroup-summary">
+                    <span>${escapeHTML(subGroup.label)}</span>
+                    <span class="admin-pricing-subgroup-summary__count">${subGroup.fields.length}</span>
+                </summary>
+                <div class="admin-pricing-group-grid">${renderFieldsHTML(subGroup.fields)}</div>
+            </details>
+        `).join('')
+        : `<div class="admin-pricing-group-grid">${renderFieldsHTML(allFields)}</div>`;
+
+    const numericValues = allFields
         .map((field) => readConfigValue(config, field.path))
         .filter((value) => Number.isFinite(value));
     const formatPricingValue = (value) => `$${Math.round(value).toLocaleString()}`;
@@ -4410,8 +4494,8 @@ function renderPricingFieldCard(fieldGroup, config) {
             : `${formatPricingValue(minValue)} - ${formatPricingValue(maxValue)}`;
     }
     const groupMetaLabel = pricingRangeLabel
-        ? `${fieldGroup.fields.length} fields - ${pricingRangeLabel}`
-        : `${fieldGroup.fields.length} fields`;
+        ? `${allFields.length} fields - ${pricingRangeLabel}`
+        : `${allFields.length} fields`;
 
     const tone = getAdminPricingGroupTone(fieldGroup.title);
     const anchorId = `adminPricingGroup-${String(fieldGroup.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
@@ -4427,7 +4511,7 @@ function renderPricingFieldCard(fieldGroup, config) {
                 <span class="admin-pricing-group-summary__meta">${escapeHTML(groupMetaLabel)}</span>
             </summary>
             <div class="admin-pricing-group-body">
-                <div class="admin-pricing-group-grid">${fieldsHTML}</div>
+                ${subGroupsHTML}
             </div>
         </details>
     `;
@@ -5329,15 +5413,17 @@ function renderHomeStars() {
     homeStarField.innerHTML = "";
     if (!canRunHeavyVisuals()) return;
     
-    const countTarget = getAdaptiveCount(72, 18);
+    const countTarget = getAdaptiveCount(120, 34);
     
     for (let i = 0; i < countTarget; i++) {
         const star = document.createElement('div');
         star.className = `star decorative`;
         star.style.top = `${Math.random() * 100}%`;
         star.style.left = `${Math.random() * 100}%`;
-        star.style.animationDuration = `${40 + Math.random() * 60}s`;
-        star.style.animationDelay = `${Math.random() * -100}s`;
+        star.style.setProperty('--drift-duration', `${16 + Math.random() * 26}s`);
+        star.style.setProperty('--drift-delay', `${Math.random() * -60}s`);
+        star.style.setProperty('--twinkle-duration', `${1.2 + Math.random() * 2.6}s`);
+        star.style.setProperty('--twinkle-delay', `${Math.random() * -6}s`);
         
         const size = Math.random() > 0.8 ? 5 : (Math.random() > 0.5 ? 3 : 2);
         star.style.width = `${size}px`;
@@ -5428,7 +5514,8 @@ function renderDashboardStars() {
         star.style.height = `${size}px`;
         star.style.top = `${Math.floor(Math.random() * 85) + 5}%`;
         star.style.left = `${Math.floor(Math.random() * 92) + 4}%`;
-        star.style.animationDelay = `${Math.random() * 4}s`;
+        star.style.setProperty('--pulse-duration', `${2 + Math.random() * 2.6}s`);
+        star.style.setProperty('--pulse-delay', `${Math.random() * -4}s`);
         dashboardStarField.appendChild(star);
     }
 }
@@ -7116,7 +7203,10 @@ function loadHomePage() {
     appViewport.innerHTML = `
         <div class="home-top-nav-strip" role="presentation">
             <nav class="home-top-nav" aria-label="Homepage utility links">
-                <button type="button" class="nav-btn home-top-link nav-pill" id="tosBtn">My TOS</button>
+                <button type="button" class="nav-btn home-top-link nav-pill tos-nav-link" id="tosBtn">
+                    <span class="tos-nav-link__mew" aria-hidden="true"><img src="https://img.pokemondb.net/sprites/black-white/anim/normal/mew.gif" alt=""></span>
+                    <span class="tos-nav-link__copy"><span class="tos-nav-link__eyebrow">Read before commissioning</span><strong>My TOS</strong></span>
+                </button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="whatWeDoBtn">What I do</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="socialsBtn">My World + FAQ</button>
                 <button type="button" class="nav-btn home-top-link nav-pill" id="reviewsBtn">Reviews</button>
@@ -7126,9 +7216,8 @@ function loadHomePage() {
 
         <section class="home-hero-shell" aria-label="Welcome and primary actions">
 
-            <div class="gif-container"><img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/umbreon.gif" alt="Shiny Umbreon" class="active-pokemon-gif"></div>
+            <div class="gif-container home-mascot-row"><span class="home-star-spark" aria-hidden="true">✦</span><img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/umbreon.gif" alt="Shiny Umbreon" class="active-pokemon-gif"><span class="home-star-spark home-star-spark--right" aria-hidden="true">✧</span></div>
             <div class="home-pokemon-orbit" aria-hidden="true">
-                <img class="home-pokemon-sprite home-pokemon-mew" src="https://img.pokemondb.net/sprites/black-white/anim/normal/mew.gif" alt="">
                 <img class="home-pokemon-sprite home-pokemon-magikarp" src="https://img.pokemondb.net/sprites/black-white/anim/normal/magikarp.gif" alt="">
             </div>
             <header class="home-hero-header">
@@ -8724,9 +8813,10 @@ function loadCustomStickersForm() {
 }
 
 function loadPremadeKeychainsForm() {
-    clearBubbles(); bodyElement.setAttribute('data-theme', 'cosmic-green-pink'); bodyElement.setAttribute('data-page', 'premade-form'); renderDynamicMoon(); renderDashboardStars();
+    clearBubbles(); bodyElement.setAttribute('data-theme', 'premade-cosmic'); bodyElement.setAttribute('data-page', 'premade-form'); renderDynamicMoon(); renderDashboardStars();
     appViewport.innerHTML = `
         <div class="preorder-card menu-large" style="margin-bottom: 25px;">
+            <div class="premade-header-mascot" aria-hidden="true"><img src="https://img.pokemondb.net/sprites/black-white/anim/normal/pichu.gif" alt=""></div>
             <h1 style="color: #ffffff; text-shadow: 0 0 15px #00f2fe; font-size: 2.5rem;">Premade Keychains</h1>
             <p style="color: #e2e8f0; margin-bottom: 20px;">Select from available in-stock designs below.</p>
             <div id="premadeKeychainGalleryWrap">${buildPremadeKeychainGalleryMarkup()}</div>
@@ -17968,6 +18058,7 @@ function renderAdminOrders(ordersArr) {
 
         const card = document.createElement('div');
         card.className = "admin-card admin-order-card";
+        card.dataset.status = order.status || 'Pending Review';
         const orderDate = order.createdAt ? new Date(order.createdAt.toDate()).toLocaleDateString() : 'Unknown Date';
         const notes = order.notes || "None";
         const email = order.email || "No Email";
@@ -18038,7 +18129,7 @@ function renderAdminOrders(ordersArr) {
             'New': 'is-amber',
             'Pending Review': 'is-amber',
             'Needs Reply': 'is-amber',
-            'Waiting Payment': 'is-purple',
+            'Waiting Payment': 'is-amber',
             'In Progress': 'is-cyan',
             'Completed': 'is-green'
         };
@@ -18066,26 +18157,23 @@ function renderAdminOrders(ordersArr) {
                 <span class="admin-order-badge ${badgeToneClass}">${escapeHTML(attentionBadge)}</span>
             </div>
 
-            <div class="admin-order-meta-row">
-                <span class="admin-order-meta-pill"><strong>ID:</strong> ${escapeHTML(order.orderId || 'N/A')}</span>
-                <span class="admin-order-meta-pill"><strong>Customer:</strong> ${escapeHTML(displayName)}</span>
-                <span class="admin-order-meta-pill"><strong>Creator:</strong> ${escapeHTML(creatorLabel)}</span>
-                <span class="admin-order-meta-pill"><strong>Date:</strong> ${escapeHTML(orderDate)}</span>
-                <span class="admin-order-meta-pill"><strong>Final:</strong> ${escapeHTML(finalMetaValue)}</span>
-                ${submittedEstimate ? `<span class="admin-order-meta-pill"><strong>Submitted Est:</strong> ${escapeHTML(submittedEstimate)}</span>` : ''}
-                ${submittedSuggestedPriceText ? `<span class="admin-order-meta-pill"><strong>Suggested:</strong> ${escapeHTML(submittedSuggestedPriceText)}</span>` : ''}
-                <span class="admin-order-meta-pill"><strong>Status:</strong> ${escapeHTML(currentStatus)}</span>
-                ${isArchived ? `<span class="admin-order-meta-pill admin-order-meta-pill--archived"><strong>Archive:</strong> ${escapeHTML(archivedAtLabel || 'Archived')}</span>` : ''}
-                <span class="admin-order-meta-pill"><strong>Public Uploads:</strong> <span class="admin-order-public-refs-flag ${refsPublished ? 'is-published' : 'is-hidden'}">${refsPublished ? `${publishedRefsCount} Published` : 'Hidden'}</span></span>
+            <div class="admin-order-meta-line">
+                <span><strong>${escapeHTML(order.orderId || 'N/A')}</strong></span>
+                <span>${escapeHTML(displayName)}</span>
+                <span>${escapeHTML(creatorLabel)}</span>
+                <span>${escapeHTML(orderDate)}</span>
+                <span>Final: ${escapeHTML(finalMetaValue)}</span>
+                ${submittedEstimate ? `<span>Est: ${escapeHTML(submittedEstimate)}</span>` : ''}
+                ${isArchived ? `<span class="admin-order-meta-pill--archived">Archived ${escapeHTML(archivedAtLabel || '')}</span>` : ''}
+                <span>Uploads: <span class="admin-order-public-refs-flag ${refsPublished ? 'is-published' : 'is-hidden'}">${refsPublished ? `${publishedRefsCount} Published` : 'Hidden'}</span></span>
             </div>
 
-            ${submittedEstimateDiscount ? `<div class="admin-detail" style="margin-bottom: 10px; color: #cdeafe;"><strong>Estimate Discount:</strong> ${escapeHTML(submittedEstimateDiscount)}</div>` : ''}
-            ${submittedSuggestedPriceText ? `<div class="admin-detail" style="margin-bottom: 10px; color: #a7f3d0;"><strong>Suggested Price:</strong> ${escapeHTML(submittedSuggestedPriceText)}</div>` : ''}
-            <div class="admin-detail" style="margin-bottom: 10px; color: ${(finalBelowFloor || quoteBelowFloor) ? '#fca5a5' : '#86efac'};">
-                <strong>${(finalBelowFloor || quoteBelowFloor) ? 'Budget Alert:' : 'Sustainable Floor:'}</strong>
-                ${(finalBelowFloor || quoteBelowFloor)
-                    ? `Current quote/final is below ${escapeHTML(sustainableFloorLabel)} for this order.`
-                    : `${escapeHTML(sustainableFloorLabel)} target met.`}
+            <div class="admin-order-signal-row">
+                ${submittedSuggestedPriceText ? `<span class="admin-order-signal-chip is-neutral">Suggested ${escapeHTML(submittedSuggestedPriceText)}</span>` : ''}
+                ${submittedEstimateDiscount ? `<span class="admin-order-signal-chip is-neutral">${escapeHTML(submittedEstimateDiscount)}</span>` : ''}
+                <span class="admin-order-signal-chip ${(finalBelowFloor || quoteBelowFloor) ? 'is-warning' : 'is-good'}">
+                    ${(finalBelowFloor || quoteBelowFloor) ? `Below ${escapeHTML(sustainableFloorLabel)}` : `${escapeHTML(sustainableFloorLabel)} met`}
+                </span>
             </div>
 
             <div class="admin-order-finance-shell">
