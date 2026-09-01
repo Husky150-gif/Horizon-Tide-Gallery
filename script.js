@@ -7202,7 +7202,8 @@ function loadHomePage() {
 
     appViewport.innerHTML = `
         <div class="home-top-nav-strip" role="presentation">
-            <nav class="home-top-nav" aria-label="Homepage utility links">
+            <button type="button" class="home-mobile-menu-toggle" id="homeMobileMenuToggle" aria-expanded="false" aria-controls="homeTopNav">More</button>
+            <nav class="home-top-nav" id="homeTopNav" aria-label="Homepage utility links">
                 <button type="button" class="nav-btn home-top-link nav-pill tos-nav-link" id="tosBtn">
                     <span class="tos-nav-link__mew" aria-hidden="true"><img src="https://img.pokemondb.net/sprites/black-white/anim/normal/mew.gif" alt=""></span>
                     <span class="tos-nav-link__copy"><span class="tos-nav-link__eyebrow">Read before commissioning</span><strong>My TOS</strong></span>
@@ -7379,14 +7380,21 @@ function loadHomePage() {
             <p class="home-final-cta-reassure">No payment needed to submit an inquiry.</p>
         </section>
 
-        <section class="home-smart-action-bar" id="homeSmartActionBar" aria-label="Quick actions">
-            <button type="button" class="nav-btn home-smart-action-primary" id="homeSmartPrimaryBtn" data-target="preorder">Start Request</button>
-            <button type="button" class="nav-btn home-smart-action-secondary" id="homeSmartStatusBtn">Check Status</button>
-            <button type="button" class="nav-btn home-smart-action-secondary" id="homeSmartPricingBtn">Pricing</button>
-        </section>
     `;
     bindCareGuideGridModal();
     bindCoreMenuControls();
+    const homeMobileMenuToggle = document.getElementById('homeMobileMenuToggle');
+    const homeTopNavStrip = appViewport.querySelector('.home-top-nav-strip');
+    homeMobileMenuToggle?.addEventListener('click', () => {
+        const isOpen = homeTopNavStrip?.classList.toggle('is-open') === true;
+        homeMobileMenuToggle.setAttribute('aria-expanded', String(isOpen));
+    });
+    appViewport.querySelectorAll('.home-top-link').forEach((link) => {
+        link.addEventListener('click', () => {
+            homeTopNavStrip?.classList.remove('is-open');
+            homeMobileMenuToggle?.setAttribute('aria-expanded', 'false');
+        });
+    });
     bindSiteGuideTriggers(appViewport);
     bindSecretCornerTrigger();
     installSectionRevealAnimations(appViewport);
