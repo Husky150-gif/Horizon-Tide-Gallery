@@ -7389,7 +7389,7 @@ function loadHomePage() {
                     <p>Follow the request path in order, with Quick Actor included right where you choose the project.</p>
                     <ol class="home-guide-flow" aria-label="Commission guide steps">
                         <li class="home-guide-step"><span class="home-guide-step__badge">1</span><strong>Pick the project</strong><small>Choose art, merch, or the closest fit.</small></li>
-                        <li class="home-guide-step home-guide-step--quick"><span class="home-guide-step__badge">2</span><strong>Use Quick Actor</strong><small>Get a fast planning estimate before committing.</small><button type="button" class="home-guide-step__action" id="homeGuideQuickActorBtn">Open Quick Actor</button></li>
+                        <li class="home-guide-step home-guide-step--quick"><span class="home-guide-step__badge">2</span><strong>Use Quick Actor</strong><small>Choose the service, timing, and budget to preview a planning estimate.</small><button type="button" class="home-guide-step__action" id="homeGuideQuickActorBtn">Open Quick Actor</button></li>
                         <li class="home-guide-step"><span class="home-guide-step__badge">3</span><strong>Share references</strong><small>Add character refs, notes, deadline, and budget.</small></li>
                         <li class="home-guide-step"><span class="home-guide-step__badge">4</span><strong>Track the queue</strong><small>Review scope, timeline, and progress clearly.</small></li>
                     </ol>
