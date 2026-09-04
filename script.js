@@ -834,6 +834,16 @@ const siteGuide = installGuidedTour({
             cardSide: 'top'
         },
         {
+            key: 'home-quick-actor',
+            route: '#home',
+            selector: '#homeGuideQuickActorBtn',
+            title: 'Step 2: Use Quick Actor',
+            body: 'Quick Actor helps visitors choose the service, timing, and budget so they can preview a planning estimate before submitting a request.',
+            scrollBehavior: 'auto',
+            scrollBlock: 'center',
+            cardSide: 'top'
+        },
+        {
             key: 'home-submit',
             route: '#home',
             selector: '#homeGuideStepSubmitTitle',
@@ -880,6 +890,14 @@ const siteGuide = installGuidedTour({
             selector: '.preorder-guide-shell h3',
             title: 'Use The Best-Fit Launcher',
             body: 'These cards help visitors choose the right form instead of guessing where to start.',
+            scrollBehavior: 'auto'
+        },
+        {
+            key: 'preorder-quick-actor',
+            route: '#preorder',
+            selector: '#btnQuickActor',
+            title: 'Try Quick Actor First',
+            body: 'This tool helps people choose the type, timing, and budget for a project before they commit to a form.',
             scrollBehavior: 'auto'
         },
         {
