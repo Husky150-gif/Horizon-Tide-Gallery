@@ -133,7 +133,7 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=148">
+    <link rel="stylesheet" href="style.css?v=153">
     
     <script defer type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
@@ -249,6 +249,10 @@
             <a href="#gallery" id="btnGalleryHome" class="nav-item secondary-action">
                 <span class="nav-item__icon" aria-hidden="true">✨</span>
                 <span class="nav-item__label">My Gallery</span>
+            </a>
+            <a href="#comics" id="btnComicsHome" class="nav-item secondary-action">
+                <span class="nav-item__icon" aria-hidden="true">📖</span>
+                <span class="nav-item__label">My Comics</span>
             </a>
             <a href="#updates" id="btnCosmicUpdates" class="nav-item secondary-action">
                 <span class="nav-item__icon" aria-hidden="true">✨</span>
@@ -647,6 +651,42 @@
         </div>
     </template>
 
+    <template id="adminComicsManagerTemplate">
+        <div class="admin-card comics-manager-card" id="adminComicsManagerCard">
+            <div class="comics-manager-heading">
+                <div>
+                    <h3 class="admin-card-title">Comics Manager</h3>
+                    <p class="admin-card-subtitle">Create a draft, add the cover and pages, then publish when the story is ready.</p>
+                </div>
+                <span class="comics-manager-status">Story studio</span>
+            </div>
+            <div class="comics-manager-editor">
+                <section class="comics-editor-section">
+                    <h4>Comic details</h4>
+                    <label class="admin-label">Title<input type="text" id="adminComicTitle" class="admin-input" maxlength="100" placeholder="Among the Moon"></label>
+                    <label class="admin-label">Short description<input type="text" id="adminComicDescription" class="admin-input" maxlength="180" placeholder="A short description"></label>
+                </section>
+                <section class="comics-editor-section">
+                    <h4>Cover</h4>
+                    <label class="admin-label">Cover image URL <span class="gallery-field-optional">or upload below</span><input type="url" id="adminComicCoverUrl" class="admin-input" placeholder="https://..."></label>
+                    <label class="admin-label">Upload cover image<input type="file" id="adminComicCoverUpload" class="admin-input" accept="image/*"></label>
+                </section>
+                <section class="comics-editor-section comics-manager-pages">
+                    <h4>Add story pages</h4>
+                    <p id="adminComicExistingPages" class="admin-detail">Current pages: none yet</p>
+                    <label class="admin-label">New page image URLs <span class="gallery-field-optional">one per line</span><textarea id="adminComicNewPageUrls" class="admin-input admin-textarea" rows="5" placeholder="https://...\nhttps://..."></textarea></label>
+                    <label class="admin-label">Upload new comic pages <span class="gallery-field-optional">added after current pages</span><input type="file" id="adminComicNewPagesUpload" class="admin-input" accept="image/*" multiple></label>
+                </section>
+                <label class="admin-checkbox-label-wrap comics-manager-published"><input type="checkbox" id="adminComicPublished" class="admin-checkbox"> Publish to public Comics page</label>
+            </div>
+            <div class="admin-actions discount-actions">
+                <button type="button" id="btnSaveComic" class="admin-btn-save">Save Comic</button>
+                <button type="button" id="btnResetComicForm" class="admin-btn-publish">Reset Form</button>
+            </div>
+            <div id="adminComicList" class="admin-comic-list" aria-live="polite"></div>
+        </div>
+    </template>
+
     <template id="adminGalleryManagerTemplate">
         <div class="admin-card gallery-manager-card">
             <div class="gallery-manager-heading">
@@ -806,7 +846,7 @@
         </div>
     </div>
 
-    <script type="module" src="script.js?v=188"></script>
+    <script type="module" src="script.js?v=192"></script>
     <script defer src="loader.js?v=3"></script>
 </body>
 </html>

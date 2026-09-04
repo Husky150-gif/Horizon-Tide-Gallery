@@ -49,6 +49,7 @@ let globalHomeRefundFreshnessListener = null;
 let globalHomeCommissionFreshnessListener = null;
 let globalPremadeKeychainCatalogListener = null;
 let globalGalleryCatalogListener = null;
+let globalComicsCatalogListener = null;
 
 const DEFAULT_HOME_AVAILABILITY = {
     artists: {
@@ -89,6 +90,20 @@ const DEFAULT_PREMADE_KEYCHAIN_CATALOG = {
             image: 'Premade keychains/Illustration13_2.png',
             subtitle: '2.5 inch acrylic keychain',
             stock: 20
+        }
+    ]
+};
+
+const DEFAULT_COMICS_CATALOG = {
+    comics: [
+        {
+            id: 'among-the-moon',
+            title: 'Among the Moon',
+            description: 'A comic by Husky.',
+            coverUrl: 'https://media.discordapp.net/attachments/1216079983420899512/1545236740183433237/IMG_1776.png?ex=6a9b695b&is=6a9a17db&hm=db03446b708fc945a3c2f1348f2c730c4d2636cf31dd02d769bbcf60740da516&=&format=webp&quality=lossless&width=565&height=768',
+            pages: [],
+            published: true,
+            sortOrder: 1
         }
     ]
 };
@@ -172,6 +187,8 @@ window.homeAvailability = JSON.parse(JSON.stringify(DEFAULT_HOME_AVAILABILITY));
 window.premadeKeychainCatalog = JSON.parse(JSON.stringify(DEFAULT_PREMADE_KEYCHAIN_CATALOG));
 window.galleryCatalog = JSON.parse(JSON.stringify(DEFAULT_GALLERY_CATALOG));
 window.galleryCatalogMeta = { ...DEFAULT_GALLERY_CATALOG_META };
+window.comicsCatalog = JSON.parse(JSON.stringify(DEFAULT_COMICS_CATALOG));
+window.comicsCatalog = JSON.parse(JSON.stringify(DEFAULT_COMICS_CATALOG));
 window.pricingConfig = null;
 window.homeReviewSummary = {
     approvedCount: 0,
@@ -2414,6 +2431,33 @@ function normalizeGalleryCatalog(raw) {
     };
 }
 
+function normalizeComicsCatalog(raw) {
+    const fallback = JSON.parse(JSON.stringify(DEFAULT_COMICS_CATALOG));
+    const sourceComics = Array.isArray(raw?.comics) ? raw.comics : fallback.comics;
+    const comics = sourceComics.map((entry, index) => {
+        const rawTitle = String(entry?.title || `Untitled Comic ${index + 1}`).trim() || `Untitled Comic ${index + 1}`;
+        const rawId = String(entry?.id || rawTitle).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        const isLegacyAmongTheMoonPlaceholder = rawId === 'title-one' || rawTitle.toLowerCase() === 'title one';
+        const title = isLegacyAmongTheMoonPlaceholder ? 'Among the Moon' : rawTitle;
+        const id = isLegacyAmongTheMoonPlaceholder ? 'among-the-moon' : (rawId || `comic-${index + 1}`);
+        const pages = Array.isArray(entry?.pages)
+            ? entry.pages.map((page) => getSafeMediaUrl(page)).filter(Boolean)
+            : [];
+        return {
+            id,
+            title,
+            description: String(entry?.description || '').trim(),
+            coverUrl: getSafeMediaUrl(entry?.coverUrl || pages[0] || ''),
+            pages,
+            published: entry?.published !== false,
+            sortOrder: Math.max(1, Number(entry?.sortOrder) || index + 1)
+        };
+    }).filter((comic) => comic.coverUrl || comic.pages.length > 0);
+
+    comics.sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title));
+    return { comics };
+}
+
 function getGalleryItemById(itemId, catalogInput = window.galleryCatalog) {
     const targetId = String(itemId || '').trim().toLowerCase();
     if (!targetId) return null;
@@ -3862,6 +3906,27 @@ function attachGalleryCatalogListener() {
     });
 }
 attachGalleryCatalogListener();
+
+function refreshComicsViews() {
+    renderAdminComicsManager();
+
+    const viewport = document.getElementById('app-viewport');
+    if (document.body?.dataset.page === 'comics' && viewport?.querySelector('.comics-page-shell')) {
+        loadComicsPage();
+    }
+}
+
+function attachComicsCatalogListener() {
+    if (globalComicsCatalogListener) globalComicsCatalogListener();
+    globalComicsCatalogListener = onSnapshot(doc(db, 'settings', 'comics'), (docSnap) => {
+        window.comicsCatalog = normalizeComicsCatalog(docSnap.exists() ? docSnap.data() : null);
+        refreshComicsViews();
+    }, () => {
+        window.comicsCatalog = normalizeComicsCatalog(null);
+        refreshComicsViews();
+    });
+}
+attachComicsCatalogListener();
 
 function getBestDiscount(type) {
     if (!window.activeSales || window.activeSales.length === 0) return 0;
@@ -5935,6 +6000,7 @@ function bindCoreMenuControls() {
     document.getElementById('socialsBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadSocialsPage, '#socials'));
     
     document.getElementById('btnGalleryHome')?.addEventListener('click', (e) => cinematicTransition(e, loadGalleryPage, '#gallery'));
+    document.getElementById('btnComicsHome')?.addEventListener('click', (e) => cinematicTransition(e, loadComicsPage, '#comics'));
     document.getElementById('btnDiscordHome')?.addEventListener('click', (e) => {
         trackAnalyticsEvent('open_discord', { source: 'home_nav' });
         cinematicTransition(e, loadDiscordPage, '#discord');
@@ -5948,6 +6014,7 @@ function bindCoreMenuControls() {
         trackAnalyticsEvent('open_preorder', { source: 'home_final_cta' });
         cinematicTransition(e, loadPreorderPage, '#preorder');
     });
+    document.getElementById('homeGuideQuickActorBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadQuickActorPage, '#quick-actor'));
     document.getElementById('homeFinalCtaContactBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadContactPage, '#contact'));
     document.getElementById('homeFinalCtaPricingBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadPricingPage, '#pricing'));
     
@@ -7317,14 +7384,15 @@ function loadHomePage() {
             </div>
 
             <div class="home-trust-grid">
-                <article class="home-trust-card">
-                    <h4>Clear Communication</h4>
-                    <p>Updates and order details stay easy to follow.</p>
-                    <div class="home-proof-chips" aria-label="Proof highlights">
-                        <span class="home-proof-chip">Fast first replies</span>
-                        <span class="home-proof-chip">Milestone updates</span>
-                        <span class="home-proof-chip">Queue transparency</span>
-                    </div>
+                <article class="home-trust-card home-trust-card--guide">
+                    <h4>Simple Guide</h4>
+                    <p>Follow the request path in order, with Quick Actor included right where you choose the project.</p>
+                    <ol class="home-guide-flow" aria-label="Commission guide steps">
+                        <li class="home-guide-step"><span class="home-guide-step__badge">1</span><strong>Pick the project</strong><small>Choose art, merch, or the closest fit.</small></li>
+                        <li class="home-guide-step home-guide-step--quick"><span class="home-guide-step__badge">2</span><strong>Use Quick Actor</strong><small>Get a fast planning estimate before committing.</small><button type="button" class="home-guide-step__action" id="homeGuideQuickActorBtn">Open Quick Actor</button></li>
+                        <li class="home-guide-step"><span class="home-guide-step__badge">3</span><strong>Share references</strong><small>Add character refs, notes, deadline, and budget.</small></li>
+                        <li class="home-guide-step"><span class="home-guide-step__badge">4</span><strong>Track the queue</strong><small>Review scope, timeline, and progress clearly.</small></li>
+                    </ol>
                 </article>
 
                 <article class="home-trust-card">
@@ -7480,6 +7548,214 @@ function loadGalleryPage() {
 
     document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
     attachInnerScrollListener();
+}
+
+function loadComicsPage() {
+    clearBubbles();
+    bodyElement.setAttribute('data-theme', 'comics');
+    bodyElement.setAttribute('data-page', 'comics');
+    renderDynamicMoon();
+    renderDashboardStars();
+
+    const comics = normalizeComicsCatalog(window.comicsCatalog).comics.filter((comic) => comic.published);
+    appViewport.innerHTML = `
+        <section class="comics-page-shell" aria-labelledby="comicsPageTitle">
+            <header class="comics-page-header">
+                <p class="comics-page-kicker">Husky's stories</p>
+                <h1 id="comicsPageTitle">Comics</h1>
+                <p>Choose a story, then read through each page at your own pace.</p>
+            </header>
+            <div class="comics-library-grid">
+                ${comics.length ? comics.map((comic) => `
+                    <button type="button" class="comic-library-card" data-comic-id="${escapeHTML(comic.id)}">
+                        <img src="${escapeHTML(comic.coverUrl)}" alt="Cover for ${escapeHTML(comic.title)}. Tap to enlarge." loading="lazy" onerror="handleImageError(this)">
+                        <span class="comic-library-card__copy"><strong>${escapeHTML(comic.title)}</strong><small>${escapeHTML(comic.description || (comic.pages.length === 0 ? 'Tap to enlarge the cover. Story pages coming soon.' : `Tap to read • ${comic.pages.length} page${comic.pages.length === 1 ? '' : 's'}`))}</small></span>
+                    </button>
+                `).join('') : '<p class="comics-empty-state">New stories will appear here soon.</p>'}
+            </div>
+            <button type="button" id="backHomeBtn" class="nav-btn">Back to Husky\'s Horizon</button>
+        </section>
+    `;
+
+    appViewport.querySelectorAll('[data-comic-id]').forEach((button) => {
+        button.addEventListener('click', () => loadComicReader(button.dataset.comicId));
+    });
+    document.getElementById('backHomeBtn')?.addEventListener('click', (event) => cinematicTransition(event, loadHomePage, '#home'));
+    attachInnerScrollListener();
+}
+
+function loadComicReader(comicId, pageIndex = 0) {
+    const comic = normalizeComicsCatalog(window.comicsCatalog).comics.find((entry) => entry.id === comicId && entry.published);
+    const pages = Array.isArray(comic?.pages) && comic.pages.length > 0
+        ? comic.pages
+        : (comic?.coverUrl ? [comic.coverUrl] : []);
+    if (!comic || pages.length === 0) {
+        loadComicsPage();
+        return;
+    }
+
+    const index = Math.max(0, Math.min(pageIndex, pages.length - 1));
+    appViewport.innerHTML = `
+        <section class="comic-reader-shell" aria-labelledby="comicReaderTitle">
+            <header class="comic-reader-header"><button type="button" class="comic-reader-back" id="backToComicsBtn">Back to comics</button><div><p id="comicReaderTitle">${escapeHTML(comic.title)}</p><span>Page ${index + 1} of ${pages.length}</span></div></header>
+            <img class="comic-reader-page" src="${escapeHTML(pages[index])}" alt="${escapeHTML(comic.title)}, page ${index + 1}" onerror="handleImageError(this)">
+            <nav class="comic-reader-controls" aria-label="Comic page navigation"><button type="button" class="nav-btn" id="comicPreviousBtn" ${index === 0 ? 'disabled' : ''}>Previous</button><button type="button" class="nav-btn" id="comicNextBtn" ${index === pages.length - 1 ? 'disabled' : ''}>Next</button></nav>
+        </section>
+    `;
+    document.getElementById('backToComicsBtn')?.addEventListener('click', loadComicsPage);
+    document.getElementById('comicPreviousBtn')?.addEventListener('click', () => loadComicReader(comicId, index - 1));
+    document.getElementById('comicNextBtn')?.addEventListener('click', () => loadComicReader(comicId, index + 1));
+    attachInnerScrollListener();
+}
+
+function resetAdminComicForm() {
+    window.currentEditingComicId = null;
+    document.getElementById('adminComicTitle').value = '';
+    document.getElementById('adminComicDescription').value = '';
+    document.getElementById('adminComicCoverUrl').value = '';
+    document.getElementById('adminComicCoverUpload').value = '';
+    document.getElementById('adminComicNewPageUrls').value = '';
+    document.getElementById('adminComicNewPagesUpload').value = '';
+    document.getElementById('adminComicPublished').checked = false;
+    const existingPages = document.getElementById('adminComicExistingPages');
+    if (existingPages) existingPages.textContent = 'Current pages: none yet';
+    document.getElementById('btnSaveComic').textContent = 'Save Comic';
+}
+
+function updateAdminComicExistingPagesLabel(comic) {
+    const existingPages = document.getElementById('adminComicExistingPages');
+    if (!(existingPages instanceof HTMLElement)) return;
+    if (!comic || comic.pages.length === 0) {
+        existingPages.textContent = 'Current pages: none yet';
+        return;
+    }
+    existingPages.textContent = `Current pages: ${comic.pages.length} • new entries will be added after them`;
+}
+
+function renderAdminComicsManager() {
+    const list = document.getElementById('adminComicList');
+    if (!(list instanceof HTMLElement)) return;
+
+    const comics = normalizeComicsCatalog(window.comicsCatalog).comics;
+    if (!comics.length) {
+        list.innerHTML = '<p class="admin-detail">No comics yet. Save a draft when the cover is ready.</p>';
+        return;
+    }
+
+    list.innerHTML = comics.map((comic) => `
+        <article class="admin-comic-row">
+            <img src="${escapeHTML(comic.coverUrl)}" alt="Cover for ${escapeHTML(comic.title)}" loading="lazy" onerror="handleImageError(this)">
+            <div class="admin-comic-row__details">
+                <strong>${escapeHTML(comic.title)}</strong>
+                <span class="admin-comic-row__meta">${comic.pages.length} page${comic.pages.length === 1 ? '' : 's'}</span>
+                <span class="admin-comic-row__status ${comic.published ? 'is-published' : 'is-draft'}">${comic.published ? 'Published' : 'Draft'}</span>
+            </div>
+            <div class="admin-comic-row__actions">
+                <button type="button" class="admin-btn-edit" data-edit-comic="${escapeHTML(comic.id)}">Edit</button>
+                <button type="button" class="admin-btn-delete" data-delete-comic="${escapeHTML(comic.id)}">Delete</button>
+            </div>
+        </article>
+    `).join('');
+}
+
+function setupAdminComicsManager() {
+    const panel = document.getElementById('adminComicsManagerCard');
+    if (!(panel instanceof HTMLElement)) return;
+
+    renderAdminComicsManager();
+    document.getElementById('btnResetComicForm')?.addEventListener('click', resetAdminComicForm);
+
+    panel.addEventListener('click', async (event) => {
+        const button = event.target instanceof Element ? event.target.closest('button') : null;
+        if (!(button instanceof HTMLButtonElement)) return;
+
+        const catalog = normalizeComicsCatalog(window.comicsCatalog);
+        const comicId = String(button.dataset.editComic || button.dataset.deleteComic || '').trim();
+        const comic = catalog.comics.find((entry) => entry.id === comicId);
+
+        if (button.dataset.editComic && comic) {
+            window.currentEditingComicId = comic.id;
+            document.getElementById('adminComicTitle').value = comic.title;
+            document.getElementById('adminComicDescription').value = comic.description;
+            document.getElementById('adminComicCoverUrl').value = comic.coverUrl;
+            document.getElementById('adminComicNewPageUrls').value = '';
+            document.getElementById('adminComicNewPagesUpload').value = '';
+            document.getElementById('adminComicPublished').checked = comic.published;
+            document.getElementById('btnSaveComic').textContent = 'Save Changes';
+            updateAdminComicExistingPagesLabel(comic);
+            document.getElementById('adminComicTitle')?.focus();
+            return;
+        }
+
+        if (button.dataset.deleteComic && comic) {
+            if (!confirm(`Delete “${comic.title}” from the comic catalog?`)) return;
+            try {
+                const nextCatalog = { comics: catalog.comics.filter((entry) => entry.id !== comic.id) };
+                await setDoc(doc(db, 'settings', 'comics'), nextCatalog);
+                window.comicsCatalog = normalizeComicsCatalog(nextCatalog);
+                resetAdminComicForm();
+                renderAdminComicsManager();
+                showAdminToast('Comic removed.');
+            } catch (error) {
+                console.error('Unable to delete comic', error);
+                showAdminToast('Unable to delete the comic.', true);
+            }
+        }
+    });
+
+    document.getElementById('btnSaveComic')?.addEventListener('click', async () => {
+        if (!requireAdminSession('Please sign in with an authorized admin account before saving comics.')) return;
+        const saveButton = document.getElementById('btnSaveComic');
+        const title = String(document.getElementById('adminComicTitle')?.value || '').trim();
+        const description = String(document.getElementById('adminComicDescription')?.value || '').trim();
+        const coverUrlInput = String(document.getElementById('adminComicCoverUrl')?.value || '').trim();
+        const coverFile = document.getElementById('adminComicCoverUpload')?.files?.[0] || null;
+        const pageFiles = Array.from(document.getElementById('adminComicNewPagesUpload')?.files || []);
+        const pageUrls = String(document.getElementById('adminComicNewPageUrls')?.value || '').split(/\r?\n/).map((url) => url.trim()).filter(Boolean);
+        const published = document.getElementById('adminComicPublished')?.checked === true;
+        const catalog = normalizeComicsCatalog(window.comicsCatalog);
+        const editingComic = catalog.comics.find((comic) => comic.id === window.currentEditingComicId) || null;
+        const id = editingComic?.id || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || `comic-${Date.now()}`;
+
+        if (!title || (!coverUrlInput && !coverFile && !editingComic?.coverUrl)) {
+            showAdminToast('Add a title and cover image before saving.', true);
+            return;
+        }
+
+        if (!(saveButton instanceof HTMLButtonElement)) return;
+        saveButton.disabled = true;
+        saveButton.textContent = 'Saving...';
+        try {
+            const uploadBase = `comics/${id}`;
+            const uploadedCoverUrl = coverFile ? await uploadFileAndResolveUrl(await optimizeImageForUpload(coverFile), `${uploadBase}/cover-${Date.now()}`) : '';
+            const uploadedPageUrls = [];
+            for (const [index, pageFile] of pageFiles.entries()) {
+                uploadedPageUrls.push(await uploadFileAndResolveUrl(await optimizeImageForUpload(pageFile), `${uploadBase}/page-${Date.now()}-${index + 1}`));
+            }
+            const pages = [...(editingComic?.pages || []), ...pageUrls, ...uploadedPageUrls];
+            const nextComic = {
+                id,
+                title,
+                description,
+                coverUrl: uploadedCoverUrl || coverUrlInput || editingComic?.coverUrl || pages[0],
+                pages,
+                published,
+                sortOrder: editingComic?.sortOrder || catalog.comics.length + 1
+            };
+            const nextCatalog = { comics: [...catalog.comics.filter((comic) => comic.id !== id), nextComic] };
+            await setDoc(doc(db, 'settings', 'comics'), nextCatalog);
+            window.comicsCatalog = normalizeComicsCatalog(nextCatalog);
+            resetAdminComicForm();
+            renderAdminComicsManager();
+            showAdminToast(published ? 'Comic published.' : 'Comic saved as a draft.');
+        } catch (error) {
+            console.error('Unable to save comic', error);
+            showAdminToast('Unable to save comic. Check the image files and try again.', true);
+        } finally {
+            saveButton.disabled = false;
+            saveButton.textContent = window.currentEditingComicId ? 'Save Changes' : 'Save Comic';
+        }
+    });
 }
 
 function loadPreorderPage() {
@@ -15473,6 +15749,7 @@ function loadAdminDashboard() {
                         <button type="button" id="adminNavPricing" class="admin-side-link" data-admin-scroll="adminPricingSettingsSection">Pricing</button>
                         <button type="button" id="adminNavAvailability" class="admin-side-link" data-admin-scroll="adminAvailabilitySection">Availability</button>
                         <button type="button" id="adminNavGalleryManager" class="admin-side-link" data-admin-scroll="adminGalleryManagerSection">Gallery Manager</button>
+                        <button type="button" id="adminNavComicsManager" class="admin-side-link" data-admin-scroll="adminComicsManagerSection">Comics Manager</button>
                         <button type="button" id="adminNavPremadeKeychains" class="admin-side-link" data-admin-scroll="adminPremadeKeychainsSection">Premade Keychains</button>
                         <button type="button" id="adminNavAnnouncements" class="admin-side-link" data-admin-scroll="adminAnnouncementsSection">Announcements</button>
                     </div>
@@ -15817,6 +16094,12 @@ function loadAdminDashboard() {
                                     ${getTemplateHTML('adminGalleryManagerTemplate')}
                                 </div>
                             </details>
+                            <details class="admin-collapsible admin-collapsible--sub" id="adminComicsManagerSection">
+                                <summary><span class="admin-summary-label">Comics Manager</span></summary>
+                                <div class="admin-collapsible-body">
+                                    ${getTemplateHTML('adminComicsManagerTemplate')}
+                                </div>
+                            </details>
                             <details class="admin-collapsible admin-collapsible--sub" id="adminDiscountManagerSection">
                                 <summary><span class="admin-summary-label">Discounts</span></summary>
                                 <div class="admin-collapsible-body">
@@ -15983,6 +16266,7 @@ function loadAdminDashboard() {
     renderAdminAvailabilitySettings();
     renderAdminPremadeKeychainManager();
     renderAdminGalleryManager();
+    setupAdminComicsManager();
     setAdminPremadeDesignEditState(null);
     setAdminGalleryEditState(null);
     setupQueueManagerTabs();
@@ -18728,6 +19012,7 @@ function resetViewportToTop() {
 const routes = {
     '#home': loadHomePage,
     '#gallery': loadGalleryPage,
+    '#comics': loadComicsPage,
     '#preorder': loadPreorderPage,
     '#quick-actor': loadQuickActorPage,
     '#pricing': loadPricingPage,
