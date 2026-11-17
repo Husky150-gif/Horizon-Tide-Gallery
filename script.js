@@ -128,9 +128,9 @@ const DEFAULT_GALLERY_CATALOG = {
         { id: 'gallery-spinel-glitchy', url: 'Images/Spinel but glitchy.png', title: 'Spinel Glitchy', creator: 'Husky', categories: ['digital-art'] },
         { id: 'gallery-sticker-design', url: 'Images/Sticker 2.png', title: 'Sticker Design', creator: 'Husky', categories: ['stickers', 'finished-commissions'] },
         { id: 'gallery-what-safety-cost-me', url: 'Images/What_safety_cost_me.png', title: 'What Safety Cost Me', creator: 'Husky', categories: ['digital-art', 'finished-commissions'] },
-        { id: 'gallery-premade-keychain', url: 'Premade keychains/Absol_keycahin_watermark.png', title: 'Premade Keychain', creator: 'Horizon Tide', categories: ['keychains', 'finished-commissions'] },
-        { id: 'gallery-keychain-sample', url: 'Premade keychains/bleh1.png', title: 'Keychain Sample', creator: 'Horizon Tide', categories: ['keychains'] },
-        { id: 'gallery-keychain-illustration', url: 'Premade keychains/Illustration13_2.png', title: 'Keychain Illustration', creator: 'Horizon Tide', categories: ['keychains'] },
+        { id: 'gallery-premade-keychain', url: 'Premade keychains/Absol_keycahin_watermark.png', title: 'Premade Keychain', creator: "Husky's Little Universe", categories: ['keychains', 'finished-commissions'] },
+        { id: 'gallery-keychain-sample', url: 'Premade keychains/bleh1.png', title: 'Keychain Sample', creator: "Husky's Little Universe", categories: ['keychains'] },
+        { id: 'gallery-keychain-illustration', url: 'Premade keychains/Illustration13_2.png', title: 'Keychain Illustration', creator: "Husky's Little Universe", categories: ['keychains'] },
         {
             id: 'gallery-animation-preview',
             url: 'https://img.youtube.com/vi/jnh7WgHTO6w/hqdefault.jpg',
@@ -366,12 +366,12 @@ const SITE_BASE_URL = 'https://horizontidegallery.com/';
 const DEFAULT_SOCIAL_IMAGE = `${SITE_BASE_URL}${encodeURI('Images/banner 1.jpg')}`;
 
 const PUBLIC_HEAD_METADATA = {
-    title: 'The Horizon | Horizon Tide Gallery',
-    description: 'Horizon Tide Gallery by Husky for custom art commissions, animation, and handmade creations.',
-    ogTitle: 'Horizon Tide Gallery',
+    title: "Husky's Little Universe",
+    description: "Husky's Little Universe by Husky for custom art commissions, animation, and handmade creations.",
+    ogTitle: "Husky's Little Universe",
     ogDescription: 'Explore custom artwork, animation portfolios, and handmade commissions by Husky.',
     ogUrl: SITE_BASE_URL,
-    twitterTitle: 'The Horizon | Horizon Tide Gallery',
+    twitterTitle: "Husky's Little Universe",
     twitterDescription: 'Commission art, animation, keychains, and stickers from Husky with clear communication and queue transparency.',
     ogType: 'website',
     robots: 'index, follow',
@@ -382,74 +382,74 @@ const PUBLIC_HEAD_METADATA = {
 
 const ROUTE_HEAD_METADATA = {
     '#home': {
-        title: 'The Horizon | Art, Animation, and Handmade Creations',
-        description: 'Start your commission with Husky at Horizon Tide Gallery: clear steps, artist availability, reviews, and a transparent queue.',
-        ogDescription: 'Custom art, merch, and step-by-step commission guidance from Husky at Horizon Tide Gallery.'
+        title: "Husky's Little Universe | Art, Animation, and Handmade Creations",
+        description: "Start your commission with Husky at Husky's Little Universe: clear steps, artist availability, reviews, and a transparent queue.",
+        ogDescription: "Custom art, merch, and step-by-step commission guidance from Husky at Husky's Little Universe."
     },
     '#gallery': {
-        title: 'Gallery | The Horizon',
-        description: 'Browse Horizon Tide Gallery artwork, merch samples, and animation previews.',
-        ogTitle: 'Gallery | Horizon Tide Gallery'
+        title: "Gallery | Husky's Little Universe",
+        description: "Browse Husky's Little Universe artwork, merch samples, and animation previews.",
+        ogTitle: "Gallery | Husky's Little Universe"
     },
     '#preorder': {
-        title: 'Preorder Menu | The Horizon',
-        description: 'Choose the right commission form, check pricing, and prep your request with Horizon Tide Gallery.',
-        ogTitle: 'Preorder Menu | Horizon Tide Gallery'
+        title: "Preorder Menu | Husky's Little Universe",
+        description: "Choose the right commission form, check pricing, and prep your request with Husky's Little Universe.",
+        ogTitle: "Preorder Menu | Husky's Little Universe"
     },
     '#quick-actor': {
-        title: 'Quick Actor | The Horizon',
+        title: "Quick Actor | Husky's Little Universe",
         description: 'Use Quick Actor to choose type, timing, and budget, then preview a planning estimate before submitting your request.',
-        ogTitle: 'Quick Actor | Horizon Tide Gallery'
+        ogTitle: "Quick Actor | Husky's Little Universe"
     },
     '#pricing': {
-        title: 'Pricing Sheet | The Horizon',
-        description: 'Review starting prices for art, animation, stickers, keychains, and handmade work at Horizon Tide Gallery.',
-        ogTitle: 'Pricing Sheet | Horizon Tide Gallery'
+        title: "Pricing Sheet | Husky's Little Universe",
+        description: "Review starting prices for art, animation, stickers, keychains, and handmade work at Husky's Little Universe.",
+        ogTitle: "Pricing Sheet | Husky's Little Universe"
     },
     '#updates': {
-        title: 'Cosmic Updates | The Horizon',
-        description: 'Read announcements, queue news, and fresh updates from Horizon Tide Gallery.',
-        ogTitle: 'Cosmic Updates | Horizon Tide Gallery'
+        title: "Cosmic Updates | Husky's Little Universe",
+        description: "Read announcements, queue news, and fresh updates from Husky's Little Universe.",
+        ogTitle: "Cosmic Updates | Husky's Little Universe"
     },
     '#reviews': {
-        title: 'Client Reviews | The Horizon',
-        description: 'See client reviews and feedback for Horizon Tide Gallery commissions and handmade creations.',
-        ogTitle: 'Client Reviews | Horizon Tide Gallery'
+        title: "Client Reviews | Husky's Little Universe",
+        description: "See client reviews and feedback for Husky's Little Universe commissions and handmade creations.",
+        ogTitle: "Client Reviews | Husky's Little Universe"
     },
     '#contact': {
-        title: 'Contact | The Horizon',
-        description: 'Contact Horizon Tide Gallery for commission questions, custom requests, and order guidance.',
-        ogTitle: 'Contact | Horizon Tide Gallery'
+        title: "Contact | Husky's Little Universe",
+        description: "Contact Husky's Little Universe for commission questions, custom requests, and order guidance.",
+        ogTitle: "Contact | Husky's Little Universe"
     },
     '#tos': {
-        title: 'Terms of Service | The Horizon',
-        description: 'Review Horizon Tide Gallery terms of service, payment policies, shipping notes, and commission rules.',
-        ogTitle: 'Terms of Service | Horizon Tide Gallery'
+        title: "Terms of Service | Husky's Little Universe",
+        description: "Review Husky's Little Universe terms of service, payment policies, shipping notes, and commission rules.",
+        ogTitle: "Terms of Service | Husky's Little Universe"
     },
     '#socials': {
-        title: 'Artists, FAQ, and Socials | The Horizon',
-        description: 'Meet Husky, get ordering answers, and find official Horizon Tide Gallery social links.',
-        ogTitle: 'Artists, FAQ, and Socials | Horizon Tide Gallery'
+        title: "Artists, FAQ, and Socials | Husky's Little Universe",
+        description: "Meet Husky, get ordering answers, and find official Husky's Little Universe social links.",
+        ogTitle: "Artists, FAQ, and Socials | Husky's Little Universe"
     },
     '#discord': {
-        title: 'Discord Community | The Horizon',
-        description: 'Join the Meowter Space Discord community and stay close to Horizon Tide Gallery updates.',
-        ogTitle: 'Discord Community | Horizon Tide Gallery'
+        title: "Discord Community | Husky's Little Universe",
+        description: "Join the Meowter Space Discord community and stay close to Husky's Little Universe updates.",
+        ogTitle: "Discord Community | Husky's Little Universe"
     },
     '#status': {
-        title: 'Order Status | The Horizon',
-        description: 'Check your Horizon Tide Gallery preorder or commission status with your order ID and email.',
-        ogTitle: 'Order Status | Horizon Tide Gallery'
+        title: "Order Status | Husky's Little Universe",
+        description: "Check your Husky's Little Universe preorder or commission status with your order ID and email.",
+        ogTitle: "Order Status | Husky's Little Universe"
     },
     '#whatwedo': {
-        title: 'What I Do | The Horizon',
+        title: "What I Do | Husky's Little Universe",
         description: 'See Husky services, specialties, and creative offerings across art, animation, and handmade commissions.',
-        ogTitle: 'What I Do | Horizon Tide Gallery'
+        ogTitle: "What I Do | Husky's Little Universe"
     },
     '#horizon-queue': {
-        title: 'Horizon Queue | The Horizon',
-        description: 'View the public Horizon queue and current progress for active client work.',
-        ogTitle: 'Horizon Queue | Horizon Tide Gallery'
+        title: "Commission Queue | Husky's Little Universe",
+        description: 'View the public queue and current progress for active client work.',
+        ogTitle: "Commission Queue | Husky's Little Universe"
     }
 };
 
@@ -527,7 +527,7 @@ function applyHeadMetadataForRoute(routeOrAdmin) {
     upsertMetaTag('meta[property="og:url"]', { property: 'og:url', content: metadata.ogUrl });
     upsertMetaTag('meta[property="og:type"]', { property: 'og:type', content: metadata.ogType });
     upsertMetaTag('meta[property="og:image"]', { property: 'og:image', content: metadata.ogImage });
-    upsertMetaTag('meta[property="og:site_name"]', { property: 'og:site_name', content: 'Horizon Tide Gallery' });
+    upsertMetaTag('meta[property="og:site_name"]', { property: 'og:site_name', content: "Husky's Little Universe" });
     upsertMetaTag('meta[name="twitter:title"]', { name: 'twitter:title', content: metadata.twitterTitle || metadata.title });
     upsertMetaTag('meta[name="twitter:description"]', { name: 'twitter:description', content: metadata.twitterDescription || metadata.description });
     upsertMetaTag('meta[name="twitter:card"]', { name: 'twitter:card', content: metadata.twitterCard });
@@ -960,7 +960,7 @@ const TOS_CONTENT_HTML = `
         <a href="#tos-art" class="tos-jump-btn">Art Policy</a>
         <a href="#tos-animation" class="tos-jump-btn">Animation Policy</a>
     </div>
-    <p>By commissioning, purchasing, or placing an order with Horizon Tide Gallery, you agree to these Terms of Service. Please read them carefully before purchasing or commissioning any product or service.</p>
+    <p>By commissioning, purchasing, or placing an order with Husky's Little Universe, you agree to these Terms of Service. Please read them carefully before purchasing or commissioning any product or service.</p>
     <p>This website may store order submissions, status lookup activity, lightweight usage analytics, and technical error reports I need to run the site, improve the ordering flow, and troubleshoot problems. By using my forms and tools, you agree to that operational use of your submitted information.</p>
     
     <h2 id="tos-general" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">GENERAL</h2>
@@ -974,10 +974,10 @@ const TOS_CONTENT_HTML = `
         <li>Repeated violation of my boundaries or policies</li>
     </ul>
     <p>I reserve the right to decline any request without explanation.<br>Clients commissioning NSFW content or entering payment agreements independently must be 18 years of age or older. Certain commission types may require parental permission for minors.</p>
-    <p>All commission requests and custom order inquiries must be submitted through my official Horizon Tide website forms. DM-only or social-only messages are not treated as accepted orders until the website form is submitted.</p>
+    <p>All commission requests and custom order inquiries must be submitted through my official Husky's Little Universe website forms. DM-only or social-only messages are not treated as accepted orders until the website form is submitted.</p>
     
     <h2 style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">PRODUCTS & SERVICES</h2>
-    <p>Horizon Tide Gallery may offer products and services including, but not limited to: Character artwork, digital illustrations, animation, keychains, charms, stickers, and handmade crafts. Because many products are handmade, slight variations may occur between finished items.</p>
+    <p>Husky's Little Universe may offer products and services including, but not limited to: Character artwork, digital illustrations, animation, keychains, charms, stickers, and handmade crafts. Because many products are handmade, slight variations may occur between finished items.</p>
     
     <h2 id="tos-payment" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">PAYMENT</h2>
     <p>Accepted payment methods may include: PayPal, CashApp, Ko-fi, or other approved platforms.</p>
@@ -987,7 +987,7 @@ const TOS_CONTENT_HTML = `
         <li>Payment plans may be available for orders over $200.</li>
         <li>Full payment must be completed before physical items are shipped.</li>
     </ul>
-    <p>If a payment plan is abandoned for more than 14 days without communication, the order may be canceled, materials remain property of Horizon Tide, and completed items may be resold.</p>
+    <p>If a payment plan is abandoned for more than 14 days without communication, the order may be canceled, materials remain property of Husky's Little Universe, and completed items may be resold.</p>
     
     <h2 id="tos-refunds" style="color: #4ade80; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 222, 128, 0.3); padding-bottom: 5px;">REFUND POLICY</h2>
     <p>Deposits and down payments are non-refundable. Once substantial work has begun, refunds may become partial or unavailable. Completed commissions are not eligible for refunds.</p>
@@ -1041,7 +1041,7 @@ const TOS_CONTENT_HTML = `
     <p><strong>Cancellation & Behavior:</strong><br>
     Cancellation before starting is allowed (standard refund rules apply). After starting, there is no refund. Respect is required; rude behavior may result in cancellation without a refund. By commissioning me, the client agrees to all terms and understands the time required for animation.</p>
 
-    <p style="text-align: center; margin-top: 30px; color: #f472b6; font-weight: bold;">✨ Thank you for supporting Horizon Tide Gallery. Every order directly supports my independent art practice and small-business creativity.</p>
+    <p style="text-align: center; margin-top: 30px; color: #f472b6; font-weight: bold;">✨ Thank you for supporting Husky's Little Universe. Every order directly supports my independent art practice and small-business creativity.</p>
 `;
 
 // === HELPER FUNCTIONS ===
@@ -2357,9 +2357,9 @@ function getGalleryFilterOptions(galleryItems) {
 function buildGalleryImageAltText(item, index) {
     const fallbackTitle = `Gallery Item ${index + 1}`;
     const title = String(item?.title || fallbackTitle).trim() || fallbackTitle;
-    const rawCreator = String(item?.creator || 'Horizon Tide Gallery').trim() || 'Horizon Tide Gallery';
+    const rawCreator = String(item?.creator || "Husky's Little Universe").trim() || "Husky's Little Universe";
     const normalizedCreator = rawCreator.toLowerCase();
-    const creatorLabel = normalizedCreator === 'husky' ? 'Husky (The Horizon)' : rawCreator;
+    const creatorLabel = normalizedCreator === 'husky' ? 'Husky' : rawCreator;
 
     const categorySnippet = Array.isArray(item?.categories)
         ? item.categories
@@ -2370,8 +2370,8 @@ function buildGalleryImageAltText(item, index) {
         : '';
 
     return categorySnippet
-        ? `${title} by ${creatorLabel} at Horizon Tide Gallery, ${categorySnippet}.`
-        : `${title} by ${creatorLabel} at Horizon Tide Gallery.`;
+        ? `${title} by ${creatorLabel} at Husky's Little Universe, ${categorySnippet}.`
+        : `${title} by ${creatorLabel} at Husky's Little Universe.`;
 }
 
 function getSafeMediaUrl(rawUrl) {
@@ -2412,7 +2412,7 @@ function normalizeGalleryCatalog(raw) {
         const fallbackEntry = fallback.items[index] || {};
         const fallbackTitle = fallbackEntry.title || `Gallery Item ${index + 1}`;
         const title = String(entry?.title || fallbackTitle).trim() || fallbackTitle;
-        const creator = String(entry?.creator || fallbackEntry.creator || 'Horizon Tide').trim() || 'Horizon Tide';
+        const creator = String(entry?.creator || fallbackEntry.creator || "Husky's Little Universe").trim() || "Husky's Little Universe";
         const url = getSafeMediaUrl(String(entry?.url || fallbackEntry.url || '').trim());
         const videoLink = String(entry?.videoLink || fallbackEntry.videoLink || '').trim();
         const categories = normalizeGalleryCategories(entry?.categories, normalizeGalleryCategories(fallbackEntry.categories));
@@ -3316,7 +3316,7 @@ function setAdminGalleryEditState(item = null) {
     if (!item) {
         window.currentEditingGalleryItemId = null;
         titleInput.value = '';
-        creatorInput.value = 'Horizon Tide';
+        creatorInput.value = "Husky's Little Universe";
         categoriesInput.value = '';
         renderAdminGalleryCategoryChecklist(['digital-art']);
         if (visibleInput instanceof HTMLInputElement) visibleInput.checked = true;
@@ -3697,7 +3697,7 @@ function applyHomeTrustSignalsToCurrentDOM() {
     }
 
     const rating = Math.max(1, Math.min(5, Number(featuredReview.rating) || Number(featuredReview.reviewRating) || 5));
-    const reviewText = String(featuredReview.reviewText || featuredReview.text || 'Loved working with Horizon Tide.').trim();
+    const reviewText = String(featuredReview.reviewText || featuredReview.text || "Loved working with Husky's Little Universe.").trim();
     const displayName = String(featuredReview.displayName || featuredReview.name || 'Client').trim() || 'Client';
     const commissionType = String(featuredReview.commissionType || featuredReview.itemType || '').trim();
     const metaBits = [displayName];
@@ -4544,28 +4544,39 @@ function renderPricingFieldCard(fieldGroup, config) {
         const value = readConfigValue(config, field.path);
         return `
             <label class="admin-label admin-pricing-field">
-                <span>${escapeHTML(field.label)}</span>
-                <input type="number" class="admin-input" data-pricing-path="${escapeHTML(field.path)}" min="0" step="1" value="${escapeHTML(String(value))}">
+                <span>${escapeHTML(field.label)} ${field.path === 'meta.premiumMarginPercent' ? '(%)' : '($)'}</span>
+                <input type="number" class="admin-input" data-pricing-path="${escapeHTML(field.path)}" min="0" step="any" required value="${escapeHTML(String(value))}">
             </label>
         `;
     }).join('');
 
+    const tone = getAdminPricingGroupTone(fieldGroup.title);
+    const anchorId = `adminPricingGroup-${tone}`;
+    const selectedSubgroup = Math.min(window.adminPricingSubgroups?.[tone] || 0, fieldGroup.subGroups.length - 1);
     const subGroupsHTML = fieldGroup.subGroups.length > 1
-        ? fieldGroup.subGroups.map((subGroup, index) => `
-            <details class="admin-pricing-subgroup" ${index === 0 ? 'open' : ''}>
-                <summary class="admin-pricing-subgroup-summary">
-                    <span>${escapeHTML(subGroup.label)}</span>
-                    <span class="admin-pricing-subgroup-summary__count">${subGroup.fields.length}</span>
-                </summary>
-                <div class="admin-pricing-group-grid">${renderFieldsHTML(subGroup.fields)}</div>
-            </details>
-        `).join('')
+        ? `
+            <div class="admin-pricing-subtabs" role="tablist" aria-label="${escapeHTML(fieldGroup.title)} pricing sections">
+                ${fieldGroup.subGroups.map((subGroup, index) => `
+                    <button type="button" class="admin-pricing-subtab" role="tab"
+                        id="${anchorId}-subtab-${index}" aria-controls="${anchorId}-subpanel-${index}"
+                        aria-selected="${index === selectedSubgroup}" tabindex="${index === selectedSubgroup ? '0' : '-1'}"
+                        data-pricing-subgroup="${index}">${escapeHTML(subGroup.label)}</button>
+                `).join('')}
+            </div>
+            ${fieldGroup.subGroups.map((subGroup, index) => `
+                <section class="admin-pricing-subgroup" id="${anchorId}-subpanel-${index}" role="tabpanel"
+                    aria-labelledby="${anchorId}-subtab-${index}" data-pricing-subpanel ${index === selectedSubgroup ? '' : 'hidden'}>
+                    <h4 class="admin-pricing-subgroup-summary">${escapeHTML(subGroup.label)}</h4>
+                    <div class="admin-pricing-group-grid">${renderFieldsHTML(subGroup.fields)}</div>
+                </section>
+            `).join('')}
+        `
         : `<div class="admin-pricing-group-grid">${renderFieldsHTML(allFields)}</div>`;
 
     const numericValues = allFields
         .map((field) => readConfigValue(config, field.path))
         .filter((value) => Number.isFinite(value));
-    const formatPricingValue = (value) => `$${Math.round(value).toLocaleString()}`;
+    const formatPricingValue = (value) => fieldGroup.title === 'Meta' ? `${value.toLocaleString()}%` : `$${value.toLocaleString()}`;
     let pricingRangeLabel = '';
     if (numericValues.length === 1) {
         pricingRangeLabel = formatPricingValue(numericValues[0]);
@@ -4580,24 +4591,65 @@ function renderPricingFieldCard(fieldGroup, config) {
         ? `${allFields.length} fields - ${pricingRangeLabel}`
         : `${allFields.length} fields`;
 
-    const tone = getAdminPricingGroupTone(fieldGroup.title);
-    const anchorId = `adminPricingGroup-${String(fieldGroup.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-    const shouldOpen = fieldGroup.title === 'Art' || fieldGroup.title === 'Animation';
-
     return `
-        <details class="admin-pricing-group admin-pricing-group--${escapeHTML(tone)}" id="${escapeHTML(anchorId)}" ${shouldOpen ? 'open' : ''}>
-            <summary class="admin-pricing-group-summary">
+        <section class="admin-pricing-group admin-pricing-group--${escapeHTML(tone)}" id="${escapeHTML(anchorId)}"
+            role="tabpanel" aria-labelledby="${escapeHTML(anchorId)}-tab" data-pricing-category="${escapeHTML(tone)}"
+            ${window.adminPricingActiveCategory === tone ? '' : 'hidden'}>
+            <div class="admin-pricing-group-summary">
                 <span class="admin-pricing-group-summary__copy">
                     <strong>${escapeHTML(fieldGroup.title)}</strong>
                     <small>${escapeHTML(fieldGroup.description)}</small>
                 </span>
                 <span class="admin-pricing-group-summary__meta">${escapeHTML(groupMetaLabel)}</span>
-            </summary>
+            </div>
             <div class="admin-pricing-group-body">
                 ${subGroupsHTML}
             </div>
-        </details>
+        </section>
     `;
+}
+
+function activateAdminPricingTab(button, focus = false) {
+    const tablist = button.closest('[role="tablist"]');
+    const category = button.closest('[data-pricing-category]');
+    if (!tablist) return;
+    tablist.querySelectorAll(':scope > [role="tab"]').forEach((tab) => {
+        const active = tab === button;
+        tab.setAttribute('aria-selected', String(active));
+        tab.tabIndex = active ? 0 : -1;
+        const panel = document.getElementById(tab.getAttribute('aria-controls'));
+        if (panel) panel.hidden = !active;
+    });
+    if (category) {
+        window.adminPricingSubgroups ||= {};
+        window.adminPricingSubgroups[category.dataset.pricingCategory] = Number(button.dataset.pricingSubgroup);
+    } else {
+        window.adminPricingActiveCategory = button.dataset.pricingCategoryTab;
+    }
+    if (focus) button.focus();
+}
+
+function bindAdminPricingTabs(container) {
+    if (container.dataset.tabsBound === 'true') return;
+    container.addEventListener('click', (event) => {
+        const tab = event.target instanceof Element ? event.target.closest('[role="tab"]') : null;
+        if (tab && container.contains(tab)) activateAdminPricingTab(tab);
+    });
+    container.addEventListener('keydown', (event) => {
+        const tab = event.target instanceof Element ? event.target.closest('[role="tab"]') : null;
+        if (!tab || !container.contains(tab)) return;
+        const tabs = Array.from(tab.parentElement.querySelectorAll(':scope > [role="tab"]'));
+        const index = tabs.indexOf(tab);
+        let next;
+        if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+        else if (event.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
+        else if (event.key === 'Home') next = 0;
+        else if (event.key === 'End') next = tabs.length - 1;
+        else return;
+        event.preventDefault();
+        activateAdminPricingTab(tabs[next], true);
+    });
+    container.dataset.tabsBound = 'true';
 }
 
 function renderAdminPricingJumpNav() {
@@ -4605,36 +4657,18 @@ function renderAdminPricingJumpNav() {
     if (!(wrap instanceof HTMLElement)) return;
 
     const groups = getPricingEditorFieldDefinitions();
-    wrap.innerHTML = groups.map((group) => {
-        const targetId = `adminPricingGroup-${String(group.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-        return `<button type="button" class="admin-pricing-jump-chip" data-pricing-jump="${escapeHTML(targetId)}">${escapeHTML(group.title)}</button>`;
-    }).join('');
-
-    const setActiveJumpChip = (targetId) => {
-        wrap.querySelectorAll('.admin-pricing-jump-chip').forEach((chip) => {
-            if (!(chip instanceof HTMLButtonElement)) return;
-            const isActive = chip.getAttribute('data-pricing-jump') === targetId;
-            chip.classList.toggle('is-active', isActive);
-            chip.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-        });
-    };
-
-    const defaultTargetId = `adminPricingGroup-${String(groups[0]?.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-    if (defaultTargetId) setActiveJumpChip(defaultTargetId);
-
-    if (wrap.dataset.bound !== 'true') {
-        wrap.addEventListener('click', (event) => {
-            const button = event.target instanceof HTMLElement ? event.target.closest('.admin-pricing-jump-chip') : null;
-            if (!(button instanceof HTMLButtonElement)) return;
-            const targetId = button.getAttribute('data-pricing-jump');
-            const target = targetId ? document.getElementById(targetId) : null;
-            if (!(target instanceof HTMLDetailsElement)) return;
-            target.open = true;
-            setActiveJumpChip(targetId);
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-        wrap.dataset.bound = 'true';
+    if (!groups.some((group) => getAdminPricingGroupTone(group.title) === window.adminPricingActiveCategory)) {
+        window.adminPricingActiveCategory = getAdminPricingGroupTone(groups[0].title);
     }
+    wrap.innerHTML = groups.map((group) => {
+        const tone = getAdminPricingGroupTone(group.title);
+        const targetId = `adminPricingGroup-${tone}`;
+        const selected = tone === window.adminPricingActiveCategory;
+        return `<button type="button" class="admin-pricing-jump-chip" role="tab" id="${targetId}-tab"
+            aria-controls="${targetId}" aria-selected="${selected}" tabindex="${selected ? '0' : '-1'}"
+            data-pricing-category-tab="${tone}">${escapeHTML(group.title)}</button>`;
+    }).join('');
+    bindAdminPricingTabs(wrap);
 }
 
 function getQuickGuideEditorGroups() {
@@ -4713,11 +4747,11 @@ function renderAdminQuickGuideSettings(config) {
                         </label>
                         <label class="admin-label admin-pricing-field">
                             <span>Min</span>
-                            <input type="number" class="admin-input" data-quick-guide-key="${escapeHTML(item.key)}" data-quick-guide-field="min" min="0" step="1" value="${escapeHTML(String(entry.min || 0))}" ${mode === 'custom' ? '' : 'disabled'}>
+                            <input type="number" class="admin-input" data-quick-guide-key="${escapeHTML(item.key)}" data-quick-guide-field="min" min="0" step="any" required value="${escapeHTML(String(mode === 'follow' ? effectiveRange.min : entry.min))}" ${mode === 'custom' ? '' : 'disabled'}>
                         </label>
                         <label class="admin-label admin-pricing-field">
                             <span>Max</span>
-                            <input type="number" class="admin-input" data-quick-guide-key="${escapeHTML(item.key)}" data-quick-guide-field="max" min="0" step="1" value="${escapeHTML(String(entry.max || 0))}" ${mode === 'custom' ? '' : 'disabled'}>
+                            <input type="number" class="admin-input" data-quick-guide-key="${escapeHTML(item.key)}" data-quick-guide-field="max" min="0" step="any" required value="${escapeHTML(String(mode === 'follow' ? effectiveRange.max : entry.max))}" ${mode === 'custom' ? '' : 'disabled'}>
                         </label>
                     </div>
                 </article>
@@ -4725,7 +4759,7 @@ function renderAdminQuickGuideSettings(config) {
         }).join('');
 
         return `
-            <details class="admin-pricing-group admin-pricing-group--${escapeHTML(group.tone)}" ${group.title === 'Fursuits' ? 'open' : ''}>
+            <details class="admin-pricing-group admin-pricing-group--${escapeHTML(group.tone)}" open>
                 <summary class="admin-pricing-group-summary">
                     <span class="admin-pricing-group-summary__copy">
                         <strong>${escapeHTML(group.title)}</strong>
@@ -4742,7 +4776,7 @@ function renderAdminQuickGuideSettings(config) {
 }
 
 function collectPricingConfigFromEditor() {
-    const config = getDefaultPricingConfig();
+    const config = normalizePricingConfig(window.adminPricingDraftConfig || window.pricingConfig || null);
     const fields = document.querySelectorAll('[data-pricing-path]');
 
     fields.forEach((field) => {
@@ -4769,10 +4803,11 @@ function collectPricingConfigFromEditor() {
             const minField = document.querySelector(`[data-quick-guide-key="${item.key}"][data-quick-guide-field="min"]`);
             const maxField = document.querySelector(`[data-quick-guide-key="${item.key}"][data-quick-guide-field="max"]`);
             const fallback = config.quickGuide[item.key] || { mode: 'follow', min: 0, max: 0 };
-            const min = minField instanceof HTMLInputElement ? normalizePricingNumber(minField.value, fallback.min) : fallback.min;
-            const max = maxField instanceof HTMLInputElement ? Math.max(min, normalizePricingNumber(maxField.value, fallback.max)) : fallback.max;
+            const mode = modeField instanceof HTMLSelectElement ? normalizeQuickGuideMode(modeField.value) : fallback.mode;
+            const min = mode === 'custom' && minField instanceof HTMLInputElement ? normalizePricingNumber(minField.value, fallback.min) : fallback.min;
+            const max = mode === 'custom' && maxField instanceof HTMLInputElement ? Math.max(min, normalizePricingNumber(maxField.value, fallback.max)) : fallback.max;
             config.quickGuide[item.key] = {
-                mode: modeField instanceof HTMLSelectElement ? normalizeQuickGuideMode(modeField.value) : fallback.mode,
+                mode,
                 min,
                 max
             };
@@ -4932,6 +4967,7 @@ function renderAdminPricingSettings() {
 
     if (grid instanceof HTMLElement) {
         grid.innerHTML = getPricingEditorFieldDefinitions().map((group) => renderPricingFieldCard(group, config)).join('');
+        bindAdminPricingTabs(grid);
     }
 
     renderAdminQuickGuideSettings(config);
@@ -4941,6 +4977,8 @@ function renderAdminPricingSettings() {
         jsonField.value = serializePricingConfig(config);
         jsonField.dataset.serialized = jsonField.value;
     }
+    window.adminPricingJsonDirty = false;
+    updateAdminPricingEditorStatus();
 }
 
 function applyPremiumPricingMargin(config, percent) {
@@ -4956,7 +4994,12 @@ function applyPremiumPricingMargin(config, percent) {
             halfBody: { flat: scale(source.art.halfBody.flat), cel: scale(source.art.halfBody.cel), rendered: scale(source.art.halfBody.rendered) },
             fullBody: { flat: scale(source.art.fullBody.flat), cel: scale(source.art.fullBody.cel), rendered: scale(source.art.fullBody.rendered) },
             scene: { flat: scale(source.art.scene.flat), cel: scale(source.art.scene.cel), rendered: scale(source.art.scene.rendered) },
-            refSheets: { basic: scale(source.art.refSheets.basic), standard: scale(source.art.refSheets.standard), deluxe: scale(source.art.refSheets.deluxe) },
+            refSheets: {
+                ...source.art.refSheets,
+                basic: scale(source.art.refSheets.basic),
+                standard: scale(source.art.refSheets.standard),
+                deluxe: scale(source.art.refSheets.deluxe)
+            },
             addOns: {
                 extraOutfit: scale(source.art.addOns.extraOutfit),
                 prop: scale(source.art.addOns.prop),
@@ -4984,16 +5027,6 @@ function applyPremiumPricingMargin(config, percent) {
                 firstCopy: scale(source.stickers.printing.firstCopy),
                 additionalCopy: scale(source.stickers.printing.additionalCopy)
             }
-        },
-        fursuits: {
-            tail: scale(source.fursuits.tail),
-            paws: scale(source.fursuits.paws),
-            pawsTailSet: scale(source.fursuits.pawsTailSet),
-            feetPaws: scale(source.fursuits.feetPaws),
-            trioSet: scale(source.fursuits.trioSet),
-            head: scale(source.fursuits.head),
-            miniPartial: scale(source.fursuits.miniPartial),
-            fullPartial: scale(source.fursuits.fullPartial)
         },
         keychains: {
             premade: {
@@ -5024,11 +5057,14 @@ function readPricingConfigFromEditor() {
     const currentSerialized = jsonField instanceof HTMLTextAreaElement ? jsonField.dataset.serialized || '' : '';
     const currentText = jsonField instanceof HTMLTextAreaElement ? jsonField.value.trim() : '';
 
-    if (jsonField instanceof HTMLTextAreaElement && currentText && currentText !== currentSerialized) {
+    if (jsonField instanceof HTMLTextAreaElement && currentText !== currentSerialized.trim()) {
         try {
-            return normalizePricingConfig(JSON.parse(currentText));
+            const parsed = JSON.parse(currentText);
+            validatePricingJsonConfig(parsed);
+            return normalizePricingConfig(parsed);
         } catch (error) {
-            throw new Error('Pricing JSON is invalid. Fix the JSON before saving.');
+            if (error instanceof SyntaxError) throw new Error('Pricing JSON is invalid. Fix the JSON before saving.');
+            throw error;
         }
     }
 
@@ -5038,6 +5074,141 @@ function readPricingConfigFromEditor() {
 function setPricingEditorConfig(nextConfig) {
     window.adminPricingDraftConfig = normalizePricingConfig(nextConfig);
     renderAdminPricingSettings();
+}
+
+function getPricingEditorScope(config, scope) {
+    const normalized = normalizePricingConfig(config);
+    if (scope === 'guide') return normalized.quickGuide;
+    const { quickGuide, ...pricing } = normalized;
+    return pricing;
+}
+
+function composePricingEditorConfig(pricing, guide) {
+    return normalizePricingConfig({ ...getPricingEditorScope(pricing, 'pricing'), quickGuide: getPricingEditorScope(guide, 'guide') });
+}
+
+function hasPricingEditorChanges() {
+    if (window.adminPricingJsonDirty || window.adminPricingVisualDirty) return true;
+    if (!window.adminPricingBaseline || !window.adminPricingDraftConfig) return false;
+    return serializePricingConfig(window.adminPricingDraftConfig) !== serializePricingConfig(window.adminPricingBaseline);
+}
+
+function validatePricingJsonConfig(config) {
+    for (const group of getPricingEditorFieldDefinitions()) {
+        for (const subGroup of group.subGroups) {
+            for (const field of subGroup.fields) {
+                const value = field.path.split('.').reduce((current, key) => current?.[key], config);
+                if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+                    throw new Error(`Pricing JSON needs a non-negative number for ${field.label}.`);
+                }
+            }
+        }
+    }
+    for (const key of getQuickGuideOverrideDefinitions()) {
+        const entry = config?.quickGuide?.[key];
+        if (!entry || !['follow', 'custom'].includes(entry.mode) ||
+            typeof entry.min !== 'number' || !Number.isFinite(entry.min) || entry.min < 0 ||
+            typeof entry.max !== 'number' || !Number.isFinite(entry.max) || entry.max < entry.min) {
+            throw new Error(`Pricing JSON needs a valid mode and range for ${key}.`);
+        }
+    }
+}
+
+function validatePricingEditor(scope) {
+    if (scope === 'pricing') {
+        for (const field of document.querySelectorAll('[data-pricing-path]')) {
+            if (!(field instanceof HTMLInputElement)) continue;
+            if (!field.value.trim() || !Number.isFinite(field.valueAsNumber) || field.valueAsNumber < 0) {
+                const category = field.closest('[data-pricing-category]');
+                const subgroup = field.closest('[data-pricing-subpanel]');
+                const categoryTab = category && document.getElementById(`${category.id}-tab`);
+                const subgroupTab = subgroup && document.getElementById(subgroup.getAttribute('aria-labelledby'));
+                if (categoryTab) activateAdminPricingTab(categoryTab);
+                if (subgroupTab) activateAdminPricingTab(subgroupTab);
+                if (field.getClientRects().length) field.focus();
+                const label = field.closest('label')?.querySelector('span')?.textContent?.trim() || 'each price';
+                throw new Error(`Enter a valid non-negative value for ${label}.`);
+            }
+        }
+        return;
+    }
+    for (const modeField of document.querySelectorAll('[data-quick-guide-field="mode"]')) {
+        if (!(modeField instanceof HTMLSelectElement) || modeField.value !== 'custom') continue;
+        const card = modeField.closest('.admin-quick-guide-card');
+        const min = card?.querySelector('[data-quick-guide-field="min"]');
+        const max = card?.querySelector('[data-quick-guide-field="max"]');
+        if (!(min instanceof HTMLInputElement) || !(max instanceof HTMLInputElement) ||
+            !min.value.trim() || !max.value.trim() || !Number.isFinite(min.valueAsNumber) ||
+            !Number.isFinite(max.valueAsNumber) || min.valueAsNumber < 0 || max.valueAsNumber < min.valueAsNumber) {
+            throw new Error(`Enter a valid minimum and maximum for ${card?.querySelector('strong')?.textContent || 'each custom range'}.`);
+        }
+    }
+}
+
+function updateAdminQuickGuideDisplays(config) {
+    document.querySelectorAll('[data-quick-guide-field="mode"]').forEach((modeField) => {
+        if (!(modeField instanceof HTMLSelectElement)) return;
+        const key = modeField.dataset.quickGuideKey;
+        const card = modeField.closest('.admin-quick-guide-card');
+        if (!key || !card) return;
+        const isCustom = modeField.value === 'custom';
+        const range = getHomeTeaserSeedRange(key, config);
+        const rangeLabel = card.querySelector('.admin-quick-guide-card__head > span');
+        const modeLabel = card.querySelector('.admin-quick-guide-card__titlewrap small');
+        if (rangeLabel) rangeLabel.textContent = formatEstimateRange(range.min, range.max);
+        if (modeLabel) modeLabel.textContent = isCustom ? 'Custom' : 'Auto';
+        card.classList.toggle('is-custom', isCustom);
+        card.classList.toggle('is-follow', !isCustom);
+        if (!isCustom) {
+            const min = card.querySelector('[data-quick-guide-field="min"]');
+            const max = card.querySelector('[data-quick-guide-field="max"]');
+            if (min instanceof HTMLInputElement) min.value = String(range.min);
+            if (max instanceof HTMLInputElement) max.value = String(range.max);
+        }
+    });
+}
+
+function updateAdminPricingEditorStatus(message = '') {
+    const ready = Boolean(window.adminPricingRemoteReady);
+    const saving = Boolean(window.adminPricingSaving);
+    const jsonDirty = Boolean(window.adminPricingJsonDirty);
+    const baseline = window.adminPricingBaseline;
+    const draft = window.adminPricingDraftConfig;
+    const pricingDirty = baseline && draft && JSON.stringify(getPricingEditorScope(baseline, 'pricing')) !== JSON.stringify(getPricingEditorScope(draft, 'pricing'));
+    const guideDirty = baseline && draft && JSON.stringify(getPricingEditorScope(baseline, 'guide')) !== JSON.stringify(getPricingEditorScope(draft, 'guide'));
+    const changedElsewhere = baseline && window.pricingConfig && serializePricingConfig(baseline) !== serializePricingConfig(window.pricingConfig);
+
+    document.querySelectorAll('[data-pricing-path]').forEach((field) => { field.disabled = !ready || saving || jsonDirty; });
+    document.querySelectorAll('[data-quick-guide-field]').forEach((field) => {
+        const mode = field.closest('.admin-quick-guide-card')?.querySelector('[data-quick-guide-field="mode"]');
+        field.disabled = !ready || saving || jsonDirty || (field.dataset.quickGuideField !== 'mode' && mode?.value !== 'custom');
+    });
+    const json = document.getElementById('adminPricingConfigJson');
+    if (json instanceof HTMLTextAreaElement) json.disabled = !ready || saving;
+    const marginButton = document.getElementById('btnApplyPremiumPricingPreset');
+    const marginField = document.querySelector('[data-pricing-path="meta.premiumMarginPercent"]');
+    if (marginButton instanceof HTMLButtonElement && marginField instanceof HTMLInputElement && marginField.value.trim()) {
+        marginButton.textContent = `Apply Premium Margin (+${marginField.value}%)`;
+    }
+    ['btnSavePricingConfig', 'btnSaveQuickGuideConfig', 'btnApplyPremiumPricingPreset', 'btnResetPricingConfig', 'btnResetQuickGuideConfig', 'btnReloadPricingConfig', 'btnApplyPricingJson'].forEach((id) => {
+        const button = document.getElementById(id);
+        if (button instanceof HTMLButtonElement) button.disabled = !ready || saving || (jsonDirty && !['btnApplyPricingJson', 'btnReloadPricingConfig', 'btnSavePricingConfig', 'btnSaveQuickGuideConfig'].includes(id));
+    });
+
+    let status = message;
+    if (!status && !ready) status = window.adminPricingLoadError || 'Loading saved pricing...';
+    else if (!status && saving) status = 'Saving changes...';
+    else if (!status && jsonDirty) status = 'Unsaved JSON edits. Apply JSON to use the visual fields, or save the selected section.';
+    else if (!status && changedElsewhere && hasPricingEditorChanges()) status = 'Saved settings changed elsewhere. Your edits are preserved; reload saved values or review before saving.';
+    else if (!status && (pricingDirty || guideDirty)) status = `Unsaved changes: ${[pricingDirty ? 'pricing' : '', guideDirty ? 'quick guide' : ''].filter(Boolean).join(' and ')}. Each Save button only saves its own section.`;
+    else if (!status && window.adminPricingVisualDirty) status = 'Check your unsaved input before saving or reloading.';
+    else if (!status && window.adminPricingSnapshotFromCache) status = 'Showing cached pricing; connect to confirm current saved values.';
+    else if (!status && !window.adminPricingDocumentExists) status = 'No saved pricing document was found. Default values are shown.';
+    else if (!status) status = 'Saved values shown. Pricing and guide ranges are saved separately.';
+    ['adminPricingConfigHint', 'adminQuickGuideConfigHint'].forEach((id) => {
+        const hint = document.getElementById(id);
+        if (hint) hint.textContent = status;
+    });
 }
 
 function bindAdminPricingSettingsControls() {
@@ -5050,95 +5221,146 @@ function bindAdminPricingSettingsControls() {
     const resetBtn = document.getElementById('btnResetPricingConfig');
     const resetQuickGuideBtn = document.getElementById('btnResetQuickGuideConfig');
 
-    const savePricingConfig = async (buttonEl, successMessage = 'Pricing settings saved.') => {
-        if (!requireAdminSession('Please sign in with an authorized admin account before saving pricing.')) return;
+    const validateBeforeReplacing = (scopes) => {
+        try {
+            scopes.forEach(validatePricingEditor);
+            return true;
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Pricing could not be validated.';
+            updateAdminPricingEditorStatus(message);
+            showAdminToast(message, true);
+            return false;
+        }
+    };
 
-        const button = buttonEl;
-        const jsonFieldEl = document.getElementById('adminPricingConfigJson');
+    const savePricingConfig = async (buttonEl, scope, successMessage) => {
+        if (!requireAdminSession('Please sign in with an authorized admin account before saving pricing.')) return;
+        if (!window.adminPricingRemoteReady || !window.adminPricingBaseline || window.adminPricingSaving) {
+            showAdminToast('Saved pricing is not available yet. Please wait or reload.', true);
+            return;
+        }
         let nextConfig;
 
         try {
+            if (!window.adminPricingJsonDirty || window.adminPricingVisualDirty) {
+                validatePricingEditor('pricing');
+                validatePricingEditor('guide');
+            }
             nextConfig = readPricingConfigFromEditor();
         } catch (error) {
-            showAdminToast(error instanceof Error ? error.message : 'Pricing JSON could not be parsed.', true);
+            const message = error instanceof Error ? error.message : 'Pricing could not be validated.';
+            updateAdminPricingEditorStatus(message);
+            showAdminToast(message, true);
             return;
         }
 
         const normalized = normalizePricingConfig(nextConfig);
-        const originalLabel = button.textContent || 'Save';
-        button.disabled = true;
-        button.textContent = 'Saving...';
+        const baseline = normalizePricingConfig(window.adminPricingBaseline);
+        const otherScope = scope === 'pricing' ? 'guide' : 'pricing';
+        const otherDirty = JSON.stringify(getPricingEditorScope(normalized, otherScope)) !== JSON.stringify(getPricingEditorScope(baseline, otherScope));
+        const originalLabel = buttonEl.textContent || 'Save';
+        let resultMessage = '';
+        window.adminPricingSaving = true;
+        buttonEl.textContent = 'Saving...';
+        updateAdminPricingEditorStatus();
 
         try {
-            await setDoc(doc(db, 'settings', 'pricing'), normalized, { merge: true });
-            window.pricingConfig = normalized;
-            window.adminPricingDraftConfig = normalizePricingConfig(normalized);
+            const pricingRef = doc(db, 'settings', 'pricing');
+            const saved = await runTransaction(db, async (transaction) => {
+                const snapshot = await transaction.get(pricingRef);
+                const remote = normalizePricingConfig(snapshot.exists() ? snapshot.data() : null);
+                if (JSON.stringify(getPricingEditorScope(remote, scope)) !== JSON.stringify(getPricingEditorScope(baseline, scope))) {
+                    throw new Error('Saved settings changed elsewhere. Reload saved values and review your changes before saving.');
+                }
+                const payload = scope === 'guide' ? { quickGuide: normalized.quickGuide } : getPricingEditorScope(normalized, 'pricing');
+                transaction.set(pricingRef, payload, { merge: true });
+                return normalizePricingConfig(scope === 'guide' ? { ...remote, quickGuide: normalized.quickGuide } : { ...normalized, quickGuide: remote.quickGuide });
+            });
+            window.pricingConfig = saved;
+            window.adminPricingBaseline = scope === 'pricing'
+                ? composePricingEditorConfig(saved, otherDirty ? baseline : saved)
+                : composePricingEditorConfig(otherDirty ? baseline : saved, saved);
+            window.adminPricingDocumentExists = true;
+            window.adminPricingSnapshotFromCache = false;
+            window.adminPricingDraftConfig = scope === 'pricing'
+                ? composePricingEditorConfig(saved, otherDirty ? normalized : saved)
+                : composePricingEditorConfig(otherDirty ? normalized : saved, saved);
+            window.adminPricingVisualDirty = otherDirty;
+            window.adminPricingSaving = false;
             renderAdminPricingSettings();
-            bindAdminPricingSettingsControls();
             refreshPricingDependentViews();
             showAdminToast(successMessage);
+            resultMessage = hasPricingEditorChanges() ? `${successMessage} Other changes remain unsaved.` : successMessage;
         } catch (error) {
             console.error(error);
-            showAdminToast('Failed to save pricing settings.', true);
+            const conflict = error instanceof Error && error.message.startsWith('Saved settings changed elsewhere.');
+            const message = conflict ? error.message : 'Could not save pricing settings. Check your connection and permissions; your edits are still here.';
+            showAdminToast(message, true);
+            resultMessage = message;
         } finally {
-            button.disabled = false;
-            button.textContent = originalLabel;
-            if (jsonFieldEl instanceof HTMLTextAreaElement) {
-                jsonFieldEl.dataset.serialized = jsonFieldEl.value;
-            }
+            window.adminPricingSaving = false;
+            buttonEl.textContent = originalLabel;
+            updateAdminPricingEditorStatus(resultMessage);
         }
     };
 
     if (grid instanceof HTMLElement && grid.dataset.pricingBound !== 'true') {
         grid.addEventListener('input', () => {
+            window.adminPricingVisualDirty = true;
             window.adminPricingDraftConfig = collectPricingConfigFromEditor();
             syncPricingJsonEditor(window.adminPricingDraftConfig);
+            updateAdminQuickGuideDisplays(window.adminPricingDraftConfig);
+            updateAdminPricingEditorStatus();
         });
         grid.dataset.pricingBound = 'true';
     }
 
     if (quickGuideGrid instanceof HTMLElement && quickGuideGrid.dataset.pricingBound !== 'true') {
         quickGuideGrid.addEventListener('input', () => {
+            window.adminPricingVisualDirty = true;
             window.adminPricingDraftConfig = collectPricingConfigFromEditor();
             syncPricingJsonEditor(window.adminPricingDraftConfig);
+            updateAdminQuickGuideDisplays(window.adminPricingDraftConfig);
+            updateAdminPricingEditorStatus();
         });
         quickGuideGrid.addEventListener('change', (event) => {
-            const target = event.target instanceof HTMLElement ? event.target : null;
+            window.adminPricingVisualDirty = true;
             window.adminPricingDraftConfig = collectPricingConfigFromEditor();
-            if (target instanceof HTMLSelectElement && target.getAttribute('data-quick-guide-field') === 'mode') {
-                renderAdminPricingSettings();
-                bindAdminPricingSettingsControls();
-            }
             syncPricingJsonEditor(window.adminPricingDraftConfig);
+            updateAdminQuickGuideDisplays(window.adminPricingDraftConfig);
+            updateAdminPricingEditorStatus();
         });
         quickGuideGrid.dataset.pricingBound = 'true';
     }
 
     if (jsonField instanceof HTMLTextAreaElement && jsonField.dataset.pricingBound !== 'true') {
         jsonField.addEventListener('input', () => {
-            jsonField.dataset.serialized = '';
+            window.adminPricingJsonDirty = jsonField.value !== (jsonField.dataset.serialized || '');
+            updateAdminPricingEditorStatus();
         });
         jsonField.dataset.pricingBound = 'true';
     }
 
     if (saveBtn instanceof HTMLButtonElement && saveBtn.dataset.pricingBound !== 'true') {
         saveBtn.addEventListener('click', async () => {
-            await savePricingConfig(saveBtn, 'Pricing settings saved.');
+            await savePricingConfig(saveBtn, 'pricing', 'Pricing settings saved.');
         });
         saveBtn.dataset.pricingBound = 'true';
     }
 
     if (saveQuickGuideBtn instanceof HTMLButtonElement && saveQuickGuideBtn.dataset.pricingBound !== 'true') {
         saveQuickGuideBtn.addEventListener('click', async () => {
-            await savePricingConfig(saveQuickGuideBtn, 'Quick guide ranges saved.');
+            await savePricingConfig(saveQuickGuideBtn, 'guide', 'Quick guide ranges saved.');
         });
         saveQuickGuideBtn.dataset.pricingBound = 'true';
     }
 
     if (presetBtn instanceof HTMLButtonElement && presetBtn.dataset.pricingBound !== 'true') {
         presetBtn.addEventListener('click', () => {
+            if (!validateBeforeReplacing(['pricing', 'guide'])) return;
             const currentConfig = normalizePricingConfig(window.adminPricingDraftConfig || window.pricingConfig || null);
             const margin = normalizePricingNumber(currentConfig?.meta?.premiumMarginPercent, 10);
+            if (!confirm(`Apply the ${margin}% premium margin to the existing preset's service prices? Reference-sheet finish variants are unchanged. Nothing is published until you save pricing.`)) return;
             setPricingEditorConfig(applyPremiumPricingMargin(currentConfig, margin));
             showAdminToast('Premium pricing preset applied to the editor. Save to publish.');
         });
@@ -5147,7 +5369,10 @@ function bindAdminPricingSettingsControls() {
 
     if (resetBtn instanceof HTMLButtonElement && resetBtn.dataset.pricingBound !== 'true') {
         resetBtn.addEventListener('click', () => {
-            setPricingEditorConfig(getDefaultPricingConfig());
+            if (!validateBeforeReplacing(['guide'])) return;
+            if (!confirm('Replace the pricing editor values with defaults? Nothing is published until you save pricing.')) return;
+            const guide = normalizePricingConfig(window.adminPricingDraftConfig || window.pricingConfig).quickGuide;
+            setPricingEditorConfig({ ...getDefaultPricingConfig(), quickGuide: guide });
             showAdminToast('Default pricing loaded into the editor. Save to publish.');
         });
         resetBtn.dataset.pricingBound = 'true';
@@ -5155,6 +5380,8 @@ function bindAdminPricingSettingsControls() {
 
     if (resetQuickGuideBtn instanceof HTMLButtonElement && resetQuickGuideBtn.dataset.pricingBound !== 'true') {
         resetQuickGuideBtn.addEventListener('click', () => {
+            if (!validateBeforeReplacing(['pricing'])) return;
+            if (!confirm('Set all quick guide ranges to Auto in the editor? Nothing is published until you save ranges.')) return;
             const nextConfig = normalizePricingConfig(window.adminPricingDraftConfig || window.pricingConfig || null);
             nextConfig.quickGuide = normalizeQuickGuideConfig(null, nextConfig);
             setPricingEditorConfig(nextConfig);
@@ -5162,6 +5389,34 @@ function bindAdminPricingSettingsControls() {
             showAdminToast('Quick guide ranges reset to follow pricing. Save to publish.');
         });
         resetQuickGuideBtn.dataset.pricingBound = 'true';
+    }
+
+    const applyJson = document.getElementById('btnApplyPricingJson');
+    if (applyJson instanceof HTMLButtonElement && applyJson.dataset.pricingBound !== 'true') {
+        applyJson.addEventListener('click', () => {
+            try {
+                if (window.adminPricingVisualDirty && !confirm('Applying JSON will replace the current visual editor values. Continue?')) return;
+                setPricingEditorConfig(readPricingConfigFromEditor());
+                updateAdminPricingEditorStatus('JSON applied to the editor. Save each changed section to publish.');
+            } catch (error) {
+                const message = error instanceof Error ? error.message : 'Pricing JSON could not be applied.';
+                updateAdminPricingEditorStatus(message);
+                showAdminToast(message, true);
+            }
+        });
+        applyJson.dataset.pricingBound = 'true';
+    }
+
+    const reload = document.getElementById('btnReloadPricingConfig');
+    if (reload instanceof HTMLButtonElement && reload.dataset.pricingBound !== 'true') {
+        reload.addEventListener('click', () => {
+            if (hasPricingEditorChanges() && !confirm('Discard your unsaved pricing and guide changes and reload the latest saved values?')) return;
+            window.adminPricingBaseline = normalizePricingConfig(window.pricingConfig);
+            window.adminPricingVisualDirty = false;
+            setPricingEditorConfig(window.pricingConfig);
+            updateAdminPricingEditorStatus(window.adminPricingSnapshotFromCache ? 'Cached values loaded. Connect to confirm current saved values.' : 'Latest saved values loaded.');
+        });
+        reload.dataset.pricingBound = 'true';
     }
 }
 
@@ -5171,19 +5426,29 @@ function attachPricingSettingsListener() {
         window.pricingSettingsUnsub = null;
     }
 
-    window.pricingSettingsUnsub = onSnapshot(doc(db, 'settings', 'pricing'), (docSnap) => {
+    window.pricingSettingsUnsub = onSnapshot(doc(db, 'settings', 'pricing'), { includeMetadataChanges: true }, (docSnap) => {
+        if (docSnap.metadata.hasPendingWrites) return;
+        const hadChanges = hasPricingEditorChanges();
         window.pricingConfig = normalizePricingConfig(docSnap.exists() ? docSnap.data() : null);
-        window.adminPricingDraftConfig = normalizePricingConfig(window.pricingConfig);
-        if (bodyElement.getAttribute('data-page') === 'admin') {
-            renderAdminPricingSettings();
+        window.adminPricingRemoteReady = true;
+        window.adminPricingLoadError = '';
+        window.adminPricingDocumentExists = docSnap.exists();
+        window.adminPricingSnapshotFromCache = docSnap.metadata.fromCache;
+        if (!hadChanges && !window.adminPricingSaving) {
+            window.adminPricingBaseline = normalizePricingConfig(window.pricingConfig);
+            window.adminPricingDraftConfig = normalizePricingConfig(window.pricingConfig);
+            window.adminPricingVisualDirty = false;
+            if (bodyElement.getAttribute('data-page') === 'admin') renderAdminPricingSettings();
+        } else if (bodyElement.getAttribute('data-page') === 'admin') {
+            updateAdminPricingEditorStatus();
         }
         refreshPricingDependentViews();
-    }, () => {
-        window.pricingConfig = normalizePricingConfig(null);
-        window.adminPricingDraftConfig = normalizePricingConfig(window.pricingConfig);
-        if (bodyElement.getAttribute('data-page') === 'admin') {
-            renderAdminPricingSettings();
-        }
+    }, (error) => {
+        console.error('Unable to load pricing settings:', error);
+        window.adminPricingRemoteReady = false;
+        window.adminPricingLoadError = 'Could not load saved pricing. Check your connection and permissions before editing.';
+        if (!window.pricingConfig) window.pricingConfig = normalizePricingConfig(null);
+        if (bodyElement.getAttribute('data-page') === 'admin') updateAdminPricingEditorStatus();
         refreshPricingDependentViews();
     });
 }
@@ -5815,6 +6080,7 @@ function closeVideoModal() {
 function handleGlobalScroll(e) {
     const btn = document.getElementById('backToTopBtn');
     if (!btn) return;
+    if (bodyElement.getAttribute('data-page') === 'admin' && e?.target instanceof Element && e.target.closest('.admin-sidebar')) return;
     
     let scrolled = window.scrollY || document.documentElement.scrollTop;
     
@@ -5900,7 +6166,29 @@ document.addEventListener('mousemove', (e) => {
 // PART 2 of 4: PAGE LOADERS & PRICING
 // ==========================================
 
-function cinematicTransition(event, targetPageFunction, hashTarget = '') {
+function cinematicTransition(event, targetPageFunction, hashTarget = '', options = {}) {
+    const leavingAdmin = bodyElement.getAttribute('data-page') === 'admin' && targetPageFunction !== loadAdminDashboard;
+    if (leavingAdmin && window.adminPricingSaving) {
+        event?.preventDefault?.();
+        showAdminToast('Please wait for the pricing save to finish before leaving.', true);
+        return;
+    }
+    if (!options.pricingExitConfirmed && leavingAdmin && hasPricingEditorChanges() &&
+        !confirm('You have unsaved pricing or guide changes. Leaving the dashboard will discard them. Continue?')) {
+        event?.preventDefault?.();
+        return;
+    }
+    if (leavingAdmin) {
+        window.adminPricingBaseline = normalizePricingConfig(window.pricingConfig);
+        window.adminPricingDraftConfig = normalizePricingConfig(window.pricingConfig);
+        window.adminPricingVisualDirty = false;
+        window.adminPricingJsonDirty = false;
+        window.adminPricingIdleDraft = null;
+    }
+    if (window.adminNavigationCleanup) {
+        window.adminNavigationCleanup();
+        window.adminNavigationCleanup = null;
+    }
     stopAdminIdleLock();
 
     if (event && typeof event.preventDefault === 'function') {
@@ -7307,8 +7595,8 @@ function loadHomePage() {
                 <img class="home-pokemon-sprite home-pokemon-magikarp" src="https://img.pokemondb.net/sprites/black-white/anim/normal/magikarp.gif" alt="">
             </div>
             <header class="home-hero-header">
-                <p class="home-hero-kicker">✦ Husky's Studio · A little corner of space ✦</p>
-                <h1>Husky's Horizon.</h1>
+                <p class="home-hero-kicker">✦ Husky's Little Universe · A little corner of the cosmos ✦</p>
+                <h1>Husky's Little Universe</h1>
                 <h2>Custom Art • Animation • Handmade Creations</h2>
                 <p class="home-hero-note">Dreamy art, animated stories, and handmade pieces made by me with care from first idea to final delivery.</p>
             </header>
@@ -7395,9 +7683,9 @@ function loadHomePage() {
         </section>
         </section>
 
-        <section class="home-trust-shell" aria-label="Why commission with Horizon Tide">
+        <section class="home-trust-shell" aria-label="Why commission with Husky's Little Universe">
             <div class="home-trust-head" id="homeGuideTrustHead">
-                <h3>Why Commission With Horizon?</h3>
+                <h3>Why Commission With Us?</h3>
                 <p>Clear updates, careful work, and a smoother ordering experience.</p>
             </div>
 
@@ -7504,7 +7792,7 @@ function loadGalleryPage() {
 
     let galleryHTML = `
         <div class="preorder-card menu-large">
-            <h1 style="color: #ffffff; text-shadow: 0 0 15px #ec4899; font-size: 2.5rem;">Horizon Tide Gallery</h1>
+            <h1 style="color: #ffffff; text-shadow: 0 0 15px #ec4899; font-size: 2.5rem;">Husky's Little Universe Gallery</h1>
             <p style="color: #e2e8f0; margin-bottom: 20px;">Explore past commissions, creations, and concepts.</p>
             <div class="filter-btn-group">
                 ${galleryFilters.map((filter, index) => `<button type="button" class="filter-btn ${index === 0 ? 'active' : ''}" data-filter="${escapeHTML(filter.value)}">${escapeHTML(filter.label)}</button>`).join('')}
@@ -7530,7 +7818,7 @@ function loadGalleryPage() {
 
     galleryHTML += `
             </div>
-            <button type="button" id="backHomeBtn" class="nav-btn" style="margin-top: 20px;">← Back to Horizon</button>
+            <button type="button" id="backHomeBtn" class="nav-btn" style="margin-top: 20px;">← Back Home</button>
         </div>
     `;
 
@@ -7591,7 +7879,7 @@ function loadComicsPage() {
                     </button>
                 `).join('') : '<p class="comics-empty-state">New stories will appear here soon.</p>'}
             </div>
-            <button type="button" id="backHomeBtn" class="nav-btn">Back to Husky\'s Horizon</button>
+            <button type="button" id="backHomeBtn" class="nav-btn">Back Home</button>
         </section>
     `;
 
@@ -7836,7 +8124,7 @@ function loadPreorderPage() {
                     <button type="button" class="preorder-btn disabled" id="btnAnimations">Animations</button>
                 </div>
             </div>
-            <button type="button" id="backHomeBtn" class="preorder-btn preorder-back-btn">← Back to Horizon</button>
+            <button type="button" id="backHomeBtn" class="preorder-btn preorder-back-btn">← Back Home</button>
         </div>
     `;
 
@@ -8063,7 +8351,7 @@ function loadPricingPage() {
 
     appViewport.innerHTML = `
         <div class="pricing-container">
-            <h1>Horizon Tide Gallery Pricing Sheet</h1>
+            <h1>Husky's Little Universe Pricing Sheet</h1>
             <p class="subtitle">Starting prices are listed below so clients can budget fast, compare services easily, and decide where to start.</p>
 
             <div class="pricing-jump-nav" role="navigation" aria-label="Pricing section jump links">
@@ -8308,7 +8596,7 @@ function loadPricingPage() {
             </div>
             <div class="pricing-ending">
                 <div class="pricing-ending-divider"></div>
-                <p>Thank you for supporting Horizon Tide Gallery ✨</p>
+                <p>Thank you for supporting Husky's Little Universe ✨</p>
             </div>
             <div class="pricing-back-menu-bottom">
                 <button type="button" id="backToMenuBtn" class="nav-btn pricing-btn-glow">← Back to Menu</button>
@@ -9125,7 +9413,7 @@ function loadPremadeKeychainsForm() {
         </div>
         <div class="form-card">
             <h1>Premade Keychain Order Form</h1>
-            <p class="form-desc">Order premade Horizon Tide Gallery keychains. (Size: 2.5 inches)</p>
+            <p class="form-desc">Order premade Husky's Little Universe keychains. (Size: 2.5 inches)</p>
             ${getFormDraftBannerHTML()}
 
             <form id="premadeKeychainForm">
@@ -9244,11 +9532,11 @@ function loadWhatWeDoPage() {
     renderDashboardStars();
 
     appViewport.innerHTML = `
-        <button type="button" id="backHomeBtn" class="nav-btn" style="margin-bottom: 25px; border-color: #ec4899;">← Back to Horizon</button>
+        <button type="button" id="backHomeBtn" class="nav-btn" style="margin-bottom: 25px; border-color: #ec4899;">← Back Home</button>
         <div class="split-workspace-layout">
             <div class="text-scroller-card">
                 <h3>What I Do</h3>
-                <p>At Horizon Tide, I bring ideas from imagination into reality, from sketches on a screen to creations you can hold in your hands.</p>
+                <p>At Husky's Little Universe, I bring ideas from imagination into reality, from sketches on a screen to creations you can hold in your hands.</p>
                 <p>🎨 <strong>Artist Husky</strong> specializes in creating artwork, character designs, and concepts for physical projects. From illustrations and creative ideas to designing products and visual concepts, every project starts with a spark of imagination.</p>
                 <p>I combine 2D creativity and handmade craftsmanship to make unique projects inspired by the sea, stars, and the things I love.</p>
             </div>
@@ -9281,9 +9569,9 @@ function loadSocialsPage() {
         </div>
         <div class="galaxy-comet comet-a"></div><div class="galaxy-comet comet-b"></div><div class="galaxy-comet comet-c"></div>
         <section class="meet-artists-heading">
-            <p class="meet-artists-kicker">Horizon Tide Studio</p>
+            <p class="meet-artists-kicker">Husky's Little Universe</p>
             <h1 class="meet-artists-title">Meet the Artists & Socials</h1>
-            <p class="meet-artists-subtitle">A warm hello from Husky, the digital artist and animator behind Horizon Tide.</p>
+            <p class="meet-artists-subtitle">A warm hello from Husky, the digital artist and animator behind Husky's Little Universe.</p>
         </section>
         <section class="meet-info-signpost" aria-label="Meet page quick links">
             <p class="meet-info-signpost-label">Need quick info?</p>
@@ -9305,7 +9593,7 @@ function loadSocialsPage() {
             </article>
         </div>
         <div class="socials-bio">
-            Horizon Tide is a small handmade studio built around trust, communication, and creativity. Husky leads digital projects and visual storytelling, keeping each project personal, clear, and carefully crafted from first idea to final delivery.
+            Husky's Little Universe is a small handmade studio built around trust, communication, and creativity. Husky leads digital projects and visual storytelling, keeping each project personal, clear, and carefully crafted from first idea to final delivery.
         </div>
         <section class="meet-faq-shell" id="meetFaqSection">
             <h2>Frequently Asked Questions</h2>
@@ -9369,7 +9657,7 @@ function loadSocialsPage() {
             </ol>
             <p class="meet-trust-note">I use Horizon Queue to keep public progress updates organized while protecting private customer information.</p>
         </section>
-        <button type="button" id="backHomeBtn" class="nav-btn" style="margin-top: 10px; border-color: #a855f7;">← Back to Horizon</button>
+        <button type="button" id="backHomeBtn" class="nav-btn" style="margin-top: 10px; border-color: #a855f7;">← Back Home</button>
     `;
 
     document.getElementById('jumpToFaqBtn')?.addEventListener('click', () => {
@@ -9400,7 +9688,7 @@ function loadTOSPage() {
         <div class="tos-container">
             ${TOS_CONTENT_HTML}
         </div>
-        <button type="button" id="backHomeBtn" class="nav-btn" style="border-color: #22c55e;">← Back to Horizon</button>
+        <button type="button" id="backHomeBtn" class="nav-btn" style="border-color: #22c55e;">← Back Home</button>
     `;
 
     document.querySelectorAll('.tos-jump-btn').forEach(btn => {
@@ -10085,14 +10373,14 @@ function loadReviewsPage() {
         <section class="reviews-page-shell" aria-label="Customer reviews page">
             <header class="reviews-hero">
                 <h1>Customer Reviews</h1>
-                <h2>Five-star feedback from Horizon Tide clients</h2>
+                <h2>Five-star feedback from Husky's Little Universe clients</h2>
                 <p class="reviews-hero-note">SFW reviews and images only. Every submission goes through admin approval before it appears publicly.</p>
                 <div class="reviews-policy-strip" role="note" aria-label="Review page guidelines">
                     <p><strong>SFW Notice:</strong> Keep text and images safe for public display.</p>
                     <p><strong>Pending Approval:</strong> Your review is saved instantly, then reviewed by an admin before it shows on this page.</p>
                 </div>
                 <div class="reviews-hero-actions">
-                    <button type="button" id="reviewsBackHomeBtn" class="nav-btn">← Back to Horizon</button>
+                    <button type="button" id="reviewsBackHomeBtn" class="nav-btn">← Back Home</button>
                     <button type="button" id="reviewsJumpToFormBtn" class="nav-btn">Leave a Review</button>
                     <button type="button" id="reviewsContactBtn" class="nav-btn reviews-secondary-btn">Contact</button>
                     ${renderAdminReturnButtonMarkup()}
@@ -10112,7 +10400,7 @@ function loadReviewsPage() {
             <section id="leaveReviewSection" class="reviews-form-shell" aria-labelledby="leaveReviewHeading">
                 <div class="reviews-section-head">
                     <h3 id="leaveReviewHeading">Submit Your Experience</h3>
-                    <p>Share your experience with Horizon Tide Gallery. Reviews are manually reviewed before appearing publicly.</p>
+                    <p>Share your experience with Husky's Little Universe. Reviews are manually reviewed before appearing publicly.</p>
                 </div>
 
                 <form id="publicReviewForm" class="reviews-form-grid" novalidate>
@@ -10368,7 +10656,7 @@ function loadContactPage() {
         <div class="gif-container"><img src="https://img.pokemondb.net/sprites/black-white/anim/shiny/umbreon.gif" alt="Shiny Umbreon" class="active-pokemon-gif"></div>
         <header><h1>Contact Me</h1><h2>Drop a message in my galactic wave box</h2></header>
         <div class="admin-public-nav-row">
-            <button type="button" id="backHomeBtn" class="nav-btn">← Back to Horizon</button>
+            <button type="button" id="backHomeBtn" class="nav-btn">← Back Home</button>
             ${renderAdminReturnButtonMarkup()}
         </div>
         <div class="comment-section" style="width: 100%; max-width: 530px; text-align: left; background: rgba(10, 18, 38, 0.85); padding: 30px; border-radius: 20px; backdrop-filter: blur(10px); border: 2px solid rgba(0, 242, 254, 0.3);">
@@ -10452,7 +10740,7 @@ function loadContactPage() {
                     createdAt: serverTimestamp(),
                     to: ['horizontidegallery@gmail.com'],
                     message: {
-                        subject: 'New comment report - Horizon Tide Gallery',
+                        subject: 'New comment report - Husky\'s Little Universe',
                         text: reportText,
                         html: reportHtml
                     }
@@ -10462,7 +10750,7 @@ function loadContactPage() {
             } catch (err) {
                 // If Firestore write fails (offline or permissions), fall back to mailto draft
                 console.warn('Report write failed, falling back to mailto:', err);
-                const reportSubject = encodeURIComponent('Report comment on Horizon Tide Gallery');
+                const reportSubject = encodeURIComponent('Report comment on Husky\'s Little Universe');
                 const reportBody = encodeURIComponent(`I want to report this comment:\n\nComment ID: ${id}\nAuthor: ${comment.name || 'Unknown'}\nMessage: ${comment.text || ''}\n\nReason: ${reason}\nReporter: ${reporterEmail || 'anonymous'}`);
                 window.location.href = `mailto:horizontidegallery@gmail.com?subject=${reportSubject}&body=${reportBody}`;
                 return;
@@ -11197,8 +11485,8 @@ function bindCustomerPhaseTwoPanel(orderId) {
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'Horizon Tide Order Tracking',
-                    text: `Track order ${orderId} on Horizon Tide Gallery`,
+                    title: 'Order Tracking - Husky\'s Little Universe',
+                    text: `Track order ${orderId} on Husky's Little Universe`,
                     url: trackingLink
                 });
                 setStatus('Share sheet opened.');
@@ -11242,7 +11530,7 @@ Enjoy your stay in <strong>Meowter Space</strong> where the vibes are cosmic, an
             
             <a href="https://discord.gg/JJt4wJca79" target="_blank" class="nav-btn btn-pink-highlight" style="display: inline-block; margin-top: 25px; text-decoration: none;">Join Meowter Space 🚀</a>
             <br>
-            <button type="button" id="backHomeBtn" class="nav-btn" style="margin-top: 20px;">← Back to Horizon</button>
+            <button type="button" id="backHomeBtn" class="nav-btn" style="margin-top: 20px;">← Back Home</button>
         </div>
     `;
     document.getElementById('backHomeBtn').addEventListener('click', (e) => cinematicTransition(e, loadHomePage, '#home'));
@@ -12066,6 +12354,10 @@ function openAdminLoginModal(options = {}) {
 bindSecretCornerTrigger();
 
 function clearAdminRealtimeListeners() {
+    if (window.adminNavigationCleanup) {
+        window.adminNavigationCleanup();
+        window.adminNavigationCleanup = null;
+    }
     if (window.adminUnsubscribe) {
         window.adminUnsubscribe();
         window.adminUnsubscribe = null;
@@ -12333,6 +12625,14 @@ function bindAdminIdleLock() {
 async function lockAdminForIdle() {
     if (bodyElement.getAttribute('data-page') !== 'admin' || adminIdleLocked) return;
 
+    if (hasPricingEditorChanges()) {
+        window.adminPricingIdleDraft = {
+            fields: Array.from(document.querySelectorAll('[data-pricing-path], [data-quick-guide-field]'), (field) => field.value),
+            json: document.getElementById('adminPricingConfigJson')?.value,
+            visualDirty: window.adminPricingVisualDirty,
+            jsonDirty: window.adminPricingJsonDirty
+        };
+    }
     adminIdleLocked = true;
     closeAdminLoginModal();
 
@@ -12631,6 +12931,16 @@ function getOrderServiceType(order) {
 
 function getOrderCreator(serviceType) {
     return 'husky';
+}
+
+function getAdminOrderCreator(order) {
+    const explicitCreator = String(order?.creator || order?.artist || order?.assignedTo || '').trim().toLowerCase();
+    if (explicitCreator.includes('lopside')) return 'lopside';
+    if (explicitCreator.includes('husky')) return 'husky';
+    return inferCommissionQueueOwner({
+        queueOwner: order?.queueOwner,
+        commissionType: order?.commissionType || order?.orderType || order?.itemType || order?.keychainType || order?.stickerType || order?.partType || order?.artType
+    });
 }
 
 function isOrderRecordValidForRevenue(order) {
@@ -13104,6 +13414,178 @@ function getOrderTimestampMs(order) {
     }
 }
 
+const ADMIN_ORDER_BUSINESS_TIME_ZONE = 'America/New_York';
+
+function getOrderSubmissionTimestampMs(order) {
+    const value = order?.createdAt;
+    if (value == null || value === '') return null;
+    try {
+        if (typeof value?.toMillis === 'function') {
+            const timestamp = value.toMillis();
+            return Number.isFinite(timestamp) ? timestamp : null;
+        }
+        if (typeof value?.toDate === 'function') {
+            const date = value.toDate();
+            const timestamp = date instanceof Date ? date.getTime() : Number.NaN;
+            return Number.isFinite(timestamp) ? timestamp : null;
+        }
+        if (typeof value === 'object' && !(value instanceof Date)) {
+            const seconds = Number(value.seconds ?? value._seconds);
+            const nanoseconds = Number(value.nanoseconds ?? value._nanoseconds ?? 0);
+            if (Number.isFinite(seconds) && Number.isFinite(nanoseconds)) {
+                const timestamp = (seconds * 1000) + (nanoseconds / 1000000);
+                return Number.isFinite(new Date(timestamp).getTime()) ? timestamp : null;
+            }
+        }
+        const numericValue = typeof value === 'number'
+            ? value
+            : typeof value === 'string' && /^\d{10,13}$/.test(value.trim())
+                ? Number(value)
+                : null;
+        const timestampValue = numericValue == null
+            ? value
+            : (Math.abs(numericValue) < 100000000000 ? numericValue * 1000 : numericValue);
+        const date = value instanceof Date ? value : new Date(timestampValue);
+        const timestamp = date.getTime();
+        return Number.isFinite(timestamp) ? timestamp : null;
+    } catch {
+        return null;
+    }
+}
+
+function getBusinessCalendarParts(timestampMs) {
+    if (!Number.isFinite(timestampMs)) return null;
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: ADMIN_ORDER_BUSINESS_TIME_ZONE,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).formatToParts(new Date(timestampMs));
+    const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    const year = Number(values.year);
+    const month = Number(values.month);
+    const day = Number(values.day);
+    if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null;
+    return {
+        year,
+        month,
+        day,
+        monthKey: `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`,
+        dateKey: `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    };
+}
+
+function getOrderBusinessDateLabel(timestampMs, options = {}) {
+    if (!Number.isFinite(timestampMs)) return 'Unknown Date';
+    return new Intl.DateTimeFormat(undefined, {
+        timeZone: ADMIN_ORDER_BUSINESS_TIME_ZONE,
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        ...(options.includeWeekday ? { weekday: 'short' } : {}),
+        ...(options.includeTime ? { hour: 'numeric', minute: '2-digit' } : {})
+    }).format(new Date(timestampMs));
+}
+
+function getOrderCalendarState() {
+    if (!window.adminOrderCalendarState) {
+        const parts = getBusinessCalendarParts(Date.now());
+        window.adminOrderCalendarState = {
+            mode: 'month',
+            month: parts?.monthKey || '2000-01',
+            expandedWeeks: {},
+            expandedDays: {},
+            activeDetailTab: 'details',
+            mobileDetailOpen: false
+        };
+    }
+    const state = window.adminOrderCalendarState;
+    if (!state.expandedWeeks) state.expandedWeeks = {};
+    if (!state.expandedDays) state.expandedDays = {};
+    if (typeof state.mobileDetailOpen !== 'boolean') state.mobileDetailOpen = false;
+    if (!state.activeDetailTab) state.activeDetailTab = 'details';
+    return state;
+}
+
+function normalizeOrderMonthKey(value) {
+    const match = /^(\d{4,})-(\d{2})$/.exec(String(value || ''));
+    if (!match) return null;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    return Number.isSafeInteger(year) && year >= 1 && month >= 1 && month <= 12
+        ? `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`
+        : null;
+}
+
+function shiftOrderMonthKey(monthKey, offset) {
+    const normalized = normalizeOrderMonthKey(monthKey);
+    if (!normalized) return monthKey;
+    const [yearText, monthText] = normalized.split('-');
+    const absoluteMonth = Number(yearText) * 12 + Number(monthText) - 1 + offset;
+    const year = Math.floor(absoluteMonth / 12);
+    const month = absoluteMonth - year * 12 + 1;
+    if (!Number.isSafeInteger(year) || year < 1) return normalized;
+    return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`;
+}
+
+function formatOrderMonthLabel(monthKey) {
+    const normalized = normalizeOrderMonthKey(monthKey);
+    if (!normalized) return 'Select month';
+    const [year, month] = normalized.split('-').map(Number);
+    const date = new Date(Date.UTC(2000, month - 1, 15));
+    date.setUTCFullYear(year);
+    return new Intl.DateTimeFormat(undefined, {
+        timeZone: 'UTC',
+        month: 'long',
+        year: 'numeric'
+    }).format(date);
+}
+
+function getBusinessDateFromKey(dateKey) {
+    const [year, month, day] = dateKey.split('-').map(Number);
+    const date = new Date(Date.UTC(2000, month - 1, day, 12));
+    date.setUTCFullYear(year);
+    return date;
+}
+
+function getBusinessWeekKey(dateKey) {
+    const date = getBusinessDateFromKey(dateKey);
+    const weekday = date.getUTCDay();
+    date.setUTCDate(date.getUTCDate() - ((weekday + 6) % 7));
+    return `${String(date.getUTCFullYear()).padStart(4, '0')}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+}
+
+function formatBusinessWeekRange(mondayKey) {
+    const monday = getBusinessDateFromKey(mondayKey);
+    const sunday = new Date(monday);
+    sunday.setUTCDate(sunday.getUTCDate() + 6);
+    const formatDate = (date) => new Intl.DateTimeFormat(undefined, {
+        timeZone: 'UTC',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    }).format(date);
+    const mondayMonth = new Intl.DateTimeFormat(undefined, {
+        timeZone: 'UTC',
+        month: 'short',
+        year: 'numeric'
+    }).format(monday);
+    const sundayMonth = new Intl.DateTimeFormat(undefined, {
+        timeZone: 'UTC',
+        month: 'short',
+        year: 'numeric'
+    }).format(sunday);
+    if (mondayMonth === sundayMonth) {
+        const month = new Intl.DateTimeFormat(undefined, { timeZone: 'UTC', month: 'short' }).format(monday);
+        return `Week of ${month} ${monday.getUTCDate()}–${sunday.getUTCDate()}, ${monday.getUTCFullYear()}`;
+    }
+    return `Week of ${formatDate(monday)} – ${formatDate(sunday)}`;
+}
+
+function getOrderTypeLabel(order) {
+    return String(order?.orderType || order?.itemType || 'Order').trim() || 'Order';
+}
+
 function getOrderAttentionBadge(order) {
     const status = normalizeOrderStatus(order.status);
     if (status === 'pending review' || status === 'new') return 'Pending Review';
@@ -13147,8 +13629,8 @@ function getOrderPublicId(order) {
 
 function buildAdminReminderSubject(order, type) {
     const orderId = getOrderPublicId(order);
-    if (type === 'deposit') return `Horizon Tide | Order ${orderId} | Deposit Reminder`;
-    return `Horizon Tide | Order ${orderId} | Payment Reminder`;
+    if (type === 'deposit') return `Husky's Little Universe | Order ${orderId} | Deposit Reminder`;
+    return `Husky's Little Universe | Order ${orderId} | Payment Reminder`;
 }
 
 function buildAdminReminderMessage(order, type, amountDue = 0) {
@@ -13165,7 +13647,7 @@ function buildAdminReminderMessage(order, type, amountDue = 0) {
             '',
             'Once that is settled, we will keep your queue progress moving smoothly.',
             '',
-            'Thank you so much for supporting Horizon Tide!'
+            "Thank you so much for supporting Husky's Little Universe!"
         ].join('\n');
     }
 
@@ -13177,7 +13659,7 @@ function buildAdminReminderMessage(order, type, amountDue = 0) {
         '',
         'Reply whenever you are ready and we can finalize next steps.',
         '',
-        'Thank you so much for supporting Horizon Tide!'
+        "Thank you so much for supporting Husky's Little Universe!"
     ].join('\n');
 }
 
@@ -13585,13 +14067,27 @@ function renderActivityRows(rows) {
         return '<li class="admin-activity-row"><span class="admin-activity-type is-cyan">System</span><span class="admin-activity-desc">No recent admin activity yet.</span><span class="admin-activity-time">Now</span></li>';
     }
 
-    return rows.map((row) => `
-        <li class="admin-activity-row">
-            <span class="admin-activity-type ${getActivityToneClass(row.type)}">${escapeHTML(row.type)}</span>
-            <span class="admin-activity-desc">${escapeHTML(row.description)}</span>
-            <span class="admin-activity-time">${escapeHTML(row.time)}</span>
-        </li>
-    `).join('');
+    const destinations = {
+        Order: 'adminNavOrders',
+        Refund: 'adminNavRefunds',
+        Commission: 'adminNavCommissions',
+        Review: 'adminNavReviews',
+        Announcement: 'adminNavAnnouncements',
+        'Customer Request': 'adminNavCustomerRequests',
+        Discount: 'adminNavDiscounts'
+    };
+    return rows.map((row) => {
+        const date = row.timestampMs > 0 ? new Date(row.timestampMs) : null;
+        const dateLabel = date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString() : '';
+        const destination = destinations[row.type];
+        return `
+            <li class="admin-activity-row">
+                <span class="admin-activity-type ${getActivityToneClass(row.type)}">${escapeHTML(row.type)}</span>
+                <span class="admin-activity-desc">${escapeHTML(row.description)}${row.status ? ` <small>(${escapeHTML(row.status)})</small>` : ''}${destination ? ` <button type="button" class="admin-btn-edit" data-admin-destination="${destination}">View</button>` : ''}</span>
+                <span class="admin-activity-time">${escapeHTML(dateLabel ? `${dateLabel} · ${row.time}` : row.time)}</span>
+            </li>
+        `;
+    }).join('');
 }
 
 function renderMiniLineChart(rows) {
@@ -13935,7 +14431,7 @@ function renderAdminSmartAlerts(rows = []) {
         return '<p class="admin-detail">No alerts yet.</p>';
     }
 
-    return `<div class="admin-alert-grid">${rows.map((row) => {
+    return `<div class="admin-alert-grid">${rows.map((row, index) => {
         const tone = String(row.tone || 'cyan').toLowerCase();
         const toneClass = ['amber', 'purple', 'red', 'green', 'cyan'].includes(tone) ? tone : 'cyan';
         const value = Math.max(0, Number(row.value) || 0);
@@ -13944,6 +14440,7 @@ function renderAdminSmartAlerts(rows = []) {
                 <p class="admin-alert-title">${escapeHTML(String(row.title || 'Alert'))}</p>
                 <strong class="admin-alert-value">${escapeHTML(String(value))}</strong>
                 <p class="admin-alert-detail">${escapeHTML(String(row.detail || ''))}</p>
+                <button type="button" class="admin-btn-edit" data-admin-destination="${index === 2 ? 'adminReminderCenterHeading' : 'adminNavOrders'}">${index === 2 ? 'View reminders' : 'View orders'}</button>
             </article>
         `;
     }).join('')}</div>`;
@@ -14032,28 +14529,24 @@ function updateAdminDashboardOverview() {
 
     const overviewRows = [
         {
-            rowClass: 'admin-overview-row--action',
-            title: 'Action Required',
-            cards: [
-                { group: 'Action Required', label: 'Pending Reviews', value: metrics.pendingOrdersCount },
-                { group: 'Action Required', label: 'Waiting Payments', value: metrics.waitingPaymentsCount },
-                { group: 'Action Required', label: 'Urgent Actions', value: metrics.urgentActionsCount }
-            ]
-        },
-        {
             rowClass: 'admin-overview-row--business',
-            title: 'Business Health',
+            title: 'Business Overview',
             cards: [
-                { group: 'Business Health', label: 'Revenue', value: formatMoney(metrics.revenueTotal) },
-                { group: 'Business Health', label: 'Paid So Far', value: formatMoney(metrics.totalAmountPaid) },
-                { group: 'Business Health', label: 'Active Preorders', value: metrics.activePreorderWorkCount },
-                { group: 'Business Health', label: 'Open Slots', value: metrics.huskyOpenSlots + metrics.lopsideOpenSlots }
+                { group: 'Queue', label: 'Active Commissions', value: metrics.activeCommissionsCount },
+                { group: 'Orders', label: 'Pending Reviews', value: metrics.pendingOrdersCount },
+                { group: 'Orders', label: 'Waiting Payments', value: metrics.waitingPaymentsCount },
+                { group: 'Orders', label: 'Active Preorders', value: metrics.activePreorderWorkCount },
+                { group: 'Business', label: 'Collected Revenue', value: formatMoney(metrics.totalAmountPaid) },
+                { group: 'Selected Revenue Scope', label: 'Outstanding', value: formatMoney(metrics.pipelineOutstandingRevenue) }
             ]
         },
         {
             rowClass: 'admin-overview-row--info',
-            title: 'Information',
+            title: 'More Overview Metrics',
             cards: [
+                { group: 'Action Required', label: 'Urgent Actions', value: metrics.urgentActionsCount },
+                { group: 'Business Health', label: 'Revenue', value: formatMoney(metrics.revenueTotal) },
+                { group: 'Business Health', label: 'Open Slots', value: metrics.huskyOpenSlots + metrics.lopsideOpenSlots },
                 { group: 'Information', label: 'Response Time', value: metrics.responseTimeLabel },
                 { group: 'Information', label: 'Reviews', value: metrics.reviewCount },
                 { group: 'Information', label: 'Refund Updates', value: metrics.refundCount },
@@ -14062,9 +14555,9 @@ function updateAdminDashboardOverview() {
         }
     ];
 
-    container.innerHTML = overviewRows.map((row) => `
-        <section class="admin-overview-row ${row.rowClass}">
-            <p class="admin-overview-row-title">${escapeHTML(row.title)}</p>
+    container.innerHTML = overviewRows.map((row, index) => `
+        <${index ? 'details' : 'section'} class="admin-overview-row ${row.rowClass}">
+            ${index ? `<summary class="admin-overview-row-title">${escapeHTML(row.title)}</summary>` : `<p class="admin-overview-row-title">${escapeHTML(row.title)}</p>`}
             <div class="admin-overview-row-grid">
                 ${row.cards.map((card) => `
                     <article class="admin-overview-card ${getOverviewCardToneClass(card.label)}">
@@ -14074,7 +14567,7 @@ function updateAdminDashboardOverview() {
                     </article>
                 `).join('')}
             </div>
-        </section>
+        </${index ? 'details' : 'section'}>
     `).join('');
 
     const creatorRows = [
@@ -14092,8 +14585,18 @@ function updateAdminDashboardOverview() {
         { label: 'Completed', value: metrics.estimatedCompletedRevenue }
     ];
 
-    alertsContainer.innerHTML = renderAdminSmartAlerts(metrics.alertRows);
+    alertsContainer.innerHTML = renderAdminSmartAlerts([
+        ...metrics.alertRows,
+        {
+            tone: metrics.waitingPaymentsCount > 0 ? 'purple' : 'green',
+            title: 'Waiting Payments',
+            value: metrics.waitingPaymentsCount,
+            detail: metrics.waitingPaymentsCount > 0 ? 'Accepted orders waiting for payment.' : 'No accepted orders waiting for payment.'
+        }
+    ]);
     remindersContainer.innerHTML = `${renderAdminReminderRows(metrics.reminderRows)}${renderAdminReminderSkipRows(metrics.reminderSkipRows)}`;
+    const reminderSummary = document.getElementById('adminReminderSummary');
+    if (reminderSummary) reminderSummary.textContent = `Reminder Center (${metrics.reminderRows.length} due)`;
 
     chartContainer.innerHTML = `
         <article class="admin-chart-card">
@@ -14156,6 +14659,7 @@ function updateAdminDashboardOverview() {
         activities.push({
             type: 'Order',
             description: `New order submitted: ${metrics.newestOrder.orderId || metrics.newestOrder.name || 'Unknown'}`,
+            status: String(metrics.newestOrder.status || ''),
             time: getRelativeTimeLabel(timestampMs),
             timestampMs
         });
@@ -14165,6 +14669,7 @@ function updateAdminDashboardOverview() {
         activities.push({
             type: 'Refund',
             description: `Refund updated: ${metrics.latestRefund.refundId || metrics.latestRefund.displayName || 'Unknown'}`,
+            status: String(metrics.latestRefund.queueStatus || ''),
             time: getRelativeTimeLabel(ts),
             timestampMs: ts
         });
@@ -14174,6 +14679,7 @@ function updateAdminDashboardOverview() {
         activities.push({
             type: 'Commission',
             description: `Commission status updated: ${metrics.latestCommission.commissionId || metrics.latestCommission.displayName || 'Unknown'}`,
+            status: String(metrics.latestCommission.queueStatus || ''),
             time: getRelativeTimeLabel(ts),
             timestampMs: ts
         });
@@ -14204,6 +14710,7 @@ function updateAdminDashboardOverview() {
         activities.push({
             type: 'Customer Request',
             description: `${getCustomerRequestTypeLabel(latestRequest.requestType || latestRequest.reason)} for ${latestRequest.orderId || 'Unknown order'}`,
+            status: String(latestRequest.status || ''),
             time: getRelativeTimeLabel(ts),
             timestampMs: ts
         });
@@ -14470,41 +14977,198 @@ function bindAdminRevenueCalculatorControls() {
 }
 
 function bindAdminDashboardNavigation() {
-    const setActiveAdminSidebarLink = (activeButton) => {
-        document.querySelectorAll('.admin-sidebar .admin-side-link').forEach((button) => {
-            if (!(button instanceof HTMLElement)) return;
-            button.classList.toggle('active-link', button === activeButton);
-        });
+    const root = document.getElementById('adminDashboardView');
+    const sidebar = root?.querySelector('.admin-sidebar');
+    const main = root?.querySelector('.admin-main-area');
+    const menuButton = document.getElementById('adminMenuBtn');
+    const backdrop = document.getElementById('adminDrawerBackdrop');
+    const railButton = document.getElementById('adminRailBtn');
+    const title = document.getElementById('adminWorkspaceTitle');
+    const tools = document.getElementById('adminSectionTools');
+    const management = root?.querySelector('.admin-management-zone');
+    if (!root || !sidebar || !main || !menuButton || !backdrop || !railButton || !tools || !management) return;
+
+    const mobile = window.matchMedia('(max-width: 760px)');
+    const controller = new AbortController();
+    const oldOverflow = document.body.style.overflow;
+    const oldRootOverflow = document.documentElement.style.overflow;
+    const dashboardParts = Array.from(root.querySelectorAll('[data-admin-home]'));
+    const analytics = document.getElementById('adminAnalyticsWorkspace');
+    const panels = Array.from(management.querySelectorAll(':scope > .admin-collapsible'));
+    const studio = tools.querySelector('.admin-tools-studio-block');
+    const toolParts = studio ? Array.from(studio.children) : [];
+
+    const closeDrawer = (restoreFocus = false) => {
+        root.classList.remove('admin-drawer-open');
+        menuButton.setAttribute('aria-expanded', 'false');
+        sidebar.removeAttribute('role');
+        sidebar.removeAttribute('aria-modal');
+        main.removeAttribute('inert');
+        document.body.style.overflow = oldOverflow;
+        document.documentElement.style.overflow = oldRootOverflow;
+        if (restoreFocus && mobile.matches) menuButton.focus();
     };
-
-    document.querySelectorAll('[data-admin-scroll]').forEach((button) => {
-        if (!(button instanceof HTMLElement) || button.dataset.scrollBound === 'true') return;
-        button.dataset.scrollBound = 'true';
-        button.addEventListener('click', () => {
-            setActiveAdminSidebarLink(button);
-            const targetId = button.getAttribute('data-admin-scroll');
-            const target = targetId ? document.getElementById(targetId) : null;
-            if (!target) return;
-
-            let current = target;
-            while (current) {
-                if (current instanceof HTMLDetailsElement) current.open = true;
-                current = current.parentElement;
+    const setCollapsed = (collapsed) => {
+        root.classList.toggle('admin-rail-collapsed', collapsed);
+        railButton.setAttribute('aria-expanded', String(!collapsed));
+        railButton.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+        try {
+            sessionStorage.setItem('missionControlSidebarCollapsed', String(collapsed));
+        } catch (error) {
+            console.warn('Could not remember sidebar preference:', error);
+        }
+    };
+    let collapsed = false;
+    try {
+        collapsed = sessionStorage.getItem('missionControlSidebarCollapsed') === 'true';
+    } catch (error) {
+        console.warn('Could not read sidebar preference:', error);
+    }
+    setCollapsed(collapsed);
+    railButton.addEventListener('click', () => setCollapsed(!root.classList.contains('admin-rail-collapsed')));
+    menuButton.addEventListener('click', () => {
+        root.classList.add('admin-drawer-open');
+        menuButton.setAttribute('aria-expanded', 'true');
+        sidebar.setAttribute('role', 'dialog');
+        sidebar.setAttribute('aria-modal', 'true');
+        main.setAttribute('inert', '');
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        sidebar.querySelector('.admin-side-link')?.focus();
+        requestAnimationFrame(() => {
+            if (root.classList.contains('admin-drawer-open') && !sidebar.contains(document.activeElement)) {
+                sidebar.querySelector('.admin-side-link')?.focus();
             }
-
-            const targetTab = button.getAttribute('data-queue-tab-focus');
-            if (targetTab) {
-                openAdminQueueTab(targetTab, { scroll: false, openDetails: false });
-            }
-
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
     });
+    backdrop.addEventListener('click', () => closeDrawer(true));
+    document.addEventListener('keydown', (event) => {
+        if (!root.classList.contains('admin-drawer-open')) return;
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            closeDrawer(true);
+        } else if (event.key === 'Tab') {
+            const focusable = Array.from(sidebar.querySelectorAll('button:not([disabled]), a[href], summary'))
+                .filter((element) => element.getClientRects().length);
+            if (!focusable.length) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (!sidebar.contains(document.activeElement)) {
+                event.preventDefault();
+                (event.shiftKey ? last : first).focus();
+            } else if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        }
+    }, { signal: controller.signal });
+    mobile.addEventListener('change', () => closeDrawer(), { signal: controller.signal });
 
-    const dashboardButton = document.getElementById('adminNavDashboard');
-    if (dashboardButton instanceof HTMLElement) {
-        setActiveAdminSidebarLink(dashboardButton);
-    }
+    const markActive = (button) => {
+        root.querySelectorAll('.admin-sidebar .admin-side-link').forEach((link) => {
+            const active = link === button;
+            link.classList.toggle('active-link', active);
+            if (active) link.setAttribute('aria-current', 'page');
+            else link.removeAttribute('aria-current');
+        });
+        if (title) title.textContent = button.dataset.workspaceTitle || button.querySelector('.admin-side-label')?.textContent || button.textContent.trim();
+    };
+
+    const activate = (button) => {
+        const targetId = button.getAttribute('data-admin-scroll');
+        const target = targetId && document.getElementById(targetId);
+        if (!target) return;
+        const drawerWasOpen = root.classList.contains('admin-drawer-open');
+        const isHome = targetId === 'adminTopDashboard' || targetId === 'adminSmartAlertsHeading';
+        const isAnalytics = targetId === 'adminAnalyticsWorkspace';
+        const panel = target.closest('.admin-management-zone > .admin-collapsible');
+        const currentTarget = root.querySelector('.admin-side-link[aria-current="page"]')?.getAttribute('data-admin-scroll');
+        const pricingTargets = ['adminPricingSettingsSection', 'adminQuickGuideSettingsSection'];
+        if (hasPricingEditorChanges() && pricingTargets.includes(currentTarget) && !pricingTargets.includes(targetId) &&
+            !confirm('You have unsaved pricing or guide changes. They will remain in this dashboard until you save or leave it. Continue?')) return false;
+        dashboardParts.forEach((part) => { part.hidden = !isHome; });
+        if (analytics) analytics.hidden = !isAnalytics;
+        management.hidden = !panel;
+        panels.forEach((item) => { item.hidden = item !== panel; });
+        const selectedTool = target.closest('.admin-collapsible--sub');
+        root.classList.toggle('admin-tool-selected', Boolean(selectedTool));
+        root.classList.toggle('admin-orders-active', targetId === 'adminSectionOrders');
+        toolParts.forEach((item) => {
+            item.hidden = selectedTool ? item !== selectedTool : item.matches('.admin-collapsible--sub');
+        });
+        if (panel instanceof HTMLDetailsElement) panel.open = true;
+        if (selectedTool instanceof HTMLDetailsElement) selectedTool.open = true;
+        const targetTab = button.getAttribute('data-queue-tab-focus');
+        if (targetTab) openAdminQueueTab(targetTab, { scroll: false, openDetails: false });
+        markActive(button);
+        closeDrawer();
+        if (drawerWasOpen && title) title.focus({ preventScroll: true });
+        if (isAnalytics) requestAnimationFrame(redrawAdminMonthlyChart);
+        if (targetId === 'adminSmartAlertsHeading') target.scrollIntoView({ block: 'start' });
+        else window.scrollTo({ top: 0, behavior: 'auto' });
+        return true;
+    };
+
+    root.querySelectorAll('.admin-side-link').forEach((button) => {
+        const label = button.textContent.trim();
+        const icon = document.createElement('span');
+        const text = document.createElement('span');
+        icon.className = 'admin-side-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = button.dataset.icon || '✦';
+        text.className = 'admin-side-label';
+        text.textContent = label;
+        button.replaceChildren(icon, text);
+        button.title = label;
+    });
+    root.querySelectorAll('[data-admin-scroll]').forEach((button) => {
+        button.addEventListener('click', (event) => {
+            if (activate(button) === false) event.stopImmediatePropagation();
+        });
+    });
+    root.addEventListener('click', (event) => {
+        const element = event.target instanceof Element ? event.target : null;
+        const queueTab = element?.closest('.queue-manager-tab-btn');
+        if (queueTab) {
+            const queueNav = document.getElementById(queueTab.dataset.queueTab === 'commissions' ? 'adminNavCommissions' : 'adminNavRefunds');
+            if (queueNav) markActive(queueNav);
+        }
+        const button = element?.closest('[data-admin-destination]');
+        if (!button) return;
+        const destination = document.getElementById(button.dataset.adminDestination);
+        if (destination?.matches('[data-admin-scroll]')) destination.click();
+        else if (destination) {
+            if (destination.id === 'adminReminderCenterHeading') document.getElementById('adminReminderDetails').open = true;
+            destination.scrollIntoView({ block: 'start' });
+        }
+    });
+    document.getElementById('sidebarHomeBtn')?.addEventListener('click', () => closeDrawer());
+    document.getElementById('sidebarLockBtn')?.addEventListener('click', () => closeDrawer());
+    window.addEventListener('beforeunload', (event) => {
+        if (!hasPricingEditorChanges()) return;
+        event.preventDefault();
+        event.returnValue = '';
+    }, { signal: controller.signal });
+    const updateClock = () => {
+        const clock = document.getElementById('adminHeaderClock');
+        const phase = document.getElementById('adminHeaderMoon');
+        if (clock) clock.textContent = getMoonClockNowDate().toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        if (phase) phase.textContent = `☾ ${getDynamicMoonPhase().name}`;
+    };
+    updateClock();
+    const clockTimer = window.setInterval(updateClock, 60000);
+    const music = document.getElementById('globalMusicBtn');
+    if (music) document.getElementById('adminMusicUtility')?.appendChild(music);
+    window.adminNavigationCleanup = () => {
+        closeDrawer();
+        controller.abort();
+        window.clearInterval(clockTimer);
+        if (music) document.body.appendChild(music);
+    };
+    activate(document.getElementById('adminNavDashboard'));
 }
 
 function setupAdminDashboardDelegation() {
@@ -15108,7 +15772,7 @@ function setupAdminDashboardDelegation() {
             let msg = `Hi ${order.name}! Your order status has been updated to ${currentStatus}. We'll contact you if we need anything else.`;
             if (currentStatus === 'Pending Review') msg = `Hi ${order.name}! Your preorder has been submitted successfully. We'll review it and contact you if we need anything else.`;
             if (currentStatus === 'Reviewed' || currentStatus === 'Accepted') msg = `Hi ${order.name}! Your order has been reviewed. We'll reach out soon with the next steps or any questions.`;
-            if (currentStatus === 'Finished') msg = `Hi ${order.name}! Your order has been completed. Thank you so much for supporting Horizon Tide Gallery!`;
+            if (currentStatus === 'Finished') msg = `Hi ${order.name}! Your order has been completed. Thank you so much for supporting Husky's Little Universe!`;
 
             navigator.clipboard.writeText(msg)
                 .then(() => showAdminToast('Message template copied! ✨'))
@@ -15186,6 +15850,7 @@ function setupAdminDashboardDelegation() {
                     finalPriceUpdatedAt: serverTimestamp(),
                     finalPriceUpdatedBy: auth.currentUser?.email || 'admin'
                 });
+                clearAdminOrderDraft(orderId, ['finalPrice']);
                 showAdminToast('Final price saved as draft.');
             } catch (error) {
                 console.error(error);
@@ -15243,6 +15908,7 @@ function setupAdminDashboardDelegation() {
                     await setDoc(doc(db, 'preorderStatusPublic', order.orderId), publicPayload, { merge: true });
                 }
 
+                clearAdminOrderDraft(orderId, ['finalPrice']);
                 showAdminToast(finalPricePublished ? 'Final price published to client.' : 'Final price unpublished from client view.');
             } catch (error) {
                 console.error(error);
@@ -15353,6 +16019,7 @@ function setupAdminDashboardDelegation() {
             button.disabled = true;
             try {
                 await updateDoc(doc(db, 'preorders', orderId), updatePayload);
+                clearAdminOrderDraft(orderId, ['quoteAmount', 'amountPaid', 'lopsideDepositPaid', 'lopsideDepositAmount']);
                 showAdminToast('Payment tracker saved.');
             } catch (error) {
                 console.error(error);
@@ -15381,6 +16048,7 @@ function setupAdminDashboardDelegation() {
                     paymentTrackingUpdatedBy: auth.currentUser?.email || 'admin'
                 };
                 await updateDoc(doc(db, 'preorders', orderId), clearPayload);
+                clearAdminOrderDraft(orderId, ['quoteAmount', 'lopsideDepositPaid', 'lopsideDepositAmount']);
                 showAdminToast('Quote and deposit tracking cleared for this order.');
             } catch (error) {
                 console.error(error);
@@ -15631,20 +16299,189 @@ async function syncOrderQueueFallbackFromAdmin(order, status) {
     });
 }
 
+function updateAdminOrderCalendarControls(allOrders) {
+    const calendar = getOrderCalendarState();
+    const heading = document.getElementById('adminOrderMonthHeading');
+    const monthInput = document.getElementById('adminOrderMonthInput');
+    const previous = document.getElementById('adminOrderPreviousMonth');
+    const next = document.getElementById('adminOrderNextMonth');
+    const allDates = document.getElementById('adminOrderAllDatesBtn');
+    const state = window.adminOrderFilterState || {};
+    const typeSelect = document.getElementById('adminOrderTypeFilter');
+    const archiveSelect = document.getElementById('adminOrderArchiveFilter');
+    const statusSelect = document.getElementById('adminOrderStatusFilter');
+    const creatorSelect = document.getElementById('adminOrderCreatorFilter');
+    const sortSelect = document.getElementById('adminOrderSort');
+
+    if (heading) {
+        heading.textContent = calendar.mode === 'all' ? 'All Dates' : formatOrderMonthLabel(calendar.month);
+        heading.setAttribute('aria-label', calendar.mode === 'all' ? 'All order dates. Choose a month' : `${formatOrderMonthLabel(calendar.month)}. Choose another month`);
+    }
+    if (monthInput && monthInput.value !== calendar.month) monthInput.value = calendar.month;
+    if (previous instanceof HTMLButtonElement) previous.disabled = calendar.mode === 'all';
+    if (next instanceof HTMLButtonElement) next.disabled = calendar.mode === 'all';
+    if (allDates instanceof HTMLButtonElement) {
+        allDates.setAttribute('aria-pressed', String(calendar.mode === 'all'));
+        allDates.classList.toggle('is-active', calendar.mode === 'all');
+    }
+    if (statusSelect instanceof HTMLSelectElement && statusSelect.value !== (state.status || 'All')) statusSelect.value = state.status || 'All';
+    if (creatorSelect instanceof HTMLSelectElement && creatorSelect.value !== (state.creator || 'all')) creatorSelect.value = state.creator || 'all';
+    if (archiveSelect instanceof HTMLSelectElement && archiveSelect.value !== (state.archiveView || 'active')) archiveSelect.value = state.archiveView || 'active';
+    if (sortSelect instanceof HTMLSelectElement && sortSelect.value !== (state.sort || 'newest')) sortSelect.value = state.sort || 'newest';
+    if (typeSelect instanceof HTMLSelectElement) {
+        const selectedType = state.type || 'all';
+        const types = [...new Set(allOrders.map(getOrderTypeLabel))].sort((a, b) => a.localeCompare(b));
+        typeSelect.innerHTML = `<option value="all">All Types</option>${types.map((type) => `<option value="${escapeHTML(type)}">${escapeHTML(type)}</option>`).join('')}`;
+        typeSelect.value = types.includes(selectedType) ? selectedType : 'all';
+        if (typeSelect.value !== selectedType) state.type = 'all';
+    }
+    const searchField = document.getElementById('adminOrderCalendarSearch');
+    const quickSearch = document.getElementById('adminQuickSearch');
+    if (searchField && searchField.value !== (state.search || '')) searchField.value = state.search || '';
+    if (quickSearch && quickSearch.value !== (state.search || '')) quickSearch.value = state.search || '';
+
+    const activeOrders = allOrders.filter((order) => !order?.archivedAt);
+    const metrics = [
+        ['adminOrderActiveCount', activeOrders.length],
+        ['adminOrderPendingCount', activeOrders.filter((order) => ['pending review', 'new'].includes(normalizeOrderStatus(order.status))).length],
+        ['adminOrderInProgressCount', activeOrders.filter((order) => normalizeOrderStatus(order.status) === 'in progress').length],
+        ['adminOrderFinishedCount', activeOrders.filter((order) => ['finished', 'shipped', 'completed'].includes(normalizeOrderStatus(order.status))).length]
+    ];
+    metrics.forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = String(value);
+    });
+    const scope = document.getElementById('adminOrderStatsScope');
+    if (scope) scope.textContent = 'All dates · excludes archived orders';
+}
+
+function bindAdminOrderCalendarControls() {
+    const toolbar = document.getElementById('adminOrdersToolbar');
+    if (!(toolbar instanceof HTMLElement) || toolbar.dataset.calendarBound === 'true') return;
+    const calendar = getOrderCalendarState();
+    bindAdminOrderDetailTabs();
+
+    toolbar.addEventListener('click', (event) => {
+        const button = event.target instanceof Element ? event.target.closest('button') : null;
+        if (!button) return;
+        if (button.id === 'adminOrderPreviousMonth' || button.id === 'adminOrderNextMonth') {
+            calendar.mode = 'month';
+            calendar.month = shiftOrderMonthKey(calendar.month, button.id === 'adminOrderPreviousMonth' ? -1 : 1);
+            applyAdminOrderFilters();
+        } else if (button.id === 'adminOrderTodayBtn') {
+            calendar.mode = 'month';
+            calendar.month = getBusinessCalendarParts(Date.now())?.monthKey || calendar.month;
+            applyAdminOrderFilters();
+        } else if (button.id === 'adminOrderAllDatesBtn') {
+            calendar.mode = calendar.mode === 'all' ? 'month' : 'all';
+            applyAdminOrderFilters();
+        } else if (button.id === 'adminOrderMonthApplyBtn') {
+            const input = document.getElementById('adminOrderMonthInput');
+            const month = input instanceof HTMLInputElement ? normalizeOrderMonthKey(input.value) : null;
+            if (!month) {
+                showAdminToast('Choose a valid month and year.', true);
+                return;
+            }
+            calendar.month = month;
+            calendar.mode = 'month';
+            const picker = document.getElementById('adminOrderMonthPicker');
+            if (picker instanceof HTMLDetailsElement) picker.open = false;
+            applyAdminOrderFilters();
+        }
+    });
+    toolbar.addEventListener('change', (event) => {
+        const field = event.target;
+        if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement)) return;
+        const state = window.adminOrderFilterState;
+        if (field.id === 'adminOrderMonthInput') {
+            const month = normalizeOrderMonthKey(field.value);
+            if (!month) return;
+            calendar.month = month;
+            calendar.mode = 'month';
+        } else if (field.id === 'adminOrderStatusFilter') {
+            state.status = field.value || 'All';
+        } else if (field.id === 'adminOrderCreatorFilter') {
+            state.creator = field.value || 'all';
+        } else if (field.id === 'adminOrderArchiveFilter') {
+            state.archiveView = field.value || 'active';
+        } else if (field.id === 'adminOrderTypeFilter') {
+            state.type = field.value || 'all';
+        } else if (field.id === 'adminOrderSort') {
+            state.sort = field.value || 'newest';
+        } else {
+            return;
+        }
+        applyAdminOrderFilters();
+    });
+    const handleSearch = (event) => {
+        const field = event.target;
+        if (!(field instanceof HTMLInputElement) || !['adminOrderCalendarSearch', 'adminQuickSearch'].includes(field.id)) return;
+        window.adminOrderFilterState.search = field.value || '';
+        applyAdminOrderFilters();
+    };
+    toolbar.addEventListener('input', handleSearch);
+    const ordersGrid = document.getElementById('ordersGrid');
+    if (ordersGrid && ordersGrid.dataset.selectionBound !== 'true') {
+        ordersGrid.addEventListener('click', (event) => {
+            const button = event.target instanceof Element ? event.target.closest('.admin-order-row-select') : null;
+            if (!(button instanceof HTMLButtonElement)) return;
+            const keyboardActivated = event.detail === 0;
+            calendar.selectedOrderId = button.dataset.orderId || '';
+            calendar.mobileDetailOpen = true;
+            applyAdminOrderFilters();
+            if (keyboardActivated) {
+                requestAnimationFrame(() => {
+                    const focusTarget = window.matchMedia('(max-width: 760px)').matches
+                        ? document.getElementById('adminOrderDetailBackBtn')
+                        : document.querySelector('#adminOrderDetailContent [data-order-detail-tab][aria-selected="true"]');
+                    focusTarget?.focus();
+                });
+            }
+        });
+        ordersGrid.addEventListener('toggle', (event) => {
+            const group = event.target;
+            if (!(group instanceof HTMLDetailsElement)) return;
+            if (group.dataset.weekKey) calendar.expandedWeeks[group.dataset.weekKey] = group.open;
+            if (group.dataset.dayKey) calendar.expandedDays[group.dataset.dayKey] = group.open;
+            if (group.matches('.admin-order-unknown-dates')) calendar.expandedUnknownDates = group.open;
+        }, true);
+        ordersGrid.dataset.selectionBound = 'true';
+    }
+    const backButton = document.getElementById('adminOrderDetailBackBtn');
+    if (backButton instanceof HTMLButtonElement && backButton.dataset.backBound !== 'true') {
+        backButton.addEventListener('click', () => {
+            calendar.mobileDetailOpen = false;
+            document.querySelector('.admin-order-workspace')?.classList.remove('has-selection');
+            document.getElementById('ordersGrid')?.focus?.();
+        });
+        backButton.dataset.backBound = 'true';
+    }
+    toolbar.dataset.calendarBound = 'true';
+}
+
 function applyAdminOrderFilters() {
     const allOrders = Array.isArray(window.allOrders) ? window.allOrders : [];
-    const state = window.adminOrderFilterState || { status: 'All', search: '', archiveView: 'active', creator: 'all' };
+    const state = window.adminOrderFilterState || { status: 'All', search: '', archiveView: 'active', creator: 'all', type: 'all', sort: 'newest' };
     const search = String(state.search || '').trim().toLowerCase();
     const creatorFilter = String(state.creator || 'all').toLowerCase();
+    const typeFilter = String(state.type || 'all');
+    const calendar = getOrderCalendarState();
+    state.sort = state.sort === 'oldest' ? 'oldest' : 'newest';
 
     const filtered = allOrders.filter((order) => {
         const isArchived = Boolean(order?.archivedAt);
         if (state.archiveView === 'active' && isArchived) return false;
         if (state.archiveView === 'archived' && !isArchived) return false;
-        if (state.status !== 'All' && String(order.status || 'Pending Review') !== state.status) return false;
+        const orderStatus = normalizeOrderStatus(order.status || 'Pending Review');
+        const requestedStatus = normalizeOrderStatus(state.status);
+        if (state.status !== 'All' && orderStatus !== requestedStatus
+            && !(requestedStatus === 'pending review' && orderStatus === 'new')) return false;
+        if (typeFilter !== 'all' && getOrderTypeLabel(order) !== typeFilter) return false;
+        const submissionTimestamp = getOrderSubmissionTimestampMs(order);
+        const businessDate = submissionTimestamp == null ? null : getBusinessCalendarParts(submissionTimestamp);
+        if (calendar.mode !== 'all' && businessDate && businessDate.monthKey !== calendar.month) return false;
         if (creatorFilter !== 'all') {
-            const serviceType = getOrderServiceType(order || {});
-            const creator = getOrderCreator(serviceType);
+            const creator = getAdminOrderCreator(order);
             if (creator !== creatorFilter) return false;
         }
         if (!search) return true;
@@ -15662,12 +16499,24 @@ function applyAdminOrderFilters() {
             order.keychainType,
             order.stickerType,
             order.status,
-            order.notes
+            order.notes,
+            order.adminNotes
         ].map((value) => String(value || '').toLowerCase()).join(' ');
 
         return haystack.includes(search);
     });
 
+    filtered.sort((a, b) => {
+        const left = getOrderSubmissionTimestampMs(a);
+        const right = getOrderSubmissionTimestampMs(b);
+        if (left == null || right == null) {
+            if (left == null && right == null) return String(a.id).localeCompare(String(b.id));
+            return left == null ? 1 : -1;
+        }
+        return state.sort === 'oldest' ? left - right : right - left;
+    });
+
+    updateAdminOrderCalendarControls(allOrders);
     renderAdminOrders(filtered);
 
     document.querySelectorAll('.admin-status-chip').forEach((chip) => {
@@ -15694,27 +16543,9 @@ function applyAdminOrderFilters() {
         chip.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     });
 
-    const activeCount = allOrders.filter((order) => !Boolean(order?.archivedAt)).length;
-    const archivedCount = allOrders.filter((order) => Boolean(order?.archivedAt)).length;
     const summary = document.getElementById('adminOrdersSnapshot');
     if (summary instanceof HTMLElement) {
-        const archiveLabel = state.archiveView === 'active'
-            ? 'Active only'
-            : state.archiveView === 'archived'
-                ? 'Archived only'
-                : 'All orders';
-        const creatorLabel = creatorFilter === 'husky'
-            ? 'Husky only'
-            : creatorFilter === 'lopside'
-                ? 'Lopside only'
-                : 'All creators';
-        summary.innerHTML = `
-            <span class="admin-orders-snapshot-pill"><strong>Showing:</strong> ${filtered.length}</span>
-            <span class="admin-orders-snapshot-pill"><strong>Active:</strong> ${activeCount}</span>
-            <span class="admin-orders-snapshot-pill"><strong>Archived:</strong> ${archivedCount}</span>
-            <span class="admin-orders-snapshot-pill"><strong>Creator:</strong> ${escapeHTML(creatorLabel)}</span>
-            <span class="admin-orders-snapshot-pill admin-orders-snapshot-pill--mode">${escapeHTML(archiveLabel)}</span>
-        `;
+        summary.textContent = `${filtered.length} shown`;
     }
 }
 
@@ -15733,43 +16564,53 @@ function loadAdminDashboard() {
     appViewport.innerHTML = `
         <div class="admin-mission-shell" id="adminDashboardView">
             <div class="admin-lockable">
-            <aside class="admin-sidebar">
-                <h2 class="admin-sidebar-title">Mission Control</h2>
-                <nav class="admin-sidebar-nav">
+            <aside class="admin-sidebar" id="adminSidebar" aria-label="Mission Control navigation">
+                <div class="admin-sidebar-heading">
+                    <h2 class="admin-sidebar-title">Mission Control</h2>
+                    <button type="button" class="admin-rail-toggle" id="adminRailBtn" aria-controls="adminSidebar" aria-expanded="true" aria-label="Collapse sidebar">☰</button>
+                </div>
+                <nav class="admin-sidebar-nav" aria-label="Admin workspaces">
                     <div class="admin-sidebar-group">
                         <p class="admin-sidebar-group-title">Mission Control</p>
-                        <button type="button" id="adminNavDashboard" class="admin-side-link" data-admin-scroll="adminTopDashboard">Dashboard</button>
+                        <button type="button" id="adminNavDashboard" class="admin-side-link" data-icon="⌂" data-admin-scroll="adminTopDashboard">Dashboard</button>
+                        <button type="button" id="adminNavAttention" class="admin-side-link" data-icon="!" data-admin-scroll="adminSmartAlertsHeading">Needs Attention</button>
                     </div>
 
                     <div class="admin-sidebar-group">
                         <p class="admin-sidebar-group-title">Orders</p>
-                        <button type="button" id="adminNavOrders" class="admin-side-link" data-admin-scroll="adminSectionOrders">Orders</button>
-                        <button type="button" id="adminNavPreorders" class="admin-side-link" data-admin-scroll="adminSectionOrders">Preorders</button>
-                        <button type="button" id="adminNavCommissions" class="admin-side-link" data-admin-scroll="adminSectionQueue" data-queue-tab-focus="commissions">Commissions</button>
-                        <button type="button" id="adminNavRefunds" class="admin-side-link" data-admin-scroll="adminSectionQueue" data-queue-tab-focus="refunds">Refunds</button>
+                        <button type="button" id="adminNavCommissions" class="admin-side-link" data-icon="☾" data-admin-scroll="adminSectionQueue" data-queue-tab-focus="commissions">Commissions</button>
+                        <button type="button" id="adminNavOrders" class="admin-side-link" data-icon="▤" data-admin-scroll="adminSectionOrders">Orders</button>
+                        <button type="button" id="adminNavPublicQueue" class="admin-side-link" data-icon="↗">Open Public Queue</button>
+                        <button type="button" id="adminNavRefunds" class="admin-side-link" data-icon="↺" data-admin-scroll="adminSectionQueue" data-queue-tab-focus="refunds">Refunds</button>
                     </div>
 
                     <div class="admin-sidebar-group">
-                        <p class="admin-sidebar-group-title">Community</p>
+                        <p class="admin-sidebar-group-title">Analytics</p>
+                        <button type="button" id="adminNavAnalytics" class="admin-side-link" data-icon="◈" data-admin-scroll="adminAnalyticsWorkspace">Revenue Observatory</button>
+                    </div>
+
+                    <div class="admin-sidebar-group">
+                        <p class="admin-sidebar-group-title">Community &amp; Customers</p>
                         <button type="button" id="adminNavReviews" class="admin-side-link" data-admin-scroll="adminSectionReviews">Reviews</button>
                         <button type="button" id="adminNavComments" class="admin-side-link" data-admin-scroll="adminSectionComments">Comments</button>
-                    </div>
-
-                    <div class="admin-sidebar-group">
-                        <p class="admin-sidebar-group-title">Customer</p>
                         <button type="button" id="adminNavCustomerRequests" class="admin-side-link" data-admin-scroll="adminSectionCustomer">Support Requests</button>
+                        <button type="button" id="adminNavContact" class="admin-side-link">Contact Inbox</button>
                     </div>
 
                     <div class="admin-sidebar-group">
-                        <p class="admin-sidebar-group-title">Business</p>
-                        <button type="button" id="adminNavDiscounts" class="admin-side-link" data-admin-scroll="adminDiscountManagerSection">Discounts</button>
-                        <button type="button" id="adminNavQuickGuide" class="admin-side-link" data-admin-scroll="adminQuickGuideSettingsSection">Quick Guide</button>
-                        <button type="button" id="adminNavPricing" class="admin-side-link" data-admin-scroll="adminPricingSettingsSection">Pricing</button>
-                        <button type="button" id="adminNavAvailability" class="admin-side-link" data-admin-scroll="adminAvailabilitySection">Availability</button>
+                        <p class="admin-sidebar-group-title">Gallery &amp; Products</p>
                         <button type="button" id="adminNavGalleryManager" class="admin-side-link" data-admin-scroll="adminGalleryManagerSection">Gallery Manager</button>
                         <button type="button" id="adminNavComicsManager" class="admin-side-link" data-admin-scroll="adminComicsManagerSection">Comics Manager</button>
                         <button type="button" id="adminNavPremadeKeychains" class="admin-side-link" data-admin-scroll="adminPremadeKeychainsSection">Premade Keychains</button>
+                        <button type="button" id="adminNavAvailability" class="admin-side-link" data-admin-scroll="adminAvailabilitySection">Availability</button>
+                    </div>
+
+                    <div class="admin-sidebar-group">
+                        <p class="admin-sidebar-group-title">Business Management</p>
+                        <button type="button" id="adminNavPricing" class="admin-side-link" data-admin-scroll="adminPricingSettingsSection">Pricing</button>
+                        <button type="button" id="adminNavDiscounts" class="admin-side-link" data-admin-scroll="adminDiscountManagerSection">Discounts</button>
                         <button type="button" id="adminNavAnnouncements" class="admin-side-link" data-admin-scroll="adminAnnouncementsSection">Announcements</button>
+                        <button type="button" id="adminNavQuickGuide" class="admin-side-link" data-admin-scroll="adminQuickGuideSettingsSection">Quick Guide</button>
                     </div>
 
                     <div class="admin-sidebar-group">
@@ -15781,21 +16622,28 @@ function loadAdminDashboard() {
                 </nav>
             </aside>
 
+            <button type="button" id="adminDrawerBackdrop" class="admin-drawer-backdrop" aria-label="Close navigation"></button>
             <section class="admin-main-area">
                 <header class="admin-top-header" id="adminTopDashboard">
                     <div>
+                        <button type="button" id="adminMenuBtn" class="admin-menu-toggle" aria-controls="adminSidebar" aria-expanded="false" aria-label="Open navigation">☰</button>
                         <p class="admin-top-kicker">Horizon Mission Control</p>
-                        <h1>Horizon Admin Dashboard</h1>
-                        <p id="adminCurrentUserStatus" class="admin-top-meta">${escapeHTML(getAdminSessionStatusLabel())}</p>
+                        <h1 id="adminWorkspaceTitle" tabindex="-1">Dashboard</h1>
+                        <p class="admin-top-meta"><span id="adminHeaderClock"></span> · <span id="adminHeaderMoon"></span></p>
                     </div>
                     <div class="admin-header-actions">
-                        <input type="search" id="adminQuickSearch" class="admin-input admin-quick-search" placeholder="Quick search orders, IDs, names...">
-                        <button type="button" id="homeAdminBtn" class="nav-btn">Back to Home</button>
-                        <button type="button" id="lockAdminBtn" class="nav-btn">Lock Dashboard</button>
+                        <input type="search" id="adminQuickSearch" class="admin-input admin-quick-search" aria-label="Search orders" placeholder="Quick search orders, IDs, names...">
+                        <span id="adminMusicUtility"></span>
+                        <details class="admin-account-menu">
+                            <summary>Admin</summary>
+                            <p id="adminCurrentUserStatus" class="admin-top-meta">${escapeHTML(getAdminSessionStatusLabel())}</p>
+                            <button type="button" id="homeAdminBtn" class="nav-btn">Back to Home</button>
+                            <button type="button" id="lockAdminBtn" class="nav-btn">Lock Dashboard</button>
+                        </details>
                     </div>
                 </header>
 
-                <section class="admin-card admin-quick-actions-card" id="adminQuickActionsCard" aria-label="Quick actions">
+                <section data-admin-home class="admin-card admin-quick-actions-card" id="adminQuickActionsCard" aria-label="Quick actions">
                     <h3 class="admin-card-title">Quick Actions</h3>
                     <div class="admin-quick-actions-grid">
                         <button type="button" class="nav-btn" id="adminQuickNewAnnouncementBtn">New Announcement</button>
@@ -15808,26 +16656,26 @@ function loadAdminDashboard() {
                     </div>
                 </section>
 
-                <section class="admin-dashboard-band" aria-labelledby="adminSmartAlertsHeading">
-                    <h2 id="adminSmartAlertsHeading" class="admin-zone-heading">Smart Admin Alerts</h2>
+                <section data-admin-home class="admin-dashboard-band" aria-labelledby="adminSmartAlertsHeading">
+                    <h2 id="adminSmartAlertsHeading" class="admin-zone-heading">Needs Attention</h2>
                     <section class="admin-card" id="adminSmartAlertsList" aria-live="polite">
                         <p class="admin-detail">Loading smart alerts...</p>
                     </section>
                 </section>
 
-                <section class="admin-dashboard-band" aria-labelledby="adminReminderCenterHeading">
-                    <h2 id="adminReminderCenterHeading" class="admin-zone-heading">Reminder Center</h2>
+                <details data-admin-home class="admin-dashboard-band admin-reminder-details" id="adminReminderDetails">
+                    <summary id="adminReminderCenterHeading" class="admin-zone-heading"><span id="adminReminderSummary">Reminder Center</span></summary>
                     <section class="admin-card admin-reminder-center" id="adminReminderQueueList" aria-live="polite">
                         <p class="admin-detail">Loading reminders...</p>
                     </section>
-                </section>
+                </details>
 
-                <section class="admin-dashboard-band" aria-labelledby="adminMissionStatusHeading">
-                    <h2 id="adminMissionStatusHeading" class="admin-zone-heading">Mission Status Cards</h2>
+                <section data-admin-home class="admin-dashboard-band" aria-labelledby="adminMissionStatusHeading">
+                    <h2 id="adminMissionStatusHeading" class="admin-zone-heading">Mission Status</h2>
                     <section class="admin-overview-grid" id="adminOverviewCards"></section>
                 </section>
 
-                <section class="admin-dashboard-band" aria-labelledby="adminAnalyticsHeading">
+                <section class="admin-dashboard-band" id="adminAnalyticsWorkspace" aria-labelledby="adminAnalyticsHeading">
                     <h2 id="adminAnalyticsHeading" class="admin-zone-heading">Analytics</h2>
                     <div class="admin-revenue-controls" aria-label="Revenue calculator settings">
                         <label class="admin-label" for="adminRevenueBasisSelect">
@@ -15851,7 +16699,7 @@ function loadAdminDashboard() {
                     <section class="admin-revenue-grid" id="adminRevenuePanels"></section>
                 </section>
 
-                <section class="admin-dashboard-band" aria-labelledby="adminRecentActivityHeading">
+                <section data-admin-home class="admin-dashboard-band" aria-labelledby="adminRecentActivityHeading">
                     <h2 id="adminRecentActivityHeading" class="admin-zone-heading">Recent Activity</h2>
                     <section class="admin-activity-panel">
                         <ul id="adminRecentActivityList"></ul>
@@ -15862,27 +16710,86 @@ function loadAdminDashboard() {
                 <h2 id="adminManagementHeading" class="admin-zone-heading">Management Panels</h2>
 
                 <details class="admin-collapsible" id="adminSectionOrders" open>
-                    <summary><span class="admin-summary-label">Orders <span class="admin-panel-badge" id="adminOrdersCountBadge" data-tone="amber">0</span></span></summary>
+                    <summary><span class="admin-summary-label">Orders Workspace <span class="admin-panel-badge" id="adminOrdersCountBadge" data-tone="amber">0</span></span></summary>
                     <div class="admin-collapsible-body">
-                        <div class="admin-orders-toolbar">
-                            <div class="admin-filters admin-filters--chips admin-filters--archive">
-                                <button type="button" class="nav-btn admin-archive-chip" data-archive-filter="active">Active</button>
-                                <button type="button" class="nav-btn admin-archive-chip" data-archive-filter="archived">Archived</button>
-                                <button type="button" class="nav-btn admin-archive-chip" data-archive-filter="all">All</button>
+                        <p class="admin-section-note">Customer submissions stay in the private Orders workspace. Public commission queue entries remain separate.</p>
+                        <div class="admin-orders-toolbar" id="adminOrdersToolbar">
+                            <div class="admin-order-topbar">
+                                <div class="admin-order-calendar-stats" aria-label="Order totals across all dates">
+                                    <article class="admin-order-stat-card admin-order-stat-card--active">
+                                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v3m10-3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v13H4V6a1 1 0 0 1 1-1Z"/><path d="m8 14 2 2 5-5"/></svg>
+                                        <strong id="adminOrderActiveCount">0</strong><span>Active Orders</span>
+                                    </article>
+                                    <article class="admin-order-stat-card admin-order-stat-card--pending">
+                                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                                        <strong id="adminOrderPendingCount">0</strong><span>Pending Review</span>
+                                    </article>
+                                    <article class="admin-order-stat-card admin-order-stat-card--progress">
+                                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17.5A3.5 3.5 0 0 1 7.5 14H9l2-4h3.5a3.5 3.5 0 1 1 0 7H7.5A3.5 3.5 0 0 1 4 17.5Z"/><path d="m8 14 2 3m5-7 2 4"/></svg>
+                                        <strong id="adminOrderInProgressCount">0</strong><span>In Progress</span>
+                                    </article>
+                                    <article class="admin-order-stat-card admin-order-stat-card--finished">
+                                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
+                                        <strong id="adminOrderFinishedCount">0</strong><span>Finished</span>
+                                    </article>
+                                </div>
+                                <span class="admin-order-stats-scope" id="adminOrderStatsScope">All dates · excludes archived orders</span>
+                                <div class="admin-order-calendar-nav">
+                                    <button type="button" class="admin-order-month-arrow" id="adminOrderPreviousMonth" aria-label="Previous month">‹</button>
+                                    <details class="admin-order-month-picker" id="adminOrderMonthPicker">
+                                        <summary id="adminOrderMonthHeading" aria-label="Choose month and year">Loading month...</summary>
+                                        <div class="admin-order-month-picker__panel">
+                                            <label for="adminOrderMonthInput">Month and year</label>
+                                            <input type="month" id="adminOrderMonthInput">
+                                            <button type="button" class="admin-btn-edit" id="adminOrderMonthApplyBtn">Go to month</button>
+                                        </div>
+                                    </details>
+                                    <button type="button" class="admin-order-month-arrow" id="adminOrderNextMonth" aria-label="Next month">›</button>
+                                    <button type="button" class="admin-btn-edit" id="adminOrderTodayBtn">Today</button>
+                                    <button type="button" class="admin-btn-edit" id="adminOrderAllDatesBtn" aria-pressed="false">All Dates</button>
+                                </div>
                             </div>
-                            <div class="admin-filters admin-filters--chips">
-                                <button type="button" class="nav-btn admin-status-chip" data-status-filter="All">All</button>
-                                <button type="button" class="nav-btn admin-status-chip" data-status-filter="Pending Review">Pending</button>
-                                <button type="button" class="nav-btn admin-status-chip" data-status-filter="Accepted">Accepted</button>
-                                <button type="button" class="nav-btn admin-status-chip" data-status-filter="In Progress">In Progress</button>
-                                <button type="button" class="nav-btn admin-status-chip" data-status-filter="Finished">Finished</button>
+                            <div class="admin-order-filter-row">
+                                <label class="admin-visually-hidden" for="adminOrderCalendarSearch">Search orders</label>
+                                <input type="search" id="adminOrderCalendarSearch" class="admin-input admin-order-search" placeholder="Search order ID, customer, or title">
+                                <label class="admin-visually-hidden" for="adminOrderStatusFilter">Status</label>
+                                <select id="adminOrderStatusFilter" class="admin-input admin-order-filter-control" aria-label="Filter by status">
+                                    <option value="All">All Statuses</option>
+                                    <option value="Pending Review">Pending Review</option>
+                                    <option value="Reviewed">Reviewed</option>
+                                    <option value="Accepted">Accepted</option>
+                                    <option value="Not Accepted">Not Accepted</option>
+                                    <option value="Paid">Paid</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="Finished">Finished</option>
+                                    <option value="Shipped">Shipped</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                </select>
+                                <label class="admin-visually-hidden" for="adminOrderCreatorFilter">Creator</label>
+                                <select id="adminOrderCreatorFilter" class="admin-input admin-order-filter-control" aria-label="Filter by creator">
+                                    <option value="all">All Creators</option>
+                                    <option value="husky">Husky</option>
+                                    <option value="lopside">Lopside</option>
+                                </select>
+                                <label class="admin-visually-hidden" for="adminOrderTypeFilter">Type</label>
+                                <select id="adminOrderTypeFilter" class="admin-input admin-order-filter-control" aria-label="Filter by order type"><option value="all">All Types</option></select>
+                                <label class="admin-visually-hidden" for="adminOrderSort">Sort order</label>
+                                <select id="adminOrderSort" class="admin-input admin-order-filter-control" aria-label="Sort orders">
+                                    <option value="newest">Newest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                </select>
                             </div>
-                            <div class="admin-filters admin-filters--chips">
-                                <button type="button" class="nav-btn admin-creator-chip" data-creator-filter="all">All Creators</button>
-                                <button type="button" class="nav-btn admin-creator-chip" data-creator-filter="husky">Husky Orders</button>
-                            </div>
-                            <div id="adminOrdersSnapshot" class="admin-orders-snapshot" aria-live="polite"></div>
-                            <div class="admin-bulk-actions" aria-label="Bulk order actions">
+                            <div class="admin-order-actions-row">
+                                <div class="admin-order-archive-control">
+                                <label class="admin-visually-hidden" for="adminOrderArchiveFilter">Archive status</label>
+                                <select id="adminOrderArchiveFilter" class="admin-input admin-order-filter-control" aria-label="Filter active or archived orders">
+                                    <option value="active">Active</option>
+                                    <option value="archived">Archived</option>
+                                    <option value="all">All Orders</option>
+                                </select>
+                                </div>
+                                <div id="adminOrdersSnapshot" class="admin-orders-snapshot" aria-live="polite"></div>
+                                <div class="admin-bulk-actions" aria-label="Bulk order actions">
                                 <span class="admin-list-count-badge" id="adminBulkSelectionCount">0 selected</span>
                                 <button type="button" class="admin-btn-edit" id="adminSelectVisibleOrdersBtn">Select Visible</button>
                                 <button type="button" class="admin-btn-edit" id="adminClearVisibleOrdersBtn">Clear Selection</button>
@@ -15898,15 +16805,19 @@ function loadAdminDashboard() {
                                     <option value="Cancelled">Cancelled</option>
                                 </select>
                                 <button type="button" class="admin-btn-save" id="adminApplyBulkStatusBtn">Apply Bulk Status</button>
+                                </div>
                             </div>
                         </div>
-                        <div class="admin-filters">
-                            <button type="button" class="nav-btn" id="filterAll">All Orders</button>
-                            <button type="button" class="nav-btn" id="filterNew">Pending Review</button>
-                            <button type="button" class="nav-btn" id="filterInProgress">In Progress</button>
-                        </div>
-                        <div id="ordersGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); grid-auto-rows: 1fr; gap: 14px; width: 100%;">
-                            <p style="color: white; text-align: center; width: 100%;">Loading secure orders...</p>
+                        <div class="admin-order-workspace">
+                            <div id="ordersGrid" class="admin-order-timeline" aria-label="Chronological orders" tabindex="0">
+                                <p class="admin-detail">Loading secure orders...</p>
+                            </div>
+                            <aside class="admin-order-detail-pane" id="adminOrderDetailPanel" aria-label="Selected order details" tabindex="0">
+                                <button type="button" class="admin-order-back-btn" id="adminOrderDetailBackBtn">‹ Back to Orders</button>
+                                <div id="adminOrderDetailContent">
+                                    <p class="admin-detail">Select an order to view its details.</p>
+                                </div>
+                            </aside>
                         </div>
                     </div>
                 </details>
@@ -16088,16 +16999,21 @@ function loadAdminDashboard() {
                     <summary><span class="admin-summary-label">Admin Tools <span class="admin-panel-badge" id="adminToolsCountBadge" data-tone="cyan">0</span></span></summary>
                     <div class="admin-collapsible-body">
                         <div class="admin-tools-studio-block">
-                            <div class="admin-management-strip">
-                                <button type="button" class="nav-btn" id="adminSetAllOpenBtn">Open Both Creators</button>
-                                <button type="button" class="nav-btn" id="adminSetAllClosedBtn">Close Both Creators</button>
-                                <button type="button" class="nav-btn" id="adminResetDiscountEditorBtn">New Discount</button>
-                                <button type="button" class="nav-btn" id="adminNormalizeLegacyFinanceBtn">Normalize Legacy Finance</button>
+                            <div class="admin-tool-tiles" aria-label="Admin tool areas">
+                                <button type="button" class="admin-tool-tile" data-admin-destination="adminNavPricing"><strong>Pricing &amp; Quick Guide</strong><span>Service prices and guide ranges</span></button>
+                                <button type="button" class="admin-tool-tile" data-admin-destination="adminNavAvailability"><strong>Availability</strong><span>Creator status and slots</span></button>
+                                <button type="button" class="admin-tool-tile" data-admin-destination="adminNavGalleryManager"><strong>Gallery &amp; Products</strong><span>Gallery, comics and keychains</span></button>
+                                <button type="button" class="admin-tool-tile" data-admin-destination="adminNavDiscounts"><strong>Discounts</strong><span>Promotions and sales</span></button>
+                                <button type="button" class="admin-tool-tile" data-admin-destination="adminSystemTools"><strong>System Administration</strong><span>Protected maintenance and utilities</span></button>
                             </div>
                             <details class="admin-collapsible admin-collapsible--sub" id="adminAvailabilitySection">
                                 <summary><span class="admin-summary-label">Availability</span></summary>
                                 <div class="admin-collapsible-body">
                                     ${getTemplateHTML('adminAvailabilityManagerTemplate')}
+                                    <div class="admin-management-strip">
+                                        <button type="button" class="nav-btn" id="adminSetAllOpenBtn">Open Both Creators</button>
+                                        <button type="button" class="nav-btn" id="adminSetAllClosedBtn">Close Both Creators</button>
+                                    </div>
                                 </div>
                             </details>
                             <details class="admin-collapsible admin-collapsible--sub" id="adminPremadeKeychainsSection">
@@ -16109,6 +17025,10 @@ function loadAdminDashboard() {
                             <details class="admin-collapsible admin-collapsible--sub" id="adminGalleryManagerSection">
                                 <summary><span class="admin-summary-label">Gallery Manager</span></summary>
                                 <div class="admin-collapsible-body">
+                                    <div class="admin-management-strip">
+                                        <button type="button" class="nav-btn" data-admin-destination="adminNavComicsManager">Comics Manager</button>
+                                        <button type="button" class="nav-btn" data-admin-destination="adminNavPremadeKeychains">Premade Keychains</button>
+                                    </div>
                                     ${getTemplateHTML('adminGalleryManagerTemplate')}
                                 </div>
                             </details>
@@ -16121,6 +17041,7 @@ function loadAdminDashboard() {
                             <details class="admin-collapsible admin-collapsible--sub" id="adminDiscountManagerSection">
                                 <summary><span class="admin-summary-label">Discounts</span></summary>
                                 <div class="admin-collapsible-body">
+                                    <button type="button" class="nav-btn" id="adminResetDiscountEditorBtn">New Discount</button>
                                     ${getTemplateHTML('adminDiscountManagerTemplate')}
                                 </div>
                             </details>
@@ -16142,6 +17063,10 @@ function loadAdminDashboard() {
                                     ${getTemplateHTML('adminAnnouncementsControlsTemplate')}
                                 </div>
                             </details>
+                            <section class="admin-system-tools" id="adminSystemTools" aria-labelledby="adminSystemToolsHeading">
+                            <h3 id="adminSystemToolsHeading">System Administration</h3>
+                            <p>Protected maintenance and administrative utilities. Use consequential actions with care.</p>
+                            <button type="button" class="nav-btn admin-system-maintenance" id="adminNormalizeLegacyFinanceBtn">Normalize Legacy Finance</button>
                             <details class="admin-collapsible admin-collapsible--sub" id="adminDiagnosticsPanel">
                                 <summary><span class="admin-summary-label">Diagnostics Snapshot</span></summary>
                                 <div class="admin-collapsible-body">
@@ -16171,7 +17096,6 @@ function loadAdminDashboard() {
                                     </div>
                                 </div>
                             </details>
-                        </div>
 
                         <div class="admin-filters">
                             <button type="button" class="nav-btn" id="adminToolsRefreshBtn">Refresh Mission Data</button>
@@ -16184,6 +17108,8 @@ function loadAdminDashboard() {
                             <button type="button" class="nav-btn" id="exportCommissionsCsvBtn">Export Commissions CSV</button>
                             <button type="button" class="nav-btn" id="adminToolsExportAllBtn">Export All CSVs</button>
                         </div>
+                            </section>
+                        </div>
                     </div>
                 </details>
 
@@ -16193,9 +17119,9 @@ function loadAdminDashboard() {
             </div>
             <section class="admin-idle-lock-screen" id="adminIdleLockScreen" hidden aria-live="polite">
                 <div class="admin-idle-lock-screen__panel">
-                    <p class="admin-idle-lock-screen__kicker">Horizon Tide Studios</p>
+                    <p class="admin-idle-lock-screen__kicker">Universe Mission Control</p>
                     <h2 class="admin-idle-lock-screen__title">Mission Control Offline</h2>
-                    <p class="admin-idle-lock-screen__copy">Admins are away right now. Mission Control is resting until they return.</p>
+                    <p class="admin-idle-lock-screen__copy">Admins are away right now. Universe Mission Control is resting until they return.</p>
                     <div class="admin-idle-lock-screen__scene" aria-hidden="true">
                         <div class="admin-idle-atmosphere">
                             <div class="admin-idle-moon"></div>
@@ -16281,6 +17207,18 @@ function loadAdminDashboard() {
     renderActiveDiscountsList();
     renderAdminPricingSettings();
     bindAdminPricingSettingsControls();
+    if (window.adminPricingIdleDraft) {
+        const draft = window.adminPricingIdleDraft;
+        document.querySelectorAll('[data-pricing-path], [data-quick-guide-field]').forEach((field, index) => {
+            if (draft.fields[index] !== undefined) field.value = draft.fields[index];
+        });
+        const json = document.getElementById('adminPricingConfigJson');
+        if (json instanceof HTMLTextAreaElement && draft.json !== undefined) json.value = draft.json;
+        window.adminPricingVisualDirty = draft.visualDirty;
+        window.adminPricingJsonDirty = draft.jsonDirty;
+        window.adminPricingIdleDraft = null;
+        updateAdminPricingEditorStatus('Your unsaved pricing and guide changes were restored after the dashboard locked.');
+    }
     renderAdminAvailabilitySettings();
     renderAdminPremadeKeychainManager();
     renderAdminGalleryManager();
@@ -16298,6 +17236,7 @@ function loadAdminDashboard() {
     attachAdminDiagnosticsListeners();
 
     window.adminOrderFilterState = { status: 'All', search: '', archiveView: 'active', creator: 'all' };
+    bindAdminOrderCalendarControls();
 
     const quickSearchInput = document.getElementById('adminQuickSearch');
     const premadeImageInput = document.getElementById('adminPremadeDesignImage');
@@ -16305,6 +17244,9 @@ function loadAdminDashboard() {
         quickSearchInput.addEventListener('input', () => {
             window.adminOrderFilterState.search = quickSearchInput.value || '';
             applyAdminOrderFilters();
+            if (quickSearchInput.value.trim() && document.getElementById('adminSectionOrders')?.hidden) {
+                document.getElementById('adminNavOrders')?.click();
+            }
         });
     }
 
@@ -16582,7 +17524,7 @@ function loadAdminDashboard() {
         }
 
         const title = titleField.value.trim();
-        const creator = creatorField.value.trim() || 'Horizon Tide';
+        const creator = creatorField.value.trim() || "Husky's Little Universe";
         const categories = getAdminGalleryFormCategories();
         const visible = visibleField instanceof HTMLInputElement ? visibleField.checked : true;
         const selectedFile = uploadField.files?.[0] || null;
@@ -16882,41 +17824,39 @@ function loadAdminDashboard() {
     document.getElementById('btnPreviewAnnouncementsPublic')?.addEventListener('click', (e) => cinematicTransition(e, loadAnnouncementsPage, '#updates'));
 
     document.getElementById('adminQuickNewAnnouncementBtn')?.addEventListener('click', () => {
-        const toolsSection = document.getElementById('adminSectionTools');
-        if (toolsSection instanceof HTMLDetailsElement) toolsSection.open = true;
-        const announcementSection = document.getElementById('adminAnnouncementsSection');
-        if (announcementSection) announcementSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('adminNavAnnouncements')?.click();
     });
 
     document.getElementById('adminQuickReviewQueueBtn')?.addEventListener('click', () => {
-        const reviewsSection = document.getElementById('adminSectionReviews');
-        if (reviewsSection instanceof HTMLDetailsElement) reviewsSection.open = true;
-        const reviewCard = document.getElementById('adminReviewsManagerCard');
-        if (reviewCard) reviewCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('adminNavReviews')?.click();
     });
 
     document.getElementById('adminQuickCustomerRequestsBtn')?.addEventListener('click', () => {
-        const customerSection = document.getElementById('adminSectionCustomer');
-        if (customerSection instanceof HTMLDetailsElement) customerSection.open = true;
-        const customerCard = document.getElementById('adminCustomerRequestsCard');
-        if (customerCard) customerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('adminNavCustomerRequests')?.click();
     });
 
     document.getElementById('adminQueueFocusRefunds')?.addEventListener('click', () => {
-        openAdminQueueTab('refunds');
+        document.getElementById('adminNavRefunds')?.click();
     });
 
     document.getElementById('adminQueueFocusCommissions')?.addEventListener('click', () => {
-        openAdminQueueTab('commissions');
+        document.getElementById('adminNavCommissions')?.click();
     });
 
     document.getElementById('adminOpenContactPageBtn')?.addEventListener('click', (e) => cinematicTransition(e, loadContactPage, '#contact'));
+    document.getElementById('adminNavContact')?.addEventListener('click', (e) => cinematicTransition(e, loadContactPage, '#contact'));
+    document.getElementById('adminNavPublicQueue')?.addEventListener('click', (e) => cinematicTransition(e, loadHuskysListPage, '#horizon-queue'));
 
     // --- STANDARD ADMIN CONTROLS ---
     const handleLogout = async (e) => {
+        if (window.adminPricingSaving) {
+            showAdminToast('Please wait for the pricing save to finish before locking.', true);
+            return;
+        }
+        if (hasPricingEditorChanges() && !confirm('You have unsaved pricing or guide changes. Locking the dashboard will discard them. Continue?')) return;
         stopAdminIdleLock();
         await clearAdminSession();
-        cinematicTransition(e || null, loadHomePage, '#home');
+        cinematicTransition(e || null, loadHomePage, '#home', { pricingExitConfirmed: true });
     };
 
     const lockDashboard = async (e) => handleLogout(e);
@@ -16940,10 +17880,6 @@ function loadAdminDashboard() {
 
     document.getElementById('adminNavOrders')?.addEventListener('click', () => {
         filterOrders('All');
-    });
-
-    document.getElementById('adminNavPreorders')?.addEventListener('click', () => {
-        filterOrders('Pending Review');
     });
 
     document.getElementById('adminNavReviews')?.addEventListener('click', () => {
@@ -17038,7 +17974,7 @@ function loadAdminDashboard() {
     });
 
     if (window.adminUnsubscribe) window.adminUnsubscribe();
-    const q = query(collection(db, "preorders"), orderBy("createdAt", "desc"));
+    const q = collection(db, "preorders");
     window.adminUnsubscribe = onSnapshot(q, (snapshot) => {
         const ordersGrid = document.getElementById('ordersGrid');
         if (!ordersGrid) return;
@@ -18211,6 +19147,106 @@ function updateAdminOrderSelectionSummary() {
     countEl.textContent = `${selectedCount} selected`;
 }
 
+function setActiveAdminOrderDetailTab(content, activeTab) {
+    if (!(content instanceof HTMLElement)) return;
+    const tabs = Array.from(content.querySelectorAll('[data-order-detail-tab]'));
+    const panels = Array.from(content.querySelectorAll('[data-order-detail-panel]'));
+    const validTab = tabs.some((tab) => tab.dataset.orderDetailTab === activeTab) ? activeTab : 'details';
+    tabs.forEach((tab) => {
+        const selected = tab.dataset.orderDetailTab === validTab;
+        tab.setAttribute('aria-selected', String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+    });
+    panels.forEach((panel) => {
+        panel.hidden = panel.dataset.orderDetailPanel !== validTab;
+    });
+    if (window.adminOrderCalendarState) window.adminOrderCalendarState.activeDetailTab = validTab;
+}
+
+function bindAdminOrderDetailTabs() {
+    const content = document.getElementById('adminOrderDetailContent');
+    if (!(content instanceof HTMLElement) || content.dataset.tabsBound === 'true') return;
+    content.addEventListener('click', (event) => {
+        const target = event.target instanceof Element ? event.target.closest('[data-order-detail-tab]') : null;
+        if (!(target instanceof HTMLButtonElement)) return;
+        setActiveAdminOrderDetailTab(content, target.dataset.orderDetailTab || 'details');
+    });
+    content.addEventListener('keydown', (event) => {
+        const tab = event.target instanceof HTMLButtonElement ? event.target : null;
+        if (!tab?.matches('[data-order-detail-tab]')) return;
+        const tabs = Array.from(content.querySelectorAll('[data-order-detail-tab]'));
+        const currentIndex = tabs.indexOf(tab);
+        if (currentIndex < 0) return;
+        let nextIndex = currentIndex;
+        if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length;
+        else if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        else if (event.key === 'Home') nextIndex = 0;
+        else if (event.key === 'End') nextIndex = tabs.length - 1;
+        else return;
+        event.preventDefault();
+        tabs[nextIndex].focus();
+        setActiveAdminOrderDetailTab(content, tabs[nextIndex].dataset.orderDetailTab || 'details');
+    });
+    const captureDraft = (event) => {
+        const field = event.target;
+        if (!(field instanceof HTMLInputElement) || !field.matches('[data-admin-order-draft]')) return;
+        const card = field.closest('.admin-order-card--detail');
+        if (card instanceof HTMLElement) captureAdminOrderDraft(card.dataset.orderDocId, card);
+    };
+    content.addEventListener('input', captureDraft);
+    content.addEventListener('change', captureDraft);
+    content.dataset.tabsBound = 'true';
+}
+
+function captureAdminOrderDraft(orderId, card) {
+    if (!(card instanceof HTMLElement) || !orderId) return;
+    if (!window.adminOrderDraftsById || typeof window.adminOrderDraftsById !== 'object') {
+        window.adminOrderDraftsById = Object.create(null);
+    }
+    const draft = { ...(window.adminOrderDraftsById[orderId] || {}) };
+    card.querySelectorAll('[data-admin-order-draft]').forEach((field) => {
+        const key = field.dataset.adminOrderDraft;
+        const initialValue = field.dataset.adminOrderInitialValue;
+        if (!key || initialValue == null || !(field instanceof HTMLInputElement)) return;
+        const currentValue = field.type === 'checkbox' ? field.checked : field.value;
+        const normalizeValue = (value) => {
+            if (field.type === 'checkbox') {
+                return (typeof value === 'boolean' ? value : value === 'true') ? 'true' : 'false';
+            }
+            const text = String(value ?? '');
+            if (field.type === 'number' && text !== '' && Number.isFinite(Number(text))) {
+                return String(Number(text));
+            }
+            return text;
+        };
+        if (normalizeValue(currentValue) === normalizeValue(initialValue)) delete draft[key];
+        else draft[key] = currentValue;
+    });
+    if (Object.keys(draft).length) window.adminOrderDraftsById[orderId] = draft;
+    else delete window.adminOrderDraftsById[orderId];
+    updateAdminOrderDraftIndicator(orderId, card);
+}
+
+function clearAdminOrderDraft(orderId, fields = null) {
+    const drafts = window.adminOrderDraftsById;
+    if (!drafts || typeof drafts !== 'object' || !drafts[orderId]) return;
+    if (!Array.isArray(fields)) {
+        delete drafts[orderId];
+        return;
+    }
+    fields.forEach((field) => delete drafts[orderId][field]);
+    if (Object.keys(drafts[orderId]).length === 0) delete drafts[orderId];
+    updateAdminOrderDraftIndicator(orderId);
+}
+
+function updateAdminOrderDraftIndicator(orderId, card = null) {
+    const activeCard = card || Array.from(document.querySelectorAll('#adminOrderDetailContent .admin-order-card--detail'))
+        .find((entry) => entry.dataset.orderDocId === String(orderId));
+    const indicator = activeCard?.querySelector('[data-order-draft-indicator]');
+    if (!indicator) return;
+    indicator.hidden = !Object.keys(window.adminOrderDraftsById?.[String(orderId)] || {}).length;
+}
+
 function setVisibleAdminOrderSelection(checked) {
     document.querySelectorAll('.admin-order-select').forEach((input) => {
         if (!(input instanceof HTMLInputElement)) return;
@@ -18287,13 +19323,43 @@ async function applyBulkAdminStatusUpdate(nextStatus) {
 
 function renderAdminOrders(ordersArr) {
     const ordersGrid = document.getElementById('ordersGrid');
+    const detailContent = document.getElementById('adminOrderDetailContent');
+    const detailPane = document.getElementById('adminOrderDetailPanel');
+    const workspace = document.querySelector('.admin-order-workspace');
+    const calendar = getOrderCalendarState();
+    const renderedCards = new Map();
+    const selectedIds = new Set(getSelectedAdminOrderIds());
+    const sortDirection = window.adminOrderFilterState?.sort === 'oldest' ? 1 : -1;
+    const hasSubmissionsInMonth = () => (Array.isArray(window.allOrders) ? window.allOrders : []).some((order) => {
+        const timestamp = getOrderSubmissionTimestampMs(order);
+        const parts = timestamp == null ? null : getBusinessCalendarParts(timestamp);
+        return parts?.monthKey === calendar.month;
+    });
+    const previousCard = detailContent?.querySelector('.admin-order-card--detail');
+    const previousOrderId = previousCard?.dataset.orderDocId || '';
+    const timelineScrollTop = ordersGrid.scrollTop;
+    if (previousCard instanceof HTMLElement) {
+        captureAdminOrderDraft(previousCard.dataset.orderDocId, previousCard);
+    }
     ordersGrid.innerHTML = "";
+    if (detailContent) detailContent.innerHTML = `<p class="admin-detail">Select an order to view its details.</p>`;
     if (ordersArr.length === 0) {
-        ordersGrid.innerHTML = `<p style="color: #a2b7cc; text-align: center; width: 100%;">No orders found.</p>`;
+        calendar.selectedOrderId = '';
+        calendar.mobileDetailOpen = false;
+        workspace?.classList.remove('has-selection');
+        const isEmptyMonth = calendar.mode === 'month' && !hasSubmissionsInMonth();
+        ordersGrid.innerHTML = `<p class="admin-order-empty">${isEmptyMonth ? `No submissions for ${escapeHTML(formatOrderMonthLabel(calendar.month))}.` : 'No orders match the current filters.'}</p>`;
+        updateAdminOrderSelectionSummary();
         return;
     }
 
+    if (!ordersArr.some((order) => order.id === calendar.selectedOrderId)) {
+        calendar.selectedOrderId = ordersArr[0].id;
+    }
+    workspace?.classList.toggle('has-selection', calendar.mobileDetailOpen);
+
     ordersArr.forEach(order => {
+        if (order.id !== calendar.selectedOrderId) return;
         const getValue = (value) => {
             if (value == null) return '';
             return String(value).trim();
@@ -18315,11 +19381,12 @@ function renderAdminOrders(ordersArr) {
             return `${cleanCut.trim()}...`;
         };
 
-        const buildOrderDetailRows = () => {
+        const buildOrderDetailRows = (group = 'details') => {
             const rows = [];
             const allReferenceImageUrls = getOrderReferenceImageUrls(order);
             const estimateSummary = getSubmittedEstimateSummary(order);
-            const pushRow = (label, value) => {
+            const pushRow = (label, value, rowGroup = 'details') => {
+                if (rowGroup !== group) return;
                 const text = getValue(value);
                 if (!text) return;
                 rows.push(`<div class="admin-order-detail-row"><strong>${escapeHTML(label)}:</strong> <span>${escapeHTML(text)}</span></div>`);
@@ -18329,11 +19396,6 @@ function renderAdminOrders(ordersArr) {
                 ? order.statusHistory.map((entry) => String(entry || '').trim()).filter(Boolean).join(' | ')
                 : (order.status || 'Pending Review');
 
-            pushRow('Order Type', order.orderType || order.itemType);
-            pushRow('Status', order.status || 'Pending Review');
-            pushRow('Customer Name', order.name);
-            pushRow('Order ID', order.orderId);
-            pushRow('Date', order.createdAt && order.createdAt.toDate ? order.createdAt.toDate().toLocaleString() : order.createdAt || 'Unknown');
             pushRow('Email', order.email);
             pushRow('Discord', order.discord);
             pushRow('Other Social Handle', order.socialHandle);
@@ -18359,22 +19421,22 @@ function renderAdminOrders(ordersArr) {
             pushRow('Estimated Price At Submit', estimateSummary.rangeText);
             if (estimateSummary.suggested != null) pushRow('Suggested Price At Submit', formatMoney(estimateSummary.suggested));
             pushRow('Estimate Discount At Submit', estimateSummary.discountText);
-            pushRow('Notes', order.notes);
-            pushRow('Status History', statusHistory);
-            pushRow('Admin Notes', order.adminNotes);
-            pushRow('Uploaded Files', allReferenceImageUrls.length > 0 ? `${allReferenceImageUrls.length} file(s)` : 'No uploaded files');
+            pushRow('Notes', order.notes, 'notes');
+            pushRow('Status History', statusHistory, 'history');
+            pushRow('Admin Notes', order.adminNotes, 'notes');
+            pushRow('Uploaded Files', allReferenceImageUrls.length > 0 ? `${allReferenceImageUrls.length} file(s)` : 'No uploaded files', 'files');
             return rows.join('');
         };
 
         const card = document.createElement('div');
         card.className = "admin-card admin-order-card";
+        card.dataset.orderDocId = order.id;
         card.dataset.status = order.status || 'Pending Review';
-        const orderDate = order.createdAt ? new Date(order.createdAt.toDate()).toLocaleDateString() : 'Unknown Date';
-        const notes = order.notes || "None";
+        const submissionTimestamp = getOrderSubmissionTimestampMs(order);
+        const notes = order.notes || '';
         const email = order.email || "No Email";
         const displayName = order.name || 'Unknown';
-        const serviceType = getOrderServiceType(order);
-        const creatorLabel = getOrderCreator(serviceType) === 'lopside' ? 'Lopside' : 'Husky';
+        const creatorLabel = getAdminOrderCreator(order) === 'lopside' ? 'Lopside' : 'Husky';
         const rawFinalPrice = parseAdminPriceInput(order.finalPrice);
         const finalPriceInputValue = rawFinalPrice != null ? String(rawFinalPrice) : '';
         const isFinalPublished = order.finalPricePublished === true;
@@ -18407,25 +19469,20 @@ function renderAdminOrders(ordersArr) {
                 <label class="admin-order-finance-field admin-payment-deposit-toggle" for="lopside-deposit-paid-${order.id}">
                     <span class="admin-final-price-label">Lopside Deposit</span>
                     <span class="admin-checkbox-label-wrap">
-                        <input type="checkbox" id="lopside-deposit-paid-${order.id}" ${lopsideDepositMarkedPaid ? 'checked' : ''}>
+                        <input type="checkbox" id="lopside-deposit-paid-${order.id}" data-admin-order-draft="lopsideDepositPaid" data-admin-order-initial-value="${lopsideDepositMarkedPaid ? 'true' : 'false'}" ${lopsideDepositMarkedPaid ? 'checked' : ''}>
                         30% Deposit Paid
                     </span>
                     <span class="admin-order-finance-hint">Target uses 30% of Quote.</span>
                 </label>
                 <label class="admin-order-finance-field" for="lopside-deposit-amount-${order.id}">
                     <span class="admin-final-price-label">Deposit Amount</span>
-                    <input type="number" step="0.01" min="0" id="lopside-deposit-amount-${order.id}" class="admin-input admin-final-price-input" value="${escapeHTML(String(lopsideDepositCollected))}" placeholder="${escapeHTML(String(lopsideDepositTarget || 0))}">
+                    <input type="number" step="0.01" min="0" id="lopside-deposit-amount-${order.id}" class="admin-input admin-final-price-input" data-admin-order-draft="lopsideDepositAmount" data-admin-order-initial-value="${escapeHTML(String(lopsideDepositCollected))}" value="${escapeHTML(String(lopsideDepositCollected))}" placeholder="${escapeHTML(String(lopsideDepositTarget || 0))}">
                 </label>
             `
             : '';
-        const notesPreview = getPreviewText(notes, 150);
-        const attentionBadge = getOrderAttentionBadge(order);
         const currentStatus = order.status || 'Pending Review';
         const isArchived = Boolean(order.archivedAt);
         card.classList.toggle('is-archived', isArchived);
-        const archivedAtLabel = getComparableTimestampMs(order.archivedAt)
-            ? new Date(getComparableTimestampMs(order.archivedAt)).toLocaleDateString()
-            : '';
         const estimateSummary = getSubmittedEstimateSummary(order);
         const submittedEstimate = estimateSummary.rangeText;
         const submittedEstimateDiscount = estimateSummary.discountText;
@@ -18435,16 +19492,6 @@ function renderAdminOrders(ordersArr) {
             ? publicStatusDoc.publicReferenceImageUrls.filter(Boolean).length
             : 0;
         const refsPublished = publishedRefsCount > 0;
-        const badgeToneMap = {
-            'New': 'is-amber',
-            'Pending Review': 'is-amber',
-            'Needs Reply': 'is-amber',
-            'Waiting Payment': 'is-amber',
-            'In Progress': 'is-cyan',
-            'Completed': 'is-green'
-        };
-        const badgeToneClass = badgeToneMap[attentionBadge] || 'is-cyan';
-        
         const allReferenceImageUrls = getOrderReferenceImageUrls(order);
 
         let imagesHtml = '';
@@ -18456,137 +19503,301 @@ function renderAdminOrders(ordersArr) {
             `).join('') + `</div>`;
         }
 
+        const detailThumbnail = allReferenceImageUrls[0]
+            ? `<img class="admin-order-detail-thumb" src="${escapeHTML(allReferenceImageUrls[0])}" alt="" loading="lazy" onerror="handleImageError(this)">`
+            : `<span class="admin-order-detail-thumb admin-order-detail-thumb--empty" aria-hidden="true"><svg width="25" height="25" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17.5 15.8A8 8 0 0 1 8.2 6.5 8.5 8.5 0 1 0 17.5 15.8Z"/></svg></span>`;
+        const detailTabId = `adminOrderTab-${String(order.id).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+        card.classList.add('admin-order-card--detail');
         card.innerHTML = `
-            <div class="admin-order-title-row">
-                <label class="admin-order-select-wrap" title="Select order for bulk actions">
-                    <input type="checkbox" class="admin-order-select" data-order-id="${order.id}" aria-label="Select order ${escapeHTML(order.orderId || order.id || 'unknown')}">
-                    <span>Select</span>
-                </label>
-                <h3>${escapeHTML(order.orderType || order.itemType || 'Order')}</h3>
+            <header class="admin-order-detail-header">
+                ${detailThumbnail}
+                <div class="admin-order-detail-heading">
+                    <h3>${escapeHTML(order.orderType || order.itemType || 'Order')}</h3>
+                    <p><strong>${escapeHTML(order.orderId || 'N/A')}</strong> · ${escapeHTML(displayName)}</p>
+                    <p>Creator: ${escapeHTML(creatorLabel)} · Submitted: ${escapeHTML(submissionTimestamp == null ? 'Unknown Date' : getOrderBusinessDateLabel(submissionTimestamp, { includeWeekday: true, includeTime: true }))}</p>
+                </div>
+                <span class="admin-order-status-badge">${escapeHTML(currentStatus)}</span>
+            </header>
+            <div class="admin-order-status-strip">
                 ${isArchived ? '<span class="admin-order-archived-tag">Archived</span>' : ''}
-                <span class="admin-order-badge ${badgeToneClass}">${escapeHTML(attentionBadge)}</span>
+                <span class="admin-order-unsaved-indicator" data-order-draft-indicator hidden>Unsaved edits</span>
+                <span class="admin-order-public-refs-flag ${refsPublished ? 'is-published' : 'is-hidden'}">${refsPublished ? `${publishedRefsCount} public file(s)` : 'Uploads private'}</span>
+                ${submittedEstimate ? `<span>Estimated ${escapeHTML(submittedEstimate)}</span>` : ''}
+                ${finalMetaValue !== 'Not set' ? `<span>${escapeHTML(finalMetaValue)}</span>` : ''}
             </div>
-
-            <div class="admin-order-meta-line">
-                <span><strong>${escapeHTML(order.orderId || 'N/A')}</strong></span>
-                <span>${escapeHTML(displayName)}</span>
-                <span>${escapeHTML(creatorLabel)}</span>
-                <span>${escapeHTML(orderDate)}</span>
-                <span>Final: ${escapeHTML(finalMetaValue)}</span>
-                ${submittedEstimate ? `<span>Est: ${escapeHTML(submittedEstimate)}</span>` : ''}
-                ${isArchived ? `<span class="admin-order-meta-pill--archived">Archived ${escapeHTML(archivedAtLabel || '')}</span>` : ''}
-                <span>Uploads: <span class="admin-order-public-refs-flag ${refsPublished ? 'is-published' : 'is-hidden'}">${refsPublished ? `${publishedRefsCount} Published` : 'Hidden'}</span></span>
+            <div class="admin-order-detail-tabs" role="tablist" aria-label="Order detail sections">
+                <button type="button" id="${detailTabId}-details" role="tab" data-order-detail-tab="details" aria-controls="${detailTabId}-panel-details" aria-selected="true" tabindex="0">Details</button>
+                <button type="button" id="${detailTabId}-files" role="tab" data-order-detail-tab="files" aria-controls="${detailTabId}-panel-files" aria-selected="false" tabindex="-1">Files <span>${allReferenceImageUrls.length}</span></button>
+                <button type="button" id="${detailTabId}-notes" role="tab" data-order-detail-tab="notes" aria-controls="${detailTabId}-panel-notes" aria-selected="false" tabindex="-1">Notes</button>
+                <button type="button" id="${detailTabId}-history" role="tab" data-order-detail-tab="history" aria-controls="${detailTabId}-panel-history" aria-selected="false" tabindex="-1">History</button>
             </div>
-
-            <div class="admin-order-signal-row">
-                ${submittedSuggestedPriceText ? `<span class="admin-order-signal-chip is-neutral">Suggested ${escapeHTML(submittedSuggestedPriceText)}</span>` : ''}
-                ${submittedEstimateDiscount ? `<span class="admin-order-signal-chip is-neutral">${escapeHTML(submittedEstimateDiscount)}</span>` : ''}
-                <span class="admin-order-signal-chip ${(finalBelowFloor || quoteBelowFloor) ? 'is-warning' : 'is-good'}">
-                    ${(finalBelowFloor || quoteBelowFloor) ? `Below ${escapeHTML(sustainableFloorLabel)}` : `${escapeHTML(sustainableFloorLabel)} met`}
-                </span>
-            </div>
-
-            <div class="admin-order-finance-shell">
-                <div class="admin-order-finance-block">
-                    <div class="admin-order-finance-head">
-                        <h4>Final Price Control</h4>
-                        <span class="admin-final-price-state ${isFinalPublished ? 'is-published' : 'is-draft'}">${escapeHTML(finalPriceStateLabel)}</span>
-                    </div>
-                    <div class="admin-order-finance-grid">
+            <section id="${detailTabId}-panel-details" class="admin-order-detail-tabpanel" role="tabpanel" data-order-detail-panel="details" aria-labelledby="${detailTabId}-details" tabindex="0">
+                <div class="admin-order-details-grid">
+                    <article class="admin-order-info-card">
+                        <h4>Order Information</h4>
+                        <div class="admin-order-details-grid">${buildOrderDetailRows('details')}</div>
+                        <div class="admin-order-signal-row">
+                            ${submittedSuggestedPriceText ? `<span class="admin-order-signal-chip is-neutral">Suggested ${escapeHTML(submittedSuggestedPriceText)}</span>` : ''}
+                            ${submittedEstimateDiscount ? `<span class="admin-order-signal-chip is-neutral">${escapeHTML(submittedEstimateDiscount)}</span>` : ''}
+                            <span class="admin-order-signal-chip ${(finalBelowFloor || quoteBelowFloor) ? 'is-warning' : 'is-good'}">${(finalBelowFloor || quoteBelowFloor) ? `Below ${escapeHTML(sustainableFloorLabel)}` : `${escapeHTML(sustainableFloorLabel)} met`}</span>
+                        </div>
+                    </article>
+                    <article class="admin-order-finance-block admin-order-final-price-card">
+                        <div class="admin-order-finance-head">
+                            <h4>Final Price Control</h4>
+                            <span class="admin-final-price-state ${isFinalPublished ? 'is-published' : 'is-draft'}">${escapeHTML(finalPriceStateLabel)}</span>
+                        </div>
                         <label class="admin-order-finance-field" for="final-price-${order.id}">
                             <span class="admin-final-price-label">Final Price</span>
-                            <input type="number" step="0.01" min="0" id="final-price-${order.id}" class="admin-input admin-final-price-input" value="${escapeHTML(finalPriceInputValue)}" placeholder="e.g. 125.00">
+                            <input type="number" step="0.01" min="0" id="final-price-${order.id}" class="admin-input admin-final-price-input" data-admin-order-draft="finalPrice" data-admin-order-initial-value="${escapeHTML(finalPriceInputValue)}" value="${escapeHTML(finalPriceInputValue)}" placeholder="e.g. 125.00">
                         </label>
                         <div class="admin-order-finance-actions">
                             <button type="button" class="admin-btn-edit admin-save-final-price-btn" data-order-id="${order.id}">Save Final</button>
                             <button type="button" class="admin-btn-edit admin-toggle-final-price-btn" data-order-id="${order.id}" data-final-published="${isFinalPublished ? 'true' : 'false'}">${isFinalPublished ? 'Unpublish Final' : 'Publish Final'}</button>
                         </div>
-                    </div>
-                </div>
-
-                <div class="admin-order-finance-block admin-payment-tracker-row">
-                    <div class="admin-order-finance-head admin-order-finance-head--stack">
-                        <h4>Payment Tracker</h4>
-                        <span class="admin-final-price-state ${quoteAmount != null && remainingBalance <= 0 ? 'is-published' : 'is-draft'}">${escapeHTML(paymentStateLabel)}</span>
-                    </div>
-                    ${quoteAmount != null ? `
-                    <div class="admin-order-finance-summary" aria-label="Payment summary">
-                        <span><strong>Total:</strong> ${escapeHTML(formatMoney(quoteAmount))}</span>
-                        <span><strong>Deposit:</strong> ${escapeHTML(formatMoney(showLopsideDepositControls ? lopsideDepositCollected : 0))}</span>
-                        <span><strong>Paid:</strong> ${escapeHTML(formatMoney(paidAmount))}</span>
-                        <span><strong>Remaining:</strong> ${escapeHTML(formatMoney(remainingBalance))}</span>
-                    </div>
-                    ` : ''}
-                    <div class="admin-order-finance-grid">
-                        <label class="admin-order-finance-field" for="quote-amount-${order.id}">
-                            <span class="admin-final-price-label">Quote</span>
-                            <input type="number" step="0.01" min="0" id="quote-amount-${order.id}" class="admin-input admin-final-price-input" value="${escapeHTML(quoteInputValue)}" placeholder="Enter agreed quote">
-                        </label>
-                        <label class="admin-order-finance-field" for="amount-paid-${order.id}">
-                            <span class="admin-final-price-label">Paid</span>
-                            <input type="number" step="0.01" min="0" id="amount-paid-${order.id}" class="admin-input admin-final-price-input" value="${escapeHTML(String(paidAmount))}" placeholder="e.g. 159.00">
-                        </label>
-                        ${depositControlsHtml}
-                        <div class="admin-order-finance-actions admin-order-finance-actions--payment">
-                            <button type="button" class="admin-btn-edit admin-save-payment-tracker-btn" data-order-id="${order.id}">Save Payment</button>
-                            <button type="button" class="admin-btn-edit admin-clear-payment-tracker-btn" data-order-id="${order.id}">Clear Quote</button>
+                    </article>
+                    <article class="admin-order-finance-block admin-payment-tracker-row">
+                        <div class="admin-order-finance-head admin-order-finance-head--stack">
+                            <h4>Payment Tracker</h4>
+                            <span class="admin-final-price-state ${quoteAmount != null && remainingBalance <= 0 ? 'is-published' : 'is-draft'}">${escapeHTML(paymentStateLabel)}</span>
                         </div>
-                    </div>
+                        ${quoteAmount != null ? `<div class="admin-order-finance-summary" aria-label="Payment summary">
+                            <span><strong>Total:</strong> ${escapeHTML(formatMoney(quoteAmount))}</span>
+                            <span><strong>Deposit:</strong> ${escapeHTML(formatMoney(showLopsideDepositControls ? lopsideDepositCollected : 0))}</span>
+                            <span><strong>Paid:</strong> ${escapeHTML(formatMoney(paidAmount))}</span>
+                            <span><strong>Remaining:</strong> ${escapeHTML(formatMoney(remainingBalance))}</span>
+                        </div>` : ''}
+                        <div class="admin-order-finance-grid">
+                            <label class="admin-order-finance-field" for="quote-amount-${order.id}">
+                                <span class="admin-final-price-label">Quote</span>
+                                <input type="number" step="0.01" min="0" id="quote-amount-${order.id}" class="admin-input admin-final-price-input" data-admin-order-draft="quoteAmount" data-admin-order-initial-value="${escapeHTML(quoteInputValue)}" value="${escapeHTML(quoteInputValue)}" placeholder="Enter agreed quote">
+                            </label>
+                            <label class="admin-order-finance-field" for="amount-paid-${order.id}">
+                                <span class="admin-final-price-label">Paid</span>
+                                <input type="number" step="0.01" min="0" id="amount-paid-${order.id}" class="admin-input admin-final-price-input" data-admin-order-draft="amountPaid" data-admin-order-initial-value="${escapeHTML(String(paidAmount))}" value="${escapeHTML(String(paidAmount))}" placeholder="e.g. 159.00">
+                            </label>
+                            ${depositControlsHtml}
+                            <div class="admin-order-finance-actions admin-order-finance-actions--payment">
+                                <button type="button" class="admin-btn-edit admin-save-payment-tracker-btn" data-order-id="${order.id}">Save Payment</button>
+                                <button type="button" class="admin-btn-edit admin-clear-payment-tracker-btn" data-order-id="${order.id}">Clear Quote</button>
+                            </div>
+                        </div>
+                    </article>
                 </div>
-            </div>
-
-            <div class="admin-order-preview-wrap">
-                <div class="admin-detail admin-order-preview">
-                    <span class="admin-order-preview-label">Notes Preview:</span>
-                    <span class="admin-order-preview-text">${escapeHTML(notesPreview)}</span>
+            </section>
+            <section id="${detailTabId}-panel-files" class="admin-order-detail-tabpanel" role="tabpanel" data-order-detail-panel="files" aria-labelledby="${detailTabId}-files" tabindex="0" hidden>
+                <article class="admin-order-info-card">
+                    <h4>Customer Files</h4>
+                    ${buildOrderDetailRows('files')}
+                    ${order.refLink ? `<div class="admin-order-detail-row"><strong>Reference Link:</strong> <a href="${escapeHTML(order.refLink)}" target="_blank" rel="noopener noreferrer" class="admin-order-link">Open Link</a></div>` : ''}
+                    ${imagesHtml || '<p class="admin-order-empty-files">No uploaded files or reference images.</p>'}
+                    <p class="admin-order-file-privacy">${refsPublished ? 'Selected references are visible in the public order tracker.' : 'Customer uploads remain private unless you publish selected references.'}</p>
+                    ${allReferenceImageUrls.length > 0 && order.orderId ? `<div class="admin-order-file-actions">
+                        <button type="button" class="admin-order-action-btn admin-order-publish-refs-btn" data-order-doc-id="${escapeHTML(order.id)}">Publish Uploads</button>
+                        <button type="button" class="admin-order-action-btn admin-order-unpublish-refs-btn" data-order-doc-id="${escapeHTML(order.id)}">Unpublish</button>
+                    </div>` : ''}
+                </article>
+            </section>
+            <section id="${detailTabId}-panel-notes" class="admin-order-detail-tabpanel" role="tabpanel" data-order-detail-panel="notes" aria-labelledby="${detailTabId}-notes" tabindex="0" hidden>
+                <article class="admin-order-info-card">
+                    <h4>Customer and Admin Notes</h4>
+                    ${buildOrderDetailRows('notes') || `<p class="admin-order-note-body">${escapeHTML(getPreviewText(notes, 10000))}</p>`}
+                </article>
+            </section>
+            <section id="${detailTabId}-panel-history" class="admin-order-detail-tabpanel" role="tabpanel" data-order-detail-panel="history" aria-labelledby="${detailTabId}-history" tabindex="0" hidden>
+                <article class="admin-order-info-card">
+                    <h4>Order History</h4>
+                    ${buildOrderDetailRows('history')}
+                </article>
+            </section>
+            <section class="admin-order-admin-actions" aria-label="Order administrative actions">
+                <h4>Admin Actions</h4>
+                <div class="admin-order-admin-actions__controls">
+                    <label class="admin-order-status-control" for="status-${order.id}">
+                        <span>Change Status</span>
+                        <select id="status-${order.id}" class="admin-order-status-select" data-order-id="${order.id}">
+                            <option value="Pending Review" ${currentStatus === 'Pending Review' || currentStatus === 'New' ? 'selected' : ''}>Pending Review</option>
+                            <option value="Reviewed" ${currentStatus === 'Reviewed' ? 'selected' : ''}>Reviewed</option>
+                            <option value="Accepted" ${currentStatus === 'Accepted' ? 'selected' : ''}>Accepted</option>
+                            <option value="Not Accepted" ${currentStatus === 'Not Accepted' ? 'selected' : ''}>Not Accepted</option>
+                            <option value="Paid" ${currentStatus === 'Paid' ? 'selected' : ''}>Paid</option>
+                            <option value="In Progress" ${currentStatus === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="Finished" ${currentStatus === 'Finished' ? 'selected' : ''}>Finished</option>
+                            <option value="Shipped" ${currentStatus === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                            <option value="Cancelled" ${currentStatus === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                    </label>
+                    <button type="button" class="admin-order-action-btn admin-order-archive-btn" data-order-id="${order.id}" data-archived="${isArchived ? 'true' : 'false'}">${isArchived ? 'Restore' : 'Archive'}</button>
+                    <button type="button" id="msg-${order.id}" class="copy-template-btn admin-order-action-btn" data-order-id="${order.id}">Copy Msg</button>
+                    <button type="button" id="copy-${order.id}" class="admin-order-action-btn" data-copy-email="${escapeHTML(email)}">Copy Email</button>
+                    <button type="button" id="delete-${order.id}" class="admin-order-action-btn admin-order-delete-btn" data-order-id="${order.id}">Delete</button>
                 </div>
-            </div>
-
-            <div class="admin-order-view-row">
-                <button type="button" id="view-${order.id}" class="admin-view-details-btn" data-order-id="${order.id}">View Details</button>
-            </div>
-
-            <div class="admin-actions">
-                <select id="status-${order.id}" class="admin-order-status-select" data-order-id="${order.id}">
-                    <option value="Pending Review" ${order.status === 'Pending Review' || order.status === 'New' ? 'selected' : ''}>Pending Review</option>
-                    <option value="Reviewed" ${order.status === 'Reviewed' ? 'selected' : ''}>Reviewed</option>
-                    <option value="Accepted" ${order.status === 'Accepted' ? 'selected' : ''}>Accepted</option>
-                    <option value="Not Accepted" ${order.status === 'Not Accepted' ? 'selected' : ''}>Not Accepted</option>
-                    <option value="Paid" ${order.status === 'Paid' ? 'selected' : ''}>Paid</option>
-                    <option value="In Progress" ${order.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                    <option value="Finished" ${order.status === 'Finished' ? 'selected' : ''}>Finished</option>
-                    <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
-                    <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-                </select>
-                <button type="button" class="admin-order-action-btn admin-order-archive-btn" data-order-id="${order.id}" data-archived="${isArchived ? 'true' : 'false'}">${isArchived ? 'Restore' : 'Archive'}</button>
-                <button type="button" id="msg-${order.id}" class="copy-template-btn admin-order-action-btn" data-order-id="${order.id}">Copy Msg</button>
-                <button type="button" id="copy-${order.id}" class="admin-order-action-btn" data-copy-email="${escapeHTML(email)}">Copy Email</button>
-                <button type="button" id="delete-${order.id}" class="admin-order-action-btn admin-order-delete-btn" data-order-id="${order.id}">Delete</button>
-            </div>
-
-            <div id="details-${order.id}" class="admin-order-details-panel" hidden>
-                <div class="admin-order-details-grid">
-                    ${buildOrderDetailRows()}
-                </div>
-                ${order.refLink ? `<div class="admin-order-detail-row"><strong>Reference Link:</strong> <a href="${escapeHTML(order.refLink)}" target="_blank" rel="noopener noreferrer" class="admin-order-link">Open Link</a></div>` : ''}
-                ${imagesHtml ? `<div class="admin-order-detail-row"><strong>Uploads:</strong>${imagesHtml}</div>` : ''}
-                ${allReferenceImageUrls.length > 0 && order.orderId ? `
-                    <div class="admin-order-detail-row">
-                        <strong>Public Gallery:</strong>
-                        <span>
-                            <button type="button" class="admin-order-action-btn admin-order-publish-refs-btn" data-order-doc-id="${escapeHTML(order.id)}">Publish Uploads</button>
-                            <button type="button" class="admin-order-action-btn admin-order-unpublish-refs-btn" data-order-doc-id="${escapeHTML(order.id)}">Unpublish</button>
-                        </span>
-                    </div>
-                ` : ''}
-                <div class="admin-order-detail-row"><strong>Email:</strong> <span>${escapeHTML(email)}</span></div>
-                <div class="admin-order-detail-row"><strong>Discord:</strong> <span>${escapeHTML(order.discord || 'N/A')}</span></div>
-                <div class="admin-order-detail-row"><strong>Other Social:</strong> <span>${escapeHTML(order.socialHandle || 'N/A')}</span></div>
-            </div>
+            </section>
         `;
-        ordersGrid.appendChild(card);
+        const orderDraft = window.adminOrderDraftsById?.[String(order.id)];
+        if (orderDraft) {
+            card.querySelectorAll('[data-admin-order-draft]').forEach((field) => {
+                if (!(field instanceof HTMLInputElement)) return;
+                const draftValue = orderDraft[field.dataset.adminOrderDraft];
+                if (draftValue === undefined) return;
+                if (field.type === 'checkbox') field.checked = Boolean(draftValue);
+                else field.value = String(draftValue);
+            });
+        }
+        updateAdminOrderDraftIndicator(order.id, card);
+        renderedCards.set(order.id, card);
     });
 
+    const byYear = new Map();
+    const unknownDates = [];
+    ordersArr.forEach((order) => {
+        const timestamp = getOrderSubmissionTimestampMs(order);
+        const parts = timestamp == null ? null : getBusinessCalendarParts(timestamp);
+        if (!parts) {
+            unknownDates.push(order);
+            return;
+        }
+        if (!byYear.has(parts.year)) byYear.set(parts.year, new Map());
+        const byMonth = byYear.get(parts.year);
+        if (!byMonth.has(parts.monthKey)) byMonth.set(parts.monthKey, new Map());
+        const byWeek = byMonth.get(parts.monthKey);
+        const weekKey = getBusinessWeekKey(parts.dateKey);
+        if (!byWeek.has(weekKey)) byWeek.set(weekKey, new Map());
+        const byDay = byWeek.get(weekKey);
+        if (!byDay.has(parts.dateKey)) byDay.set(parts.dateKey, []);
+        byDay.get(parts.dateKey).push(order);
+    });
+
+    if (calendar.mode === 'month' && byYear.size === 0) {
+        const message = document.createElement('p');
+        message.className = 'admin-order-empty';
+        message.textContent = hasSubmissionsInMonth()
+            ? 'No orders match the current filters.'
+            : `No submissions for ${formatOrderMonthLabel(calendar.month)}.`;
+        ordersGrid.appendChild(message);
+    }
+
+    const statusSummary = (orders) => {
+        const counts = new Map();
+        orders.forEach((order) => {
+            const label = String(order.status || 'Pending Review');
+            counts.set(label, (counts.get(label) || 0) + 1);
+        });
+        return [...counts.entries()].map(([status, count]) => `${escapeHTML(status)} ${count}`).join(' · ');
+    };
+    const calendarIcon = `<svg class="admin-order-calendar-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v3m10-3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v13H4V6a1 1 0 0 1 1-1Z"/></svg>`;
+    const appendOrderRow = (order) => {
+        const timestamp = getOrderSubmissionTimestampMs(order);
+        const orderId = String(order.orderId || order.id || 'N/A');
+        const references = getOrderReferenceImageUrls(order);
+        const estimate = getSubmittedEstimateSummary(order);
+        const quote = getOrderQuoteAmount(order);
+        const finalPrice = parseAdminPriceInput(order.finalPrice);
+        const priceText = finalPrice != null
+            ? `Final ${formatMoney(finalPrice)}`
+            : quote != null
+                ? `Quote ${formatMoney(quote)}`
+                : estimate.rangeText
+                    ? `Est. ${estimate.rangeText}`
+                    : 'Price pending';
+        const status = String(order.status || 'Pending Review');
+        const normalizedStatus = normalizeOrderStatus(status).replace(/\s+/g, '-');
+        const thumbnail = references[0]
+            ? `<img class="admin-order-row-thumb" src="${escapeHTML(references[0])}" alt="" loading="lazy" onerror="handleImageError(this)">`
+            : `<span class="admin-order-row-thumb admin-order-row-thumb--empty" aria-hidden="true"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17.5 15.8A8 8 0 0 1 8.2 6.5 8.5 8.5 0 1 0 17.5 15.8Z"/></svg></span>`;
+        const creator = getAdminOrderCreator(order) === 'lopside' ? 'Lopside' : 'Husky';
+        const submittedLabel = timestamp == null
+            ? 'Unknown Date'
+            : getOrderBusinessDateLabel(timestamp, { includeWeekday: true, includeTime: true });
+        const row = document.createElement('article');
+        row.className = `admin-order-row${order.id === calendar.selectedOrderId ? ' is-selected' : ''}`;
+        row.innerHTML = `
+            <input type="checkbox" class="admin-order-select" data-order-id="${escapeHTML(order.id)}" aria-label="Select order ${escapeHTML(orderId)} for bulk actions">
+            <button type="button" class="admin-order-row-select" data-order-id="${escapeHTML(order.id)}" aria-label="Open ${escapeHTML(getOrderTypeLabel(order))} ${escapeHTML(orderId)} for ${escapeHTML(order.name || 'Unknown customer')}" aria-pressed="${order.id === calendar.selectedOrderId ? 'true' : 'false'}">
+                ${thumbnail}
+                <span class="admin-order-row-main">
+                    <strong>${escapeHTML(getOrderTypeLabel(order))} <span class="admin-order-row-id">· ${escapeHTML(orderId)}</span></strong>
+                    <span>${escapeHTML(order.name || 'Unknown customer')} · ${escapeHTML(creator)}</span>
+                </span>
+                <span class="admin-order-row-meta">
+                    <span>${escapeHTML(submittedLabel)}</span>
+                </span>
+                <strong class="admin-order-row-price">${escapeHTML(priceText)}</strong>
+                <span class="admin-order-row-status is-${escapeHTML(normalizedStatus)}">${escapeHTML(status)}</span>
+                <svg class="admin-order-row-arrow" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+        `;
+        row.querySelector('.admin-order-select').checked = selectedIds.has(String(order.id));
+        return row;
+    };
+    const appendDay = (dayKey, dayOrders) => {
+        const day = document.createElement('details');
+        day.className = 'admin-order-day';
+        const date = getBusinessDateFromKey(dayKey);
+        const dateLabel = new Intl.DateTimeFormat(undefined, { timeZone: 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(date);
+        day.dataset.dayKey = dayKey;
+        const hasSavedState = Object.prototype.hasOwnProperty.call(calendar.expandedDays, dayKey);
+        day.open = hasSavedState ? calendar.expandedDays[dayKey] : calendar.mode === 'month' || selectedParts?.dateKey === dayKey;
+        day.innerHTML = `<summary>${calendarIcon}<span>${escapeHTML(dateLabel)}</span><span class="admin-order-day-count">${dayOrders.length} submission${dayOrders.length === 1 ? '' : 's'}</span></summary>`;
+        const list = document.createElement('div');
+        list.className = 'admin-order-day-rows';
+        dayOrders.forEach((order) => list.appendChild(appendOrderRow(order)));
+        day.appendChild(list);
+        return day;
+    };
+
+    const selectedTimestamp = getOrderSubmissionTimestampMs(ordersArr.find((entry) => entry.id === calendar.selectedOrderId));
+    const selectedParts = selectedTimestamp == null ? null : getBusinessCalendarParts(selectedTimestamp);
+    [...byYear.entries()].sort((a, b) => sortDirection * (a[0] - b[0])).forEach(([year, byMonth]) => {
+        const yearSection = document.createElement('section');
+        yearSection.className = 'admin-order-year';
+        if (calendar.mode === 'all') yearSection.innerHTML = `<h3>${year}</h3>`;
+        [...byMonth.entries()].sort((a, b) => sortDirection * a[0].localeCompare(b[0])).forEach(([monthKey, byWeek]) => {
+            const monthSection = document.createElement('section');
+            monthSection.className = 'admin-order-month';
+            monthSection.innerHTML = `<h4>${escapeHTML(formatOrderMonthLabel(monthKey))}</h4>`;
+            [...byWeek.entries()].sort((a, b) => sortDirection * a[0].localeCompare(b[0])).forEach(([weekKey, byDay]) => {
+                const weekOrders = [...byDay.values()].flat();
+                const week = document.createElement('details');
+                week.className = 'admin-order-week';
+                week.dataset.weekKey = weekKey;
+                const hasSavedState = Object.prototype.hasOwnProperty.call(calendar.expandedWeeks, weekKey);
+                week.open = hasSavedState ? calendar.expandedWeeks[weekKey] : calendar.mode === 'month' || (selectedParts != null && getBusinessWeekKey(selectedParts.dateKey) === weekKey);
+                week.innerHTML = `<summary>${calendarIcon}<span class="admin-order-week-range">${escapeHTML(formatBusinessWeekRange(weekKey))}</span><span class="admin-order-week-count">${weekOrders.length} submission${weekOrders.length === 1 ? '' : 's'}</span><span class="admin-order-week-statuses">${statusSummary(weekOrders)}</span></summary>`;
+                const days = document.createElement('div');
+                days.className = 'admin-order-week-days';
+                [...byDay.entries()].sort((a, b) => sortDirection * a[0].localeCompare(b[0])).forEach(([dayKey, dayOrders]) => days.appendChild(appendDay(dayKey, dayOrders)));
+                week.appendChild(days);
+                monthSection.appendChild(week);
+            });
+            yearSection.appendChild(monthSection);
+        });
+        ordersGrid.appendChild(yearSection);
+    });
+
+    if (unknownDates.length) {
+        const unknownSection = document.createElement('details');
+        unknownSection.className = 'admin-order-unknown-dates';
+        const unknownState = calendar.expandedUnknownDates;
+        const selectedOrderIsUndated = unknownDates.some((order) => order.id === calendar.selectedOrderId);
+        unknownSection.open = typeof unknownState === 'boolean' ? unknownState : selectedOrderIsUndated;
+        unknownSection.innerHTML = `<summary>${calendarIcon}<span>Unknown Date</span><span class="admin-order-day-count">${unknownDates.length} submission${unknownDates.length === 1 ? '' : 's'}</span></summary>`;
+        const rows = document.createElement('div');
+        rows.className = 'admin-order-day-rows';
+        unknownDates.forEach((order) => rows.appendChild(appendOrderRow(order)));
+        unknownSection.appendChild(rows);
+        ordersGrid.appendChild(unknownSection);
+    }
+
+    const selectedCard = renderedCards.get(calendar.selectedOrderId);
+    if (selectedCard && detailContent) {
+        selectedCard.classList.add('admin-order-card--detail');
+        detailContent.replaceChildren(selectedCard);
+        setActiveAdminOrderDetailTab(detailContent, calendar.activeDetailTab);
+        if (detailPane && previousOrderId !== calendar.selectedOrderId) detailPane.scrollTop = 0;
+    }
+
+    ordersGrid.scrollTop = timelineScrollTop;
     updateAdminOrderSelectionSummary();
 }
 

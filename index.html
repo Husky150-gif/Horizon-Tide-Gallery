@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Horizon</title>
-    <meta name="description" content="Horizon Tide Gallery by Husky for custom art commissions, animation, and handmade creations.">
-    <meta property="og:title" content="Horizon Tide Gallery">
+    <title>Husky's Little Universe</title>
+    <meta name="description" content="Husky's Little Universe by Husky for custom art commissions, animation, and handmade creations.">
+    <meta property="og:title" content="Husky's Little Universe">
     <meta property="og:description" content="Explore custom artwork, animation portfolios, and handmade commissions by Husky.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://horizontidegallery.com/">
     <meta property="og:image" content="https://horizontidegallery.com/Images/banner%201.jpg">
     <meta name="robots" content="index, follow">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="The Horizon | Horizon Tide Gallery">
+    <meta name="twitter:title" content="Husky's Little Universe">
     <meta name="twitter:description" content="Commission art, animation, keychains, and stickers from Husky with clear communication and queue transparency.">
     <meta name="twitter:image" content="https://horizontidegallery.com/Images/banner%201.jpg">
     <meta name="theme-color" content="#080d1f">
@@ -24,8 +24,8 @@
                 {
                     "@type": "Organization",
                     "@id": "https://horizontidegallery.com/#organization",
-                    "name": "Horizon Tide Gallery",
-                    "alternateName": ["The Horizon", "Horizon Tide"],
+                    "name": "Husky's Little Universe",
+                    "alternateName": ["Husky's Universe", "Husky's Little Universe - A Little Corner of the Cosmos"],
                     "url": "https://horizontidegallery.com/",
                     "logo": "https://horizontidegallery.com/Images/banner%201.jpg",
                     "description": "Custom art, animation, and handmade creations with clear commission guidance and transparent queue updates.",
@@ -45,9 +45,9 @@
                     "@type": "Person",
                     "@id": "https://horizontidegallery.com/#husky",
                     "name": "Husky",
-                    "alternateName": ["Husky (The Horizon)", "Husky Art Commissions"],
+                    "alternateName": ["Husky's Little Universe Creator", "Husky Art Commissions"],
                     "jobTitle": "Digital Artist and Animator",
-                    "description": "Husky is a digital artist and animator at Horizon Tide Gallery focused on custom character art, animation, and visual storytelling.",
+                    "description": "Husky is a digital artist and animator at Husky's Little Universe focused on custom character art, animation, and visual storytelling.",
                     "url": "https://horizontidegallery.com/husky.html",
                     "image": "https://horizontidegallery.com/Husky%20our%20socials/IMG_6379.jpg",
                     "worksFor": { "@id": "https://horizontidegallery.com/#organization" },
@@ -69,8 +69,8 @@
                     "@type": "WebSite",
                     "@id": "https://horizontidegallery.com/#website",
                     "url": "https://horizontidegallery.com/",
-                    "name": "Horizon Tide Gallery",
-                    "alternateName": "The Horizon",
+                    "name": "Husky's Little Universe",
+                    "alternateName": "A Little Corner of the Cosmos, Made With Love",
                     "description": "Custom art commissions, animation, and handmade creations by Husky.",
                     "publisher": {
                         "@id": "https://horizontidegallery.com/#organization"
@@ -93,7 +93,7 @@
                             "name": "How do commissions work?",
                             "acceptedAnswer": {
                                 "@type": "Answer",
-                                "text": "Submit a request through my order form. I review the details, then contact you about pricing and timeline. Once confirmed, your order can be added to Horizon Queue for public progress updates."
+                                    "text": "Submit a request through my order form. I review the details, then contact you about pricing and timeline. Once confirmed, your order can be added to the queue for public progress updates."
                             }
                         },
                         {
@@ -101,7 +101,7 @@
                             "name": "How do I check my order or commission status?",
                             "acceptedAnswer": {
                                 "@type": "Answer",
-                                "text": "Use Horizon Queue and the status checker with your order number. Refund Queue shows refund progress and Commission Queue shows current work status while private customer information remains protected."
+                                    "text": "Use the status checker with your order number. Refund Queue shows refund progress and Commission Queue shows current work status while private customer information remains protected."
                             }
                         },
                         {
@@ -134,6 +134,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="style.css?v=153">
+    <link rel="stylesheet" href="mission-control-theme.css?v=12">
     
     <script defer type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
@@ -268,7 +269,7 @@
     <template id="announcementsPageTemplate">
         <div class="announcements-container space-theme">
             <h1 class="cosmic-title">Cosmic Updates</h1>
-            <p class="intro-text">Check here for the latest news, progress updates, and announcements from Horizon Tide Gallery!</p>
+            <p class="intro-text">Check here for the latest news, progress updates, and announcements from Husky's Little Universe!</p>
             
             <div class="announcements-mascot-container">
                 <div class="announcements-mascot-gif">
@@ -290,7 +291,7 @@
                     <p class="announcement-body">Main update text goes here. This area supports multi-line announcements regarding commissions, queue status, or new merch drops.</p>
                 </div>
             </div>
-            <button type="button" id="backHomeFromUpdatesBtn" class="nav-btn btn-spacing-top">← Back to Horizon</button>
+            <button type="button" id="backHomeFromUpdatesBtn" class="nav-btn btn-spacing-top">← Back Home</button>
         </div>
     </template>
 
@@ -386,10 +387,11 @@
         <div class="admin-card pricing-settings-card">
             <h3 class="admin-card-title pricing-settings-title">Pricing Settings</h3>
             <p class="admin-card-subtitle">Use the visual controls below to update pricing. Base pricing still drives the forms, calculators, and pricing sheet.</p>
+            <button type="button" class="admin-btn-edit admin-pricing-related-link" data-admin-destination="adminNavQuickGuide">Open Quick Guide Ranges</button>
 
-            <div id="adminPricingJumpNav" class="admin-pricing-jump-nav" aria-label="Pricing editor sections"></div>
+            <div id="adminPricingJumpNav" class="admin-pricing-jump-nav" role="tablist" aria-label="Pricing categories"></div>
 
-            <div id="adminPricingFieldGrid" class="admin-pricing-field-grid" aria-live="polite"></div>
+            <div id="adminPricingFieldGrid" class="admin-pricing-field-grid"></div>
 
             <details class="admin-pricing-advanced-json">
                 <summary>Advanced: Edit raw pricing JSON</summary>
@@ -397,15 +399,17 @@
                     Pricing JSON
                     <textarea id="adminPricingConfigJson" class="admin-input admin-textarea" rows="14" spellcheck="false" placeholder="Pricing config will load here..."></textarea>
                 </label>
+                <button type="button" id="btnApplyPricingJson" class="admin-btn-edit">Apply JSON to Editor</button>
             </details>
 
             <div class="admin-actions discount-actions">
                 <button type="button" id="btnSavePricingConfig" class="admin-btn-save">Save Pricing</button>
                 <button type="button" id="btnApplyPremiumPricingPreset" class="admin-btn-edit">Apply Premium Margin (+10%)</button>
                 <button type="button" id="btnResetPricingConfig" class="admin-btn-publish">Reset to Defaults</button>
+                <button type="button" id="btnReloadPricingConfig" class="admin-btn-edit">Reload Saved Values</button>
             </div>
 
-            <p class="admin-detail" id="adminPricingConfigHint">Tip: update values in the visual editor, then click Save Pricing to publish.</p>
+            <p class="admin-detail" id="adminPricingConfigHint" role="status" aria-live="polite">Loading saved pricing...</p>
         </div>
     </template>
 
@@ -413,6 +417,7 @@
         <div class="admin-card pricing-settings-card">
             <h3 class="admin-card-title pricing-settings-title">Quick Guide Ranges</h3>
             <p class="admin-card-subtitle">These only change the planning ranges shown in Quick Actor and the home quick guide. They do not change your main calculator pricing.</p>
+            <button type="button" class="admin-btn-edit admin-pricing-related-link" data-admin-destination="adminNavPricing">Open Pricing Settings</button>
 
             <section class="admin-quick-guide-shell" aria-labelledby="adminQuickGuideTitle">
                 <div class="admin-quick-guide-shell__head">
@@ -427,7 +432,7 @@
                 <button type="button" id="btnResetQuickGuideConfig" class="admin-btn-publish">Reset All to Auto</button>
             </div>
 
-            <p class="admin-detail">Auto follows pricing settings. Custom only changes the guide.</p>
+            <p class="admin-detail" id="adminQuickGuideConfigHint" role="status" aria-live="polite">Loading saved ranges...</p>
         </div>
     </template>
 
@@ -720,7 +725,7 @@
                             </label>
                             <label class="admin-label admin-label-medium">
                                 Creator
-                                <input type="text" id="adminGalleryCreator" class="admin-input" placeholder="Husky, Horizon Tide">
+                                <input type="text" id="adminGalleryCreator" class="admin-input" placeholder="Husky, Husky's Little Universe">
                             </label>
                         </div>
                     </section>
@@ -846,7 +851,7 @@
         </div>
     </div>
 
-    <script type="module" src="script.js?v=192"></script>
+    <script type="module" src="script.js?v=200"></script>
     <script defer src="loader.js?v=3"></script>
 </body>
 </html>

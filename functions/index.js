@@ -232,7 +232,7 @@ function buildReminderEmail(order, plan) {
   const orderId = String(order?.orderId || '').trim() || 'Unknown';
   const amountLabel = `$${Number(plan.amountDue || 0).toFixed(2)}`;
   const typeLabel = plan.type === 'deposit' ? 'Deposit Reminder' : 'Payment Reminder';
-  const subject = `Horizon Tide | Order ${orderId} | ${typeLabel}`;
+  const subject = `Husky's Little Universe | Order ${orderId} | ${typeLabel}`;
 
   const text = plan.type === 'deposit'
     ? [
@@ -243,7 +243,7 @@ function buildReminderEmail(order, plan) {
         '',
         'Once the deposit is settled, we can keep your project moving smoothly in queue.',
         '',
-        'Thank you for supporting Horizon Tide!'
+        "Thank you for supporting Husky's Little Universe!"
       ].join('\n')
     : [
         `Hi ${customerName},`,
@@ -253,7 +253,7 @@ function buildReminderEmail(order, plan) {
         '',
         'Reply when ready and we will finalize next steps.',
         '',
-        'Thank you for supporting Horizon Tide!'
+        "Thank you for supporting Husky's Little Universe!"
       ].join('\n');
 
   return { subject, text };
@@ -264,15 +264,15 @@ function buildMilestoneEmail(order, nextStatus) {
   const orderId = String(order?.orderId || '').trim() || 'Unknown';
   const statusLabel = String(nextStatus || 'Updated').trim();
 
-  const subject = `Horizon Tide | Order ${orderId} | Status: ${statusLabel}`;
+  const subject = `Husky's Little Universe | Order ${orderId} | Status: ${statusLabel}`;
   const text = [
     `Hi ${customerName},`,
     '',
     `Your order ${orderId} moved to: ${statusLabel}.`,
     '',
-    'You can keep tracking progress from the Horizon status page anytime.',
+    'You can keep tracking progress from the status page anytime.',
     '',
-    'Thank you for supporting Horizon Tide!'
+    "Thank you for supporting Husky's Little Universe!"
   ].join('\n');
 
   return { subject, text };
@@ -344,7 +344,7 @@ exports.processCustomerPaymentReminderRequest = functions.firestore
       const payload = plan.shouldSend
         ? buildReminderEmail(order, plan)
         : {
-            subject: `Horizon Tide | Order ${orderId} | Payment Snapshot`,
+            subject: `Husky's Little Universe | Order ${orderId} | Payment Snapshot`,
             text: [
               `Hi ${String(order?.name || 'there').trim() || 'there'},`,
               '',

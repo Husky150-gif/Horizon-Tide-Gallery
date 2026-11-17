@@ -1,0 +1,1958 @@
+body[data-page="admin"] {
+    --mission-midnight: #100e24;
+    --mission-indigo: #1b1736;
+    --mission-plum: #382453;
+    --mission-lavender: #b78aef;
+    --mission-starlight: #e9d9ff;
+    --mission-ocean: #80c7e8;
+    --mission-panel: rgba(27, 24, 49, 0.98);
+    --mission-border: rgba(183, 138, 239, 0.35);
+    --mission-glow: rgba(183, 138, 239, 0.18);
+    /* Replace these placeholders with url("...") when the artwork is ready. */
+    --mission-background-art: none;
+    --mission-logo-art: none;
+    --mission-logo-shadow: inset -5px -2px 0 0 var(--mission-lavender);
+    /* Set any decorative layer to none when replacing the temporary artwork. */
+    --mission-stars:
+        radial-gradient(1px 1px at 12% 18%, rgba(233, 217, 255, 0.72), transparent),
+        radial-gradient(1px 1px at 43% 8%, rgba(233, 217, 255, 0.6), transparent),
+        radial-gradient(1px 1px at 69% 25%, rgba(233, 217, 255, 0.6), transparent),
+        radial-gradient(1px 1px at 90% 42%, rgba(233, 217, 255, 0.55), transparent);
+    --mission-ocean-light:
+        radial-gradient(ellipse 75% 22% at 50% 108%, rgba(128, 199, 232, 0.14), transparent 72%),
+        radial-gradient(ellipse 90% 27% at 15% 110%, rgba(91, 120, 183, 0.16), transparent 70%);
+    --mission-moonlight:
+        radial-gradient(ellipse at 78% 12%, rgba(183, 138, 239, 0.14), transparent 30%),
+        radial-gradient(ellipse at 18% 68%, rgba(128, 199, 232, 0.07), transparent 33%);
+}
+
+/* Temporary CSS sky and ocean; the moon widget remains independent. */
+body[data-page="admin"] .sky-container {
+    background-color: var(--mission-midnight);
+    background-image:
+        var(--mission-background-art),
+        var(--mission-stars),
+        var(--mission-ocean-light),
+        var(--mission-moonlight),
+        linear-gradient(155deg, #0b0b1c, var(--mission-midnight) 52%, #10172a);
+    background-size: cover;
+    background-position: center;
+}
+
+body[data-page="admin"] .galaxy-nebula,
+body[data-page="admin"] .cosmic-planet-layer,
+body[data-page="admin"] .cosmic-cloud-layer,
+body[data-page="admin"] .cosmic-shooting-star {
+    display: none;
+}
+
+body[data-page="admin"] #adminDashboardView {
+    color: var(--mission-starlight);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-sidebar,
+body[data-page="admin"] #adminDashboardView .admin-top-header,
+body[data-page="admin"] #adminDashboardView .admin-card,
+body[data-page="admin"] #adminDashboardView .admin-chart-card,
+body[data-page="admin"] #adminDashboardView .admin-activity-panel,
+body[data-page="admin"] #adminDashboardView .admin-collapsible {
+    border-color: var(--mission-border);
+    background: linear-gradient(145deg, rgba(45, 34, 72, 0.98), var(--mission-panel));
+    box-shadow: 0 14px 34px rgba(5, 5, 20, 0.42), inset 0 1px 0 rgba(233, 217, 255, 0.07);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-sidebar {
+    background: linear-gradient(180deg, rgba(25, 23, 49, 0.99), rgba(16, 18, 38, 0.99));
+    box-shadow: 0 18px 38px rgba(3, 5, 18, 0.48), inset 0 1px 0 rgba(233, 217, 255, 0.08);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-sidebar-title {
+    font-size: 0.88rem;
+    letter-spacing: 0.04em;
+}
+
+/* Set --mission-logo-shadow to none when replacing the temporary crescent. */
+body[data-page="admin"] #adminDashboardView .admin-sidebar-title::before {
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    vertical-align: middle;
+    border-radius: 50%;
+    background-image: var(--mission-logo-art);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    box-shadow: var(--mission-logo-shadow);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-sidebar-title,
+body[data-page="admin"] #adminDashboardView .admin-top-header h1,
+body[data-page="admin"] #adminDashboardView .admin-card-title {
+    color: #f7efff;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-sidebar-group-title,
+body[data-page="admin"] #adminDashboardView .admin-top-kicker,
+body[data-page="admin"] #adminDashboardView .admin-zone-heading {
+    color: #e2ccfb;
+    opacity: 1;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-top-meta,
+body[data-page="admin"] #adminDashboardView .admin-card-subtitle,
+body[data-page="admin"] #adminDashboardView .admin-revenue-controls__hint,
+body[data-page="admin"] #adminDashboardView .admin-section-note {
+    color: #d9cfe9;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-sidebar .admin-side-link {
+    color: #ede3fb;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-sidebar .admin-side-link:hover,
+body[data-page="admin"] #adminDashboardView .admin-sidebar .admin-side-link:focus-visible,
+body[data-page="admin"] #adminDashboardView .admin-sidebar .admin-side-link.active-link {
+    color: #fff;
+    border-left-color: var(--mission-lavender);
+    background: linear-gradient(90deg, rgba(183, 138, 239, 0.24), rgba(128, 199, 232, 0.04));
+    box-shadow: inset 0 0 14px rgba(183, 138, 239, 0.08), 0 0 12px var(--mission-glow);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-sidebar .admin-side-link::before {
+    background: linear-gradient(90deg, rgba(183, 138, 239, 0.16), transparent);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-top-header::before,
+body[data-page="admin"] #adminDashboardView .admin-collapsible::before {
+    background: linear-gradient(90deg, var(--mission-lavender), var(--mission-ocean), transparent);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-collapsible > summary {
+    color: #f1e8ff;
+    background: linear-gradient(105deg, rgba(56, 36, 83, 0.92), rgba(27, 23, 54, 0.96));
+}
+
+body[data-page="admin"] #adminDashboardView .admin-collapsible[open] > summary {
+    border-bottom-color: var(--mission-border);
+}
+
+body[data-page="admin"] #adminDashboardView :is(.admin-card, .admin-chart-card, .admin-collapsible):focus-within,
+body[data-page="admin"] #adminDashboardView :is(.admin-card, .admin-chart-card, .admin-collapsible):hover {
+    box-shadow: 0 14px 34px rgba(5, 5, 20, 0.42), 0 0 16px rgba(183, 138, 239, 0.12);
+}
+
+body[data-page="admin"] #adminDashboardView :is(.nav-btn, .admin-btn-edit, .admin-btn-save, .admin-btn-delete, .admin-btn-publish):hover,
+body[data-page="admin"] #adminDashboardView :is(.nav-btn, .admin-btn-edit, .admin-btn-save, .admin-btn-delete, .admin-btn-publish):focus-visible {
+    box-shadow: 0 0 14px var(--mission-glow);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-input,
+body[data-page="admin"] #adminDashboardView .admin-textarea {
+    color: #f8f2ff;
+    background: rgba(16, 14, 36, 0.94);
+    border-color: rgba(183, 138, 239, 0.46);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-input::placeholder,
+body[data-page="admin"] #adminDashboardView .admin-textarea::placeholder {
+    color: #c4b8d6;
+    opacity: 1;
+}
+
+body[data-page="admin"] #adminDashboardView :is(button, input, select, textarea, summary, a):focus-visible {
+    outline: 3px solid var(--mission-ocean);
+    outline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+    body[data-page="admin"] #adminDashboardView {
+        max-width: calc(100% - 16px);
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-filters--chips {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        overflow-x: visible;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-filters--chips .nav-btn {
+        flex: 0 1 auto;
+        white-space: normal;
+    }
+}
+
+@media (max-width: 500px) {
+    /* The existing grid columns are set inline on the order list. */
+    body[data-page="admin"] #adminDashboardView #ordersGrid {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    body[data-page="admin"] #adminDashboardView .queue-manager-tabs,
+    body[data-page="admin"] #adminDashboardView .premade-manager-card .admin-actions {
+        flex-wrap: wrap;
+    }
+
+    body[data-page="admin"] #adminDashboardView .queue-manager-tabs {
+        box-sizing: border-box;
+        max-width: 100%;
+    }
+
+    body[data-page="admin"] #adminDashboardView .queue-manager-tab-btn {
+        flex: 1 1 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body[data-page="admin"] #adminDashboardView :is(.admin-side-link, .nav-btn, .admin-card, .admin-chart-card, .admin-collapsible, .admin-input, .admin-textarea),
+    body[data-page="admin"] #adminDashboardView .admin-sidebar .admin-side-link::before,
+    body[data-page="admin"] #backToTopBtn {
+        transition: none;
+        animation: none;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-sidebar .admin-side-link:hover {
+        transform: none;
+    }
+
+    body[data-page="admin"] #globalMusicBtn {
+        transition: none !important;
+    }
+}
+
+/* Mission Control workspaces. Artwork remains in the variables above. */
+body[data-page="admin"] #app-viewport {
+    padding: 18px 18px calc(24px + env(safe-area-inset-bottom));
+    text-align: left;
+}
+
+body[data-page="admin"] #secretAdminTrigger {
+    pointer-events: none;
+}
+
+body[data-page="admin"] #adminDashboardView {
+    width: 100%;
+    max-width: none;
+}
+
+body[data-page="admin"] #adminDashboardView [hidden] {
+    display: none !important;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-lockable {
+    grid-template-columns: 250px minmax(0, 1fr);
+    gap: 18px;
+}
+
+body[data-page="admin"] #adminDashboardView.admin-rail-collapsed .admin-lockable {
+    grid-template-columns: 70px minmax(0, 1fr);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-sidebar {
+    position: sticky;
+    top: 18px;
+    box-sizing: border-box;
+    max-height: calc(100vh - 36px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 14px 10px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-sidebar-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-sidebar-title {
+    margin: 0;
+    white-space: nowrap;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-rail-toggle,
+body[data-page="admin"] #adminDashboardView .admin-menu-toggle {
+    border: 1px solid var(--mission-border);
+    border-radius: 9px;
+    background: rgba(183, 138, 239, 0.1);
+    color: #f7efff;
+    min-width: 38px;
+    min-height: 38px;
+    cursor: pointer;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-menu-toggle,
+body[data-page="admin"] #adminDashboardView .admin-drawer-backdrop {
+    display: none;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-sidebar-nav {
+    gap: 8px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-sidebar-group + .admin-sidebar-group {
+    padding-top: 8px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-sidebar .admin-side-link {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 38px;
+    padding: 7px 8px;
+    line-height: 1.25;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-side-icon {
+    display: inline-grid;
+    flex: 0 0 24px;
+    place-items: center;
+    font-size: 1rem;
+    color: #dfc7ff;
+}
+
+body[data-page="admin"] #adminDashboardView.admin-rail-collapsed .admin-sidebar-title,
+body[data-page="admin"] #adminDashboardView.admin-rail-collapsed .admin-sidebar-group-title,
+body[data-page="admin"] #adminDashboardView.admin-rail-collapsed .admin-side-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+body[data-page="admin"] #adminDashboardView.admin-rail-collapsed .admin-sidebar-heading,
+body[data-page="admin"] #adminDashboardView.admin-rail-collapsed .admin-sidebar .admin-side-link {
+    justify-content: center;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-main-area {
+    align-content: start;
+    gap: 14px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-top-header {
+    overflow: visible;
+    align-items: center;
+    padding: 16px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-top-header h1 {
+    font-size: clamp(1.35rem, 2vw, 1.85rem);
+}
+
+body[data-page="admin"] #adminDashboardView.admin-orders-active .admin-top-header {
+    padding: 10px 14px;
+}
+
+body[data-page="admin"] #adminDashboardView.admin-orders-active .admin-top-header :is(.admin-top-kicker, h1, .admin-top-meta) {
+    margin: 0 0 3px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-header-actions {
+    align-items: center;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-account-menu {
+    position: relative;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-account-menu summary,
+body[data-page="admin"] #adminDashboardView .admin-reminder-details > summary,
+body[data-page="admin"] #adminDashboardView .admin-overview-row > summary {
+    cursor: pointer;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-account-menu[open] {
+    z-index: 20;
+    padding: 10px;
+    border: 1px solid var(--mission-border);
+    border-radius: 10px;
+    background: #1b1736;
+}
+
+body[data-page="admin"] #adminDashboardView #adminMusicUtility {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+}
+
+body[data-page="admin"] #adminDashboardView #globalMusicBtn {
+    position: static !important;
+    max-width: none !important;
+    padding: 8px 10px !important;
+    border: 1px solid var(--mission-border) !important;
+    border-radius: 9px !important;
+    background: rgba(183, 138, 239, 0.1) !important;
+    box-shadow: none !important;
+    font-size: 0.8rem !important;
+}
+
+body[data-page="admin"] #backToTopBtn {
+    right: max(10px, env(safe-area-inset-right));
+    border-color: var(--mission-border);
+    box-shadow: 0 0 14px var(--mission-glow);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-orders-toolbar {
+    position: static;
+    display: grid;
+    min-width: 0;
+    gap: 5px;
+    margin-bottom: 8px;
+    padding: 6px;
+}
+
+body[data-page="admin"] #adminDashboardView #adminSectionOrders > .admin-collapsible-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+}
+
+body[data-page="admin"] #adminDashboardView #adminSectionOrders > summary {
+    box-sizing: border-box;
+    min-height: 38px;
+    padding: 8px 12px;
+}
+
+body[data-page="admin"] #adminDashboardView #adminSectionOrders .admin-section-note {
+    margin: 0;
+    font-size: 0.78rem;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-calendar-heading {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--mission-border);
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(47, 36, 76, 0.88), rgba(16, 18, 38, 0.96));
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-calendar-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-calendar-stats article {
+    display: grid;
+    gap: 2px;
+    padding: 8px 10px;
+    border: 1px solid rgba(183, 138, 239, 0.22);
+    border-radius: 9px;
+    background: rgba(15, 14, 34, 0.56);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-calendar-stats strong {
+    color: #f5ebff;
+    font-size: 1.08rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-calendar-stats span,
+body[data-page="admin"] #adminDashboardView .admin-order-filter-label,
+body[data-page="admin"] #adminDashboardView .admin-order-search-label {
+    color: #d7c8e8;
+    font-size: 0.82rem;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-calendar-nav,
+body[data-page="admin"] #adminDashboardView .admin-order-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 9px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-calendar-nav {
+    justify-content: center;
+    gap: 6px 14px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-calendar-nav .admin-order-month-picker {
+    order: 2;
+    flex: 0 1 auto;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-calendar-nav .admin-order-month-picker > summary {
+    min-width: 160px;
+    padding: 10px 14px;
+    font-size: 1.02rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    border-color: rgba(183, 138, 239, 0.56);
+    background: linear-gradient(135deg, rgba(183, 138, 239, 0.18), rgba(183, 138, 239, 0.08));
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-month-arrow {
+    order: 1;
+    min-width: 40px;
+    min-height: 38px;
+    border-color: rgba(183, 138, 239, 0.3);
+    background: rgba(183, 138, 239, 0.14);
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-month-arrow:hover {
+    background: rgba(183, 138, 239, 0.22);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-month-arrow {
+    min-width: 38px;
+    min-height: 36px;
+    border: 1px solid var(--mission-border);
+    border-radius: 9px;
+    background: rgba(183, 138, 239, 0.1);
+    color: #f5ebff;
+    font-size: 1.4rem;
+    cursor: pointer;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-month-picker {
+    position: relative;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-month-picker > summary {
+    padding: 8px 12px;
+    border: 1px solid rgba(183, 138, 239, 0.42);
+    border-radius: 9px;
+    background: rgba(183, 138, 239, 0.12);
+    color: #f5ebff;
+    font-weight: 700;
+    list-style: none;
+    cursor: pointer;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-month-picker > summary::-webkit-details-marker {
+    display: none;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-month-picker__panel {
+    position: absolute;
+    z-index: 8;
+    top: calc(100% + 8px);
+    left: 50%;
+    display: grid;
+    min-width: 220px;
+    gap: 8px;
+    padding: 12px;
+    transform: translateX(-50%);
+    border: 1px solid var(--mission-border);
+    border-radius: 12px;
+    background: #191631;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.4);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-filter-row {
+    align-items: end;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-filter-row .admin-input {
+    flex: 1 1 145px;
+    min-width: 120px;
+}
+
+body[data-page="admin"] #adminDashboardView #adminOrderCalendarSearch {
+    flex: 2 1 240px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.95fr);
+    align-items: start;
+    gap: 12px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-timeline,
+body[data-page="admin"] #adminDashboardView .admin-order-detail-pane {
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid var(--mission-border);
+    border-radius: 12px;
+    background: rgba(17, 16, 38, 0.92);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-detail-pane {
+    position: sticky;
+    top: 12px;
+    max-height: calc(100vh - 24px);
+    overflow: auto;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-year > h3 {
+    margin: 2px 0 8px;
+    color: #e9d8ff;
+    font-size: 0.88rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-month > h4 {
+    margin: 3px 0 8px;
+    color: #f0e2ff;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-month {
+    margin-bottom: 14px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-week,
+body[data-page="admin"] #adminDashboardView .admin-order-day,
+body[data-page="admin"] #adminDashboardView .admin-order-unknown-dates {
+    margin: 6px 0;
+    border: 1px solid rgba(183, 138, 239, 0.26);
+    border-radius: 10px;
+    background: rgba(38, 31, 60, 0.58);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-week > summary,
+body[data-page="admin"] #adminDashboardView .admin-order-day > summary,
+body[data-page="admin"] #adminDashboardView .admin-order-unknown-dates > summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px 10px;
+    padding: 9px 11px;
+    color: #f4eaff;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-week > summary {
+    background: linear-gradient(90deg, rgba(183, 138, 239, 0.2), rgba(183, 138, 239, 0.04));
+    font-weight: 700;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-week-count,
+body[data-page="admin"] #adminDashboardView .admin-order-day > summary span,
+body[data-page="admin"] #adminDashboardView .admin-order-unknown-dates > summary span {
+    color: #d8c6f2;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-week-statuses {
+    flex-basis: 100%;
+    color: #c9bddc;
+    font-size: 0.76rem;
+    font-weight: 400;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-week-days {
+    padding: 0 8px 8px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-day {
+    background: rgba(15, 14, 34, 0.55);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-day-rows {
+    display: grid;
+    gap: 6px;
+    padding: 0 8px 8px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    align-items: center;
+    gap: 7px;
+    padding: 6px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: rgba(29, 26, 51, 0.86);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row.is-selected {
+    border-color: rgba(183, 138, 239, 0.7);
+    box-shadow: 0 0 14px rgba(183, 138, 239, 0.15);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-select {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) minmax(88px, auto) auto;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    gap: 9px;
+    padding: 4px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #eee6f8;
+    text-align: left;
+    cursor: pointer;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-select:hover,
+body[data-page="admin"] #adminDashboardView .admin-order-row-select[aria-pressed="true"] {
+    background: rgba(183, 138, 239, 0.11);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-thumb {
+    width: 40px;
+    height: 40px;
+    border-radius: 7px;
+    object-fit: cover;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-thumb--empty {
+    display: grid;
+    place-items: center;
+    background: rgba(183, 138, 239, 0.12);
+    color: #d7c2f2;
+    font-size: 1.15rem;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-main,
+body[data-page="admin"] #adminDashboardView .admin-order-row-meta {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-main span,
+body[data-page="admin"] #adminDashboardView .admin-order-row-meta span {
+    overflow: hidden;
+    color: #cfc4dc;
+    font-size: 0.76rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-status {
+    color: #dfc5ff !important;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-price {
+    color: #f2e7ff;
+    white-space: nowrap;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-empty {
+    margin: 0;
+    padding: 18px;
+    color: #d8cde7;
+    text-align: center;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-card--detail {
+    width: auto;
+    max-width: none;
+    margin: 0;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-card--detail .admin-order-details-panel {
+    display: block;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-quick-filters {
+    margin-block: 4px;
+}
+
+@media (max-width: 1100px) {
+    body[data-page="admin"] #adminDashboardView .admin-order-workspace {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-detail-pane {
+        position: static;
+        max-height: none;
+    }
+}
+
+@media (max-width: 680px) {
+    body[data-page="admin"] #adminDashboardView .admin-order-calendar-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-filter-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-filter-row .admin-input {
+        width: 100%;
+        min-width: 0;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-row-select {
+        grid-template-columns: 38px minmax(0, 1fr) auto;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-row-thumb {
+        width: 36px;
+        height: 36px;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-row-meta {
+        display: none;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-row-price {
+        font-size: 0.83rem;
+    }
+}
+
+@supports selector(body:has(*)) {
+    body[data-page="admin"]:has(#backToTopBtn.visible) #app-viewport {
+        padding-right: calc(90px + env(safe-area-inset-right));
+    }
+}
+
+body[data-page="admin"] #adminDashboardView [aria-labelledby="adminMissionStatusHeading"] { order: 1; }
+body[data-page="admin"] #adminDashboardView [aria-labelledby="adminSmartAlertsHeading"] { order: 2; }
+body[data-page="admin"] #adminDashboardView #adminQuickActionsCard { order: 3; }
+body[data-page="admin"] #adminDashboardView [aria-labelledby="adminRecentActivityHeading"] { order: 4; }
+body[data-page="admin"] #adminDashboardView #adminReminderDetails { order: 5; }
+body[data-page="admin"] #adminDashboardView #adminAnalyticsWorkspace,
+body[data-page="admin"] #adminDashboardView .admin-management-zone { order: 6; }
+
+body[data-page="admin"] #adminDashboardView .admin-overview-row-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
+    align-items: stretch;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-overview-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    background: linear-gradient(145deg, rgba(47, 36, 76, 0.96), rgba(25, 23, 49, 0.98));
+    border-color: var(--mission-border);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-overview-card p {
+    margin: 0;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-overview-value {
+    margin-top: auto;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-overview-label,
+body[data-page="admin"] #adminDashboardView .admin-overview-group {
+    color: #e2d5f1;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-quick-actions-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+body[data-page="admin"] #adminDashboardView .admin-quick-actions-grid .nav-btn {
+    color: #f1e8ff;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-alert-item .admin-btn-edit {
+    align-self: start;
+    margin-top: auto;
+}
+
+body[data-page="admin"] #adminDashboardView #adminSmartAlertsList {
+    padding: 12px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-alert-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr));
+    grid-auto-rows: 1fr;
+    align-items: stretch;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-alert-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-alert-value,
+body[data-page="admin"] #adminDashboardView .admin-alert-detail {
+    margin: 0;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-pricing-jump-nav,
+body[data-page="admin"] #adminDashboardView .admin-pricing-subtabs {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding: 6px 6px 8px;
+    scrollbar-color: #9c79c7 rgba(16, 14, 36, 0.75);
+    scrollbar-width: thin;
+}
+
+body[data-page="admin"] #adminDashboardView :is(.admin-pricing-jump-nav, .admin-pricing-subtabs)::-webkit-scrollbar {
+    height: 6px;
+}
+
+body[data-page="admin"] #adminDashboardView :is(.admin-pricing-jump-nav, .admin-pricing-subtabs)::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #9c79c7;
+}
+
+body[data-page="admin"] #adminDashboardView :is(.admin-pricing-jump-nav, .admin-pricing-subtabs)::-webkit-scrollbar-track {
+    background: rgba(16, 14, 36, 0.75);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-pricing-jump-chip,
+body[data-page="admin"] #adminDashboardView .admin-pricing-subtab {
+    flex: 0 0 auto;
+    border: 1px solid var(--mission-border);
+    border-radius: 999px;
+    padding: 8px 13px;
+    background: rgba(16, 14, 36, 0.9);
+    color: #ede3fb;
+    font: inherit;
+    cursor: pointer;
+}
+
+body[data-page="admin"] #adminDashboardView :is(.admin-pricing-jump-chip, .admin-pricing-subtab)[aria-selected="true"] {
+    color: #fff;
+    border-color: var(--mission-lavender);
+    background: rgba(111, 69, 158, 0.52);
+    box-shadow: inset 0 0 0 1px rgba(233, 217, 255, 0.15), 0 0 12px var(--mission-glow);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-pricing-group > .admin-pricing-group-summary {
+    cursor: default;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-pricing-subgroup-summary {
+    cursor: default;
+    margin: 0;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-management-zone {
+    border: 0;
+    padding: 0;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-management-zone > .admin-zone-heading {
+    display: none;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-tool-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: 12px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-tool-tile {
+    display: grid;
+    gap: 6px;
+    text-align: left;
+    padding: 18px;
+    border: 1px solid var(--mission-border);
+    border-radius: 14px;
+    background: rgba(26, 22, 48, 0.9);
+    color: #f7efff;
+    font: inherit;
+    cursor: pointer;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-tool-tile span,
+body[data-page="admin"] #adminDashboardView .admin-system-tools > p {
+    color: #d9cfe9;
+    font-size: 0.88rem;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-tool-tile:hover,
+body[data-page="admin"] #adminDashboardView .admin-tool-tile:focus-visible {
+    box-shadow: 0 0 16px var(--mission-glow);
+    border-color: var(--mission-lavender);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-system-tools {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 18px;
+    border: 1px solid var(--mission-border);
+    border-radius: 14px;
+    background: rgba(15, 14, 33, 0.75);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-system-tools h3,
+body[data-page="admin"] #adminDashboardView .admin-system-tools p {
+    margin: 0;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-system-maintenance {
+    justify-self: start;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.85fr);
+    align-items: center;
+    gap: 6px 12px;
+    padding: 8px;
+    border: 1px solid var(--mission-border);
+    border-radius: 12px;
+    background: linear-gradient(130deg, rgba(48, 36, 76, 0.92), rgba(17, 18, 40, 0.96));
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-calendar-stats {
+    grid-column: 1;
+    grid-row: 1;
+    gap: 8px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-calendar-stats .admin-order-stat-card {
+    position: relative;
+    box-sizing: border-box;
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: center;
+    gap: 3px 8px;
+    min-width: 0;
+    min-height: 48px;
+    padding: 6px 9px;
+    border-color: rgba(195, 164, 232, 0.26);
+    background: linear-gradient(145deg, rgba(74, 54, 105, 0.55), rgba(20, 19, 42, 0.92));
+    box-shadow: inset 0 1px 0 rgba(244, 233, 255, 0.06);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-stat-card svg {
+    grid-row: 1 / span 2;
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: #d7b8ff;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.6;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-stat-card strong {
+    font-size: 1.05rem;
+    line-height: 1.1;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-stat-card span {
+    font-size: 0.73rem;
+    line-height: 1.15;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-stats-scope {
+    grid-column: 1;
+    grid-row: 2;
+    color: #d3c6e2;
+    font-size: 0.72rem;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-calendar-nav {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    min-width: 0;
+    overflow: visible;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-calendar-nav > .admin-btn-edit {
+    min-height: 32px;
+    padding: 6px 8px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-month-picker > summary {
+    min-width: 138px;
+    text-align: center;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-filter-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 2fr) repeat(4, minmax(100px, 1fr));
+    gap: 6px;
+    padding: 0;
+    border: 0;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-filter-row .admin-input {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 34px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(183, 138, 239, 0.16);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-archive-control {
+    flex: 0 0 auto;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-archive-control select {
+    min-height: 34px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-orders-snapshot {
+    flex: 0 0 auto;
+    border: 0;
+    padding: 0 4px;
+    color: #d3c6e2;
+    font-size: 0.74rem;
+    white-space: nowrap;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-actions-row .admin-bulk-actions {
+    flex: 0 1 auto;
+    justify-content: flex-start;
+    gap: 6px;
+    margin-left: 0;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-actions-row .admin-bulk-actions .admin-input {
+    width: 125px;
+    min-height: 34px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-actions-row .admin-bulk-actions button {
+    min-height: 34px;
+    padding: 6px 7px;
+    font-size: 0.75rem;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-actions-row .admin-list-count-badge {
+    padding: 4px 7px;
+    font-size: 0.7rem;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-workspace {
+    grid-template-columns: minmax(0, 1.22fr) minmax(0, 1fr);
+    min-width: 0;
+    align-items: start;
+    gap: 12px;
+    background: transparent;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-timeline {
+    display: grid;
+    box-sizing: border-box;
+    align-content: start;
+    gap: 4px;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+    background: linear-gradient(160deg, rgba(21, 19, 43, 0.97), rgba(13, 17, 35, 0.98));
+    container: order-timeline / inline-size;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-calendar-icon,
+body[data-page="admin"] #adminDashboardView .admin-order-row-thumb--empty svg {
+    display: block;
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: #d7b8ff;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.6;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-week > summary::after,
+body[data-page="admin"] #adminDashboardView .admin-order-day > summary::after,
+body[data-page="admin"] #adminDashboardView .admin-order-unknown-dates > summary::after {
+    content: "";
+    flex: 0 0 6px;
+    width: 6px;
+    height: 6px;
+    margin-left: auto;
+    border-right: 1.5px solid #d7b8ff;
+    border-bottom: 1.5px solid #d7b8ff;
+    transform: rotate(-45deg);
+}
+
+body[data-page="admin"] #adminDashboardView :is(.admin-order-week, .admin-order-day, .admin-order-unknown-dates)[open] > summary::after {
+    transform: rotate(45deg);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-year > h3 {
+    margin: 0 0 7px;
+    color: #e9d8ff;
+    font-size: 0.88rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-month {
+    margin-bottom: 10px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-month > h4 {
+    margin: 0 0 6px;
+    color: #f0e2ff;
+    font-size: 0.96rem;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-week,
+body[data-page="admin"] #adminDashboardView .admin-order-day,
+body[data-page="admin"] #adminDashboardView .admin-order-unknown-dates {
+    margin: 5px 0;
+    overflow: clip;
+    border-color: rgba(183, 138, 239, 0.24);
+    background: rgba(30, 26, 51, 0.76);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-week > summary {
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr) auto 8px;
+    gap: 2px 8px;
+    min-height: 38px;
+    padding: 8px 10px;
+    background: linear-gradient(100deg, rgba(119, 82, 157, 0.36), rgba(49, 39, 72, 0.22));
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-week > summary::after {
+    grid-column: 4;
+    grid-row: 1 / span 2;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-day > summary,
+body[data-page="admin"] #adminDashboardView .admin-order-unknown-dates > summary {
+    min-height: 34px;
+    padding: 7px 10px;
+    background: rgba(15, 15, 34, 0.7);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-week-statuses {
+    grid-column: 2 / 4;
+    margin: 0;
+    text-align: left;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-day-rows {
+    gap: 4px;
+    padding: 0 6px 6px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row {
+    grid-template-columns: 16px minmax(0, 1fr);
+    gap: 4px;
+    padding: 3px 5px;
+    background: rgba(24, 22, 43, 0.92);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-select {
+    grid-template-columns: 36px minmax(0, 1fr) minmax(0, auto) 14px;
+    gap: 2px 7px;
+    padding: 3px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-thumb {
+    grid-row: 1 / span 2;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-meta {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-price {
+    grid-column: 3;
+    grid-row: 2;
+    font-size: 0.72rem;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-status {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-arrow {
+    grid-column: 4;
+    grid-row: 1 / span 2;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-main strong {
+    overflow: hidden;
+    font-size: 0.82rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-thumb {
+    width: 36px;
+    height: 36px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-status {
+    justify-self: start;
+    max-width: 100%;
+    overflow: hidden;
+    padding: 3px 6px;
+    border: 1px solid rgba(183, 138, 239, 0.3);
+    border-radius: 999px;
+    background: rgba(183, 138, 239, 0.12);
+    font-size: 0.7rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-status.is-pending-review,
+body[data-page="admin"] #adminDashboardView .admin-order-row-status.is-new {
+    border-color: rgba(248, 196, 123, 0.45);
+    background: rgba(160, 105, 46, 0.2);
+    color: #ffe4ba !important;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-status.is-in-progress {
+    border-color: rgba(128, 199, 232, 0.45);
+    background: rgba(61, 134, 168, 0.2);
+    color: #c9efff !important;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-status.is-finished,
+body[data-page="admin"] #adminDashboardView .admin-order-row-status.is-shipped {
+    border-color: rgba(144, 221, 193, 0.45);
+    background: rgba(54, 139, 110, 0.2);
+    color: #cef9e6 !important;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-row-arrow {
+    width: 15px;
+    height: 15px;
+    fill: none;
+    stroke: #d9c2f4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-detail-pane {
+    position: static;
+    top: auto;
+    padding: 12px;
+    box-sizing: border-box;
+    max-height: none;
+    overflow: visible;
+    background: linear-gradient(155deg, rgba(37, 29, 59, 0.98), rgba(15, 18, 38, 0.98));
+    container: order-detail / inline-size;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-card--detail {
+    display: grid;
+    width: 100%;
+    max-width: none;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-card--detail::before,
+body[data-page="admin"] #adminDashboardView .admin-order-card--detail::after {
+    content: none;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-detail-header {
+    display: grid;
+    grid-template-columns: 54px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-detail-thumb {
+    display: grid;
+    width: 54px;
+    height: 54px;
+    place-items: center;
+    border: 1px solid rgba(183, 138, 239, 0.34);
+    border-radius: 11px;
+    background: rgba(183, 138, 239, 0.11);
+    object-fit: cover;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-detail-thumb--empty svg {
+    width: 25px;
+    height: 25px;
+    fill: none;
+    stroke: #d5b9f4;
+    stroke-width: 1.5;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-detail-heading {
+    min-width: 0;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-detail-heading h3,
+body[data-page="admin"] #adminDashboardView .admin-order-detail-heading p {
+    overflow-wrap: anywhere;
+    margin: 0;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-detail-heading h3 {
+    margin-bottom: 3px;
+    color: #f6edff;
+    font-size: 1rem;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-detail-heading p {
+    color: #d5c9e2;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-status-badge {
+    max-width: 130px;
+    padding: 5px 8px;
+    border: 1px solid rgba(183, 138, 239, 0.38);
+    border-radius: 999px;
+    background: rgba(183, 138, 239, 0.13);
+    color: #edddff;
+    font-size: 0.72rem;
+    text-align: center;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-status-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    color: #d8cce8;
+    font-size: 0.72rem;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-status-strip > * {
+    padding: 4px 7px;
+    border: 1px solid rgba(183, 138, 239, 0.2);
+    border-radius: 999px;
+    background: rgba(19, 17, 37, 0.58);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-public-refs-flag.is-hidden {
+    color: #d8cce8;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-unsaved-indicator {
+    border-color: rgba(248, 196, 123, 0.42);
+    background: rgba(160, 105, 46, 0.2);
+    color: #ffe4ba;
+    font-weight: 700;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-detail-tabs {
+    display: flex;
+    gap: 4px;
+    max-width: 100%;
+    overflow-x: auto;
+    border-bottom: 1px solid rgba(183, 138, 239, 0.26);
+    scrollbar-width: thin;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-detail-tabs [role="tab"] {
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 8px 12px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 8px 8px 0 0;
+    background: transparent;
+    color: #d3c6e2;
+    font: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-detail-tabs [role="tab"][aria-selected="true"] {
+    border-bottom-color: var(--mission-lavender);
+    background: linear-gradient(180deg, rgba(183, 138, 239, 0.2), rgba(183, 138, 239, 0.03));
+    color: #fff;
+    box-shadow: 0 0 14px rgba(183, 138, 239, 0.12);
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-detail-tabpanel[hidden] {
+    display: none !important;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-detail-tabpanel {
+    min-width: 0;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-details-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-info-card,
+body[data-page="admin"] #adminDashboardView .admin-order-final-price-card,
+body[data-page="admin"] #adminDashboardView .admin-payment-tracker-row,
+body[data-page="admin"] #adminDashboardView .admin-order-admin-actions {
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid rgba(183, 138, 239, 0.24);
+    border-radius: 11px;
+    background: linear-gradient(145deg, rgba(42, 34, 66, 0.76), rgba(18, 17, 38, 0.88));
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-info-card h4,
+body[data-page="admin"] #adminDashboardView .admin-order-admin-actions h4 {
+    margin: 0 0 8px;
+    color: #f0e2ff;
+    font-size: 0.86rem;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-info-card .admin-order-details-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-detail-row {
+    display: grid;
+    grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+    min-width: 0;
+    gap: 4px 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(183, 138, 239, 0.1);
+    color: #ddd1ea;
+    font-size: 0.82rem;
+    overflow-wrap: anywhere;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-detail-row strong {
+    min-width: 0;
+    color: #f0e5fb;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-detail-row > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-finance-block {
+    display: grid;
+    gap: 8px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-finance-head {
+    align-items: center;
+    margin: 0;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-finance-head h4 {
+    margin: 0;
+    color: #f0e2ff;
+    font-size: 0.86rem;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-finance-grid {
+    gap: 8px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-payment-tracker-row {
+    grid-column: 1 / -1;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-finance-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 5px 8px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-payment-tracker-row .admin-order-finance-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body[data-page="admin"] #adminDashboardView .admin-payment-tracker-row .admin-order-finance-actions {
+    grid-column: 1 / -1;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-finance-field {
+    min-width: 0;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-finance-field input {
+    width: 100%;
+    min-width: 0;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-finance-actions,
+body[data-page="admin"] #adminDashboardView .admin-order-file-actions,
+body[data-page="admin"] #adminDashboardView .admin-order-admin-actions__controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-admin-actions {
+    display: grid;
+    gap: 8px;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-status-control {
+    display: grid;
+    flex: 1 1 150px;
+    gap: 4px;
+    color: #e1d4ef;
+    font-size: 0.76rem;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-status-control select {
+    width: 100%;
+    min-width: 0;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-empty-files,
+body[data-page="admin"] #adminDashboardView .admin-order-file-privacy,
+body[data-page="admin"] #adminDashboardView .admin-order-note-body {
+    color: #d6cae4;
+    font-size: 0.78rem;
+    overflow-wrap: anywhere;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-order-back-btn {
+    display: none;
+}
+
+@media (max-width: 1100px) and (min-width: 761px) {
+    body[data-page="admin"] #adminDashboardView .admin-order-workspace {
+        grid-template-columns: minmax(0, 1.22fr) minmax(0, 1fr);
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-topbar {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-calendar-nav {
+        grid-column: 1;
+        grid-row: 3;
+        justify-content: flex-start;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-filter-row {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    body[data-page="admin"] #adminDashboardView #adminOrderCalendarSearch {
+        grid-column: span 4;
+    }
+}
+
+@media (max-width: 1000px) and (min-width: 761px) {
+    body[data-page="admin"] #adminDashboardView .admin-order-workspace {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (min-width: 1001px) {
+    body[data-page="admin"] #adminDashboardView .admin-order-timeline,
+    body[data-page="admin"] #adminDashboardView .admin-order-detail-pane {
+        max-height: clamp(22rem, calc(100vh - 220px), 46rem);
+        overflow: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+    }
+}
+
+@container order-detail (min-width: 600px) {
+    body[data-page="admin"] #adminDashboardView .admin-order-info-card .admin-order-details-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@container order-detail (min-width: 760px) {
+    body[data-page="admin"] #adminDashboardView .admin-order-detail-tabpanel > .admin-order-details-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+body[data-page="admin"] #adminDashboardView.admin-tool-selected #adminSectionTools > summary,
+body[data-page="admin"] #adminDashboardView.admin-tool-selected #adminSectionTools > .admin-collapsible-body > .admin-tools-studio-block > .admin-collapsible--sub > summary {
+    display: none;
+}
+
+body[data-page="admin"] #adminDashboardView .admin-pricing-subgroup-summary > span:first-child::before {
+    content: none;
+}
+
+body[data-page="admin"] #adminDashboardView :is(.admin-collapsible, .admin-pricing-group, .admin-pricing-advanced-json) > summary::after {
+    content: "";
+    display: inline-block;
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
+    margin-left: 8px;
+    background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23dfc7ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    transform: rotate(-90deg);
+}
+
+body[data-page="admin"] #adminDashboardView :is(.admin-collapsible, .admin-pricing-group, .admin-pricing-advanced-json)[open] > summary::after {
+    content: "";
+    transform: rotate(0);
+}
+
+@media (min-width: 1600px) {
+    body[data-page="admin"] #adminDashboardView .admin-overview-row--business .admin-overview-row-grid {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1100px) and (min-width: 761px) {
+    body[data-page="admin"] #adminDashboardView .admin-lockable {
+        grid-template-columns: 230px minmax(0, 1fr);
+    }
+
+    body[data-page="admin"] #adminDashboardView.admin-rail-collapsed .admin-lockable {
+        grid-template-columns: 70px minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 760px) {
+    body[data-page="admin"] #adminDashboardView .admin-overview-row-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body[data-page="admin"] #app-viewport {
+        padding: 10px 10px calc(20px + env(safe-area-inset-bottom));
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-lockable,
+    body[data-page="admin"] #adminDashboardView.admin-rail-collapsed .admin-lockable {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-sidebar {
+        position: fixed;
+        z-index: 100002;
+        inset: 0 auto 0 0;
+        width: min(280px, 85vw);
+        max-height: none;
+        height: 100dvh;
+        border-radius: 0 16px 16px 0;
+        visibility: hidden;
+        transform: translateX(-105%);
+        transition: transform 0.2s ease, visibility 0.2s;
+    }
+
+    body[data-page="admin"] #adminDashboardView.admin-drawer-open .admin-sidebar {
+        visibility: visible;
+        transform: translateX(0);
+    }
+
+    body[data-page="admin"] #adminDashboardView.admin-drawer-open .admin-drawer-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 100001;
+        border: 0;
+        background: rgba(5, 5, 18, 0.78);
+        pointer-events: auto;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-menu-toggle {
+        display: inline-block;
+        margin-bottom: 8px;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-rail-toggle {
+        display: none;
+    }
+
+    body[data-page="admin"] #adminDashboardView.admin-rail-collapsed .admin-sidebar-title,
+    body[data-page="admin"] #adminDashboardView.admin-rail-collapsed .admin-sidebar-group-title,
+    body[data-page="admin"] #adminDashboardView.admin-rail-collapsed .admin-side-label {
+        position: static;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        clip-path: none;
+        white-space: normal;
+    }
+
+    body[data-page="admin"] #adminDashboardView.admin-rail-collapsed .admin-sidebar .admin-side-link {
+        justify-content: flex-start;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-top-header {
+        flex-wrap: wrap;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-header-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-collapsible-body {
+        padding: 10px;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-topbar {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-calendar-stats,
+    body[data-page="admin"] #adminDashboardView .admin-order-stats-scope,
+    body[data-page="admin"] #adminDashboardView .admin-order-calendar-nav {
+        grid-column: 1;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-calendar-stats {
+        grid-row: 1;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-stats-scope {
+        grid-row: 2;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-calendar-nav {
+        grid-row: 3;
+        justify-content: flex-start;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-calendar-nav > * {
+        flex: 0 0 auto;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-calendar-nav {
+        overflow-x: auto;
+        padding-bottom: 3px;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-filter-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body[data-page="admin"] #adminDashboardView #adminOrderCalendarSearch {
+        grid-column: 1 / -1;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-workspace {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-timeline {
+        max-height: none;
+        overflow: visible;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-detail-pane {
+        display: none;
+        position: fixed;
+        z-index: 10000;
+        inset: max(8px, env(safe-area-inset-top)) 8px calc(64px + env(safe-area-inset-bottom));
+        max-height: none;
+        padding: 12px;
+        overflow: auto;
+        background: #17142c;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.62);
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-detail-tabs {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-detail-tabs [role="tab"] {
+        min-width: 0;
+        padding: 8px 2px;
+        font-size: 0.75rem;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-workspace.has-selection .admin-order-detail-pane {
+        display: block;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-workspace.has-selection #ordersGrid {
+        display: none;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-back-btn {
+        display: inline-flex;
+        min-height: 38px;
+        margin-bottom: 10px;
+        padding: 8px 10px;
+        border: 1px solid var(--mission-border);
+        border-radius: 9px;
+        background: rgba(183, 138, 239, 0.12);
+        color: #f5ebff;
+        font: inherit;
+        cursor: pointer;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-row-select {
+        grid-template-columns: 36px minmax(0, 1fr) minmax(0, auto) 14px;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-row-meta {
+        display: grid;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-row-status {
+        max-width: 92px;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-details-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-detail-header {
+        grid-template-columns: 44px minmax(0, 1fr);
+        align-items: start;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-detail-thumb {
+        grid-row: 1 / span 2;
+        width: 44px;
+        height: 44px;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-detail-heading {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-detail-heading p {
+        font-size: 0.73rem;
+    }
+
+    body[data-page="admin"] #adminDashboardView .admin-order-status-badge {
+        grid-column: 2;
+        grid-row: 2;
+        justify-self: start;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body[data-page="admin"] #adminDashboardView .admin-sidebar {
+        transition: none;
+    }
+}
